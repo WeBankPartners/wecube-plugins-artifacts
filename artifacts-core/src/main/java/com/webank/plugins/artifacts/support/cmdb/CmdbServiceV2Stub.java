@@ -777,7 +777,7 @@ public class CmdbServiceV2Stub {
         if (pathVariables != null && pathVariables.length > 0) {
             path = String.format(path, pathVariables);
         }
-        return applicationProperties.getCmdbServerUrl() + API_VERSION + path;
+        return applicationProperties.getWecmdbServerUrl() + API_VERSION + path;
     }
 
     private String formatString(String path, Object... pathVariables) {

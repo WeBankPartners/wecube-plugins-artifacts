@@ -1,0 +1,7 @@
+*.project
+.settings/org.eclipse.core.resources.prefs
+*.prefs
+artifacts-core/.classpath
+*.classpath
+*.MF
+artifacts-core/target/*
