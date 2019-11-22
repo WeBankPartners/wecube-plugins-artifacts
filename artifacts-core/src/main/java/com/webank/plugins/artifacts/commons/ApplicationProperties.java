@@ -8,14 +8,14 @@ import lombok.Data;
 
 @Data
 @Component
-@ConfigurationProperties(prefix = "artifacts.core")
+@ConfigurationProperties(prefix = "plugins")
 public class ApplicationProperties {
     private static final String AUTH_PROVIDER_LOCAL = "local";
     private static final String AUTH_PROVIDER_CAS = "CAS";
 
     private String authenticationProvider;
     private String casServerUrl = "";
-    private String cmdbServerUrl = "";
+    private String wecmdbServerUrl = "";
     private String casRedirectAppAddr = "";
     private DataSize maxFileSize = DataSize.ofKilobytes(64);
     private boolean securityEnabled = true;
