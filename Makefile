@@ -19,7 +19,8 @@ image: build
 s3_server_url=http://10.10.10.1:9000
 s3_access_key=access_key
 s3_secret_key=secret_key
-wecmdb_server_url=http://111.230.161.237:8080/wecmdb
+wecmdb_server_url=http://10.0.0.8:8080/wecmdb
+saltstack_server_url=http://10.0.2.12:20000
 
 .PHONY:package
 package: image
@@ -30,6 +31,7 @@ package: image
 	cd package && sed -i "s~{{REPOSITORY}}~$(project_name)~g" register.xml
 	cd package && sed -i "s~{{VERSION}}~$(version)~g" register.xml
 	cd package && sed -i "s~{{WECMDB_SERVER_URL}}~$(wecmdb_server_url)~g" register.xml
+	cd package && sed -i "s~{{SALTSTACK_SERVER_URL}}~$(saltstack_server_url)~g" register.xml
 	cd artifacts-ui/dist && zip -r ui.zip .
 	cd package && cp ../artifacts-ui/dist/ui.zip .
 	cd package && zip -r $(project_name)-$(version).zip .
