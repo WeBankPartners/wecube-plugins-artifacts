@@ -8,9 +8,6 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 	<artifactId>artifacts-core</artifactId>
-
-
-
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
