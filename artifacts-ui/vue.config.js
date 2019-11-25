@@ -1,7 +1,12 @@
 module.exports = {
   devServer: {
     open: true,
-    port: 3000
+    port: 3000,
+    proxy: {
+    	"": {
+            target: "http://localhost:8081/artifacts"
+          }
+    }
   },
   runtimeCompiler: true,
   publicPath: "",

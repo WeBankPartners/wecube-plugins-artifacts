@@ -1,6 +1,6 @@
 import Vue from "vue";
 import axios from "axios";
-export const baseURL = window.request ? "/weartifacts/weartifacts/ui/v2" : "/weartifacts/ui/v2";
+export const baseURL = "";
 export const req = axios.create({
   withCredentials: true,
   baseURL,

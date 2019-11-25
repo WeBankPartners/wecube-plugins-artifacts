@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,11 +30,7 @@ import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 
-import lombok.extern.slf4j.Slf4j;
-
 @RestController
-@Slf4j
-@RequestMapping("/artifact")
 @RolesAllowed({MENU_IMPLEMENTATION_ARTIFACT_MANAGEMENT})
 public class ArtifactManagementController {
     @Autowired
