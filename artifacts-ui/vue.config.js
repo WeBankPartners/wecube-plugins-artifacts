@@ -11,7 +11,7 @@ module.exports = {
   runtimeCompiler: true,
   publicPath: "",
   chainWebpack: config => {
-    if (process.env.PLUGIN === "plugin") {
+    if (process.env.APP_TYPE === "plugin") {
       const img = config.module.rule("images");
       img.uses.clear();
       img
@@ -22,23 +22,24 @@ module.exports = {
         });
     }
 
-    config.when(process.env.PLUGIN === "plugin", config => {
+    config.when(process.env.APP_TYPE === "plugin", config => {
       config
         .entry("app")
         .clear()
         .add("./src/main-plugin.js"); //作为插件时
     });
-    config.when(!process.env.PLUGIN, config => {
+    config.when(!process.env.APP_TYPE, config => {
       config
         .entry("app")
         .clear()
         .add("./src/main.js"); //独立运行时
     });
   },
-  productionSourceMap: process.env.PLUGIN !== "plugin",
+  productionSourceMap: process.env.APP_TYPE !== "plugin",
   configureWebpack: config => {
-    if (process.env.PLUGIN === "plugin") {
-      // Do Something
+    if (process.env.APP_TYPE === "plugin") {
+      config.optimization.splitChunks = {}
+      return;
     } 
   }
 }
