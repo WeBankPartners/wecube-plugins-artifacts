@@ -19,8 +19,13 @@ image: build
 s3_server_url=http://10.10.10.1:9000
 s3_access_key=access_key
 s3_secret_key=secret_key
-wecmdb_server_url=http://10.0.0.8:8080/wecmdb
+
+artifacts_s3_server_url=http://10.10.10.1:9000
+artifacts_s3_access_key=access_key
+artifacts_s3_secret_key=secret_key
+
 saltstack_server_url=http://10.0.2.12:20000
+wecmdb_server_url=http://10.0.0.8:8080/wecmdb
 
 .PHONY:package
 package: image
@@ -32,6 +37,9 @@ package: image
 	cd package && sed -i "s~{{VERSION}}~$(version)~g" register.xml
 	cd package && sed -i "s~{{WECMDB_SERVER_URL}}~$(wecmdb_server_url)~g" register.xml
 	cd package && sed -i "s~{{SALTSTACK_SERVER_URL}}~$(saltstack_server_url)~g" register.xml
+	cd package && sed -i "s~{{ARTIFACTS_S3_SERVER_URL}}~$(artifacts_s3_server_url)~g" register.xml
+	cd package && sed -i "s~{{ARTIFACTS_S3_ACCESS_KEY}}~$(artifacts_s3_access_key)~g" register.xml
+	cd package && sed -i "s~{{ARTIFACTS_S3_SECRET_KEY}}~$(artifacts_s3_secret_key)~g" register.xml
 	cd artifacts-ui/dist && zip -r ui.zip .
 	cd package && cp ../artifacts-ui/dist/ui.zip .
 	cd package && zip -r $(project_name)-$(version).zip .
