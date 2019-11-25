@@ -12,12 +12,12 @@ spring:
     username: db_user
     password: db_password
 
-
 plugins:
   pacakge-name: wecmdb
   wecmdb-server-url: http://111.230.161.237:8080/wecmdb
-  
 
+  saltstack-server-url: http://10.0.2.12:20000
 
-
-
+  artifacts-s3-server-url: http://10.10.10.1:9000
+  artifacts-s3-access-key: access_key
+  artifacts-s3-secret-key: secret_key
