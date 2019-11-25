@@ -1,6 +1,6 @@
 import Vue from "vue";
 import axios from "axios";
-export const baseURL = "";
+export const baseURL = "/artifacts";
 export const req = axios.create({
   withCredentials: true,
   baseURL,

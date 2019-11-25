@@ -2,7 +2,6 @@ package com.webank.plugins.artifacts.commons;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
-import org.springframework.util.unit.DataSize;
 
 import lombok.Data;
 
@@ -10,27 +9,15 @@ import lombok.Data;
 @Component
 @ConfigurationProperties(prefix = "plugins")
 public class ApplicationProperties {
-    private static final String AUTH_PROVIDER_LOCAL = "local";
-    private static final String AUTH_PROVIDER_CAS = "CAS";
 
-    private String authenticationProvider;
-    private String casServerUrl = "";
     private String wecmdbServerUrl = "";
-    private String casRedirectAppAddr = "";
-    private DataSize maxFileSize = DataSize.ofKilobytes(64);
-    private boolean securityEnabled = true;
+    private String saltstackServerUrl = "";
+    private String artifactsS3ServerUrl = "";
+    private String artifactsS3AccessKey = "";
+    private String artifactsS3SecretKey = "";
     
-    public boolean isAuthenticationProviderLocal() {
-        return AUTH_PROVIDER_LOCAL.equalsIgnoreCase(authenticationProvider);
-    }
-    
-    public boolean isAuthenticationProviderCAS() {
-        return AUTH_PROVIDER_CAS.equalsIgnoreCase(authenticationProvider);
-    }
-
-
     @Data
-    @ConfigurationProperties(prefix = "artifacts.core")
+    @ConfigurationProperties(prefix = "plugins")
     public class CmdbDataProperties {
         private Integer enumCategoryTypeSystem = 1;
         private Integer enumCategoryTypeCommon = 2;
@@ -79,7 +66,7 @@ public class ApplicationProperties {
     }
 
     @Data
-    @ConfigurationProperties(prefix = "artifacts.core.plugin")
+    @ConfigurationProperties(prefix = "plugins")
     public class PluginProperties {
         private String pluginDeployPath;
         private String[] pluginHosts;
@@ -91,11 +78,4 @@ public class ApplicationProperties {
         private Integer defaultHostSshPort;
     }
 
-    @Data
-    @ConfigurationProperties(prefix = "artifacts.core.s3")
-    public class S3Properties {
-        private String endpoint;
-        private String accessKey;
-        private String secretKey;
-    }
 }

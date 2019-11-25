@@ -18,7 +18,6 @@ import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProper
 import com.webank.plugins.artifacts.commons.ApplicationProperties.PluginProperties;
 import com.webank.plugins.artifacts.commons.WecubeCoreException;
 import com.webank.plugins.artifacts.domain.PackageDomain;
-import com.webank.plugins.artifacts.domain.plugin.PluginInstance;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CategoryDto;
@@ -29,16 +28,9 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.Dialect;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.Sorting;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
-import com.webank.plugins.artifacts.support.plugin.PluginServiceStub;
-import com.webank.plugins.artifacts.support.plugin.dto.PluginRequest.DefaultPluginRequest;
 import com.webank.plugins.artifacts.support.s3.S3Client;
 
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
-
 @Service
-@Setter
-@Slf4j
 public class ArtifactService {
 	private static final String CONSTANT_FIX_DATE = "fixed_date";
 	private static final String S3_BUCKET_NAME_FOR_ARTIFACT = "wecube-artifact";
@@ -47,20 +39,15 @@ public class ArtifactService {
 	@Autowired
 	private CmdbServiceV2Stub cmdbServiceV2Stub;
 
-	@Autowired
-	private PluginServiceStub pluginServiceStub;
-
-	@Autowired
-	private PluginInstanceService pluginInstanceService;
 
 	@Autowired
 	CmdbDataProperties cmdbDataProperties;
 
 	@Autowired
 	PluginProperties pluginProperties;
-
+	
 	@Autowired
-	ApplicationProperties.S3Properties s3Properties;
+    private ApplicationProperties applicationProperties;
 
 	public String uploadPackageToS3(File file) {
 		if (file == null) {
@@ -68,8 +55,9 @@ public class ArtifactService {
 		}
 
 		String s3Key = genMd5Value(file) + S3_KEY_DELIMITER + file.getName();
-		String url = new S3Client(s3Properties.getEndpoint(), s3Properties.getAccessKey(), s3Properties.getSecretKey())
+		String url = new S3Client(applicationProperties.getArtifactsS3ServerUrl(), applicationProperties.getArtifactsS3AccessKey(), applicationProperties.getArtifactsS3SecretKey())
 				.uploadFile(S3_BUCKET_NAME_FOR_ARTIFACT, s3Key, file);
+		//TODO
 		return url.substring(0, url.indexOf("?"));
 	}
 
@@ -89,6 +77,10 @@ public class ArtifactService {
 	public void active(String packageId) {
 		updateState(packageId, cmdbDataProperties.getEnumCodeChangeOfCiStateOfCreate());
 	}
+	
+	public Object operateState(List<OperateCiDto> operateCiDtos, String operation) {
+		return cmdbServiceV2Stub.operateCiForState(operateCiDtos, operation);
+	}
 
 	public void saveConfigFiles(String packageId, PackageDomain packageDomain) {
 		String files = String.join("|", packageDomain.getConfigFilesWithPath());
@@ -99,35 +91,43 @@ public class ArtifactService {
 	}
 
 	public Object getCurrentDirs(String packageId, String currentDir) {
-		List<PluginInstance> instances = pluginInstanceService
-				.getRunningPluginInstances(pluginProperties.getPluginPackageNameOfDeploy());
-
-		DefaultPluginRequest request = new DefaultPluginRequest();
-		List<Map<String, Object>> inputs = new ArrayList<>();
-		inputs.add(
-				ImmutableMap.<String, Object>builder().put("endpoint", retrieveS3EndpointWithKeyByPackageId(packageId))
-						.put("accessKey", s3Properties.getAccessKey()).put("secretKey", s3Properties.getSecretKey())
-						.put("currentDir", currentDir).build());
-		request.setInputs(inputs);
-
-		return pluginServiceStub.getPluginReleasedPackageFilesByCurrentDir(
-				pluginInstanceService.getInstanceAddress(instances.get(0)), request);
+		//TODO
+		return null;
+		/*
+		 * List<PluginInstance> instances = pluginInstanceService
+		 * .getRunningPluginInstances(pluginProperties.getPluginPackageNameOfDeploy());
+		 * 
+		 * DefaultPluginRequest request = new DefaultPluginRequest(); List<Map<String,
+		 * Object>> inputs = new ArrayList<>(); inputs.add( ImmutableMap.<String,
+		 * Object>builder().put("endpoint",
+		 * retrieveS3EndpointWithKeyByPackageId(packageId)) .put("accessKey",
+		 * applicationProperties.getArtifactsS3AccessKey()).put("secretKey",
+		 * applicationProperties.getArtifactsS3SecretKey()) .put("currentDir",
+		 * currentDir).build()); request.setInputs(inputs);
+		 * 
+		 * return pluginServiceStub.getPluginReleasedPackageFilesByCurrentDir(
+		 * pluginInstanceService.getInstanceAddress(instances.get(0)), request);
+		 */
 	}
 
 	public Object getPropertyKeys(String packageId, String filePath) {
-		List<PluginInstance> instances = pluginInstanceService
-				.getRunningPluginInstances(pluginProperties.getPluginPackageNameOfDeploy());
-
-		DefaultPluginRequest request = new DefaultPluginRequest();
-		List<Map<String, Object>> inputs = new ArrayList<>();
-		inputs.add(
-				ImmutableMap.<String, Object>builder().put("endpoint", retrieveS3EndpointWithKeyByPackageId(packageId))
-						.put("accessKey", s3Properties.getAccessKey()).put("secretKey", s3Properties.getSecretKey())
-						.put("file_path", filePath).build());
-		request.setInputs(inputs);
-
-		return pluginServiceStub.getPluginReleasedPackagePropertyKeysByFilePath(
-				pluginInstanceService.getInstanceAddress(instances.get(0)), request);
+		//TODO
+		return null;
+		/*
+		 * List<PluginInstance> instances = pluginInstanceService
+		 * .getRunningPluginInstances(pluginProperties.getPluginPackageNameOfDeploy());
+		 * 
+		 * DefaultPluginRequest request = new DefaultPluginRequest(); List<Map<String,
+		 * Object>> inputs = new ArrayList<>(); inputs.add( ImmutableMap.<String,
+		 * Object>builder().put("endpoint",
+		 * retrieveS3EndpointWithKeyByPackageId(packageId)) .put("accessKey",
+		 * applicationProperties.getArtifactsS3AccessKey()).put("secretKey",
+		 * applicationProperties.getArtifactsS3SecretKey()) .put("file_path",
+		 * filePath).build()); request.setInputs(inputs);
+		 * 
+		 * return pluginServiceStub.getPluginReleasedPackagePropertyKeysByFilePath(
+		 * pluginInstanceService.getInstanceAddress(instances.get(0)), request);
+		 */
 	}
 
 	private String retrieveS3EndpointWithKeyByPackageId(String packageId) {
@@ -141,7 +141,7 @@ public class ArtifactService {
 		Map pkgData = (Map) result.getContents().get(0);
 		Map pkg = (Map) pkgData.get("data");
 		String s3Key = pkg.get("md5_value") + S3_KEY_DELIMITER + pkg.get("name");
-		String endpointWithKey = s3Properties.getEndpoint() + "/" + S3_BUCKET_NAME_FOR_ARTIFACT + "/" + s3Key;
+		String endpointWithKey = applicationProperties.getArtifactsS3ServerUrl() + "/" + S3_BUCKET_NAME_FOR_ARTIFACT + "/" + s3Key;
 		return endpointWithKey;
 	}
 
@@ -150,7 +150,9 @@ public class ArtifactService {
 		operateCiDtos.add(new OperateCiDto(packageId, cmdbDataProperties.getCiTypeIdOfPackage()));
 		cmdbServiceV2Stub.operateCiForState(operateCiDtos, operation);
 	}
-
+	
+	
+	
 	private String genMd5Value(File file) {
 		if (file == null) {
 			return null;
@@ -260,5 +262,12 @@ public class ArtifactService {
 					cmdbDataProperties.getEnumCategoryNameOfDiffConf()));
 		}
 		return cmdbServiceV2Stub.getEnumCodesByCategoryId(cat.getCatId());
+	}
+
+	public Object getCiTypes(Boolean withAttributes, String status) {
+		return cmdbServiceV2Stub.getAllCiTypes(withAttributes,status);
+	}
+	public void deleteCiTypes(Integer... ids) {
+		cmdbServiceV2Stub.deleteCiTypes(ids);
 	}
 }

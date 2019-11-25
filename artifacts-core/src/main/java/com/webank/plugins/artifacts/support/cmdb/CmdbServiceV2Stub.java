@@ -16,9 +16,6 @@ import org.springframework.stereotype.Service;
 
 import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.WecubeCoreException;
-import com.webank.plugins.artifacts.domain.Role;
-import com.webank.plugins.artifacts.domain.RoleUser;
-import com.webank.plugins.artifacts.domain.User;
 import com.webank.plugins.artifacts.support.cmdb.dto.CmdbResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.CmdbResponse.DefaultCmdbResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.AdhocIntegrationQueryDto;
@@ -33,7 +30,6 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.CiDataQueryResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.CiDataVersionDetailResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.CiDataVersionsQueryResultResponse;
-import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.CiReferenceDataListResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.CiTypeAttributeListResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.CiTypeAttributeQueryResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.CiTypeListResultResponse;
@@ -55,12 +51,6 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.RoleCiType
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.RoleCiTypeCtrlAttrQueryResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.RoleCiTypeListResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.RoleCiTypeQueryResultResponse;
-import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.RoleListResultResponse;
-import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.RoleQueryResultResponse;
-import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.RoleUserListResultResponse;
-import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.RoleUserQueryResultResponse;
-import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.UserListResultResponse;
-import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.UsersQueryResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.ImageInfoDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.IntQueryOperateAggRequestDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.IntQueryOperateAggResponseDto;
@@ -72,9 +62,6 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.RoleCiTypeCtrlAttrCondit
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.RoleCiTypeCtrlAttrDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.RoleCiTypeDto;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 @Service
 public class CmdbServiceV2Stub {
 
@@ -91,15 +78,6 @@ public class CmdbServiceV2Stub {
     private static final String CONSTANTS_INPUT_TYPES = "/constants/inputTypes/retrieve";
     private static final String CONSTANTS_EFFECTIVE_STATUS = "/constants/effectiveStatus/retrieve";
 
-    private static final String ADMIN_USERS_QUERY = "/users/retrieve";
-    private static final String ADMIN_USERS_CREATE = "/users/create";
-    private static final String ADMIN_ROLES_QUERY = "/roles/retrieve";
-    private static final String ADMIN_ROLES_CREATE = "/roles/create";
-    private static final String ADMIN_ROLES_UPDATE = "/roles/update";
-    private static final String ADMIN_ROLES_DELETE = "/roles/delete";
-    private static final String ADMIN_ROLE_USERS_QUERY = "/role-users/retrieve";
-    private static final String ADMIN_ROLE_USERS_CREATE = "/role-users/create";
-    private static final String ADMIN_ROLE_USERS_DELETE = "/role-users/delete";
     private static final String ADMIN_ROLE_CITYPES_QUERY = "/role-citypes/retrieve";
     private static final String ADMIN_ROLE_CITYPES_CREATE = "/role-citypes/create";
     private static final String ADMIN_ROLE_CITYPES_UPDATE = "/role-citypes/update";
@@ -129,7 +107,6 @@ public class CmdbServiceV2Stub {
     private static final String ENUM_CODE_QUERY = "/enum/codes/retrieve";
     private static final String ENUM_CODE_UPDATE = "/enum/codes/update";
     private static final String ENUM_CODE_DELETE = "/enum/codes/delete";
-    private static final String ENUM_CODE_REFERENCE_QUERY = "/enum/codes/referenceDatas/%d/query";
 
     private static final String CITYPE_CREATE = "/ciTypes/create";
     private static final String CITYPE_QUERY = "/ciTypes/retrieve";
@@ -145,7 +122,6 @@ public class CmdbServiceV2Stub {
     private static final String CIDATA_QUERY = "/ci/%d/retrieve";
     private static final String CIDATA_UPDATE = "/ci/%d/update";
     private static final String CIDATA_DELETE = "/ci/%d/delete";
-    private static final String CIDATA_REFERNECE_QUERY = "/ci/referenceDatas/%d/query";
     private static final String CIDATA_STATE_OPERATE = "/ci/state/operate";
     private static final String CIDATA_RETRIEVE_VERSIONS = "/ci/%d/versions/retrieve";
     private static final String CIDATA_RETRIEVE_VERSION_DETAIL = "/ci/from/%d/to/%d/versions/%s/retrieve";
@@ -199,67 +175,6 @@ public class CmdbServiceV2Stub {
 
     public List<String> getEffectiveStatus() {
         return template.postForResponse(asCmdbUrl(CONSTANTS_EFFECTIVE_STATUS), ConstantsReferenceTypesResponse.class);
-    }
-
-    public List<User> getAllUsers() {
-        PaginationQueryResult<User> queryResult = query(ADMIN_USERS_QUERY, defaultQueryObject(), UsersQueryResultResponse.class);
-        return queryResult.getContents();
-    }
-    
-    public User getUserByUsername(String username) {
-        return findFirst(ADMIN_USERS_QUERY, defaultQueryObject("username", username), UsersQueryResultResponse.class, false);
-    }
-    
-    public List<User> createUsers(User... users) {
-        return create(ADMIN_USERS_CREATE, users, UserListResultResponse.class);
-    }
-
-    public List<Role> getAllRoles() {
-        PaginationQueryResult<Role> queryResult = query(ADMIN_ROLES_QUERY, defaultQueryObject(), RoleQueryResultResponse.class);
-        return queryResult.getContents();
-    }
-
-    public List<Role> getRolesByUsername(String username) {
-        PaginationQuery queryObject = defaultQueryObject()
-                .addReferenceResource("roleUsers")
-                .addReferenceResource("roleUsers.user")
-                .addEqualsFilter("roleUsers.user.username", username);
-        PaginationQueryResult<Role> queryResult = query(ADMIN_ROLES_QUERY, queryObject, RoleQueryResultResponse.class);
-        return queryResult.getContents();
-    }
-
-    public List<User> getUsersByRoleId(int roleId) {
-        PaginationQuery queryObject = defaultQueryObject()
-                .addReferenceResource("roleUsers")
-                .addReferenceResource("roleUsers.role")
-                .addEqualsFilter("roleUsers.role.roleId", roleId);
-        PaginationQueryResult<User> queryResult = query(ADMIN_USERS_QUERY, queryObject, UsersQueryResultResponse.class);
-        return queryResult.getContents();
-    }
-
-    public List<Role> createRoles(Role... roles) {
-        return create(ADMIN_ROLES_CREATE, roles, RoleListResultResponse.class);
-    }
-    
-    public List<CiTypeDto> updateRoles(Role... roles) {
-        return update(ADMIN_ROLES_UPDATE, roles, RoleListResultResponse.class);
-    }
-
-    public void deleteRoles(Integer... ids) {
-        delete(ADMIN_ROLES_DELETE, ids, DefaultCmdbResponse.class);
-    }
-
-    public List<RoleUser> getRoleUsers(PaginationQuery queryObject) {
-        PaginationQueryResult<RoleUser> queryResult = query(ADMIN_ROLE_USERS_QUERY, queryObject, RoleUserQueryResultResponse.class);
-        return queryResult.getContents();
-    }
-
-    public List<RoleUser> createRoleUsers(RoleUser... roleUsers) {
-        return create(ADMIN_ROLE_USERS_CREATE, roleUsers, RoleUserListResultResponse.class);
-    }
-
-    public void deleteRoleUsers(Integer... ids) {
-        delete(ADMIN_ROLE_USERS_DELETE, ids, DefaultCmdbResponse.class);
     }
 
     public List<RoleCiTypeDto> queryRoleCiTypes(PaginationQuery queryObject) {
@@ -554,7 +469,7 @@ public class CmdbServiceV2Stub {
     }
 
     public List<CiTypeAttrDto> createCiTypeAttribute(CiTypeAttrDto ciTypeAttribute) {
-        ArrayList ciTypeAttributes = new ArrayList();
+        ArrayList<CiTypeAttrDto> ciTypeAttributes = new ArrayList<CiTypeAttrDto>();
         ciTypeAttributes.add(ciTypeAttribute);
         return create(CITYPE_ATTRIBUTE_CREATE, ciTypeAttributes.toArray(), CiTypeAttributeListResultResponse.class);
     }
@@ -626,7 +541,7 @@ public class CmdbServiceV2Stub {
     }
 
     public List<CiDataDto> createCiData(Integer ciTypeId, Object ciData) {
-        ArrayList ciDatas = new ArrayList();
+        ArrayList<Object> ciDatas = new ArrayList<Object>();
         ciDatas.add(ciData);
         return create(formatString(CIDATA_CREATE, ciTypeId), ciDatas.toArray(), DefaultCmdbResponse.class);
     }
@@ -660,7 +575,7 @@ public class CmdbServiceV2Stub {
     }
 
     public List<Object> updateCiData(Integer ciTypeId, Map<String, Object> ciData) {
-        ArrayList ciDatas = new ArrayList();
+        List<Map<String, Object>> ciDatas = new ArrayList<Map<String, Object>>();
         ciDatas.add(ciData);
         return update(formatString(CIDATA_UPDATE, ciTypeId), ciDatas.toArray(), DefaultCmdbResponse.class);
     }
@@ -670,7 +585,7 @@ public class CmdbServiceV2Stub {
     }
 
     public Object deleteCiData(Integer ciTypeId, Object ciData) {
-        ArrayList ciDatas = new ArrayList();
+        ArrayList<Object> ciDatas = new ArrayList<Object>();
         ciDatas.add(ciData);
         return delete(formatString(CIDATA_DELETE, ciTypeId), ciDatas.toArray(), DefaultCmdbResponse.class);
     }
@@ -737,11 +652,11 @@ public class CmdbServiceV2Stub {
                 CmdbResponse.IntegerCmdbResponse.class);
     }
 
-    private <D, R extends CmdbResponse> D findFirst(String url, String field, Object value, Class<R> responseType) {
+    private <D, R extends CmdbResponse<?>> D findFirst(String url, String field, Object value, Class<R> responseType) {
         return findFirst(url, defaultQueryObject(field, value), responseType, true);
     }
 
-    private <D, R extends CmdbResponse> D findFirst(String url, PaginationQuery queryObject, Class<R> responseType, boolean dataRequired) {
+    private <D, R extends CmdbResponse<?>> D findFirst(String url, PaginationQuery queryObject, Class<R> responseType, boolean dataRequired) {
         String targetUrl = asCmdbUrl(url);
         PaginationQueryResult<D> result = template.postForResponse(targetUrl, queryObject, responseType);
         List<D> dataContent = result.getContents();
@@ -751,25 +666,25 @@ public class CmdbServiceV2Stub {
         return null;
     }
 
-    private <D, R extends CmdbResponse> List<D> findAll(String url, PaginationQuery queryObject,
+    private <D, R extends CmdbResponse<?>> List<D> findAll(String url, PaginationQuery queryObject,
                                                         Class<R> responseType) {
         PaginationQueryResult<D> result = template.postForResponse(asCmdbUrl(url), queryObject, responseType);
         return result.getContents();
     }
 
-    private <D, R extends CmdbResponse> D create(String url, Object[] createObject, Class<R> responseType) {
+    private <D, R extends CmdbResponse<?>> D create(String url, Object[] createObject, Class<R> responseType) {
         return template.postForResponse(asCmdbUrl(url), createObject, responseType);
     }
 
-    private <D, R extends CmdbResponse> D query(String url, PaginationQuery queryObject, Class<R> responseType) {
+    private <D, R extends CmdbResponse<?>> D query(String url, PaginationQuery queryObject, Class<R> responseType) {
         return template.postForResponse(asCmdbUrl(url), queryObject, responseType);
     }
 
-    private <D, R extends CmdbResponse> D update(String url, Object[] updateObject, Class<R> responseType) {
+    private <D, R extends CmdbResponse<?>> D update(String url, Object[] updateObject, Class<R> responseType) {
         return template.postForResponse(asCmdbUrl(url), updateObject, responseType);
     }
 
-    private <D, R extends CmdbResponse> D delete(String url, Object[] ids, Class<R> responseType) {
+    private <D, R extends CmdbResponse<?>> D delete(String url, Object[] ids, Class<R> responseType) {
         return template.postForResponse(asCmdbUrl(url), ids, responseType);
     }
 
@@ -778,6 +693,14 @@ public class CmdbServiceV2Stub {
             path = String.format(path, pathVariables);
         }
         return applicationProperties.getWecmdbServerUrl() + API_VERSION + path;
+    }
+    
+    private String asSaltstackUrl(String path, Object... pathVariables) {
+        if (pathVariables != null && pathVariables.length > 0) {
+            path = String.format(path, pathVariables);
+        }
+        return applicationProperties.getSaltstackServerUrl() + API_VERSION + path;
+        //TODO
     }
 
     private String formatString(String path, Object... pathVariables) {

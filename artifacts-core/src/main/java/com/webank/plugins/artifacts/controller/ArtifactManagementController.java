@@ -2,14 +2,13 @@ package com.webank.plugins.artifacts.controller;
 
 import static com.webank.plugins.artifacts.domain.JsonResponse.okay;
 import static com.webank.plugins.artifacts.domain.JsonResponse.okayWithData;
-import static com.webank.plugins.artifacts.domain.MenuItem.MENU_IMPLEMENTATION_ARTIFACT_MANAGEMENT;
+import static com.webank.plugins.artifacts.utils.BooleanUtils.isTrue;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
-
-import javax.annotation.security.RolesAllowed;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,10 +27,10 @@ import com.webank.plugins.artifacts.domain.PackageDomain;
 import com.webank.plugins.artifacts.service.ArtifactService;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
+import com.webank.plugins.artifacts.support.cmdb.dto.v2.OperateCiDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 
 @RestController
-@RolesAllowed({MENU_IMPLEMENTATION_ARTIFACT_MANAGEMENT})
 public class ArtifactManagementController {
     @Autowired
     CmdbDataProperties cmdbDataProperties;
@@ -153,4 +152,31 @@ public class ArtifactManagementController {
         }
         return file;
     }
+    @PostMapping("/ci/state/operate")
+    public JsonResponse operateCiForState(@RequestBody List<OperateCiDto> ciIds, @RequestParam("operation") String operation) {
+    	return okayWithData(artifactService.operateState(ciIds,operation));
+    }
+    
+    @GetMapping("/ci-types")
+    @ResponseBody
+    public JsonResponse getCiTypes(@RequestParam(name = "group-by", required = false) String groupBy, @RequestParam(name = "with-attributes", required = false) String withAttributes,
+            @RequestParam(name = "status", required = false) String status) {
+    	if ("layer".equalsIgnoreCase(groupBy)) {
+    		return okayWithData(artifactService.getCiTypes(isTrue(withAttributes),status));
+    	}
+        throw new WecubeCoreException("The parameter group-by is wrong");
+    }
+    
+
+    @PostMapping("/ci-types/{ci-type-id}/ci-data/batch-delete")
+    @ResponseBody
+    public JsonResponse deleteCiData(@PathVariable(value = "ci-type-id") int ciTypeId, @RequestBody List<String> ciDataIds) {
+        try{
+        	artifactService.deleteCiTypes((Integer[])ciDataIds.toArray());
+        } catch (Exception e) {
+            throw new WecubeCoreException("The parameter ciDataIds is wrong", e);
+        }
+        return okay();
+    }
+
 }

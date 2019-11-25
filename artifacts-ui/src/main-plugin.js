@@ -1,5 +1,10 @@
 import Vue from 'vue'
 import router from "./router-plugin";
+import ArtifactsSimpleTable from "../src/components/simple-table.vue";
+import ArtifactsAttrInput from "../src/pages/components/attr-input";
+
+Vue.component("ArtifactsSimpleTable", ArtifactsSimpleTable);
+Vue.component("ArtifactsAttrInput", ArtifactsAttrInput);
 
 Vue.config.productionTip = false
 

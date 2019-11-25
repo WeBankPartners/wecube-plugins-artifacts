@@ -14,7 +14,7 @@ export const getPackageCiTypeId = () => req.get("/getPackageCiTypeId");
 export const getAllCITypesByLayerWithAttr = data => {
   const status = data.toString();
   return req.get(
-    `/wecmdb/ci-types?group-by=layer&with-attributes=yes&status=${status}`
+    `/ci-types?group-by=layer&with-attributes=yes&status=${status}`
   );
 };
 export const getSystemDesignVersions = () => {
@@ -28,13 +28,13 @@ export const queryPackages = (guid, data) => {
 };
 export const deleteCiDatas = data => {
   return req.post(
-    `/wecmdb/ci-types/${data.id}/ci-data/batch-delete`,
+    `/ci-types/${data.id}/ci-data/batch-delete`,
     data.deleteData
   );
 };
 export const operateCiState = (ciTypeId, guid, op) => {
   const payload = [{ ciTypeId, guid }];
-  return req.post(`/wecmdb/ci/state/operate?operation=${op}`, payload);
+  return req.post(`/ci/state/operate?operation=${op}`, payload);
 };
 export const getFiles = (guid, packageId, data) => {
   return req.post(
@@ -59,5 +59,5 @@ export const saveDiffConfigEnumCodes = data =>
 export const getDiffConfigEnumCodes = () =>
   req.get("/enum/codes/diff-config/query");
 export const getAllSystemEnumCodes = data => {
-  return req.post(`/wecmdb/enum/system/codes`, data);
+  return req.post(`/enum/system/codes`, data);
 };

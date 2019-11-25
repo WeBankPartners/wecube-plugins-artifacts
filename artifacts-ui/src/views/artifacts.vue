@@ -41,7 +41,7 @@
         >
           <Button icon="ios-cloud-upload-outline">上传新包</Button>
         </Upload>
-        <SimpleTable
+        <ArtifactsSimpleTable
           :loading="tableLoading"
           :columns="tableColumns"
           :data="tableData"
@@ -49,7 +49,7 @@
           @pageChange="pageChange"
           @pageSizeChange="pageSizeChange"
           @rowClick="rowClick"
-        ></SimpleTable>
+        ></ArtifactsSimpleTable>
         <Modal
           v-model="isShowFilesModal"
           title="脚本配置"
@@ -265,7 +265,7 @@ export default {
           title: "CMDB-ATTR",
           render: (h, params) => {
             return params.row.attrInputValue ? (
-              <AttrInput
+              <ArtifactsAttrInput
                 style="margin-top:5px;"
                 allCiTypes={this.ciTypes}
                 rootCiType={15}
@@ -277,7 +277,7 @@ export default {
               />
             ) : (
               <div style="align-items:center;display:flex;">
-                <AttrInput
+                <ArtifactsAttrInput
                   style="margin-top:5px;width:calc(100% - 55px);"
                   allCiTypes={this.ciTypes}
                   rootCiType={15}

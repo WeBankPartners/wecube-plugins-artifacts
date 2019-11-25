@@ -4,21 +4,12 @@ package com.webank.plugins.artifacts.support.cmdb.dto.v2;
 import java.util.List;
 import java.util.Map;
 
-import com.webank.plugins.artifacts.domain.Role;
-import com.webank.plugins.artifacts.domain.RoleUser;
-import com.webank.plugins.artifacts.domain.User;
 import com.webank.plugins.artifacts.support.cmdb.dto.CmdbResponse;
 
 public class CmdbResponses {
 
     public static class ImageInfoResponse extends CmdbResponse<ImageInfoDto> {}
 
-    public static class UsersQueryResultResponse extends CmdbResponse<PaginationQueryResult<User>> {}
-    public static class UserListResultResponse extends CmdbResponse<List<User>> {}
-    public static class RoleQueryResultResponse extends CmdbResponse<PaginationQueryResult<Role>> {}
-    public static class RoleListResultResponse extends CmdbResponse<List<Role>> {}
-    public static class RoleUserQueryResultResponse extends CmdbResponse<PaginationQueryResult<RoleUser>> {}
-    public static class RoleUserListResultResponse extends CmdbResponse<List<RoleUser>> {}
     public static class RoleCiTypeQueryResultResponse extends CmdbResponse<PaginationQueryResult<RoleCiTypeDto>> {}
     public static class RoleCiTypeListResultResponse extends CmdbResponse<List<RoleCiTypeDto>> {}
     public static class RoleCiTypeCtrlAttrQueryResultResponse extends CmdbResponse<PaginationQueryResult<RoleCiTypeCtrlAttrDto>> {}
