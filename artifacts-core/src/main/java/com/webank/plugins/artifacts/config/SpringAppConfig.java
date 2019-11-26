@@ -5,10 +5,9 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
-import com.webank.plugins.artifacts.commons.ApplicationProperties.PluginProperties;
 
 @Configuration
-@EnableConfigurationProperties({PluginProperties.class, CmdbDataProperties.class})
+@EnableConfigurationProperties({CmdbDataProperties.class})
 @ComponentScan({ "com.webank.plugins.artifacts" })
 public class SpringAppConfig {
 
