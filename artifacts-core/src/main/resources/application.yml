@@ -8,12 +8,6 @@ spring:
   profiles:
     active: dev
 
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/wecube_core?characterEncoding=utf8&serverTimezone=UTC
-    username: db_user
-    password: db_password
-
   servlet:
     multipart:
       max-file-size: 2GB
