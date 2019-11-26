@@ -14,6 +14,11 @@ spring:
     username: db_user
     password: db_password
 
+  servlet:
+    multipart:
+      max-file-size: 2GB
+      max-request-size: 2GB
+
 plugins:
   pacakge-name: artifacts
   wecmdb-server-url: http://localhost:8080/wecmdb

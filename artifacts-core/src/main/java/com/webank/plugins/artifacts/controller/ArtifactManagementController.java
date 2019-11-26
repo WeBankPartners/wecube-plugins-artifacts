@@ -6,7 +6,6 @@ import static com.webank.plugins.artifacts.utils.BooleanUtils.isTrue;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +23,7 @@ import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProper
 import com.webank.plugins.artifacts.commons.WecubeCoreException;
 import com.webank.plugins.artifacts.domain.JsonResponse;
 import com.webank.plugins.artifacts.domain.PackageDomain;
+import com.webank.plugins.artifacts.interceptor.UsernameStorage;
 import com.webank.plugins.artifacts.service.ArtifactService;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
@@ -56,13 +56,13 @@ public class ArtifactManagementController {
     @PostMapping("/unit-designs/{unit-design-id}/packages/upload")
     @ResponseBody
     public JsonResponse uploadPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
-            @RequestParam(value = "file", required = false) MultipartFile multipartFile, Principal principal) {
+            @RequestParam(value = "file", required = false) MultipartFile multipartFile) {
 
         File file = convertMultiPartToFile(multipartFile);
 
         String url = artifactService.uploadPackageToS3(file);
 
-        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, principal.getName(), url));
+        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, UsernameStorage.getIntance().get(), url));
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/query")
@@ -145,40 +145,40 @@ public class ArtifactManagementController {
         }
 
         File file = new File(multipartFile.getOriginalFilename());
-        try (FileOutputStream fos = new FileOutputStream(file)){
+        try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(multipartFile.getBytes());
         } catch (Exception e) {
             throw new WecubeCoreException("Fail to convert multipart file to file", e);
         }
         return file;
     }
+
     @PostMapping("/ci/state/operate")
     public JsonResponse operateCiForState(@RequestBody List<OperateCiDto> ciIds, @RequestParam("operation") String operation) {
-    	return okayWithData(artifactService.operateState(ciIds,operation));
+        return okayWithData(artifactService.operateState(ciIds, operation));
     }
-    
+
     @GetMapping("/ci-types")
     @ResponseBody
     public JsonResponse getCiTypes(@RequestParam(name = "group-by", required = false) String groupBy, @RequestParam(name = "with-attributes", required = false) String withAttributes,
             @RequestParam(name = "status", required = false) String status) {
-    	if ("layer".equalsIgnoreCase(groupBy)) {
-    		return okayWithData(artifactService.getCiTypes(isTrue(withAttributes),status));
-    	}
+        if ("layer".equalsIgnoreCase(groupBy)) {
+            return okayWithData(artifactService.getCiTypes(isTrue(withAttributes), status));
+        }
         throw new WecubeCoreException("The parameter group-by is wrong");
     }
-    
 
     @PostMapping("/ci-types/{ci-type-id}/ci-data/batch-delete")
     @ResponseBody
     public JsonResponse deleteCiData(@PathVariable(value = "ci-type-id") int ciTypeId, @RequestBody List<String> ciDataIds) {
-        try{
-        	artifactService.deleteCiTypes((Integer[])ciDataIds.toArray());
+        try {
+            artifactService.deleteCiData(ciTypeId, ciDataIds.toArray());
         } catch (Exception e) {
             throw new WecubeCoreException("The parameter ciDataIds is wrong", e);
         }
         return okay();
     }
-    
+
     @PostMapping("/enum/system/codes")
     @ResponseBody
     public JsonResponse querySystemEnumCodesWithRefResources(@RequestBody PaginationQuery queryObject) {

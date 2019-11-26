@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import com.google.common.collect.ImmutableMap;
 import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
-import com.webank.plugins.artifacts.commons.ApplicationProperties.PluginProperties;
 import com.webank.plugins.artifacts.commons.WecubeCoreException;
 import com.webank.plugins.artifacts.domain.PackageDomain;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
@@ -30,254 +29,248 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.Dialect;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.Sorting;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
 import com.webank.plugins.artifacts.support.s3.S3Client;
+import com.webank.plugins.artifacts.support.saltstack.SaltstackRequest.DefaultSaltstackRequest;
+import com.webank.plugins.artifacts.support.saltstack.SaltstackServiceStub;
 
 @Service
 public class ArtifactService {
-	private static final String CONSTANT_FIX_DATE = "fixed_date";
-	private static final String S3_BUCKET_NAME_FOR_ARTIFACT = "wecube-artifact";
-	private static final String S3_KEY_DELIMITER = "_";
+    private static final String CONSTANT_FIX_DATE = "fixed_date";
+    private static final String S3_BUCKET_NAME_FOR_ARTIFACT = "wecube-artifacts";
+    private static final String S3_KEY_DELIMITER = "_";
     private static final String CONSTANT_CAT_CAT_TYPE = "cat.catType";
 
+    @Autowired
+    private CmdbServiceV2Stub cmdbServiceV2Stub;
 
-	@Autowired
-	private CmdbServiceV2Stub cmdbServiceV2Stub;
+    @Autowired
+    private SaltstackServiceStub saltstackServiceStub;
 
+    @Autowired
+    CmdbDataProperties cmdbDataProperties;
 
-	@Autowired
-	CmdbDataProperties cmdbDataProperties;
-
-	@Autowired
-	PluginProperties pluginProperties;
-	
-	@Autowired
+    @Autowired
     private ApplicationProperties applicationProperties;
 
-	public String uploadPackageToS3(File file) {
-		if (file == null) {
-			throw new WecubeCoreException("Upload package file is required.");
-		}
+    public String uploadPackageToS3(File file) {
+        if (file == null) {
+            throw new WecubeCoreException("Upload package file is required.");
+        }
 
-		String s3Key = genMd5Value(file) + S3_KEY_DELIMITER + file.getName();
-		String url = new S3Client(applicationProperties.getArtifactsS3ServerUrl(), applicationProperties.getArtifactsS3AccessKey(), applicationProperties.getArtifactsS3SecretKey())
-				.uploadFile(S3_BUCKET_NAME_FOR_ARTIFACT, s3Key, file);
-		//TODO
-		return url.substring(0, url.indexOf("?"));
-	}
+        String s3Key = genMd5Value(file) + S3_KEY_DELIMITER + file.getName();
+        String url = new S3Client(applicationProperties.getArtifactsS3ServerUrl(), applicationProperties.getArtifactsS3AccessKey(), applicationProperties.getArtifactsS3SecretKey())
+                .uploadFile(S3_BUCKET_NAME_FOR_ARTIFACT, s3Key, file);
+        return url.substring(0, url.indexOf("?"));
+    }
 
-	public List<CiDataDto> savePackageToCmdb(File file, String unitDesignId, String uploadUser, String url) {
-		Map<String, Object> pkg = ImmutableMap.<String, Object>builder().put("name", file.getName()).put("url", url)
-				.put("md5_value", genMd5Value(file)).put("description", file.getName()).put("upload_user", uploadUser)
-				.put("upload_time", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()))
-				.put("unit_design", unitDesignId).build();
+    public List<CiDataDto> savePackageToCmdb(File file, String unitDesignId, String uploadUser, String deployPackageUrl) {
+        Map<String, Object> pkg = ImmutableMap.<String, Object>builder()
+                .put("name", file.getName())
+                .put("deploy_package_url", deployPackageUrl)
+                .put("md5_value", genMd5Value(file))
+                .put("description", file.getName())
+                .put("upload_user", uploadUser)
+                .put("upload_time", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()))
+                .put("unit_design", unitDesignId)
+                .build();
 
-		return cmdbServiceV2Stub.createCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
-	}
+        return cmdbServiceV2Stub.createCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
+    }
 
-	public void deactive(String packageId) {
-		updateState(packageId, cmdbDataProperties.getEnumCodeDestroyedOfCiStateOfCreate());
-	}
+    public void deactive(String packageId) {
+        updateState(packageId, cmdbDataProperties.getEnumCodeDestroyedOfCiStateOfCreate());
+    }
 
-	public void active(String packageId) {
-		updateState(packageId, cmdbDataProperties.getEnumCodeChangeOfCiStateOfCreate());
-	}
-	
-	public Object operateState(List<OperateCiDto> operateCiDtos, String operation) {
-		return cmdbServiceV2Stub.operateCiForState(operateCiDtos, operation);
-	}
+    public void active(String packageId) {
+        updateState(packageId, cmdbDataProperties.getEnumCodeChangeOfCiStateOfCreate());
+    }
 
-	public void saveConfigFiles(String packageId, PackageDomain packageDomain) {
-		String files = String.join("|", packageDomain.getConfigFilesWithPath());
-		Map<String, Object> pkg = ImmutableMap.<String, Object>builder().put("guid", packageId)
-				.put("deploy_file", packageDomain.getDeployFile()).put("start_file", packageDomain.getStartFile())
-				.put("stop_file", packageDomain.getStopFile()).put("diff_conf_file", files).build();
-		cmdbServiceV2Stub.updateCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
-	}
+    public Object operateState(List<OperateCiDto> operateCiDtos, String operation) {
+        return cmdbServiceV2Stub.operateCiForState(operateCiDtos, operation);
+    }
 
-	public Object getCurrentDirs(String packageId, String currentDir) {
-		//TODO
-		return null;
-		/*
-		 * List<PluginInstance> instances = pluginInstanceService
-		 * .getRunningPluginInstances(pluginProperties.getPluginPackageNameOfDeploy());
-		 * 
-		 * DefaultPluginRequest request = new DefaultPluginRequest(); List<Map<String,
-		 * Object>> inputs = new ArrayList<>(); inputs.add( ImmutableMap.<String,
-		 * Object>builder().put("endpoint",
-		 * retrieveS3EndpointWithKeyByPackageId(packageId)) .put("accessKey",
-		 * applicationProperties.getArtifactsS3AccessKey()).put("secretKey",
-		 * applicationProperties.getArtifactsS3SecretKey()) .put("currentDir",
-		 * currentDir).build()); request.setInputs(inputs);
-		 * 
-		 * return pluginServiceStub.getPluginReleasedPackageFilesByCurrentDir(
-		 * pluginInstanceService.getInstanceAddress(instances.get(0)), request);
-		 */
-	}
+    public void saveConfigFiles(String packageId, PackageDomain packageDomain) {
+        String files = String.join("|", packageDomain.getConfigFilesWithPath());
+        Map<String, Object> pkg = ImmutableMap.<String, Object>builder()
+                .put("guid", packageId)
+                .put("deploy_file", packageDomain.getDeployFile())
+                .put("start_file", packageDomain.getStartFile())
+                .put("stop_file", packageDomain.getStopFile())
+                .put("diff_conf_file", files)
+                .build();
+        cmdbServiceV2Stub.updateCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
+    }
 
-	public Object getPropertyKeys(String packageId, String filePath) {
-		//TODO
-		return null;
-		/*
-		 * List<PluginInstance> instances = pluginInstanceService
-		 * .getRunningPluginInstances(pluginProperties.getPluginPackageNameOfDeploy());
-		 * 
-		 * DefaultPluginRequest request = new DefaultPluginRequest(); List<Map<String,
-		 * Object>> inputs = new ArrayList<>(); inputs.add( ImmutableMap.<String,
-		 * Object>builder().put("endpoint",
-		 * retrieveS3EndpointWithKeyByPackageId(packageId)) .put("accessKey",
-		 * applicationProperties.getArtifactsS3AccessKey()).put("secretKey",
-		 * applicationProperties.getArtifactsS3SecretKey()) .put("file_path",
-		 * filePath).build()); request.setInputs(inputs);
-		 * 
-		 * return pluginServiceStub.getPluginReleasedPackagePropertyKeysByFilePath(
-		 * pluginInstanceService.getInstanceAddress(instances.get(0)), request);
-		 */
-	}
+    public Object getCurrentDirs(String packageId, String currentDir) {
+        DefaultSaltstackRequest request = new DefaultSaltstackRequest();
+        List<Map<String, Object>> inputs = new ArrayList<>();
+        inputs.add(ImmutableMap.<String, Object>builder()
+                .put("endpoint", retrieveS3EndpointWithKeyByPackageId(packageId))
+                .put("accessKey", applicationProperties.getArtifactsS3AccessKey())
+                .put("secretKey", applicationProperties.getArtifactsS3SecretKey())
+                .put("currentDir", currentDir)
+                .build());
+        request.setInputs(inputs);
+        return saltstackServiceStub.getReleasedPackageFilesByCurrentDir(applicationProperties.getSaltstackServerUrl(), request);
+    }
 
-	private String retrieveS3EndpointWithKeyByPackageId(String packageId) {
-		PaginationQuery queryObject = PaginationQuery.defaultQueryObject().addEqualsFilter("guid", packageId);
-		PaginationQueryResult<Object> result = cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(),
-				queryObject);
-		if (result == null || result.getContents().isEmpty()) {
-			throw new WecubeCoreException(String.format("Package with ID [%s] not found.", packageId));
-		}
+    public Object getPropertyKeys(String packageId, String filePath) {
+        DefaultSaltstackRequest request = new DefaultSaltstackRequest();
+        List<Map<String, Object>> inputs = new ArrayList<>();
+        inputs.add(ImmutableMap.<String, Object>builder()
+                .put("endpoint", retrieveS3EndpointWithKeyByPackageId(packageId))
+                .put("accessKey", applicationProperties.getArtifactsS3AccessKey())
+                .put("secretKey", applicationProperties.getArtifactsS3SecretKey())
+                .put("file_path", filePath)
+                .build());
+        request.setInputs(inputs);
+        return saltstackServiceStub.getReleasedPackagePropertyKeysByFilePath(applicationProperties.getSaltstackServerUrl(), request);
+    }
 
-		Map pkgData = (Map) result.getContents().get(0);
-		Map pkg = (Map) pkgData.get("data");
-		String s3Key = pkg.get("md5_value") + S3_KEY_DELIMITER + pkg.get("name");
-		String endpointWithKey = applicationProperties.getArtifactsS3ServerUrl() + "/" + S3_BUCKET_NAME_FOR_ARTIFACT + "/" + s3Key;
-		return endpointWithKey;
-	}
+    private String retrieveS3EndpointWithKeyByPackageId(String packageId) {
+        PaginationQuery queryObject = PaginationQuery.defaultQueryObject().addEqualsFilter("guid", packageId);
+        PaginationQueryResult<Object> result = cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(),
+                queryObject);
+        if (result == null || result.getContents().isEmpty()) {
+            throw new WecubeCoreException(String.format("Package with ID [%s] not found.", packageId));
+        }
 
-	private void updateState(String packageId, String operation) {
-		List<OperateCiDto> operateCiDtos = new ArrayList<>();
-		operateCiDtos.add(new OperateCiDto(packageId, cmdbDataProperties.getCiTypeIdOfPackage()));
-		cmdbServiceV2Stub.operateCiForState(operateCiDtos, operation);
-	}
-	
-	
-	
-	private String genMd5Value(File file) {
-		if (file == null) {
-			return null;
-		}
+        Map pkgData = (Map) result.getContents().get(0);
+        Map pkg = (Map) pkgData.get("data");
+        String s3Key = pkg.get("md5_value") + S3_KEY_DELIMITER + pkg.get("name");
+        String endpointWithKey = applicationProperties.getArtifactsS3ServerUrl() + "/" + S3_BUCKET_NAME_FOR_ARTIFACT + "/" + s3Key;
+        return endpointWithKey;
+    }
 
-		String md5Value = null;
+    private void updateState(String packageId, String operation) {
+        List<OperateCiDto> operateCiDtos = new ArrayList<>();
+        operateCiDtos.add(new OperateCiDto(packageId, cmdbDataProperties.getCiTypeIdOfPackage()));
+        cmdbServiceV2Stub.operateCiForState(operateCiDtos, operation);
+    }
 
-		try {
-			md5Value = DigestUtils.md5Hex(FileUtils.readFileToByteArray(file));
-		} catch (Exception e) {
-			throw new WecubeCoreException(String.format("Fail to generateMd5 value for file [%s]", file.getName()), e);
-		}
-		return md5Value;
-	}
+    private String genMd5Value(File file) {
+        if (file == null) {
+            return null;
+        }
 
-	public Object getArtifactSystemDesignTree(String systemDesignId) {
-		List<CiDataTreeDto> tree = new ArrayList<>();
-		PaginationQuery queryObject = new PaginationQuery();
-		Dialect dialect = new Dialect();
-		dialect.setShowCiHistory(true);
-		queryObject.setDialect(dialect);
-		queryObject.addEqualsFilter("guid", systemDesignId);
-		PaginationQueryResult<Object> ciData = cmdbServiceV2Stub
-				.queryCiData(cmdbDataProperties.getCiTypeIdOfSystemDesign(), queryObject);
+        String md5Value = null;
 
-		if (ciData == null || ciData.getContents() == null || ciData.getContents().isEmpty()) {
-			throw new WecubeCoreException(String.format("Can not find ci data for guid [%s]", systemDesignId));
-		}
+        try {
+            md5Value = DigestUtils.md5Hex(FileUtils.readFileToByteArray(file));
+        } catch (Exception e) {
+            throw new WecubeCoreException(String.format("Fail to generateMd5 value for file [%s]", file.getName()), e);
+        }
+        return md5Value;
+    }
 
-		Object fixedDate = ((Map) ((Map) ciData.getContents().get(0)).get("data")).get(CONSTANT_FIX_DATE);
-		if (fixedDate != null) {
-			List<CiDataTreeDto> dtos = cmdbServiceV2Stub.getCiDataDetailForVersion(
-					cmdbDataProperties.getCiTypeIdOfSystemDesign(), cmdbDataProperties.getCiTypeIdOfUnitDesign(),
-					fixedDate.toString());
+    public Object getArtifactSystemDesignTree(String systemDesignId) {
+        List<CiDataTreeDto> tree = new ArrayList<>();
+        PaginationQuery queryObject = new PaginationQuery();
+        Dialect dialect = new Dialect();
+        dialect.setShowCiHistory(true);
+        queryObject.setDialect(dialect);
+        queryObject.addEqualsFilter("guid", systemDesignId);
+        PaginationQueryResult<Object> ciData = cmdbServiceV2Stub
+                .queryCiData(cmdbDataProperties.getCiTypeIdOfSystemDesign(), queryObject);
 
-			dtos.forEach(dto -> {
-				if (systemDesignId.equals(((Map) dto.getData()).get("guid"))) {
-					tree.add(dto);
-				}
-			});
-		}
-		return tree;
-	}
+        if (ciData == null || ciData.getContents() == null || ciData.getContents().isEmpty()) {
+            throw new WecubeCoreException(String.format("Can not find ci data for guid [%s]", systemDesignId));
+        }
 
-	public PaginationQueryResult<Object> getSystemDesignVersions() {
-		PaginationQueryResult<Object> queryResult = new PaginationQueryResult<>();
+        Object fixedDate = ((Map) ((Map) ciData.getContents().get(0)).get("data")).get(CONSTANT_FIX_DATE);
+        if (fixedDate != null) {
+            List<CiDataTreeDto> dtos = cmdbServiceV2Stub.getCiDataDetailForVersion(
+                    cmdbDataProperties.getCiTypeIdOfSystemDesign(), cmdbDataProperties.getCiTypeIdOfUnitDesign(),
+                    fixedDate.toString());
 
-		PaginationQuery queryObject = new PaginationQuery();
-		Dialect dialect = new Dialect();
-		dialect.setShowCiHistory(true);
-		queryObject.setDialect(dialect);
-		queryObject.addNotNullFilter(CONSTANT_FIX_DATE);
-		queryObject.addNotEqualsFilter(CONSTANT_FIX_DATE, "");
-		queryObject.setSorting(new Sorting(false, CONSTANT_FIX_DATE));
+            dtos.forEach(dto -> {
+                if (systemDesignId.equals(((Map) dto.getData()).get("guid"))) {
+                    tree.add(dto);
+                }
+            });
+        }
+        return tree;
+    }
 
-		PaginationQueryResult<Object> ciDatas = cmdbServiceV2Stub
-				.queryCiData(cmdbDataProperties.getCiTypeIdOfSystemDesign(), queryObject);
+    public PaginationQueryResult<Object> getSystemDesignVersions() {
+        PaginationQueryResult<Object> queryResult = new PaginationQueryResult<>();
 
-		queryResult.setContents(extractedLatestVersionSystemDesigns(ciDatas));
+        PaginationQuery queryObject = new PaginationQuery();
+        Dialect dialect = new Dialect();
+        dialect.setShowCiHistory(true);
+        queryObject.setDialect(dialect);
+        queryObject.addNotNullFilter(CONSTANT_FIX_DATE);
+        queryObject.addNotEqualsFilter(CONSTANT_FIX_DATE, "");
+        queryObject.setSorting(new Sorting(false, CONSTANT_FIX_DATE));
 
-		return queryResult;
-	}
+        PaginationQueryResult<Object> ciDatas = cmdbServiceV2Stub
+                .queryCiData(cmdbDataProperties.getCiTypeIdOfSystemDesign(), queryObject);
 
-	private List<Object> extractedLatestVersionSystemDesigns(PaginationQueryResult<Object> ciDatas) {
-		List<Object> finalCiDatas = new ArrayList<>();
-		ciDatas.getContents().forEach(ciData -> {
-			if (ciData instanceof Map) {
-				Map map = (Map) ciData;
-				if (!isExist(finalCiDatas, map.get("data"))) {
-					finalCiDatas.add(ciData);
-				}
-			}
-		});
-		return finalCiDatas;
-	}
+        queryResult.setContents(extractedLatestVersionSystemDesigns(ciDatas));
 
-	private boolean isExist(List<Object> results, Object systemName) {
-		for (Object result : results) {
-			Map m = (Map) result;
-			Object existName = ((Map) m.get("data")).get("name");
-			Object newName = ((Map) systemName).get("name");
-			if (existName != null && existName.equals(newName)) {
-				return true;
-			}
-		}
-		return false;
-	}
+        return queryResult;
+    }
 
-	public void saveDiffConfigEnumCodes(CatCodeDto requestCode) {
-		CategoryDto cat = cmdbServiceV2Stub.getEnumCategoryByName(cmdbDataProperties.getEnumCategoryNameOfDiffConf());
-		if (cat == null) {
-			throw new WecubeCoreException(String.format("Can not find cat with name [%s].",
-					cmdbDataProperties.getEnumCategoryNameOfDiffConf()));
-		}
+    private List<Object> extractedLatestVersionSystemDesigns(PaginationQueryResult<Object> ciDatas) {
+        List<Object> finalCiDatas = new ArrayList<>();
+        ciDatas.getContents().forEach(ciData -> {
+            if (ciData instanceof Map) {
+                Map map = (Map) ciData;
+                if (!isExist(finalCiDatas, map.get("data"))) {
+                    finalCiDatas.add(ciData);
+                }
+            }
+        });
+        return finalCiDatas;
+    }
 
-		CatCodeDto code = new CatCodeDto();
-		code.setCatId(cat.getCatId());
-		code.setCode(requestCode.getCode());
-		code.setValue(requestCode.getValue());
-		cmdbServiceV2Stub.createEnumCodes(code);
-	}
+    private boolean isExist(List<Object> results, Object systemName) {
+        for (Object result : results) {
+            Map m = (Map) result;
+            Object existName = ((Map) m.get("data")).get("name");
+            Object newName = ((Map) systemName).get("name");
+            if (existName != null && existName.equals(newName)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	public List<CatCodeDto> getDiffConfigEnumCodes() {
-		CategoryDto cat = cmdbServiceV2Stub.getEnumCategoryByName(cmdbDataProperties.getEnumCategoryNameOfDiffConf());
-		if (cat == null) {
-			throw new WecubeCoreException(String.format("Can not find cat with name [%s].",
-					cmdbDataProperties.getEnumCategoryNameOfDiffConf()));
-		}
-		return cmdbServiceV2Stub.getEnumCodesByCategoryId(cat.getCatId());
-	}
+    public void saveDiffConfigEnumCodes(CatCodeDto requestCode) {
+        CategoryDto cat = cmdbServiceV2Stub.getEnumCategoryByName(cmdbDataProperties.getEnumCategoryNameOfDiffConf());
+        if (cat == null) {
+            throw new WecubeCoreException(String.format("Can not find cat with name [%s].",
+                    cmdbDataProperties.getEnumCategoryNameOfDiffConf()));
+        }
 
-	public List<CiTypeDto> getCiTypes(Boolean withAttributes, String status) {
-		return cmdbServiceV2Stub.getAllCiTypes(withAttributes,status);
-	}
-	public void deleteCiTypes(Integer... ids) {
-		cmdbServiceV2Stub.deleteCiTypes(ids);
-	}
+        CatCodeDto code = new CatCodeDto();
+        code.setCatId(cat.getCatId());
+        code.setCode(requestCode.getCode());
+        code.setValue(requestCode.getValue());
+        cmdbServiceV2Stub.createEnumCodes(code);
+    }
 
-	public PaginationQueryResult<CatCodeDto> querySystemEnumCodesWithRefResources(PaginationQuery queryObject) {
-		 queryObject.addEqualsFilter(CONSTANT_CAT_CAT_TYPE, cmdbDataProperties.getEnumCategoryTypeSystem());
-	     queryObject.addReferenceResource("cat");
-	     queryObject.addReferenceResource(CONSTANT_CAT_CAT_TYPE);
-		return cmdbServiceV2Stub.queryEnumCodes(queryObject);
-	}
+    public List<CatCodeDto> getDiffConfigEnumCodes() {
+        CategoryDto cat = cmdbServiceV2Stub.getEnumCategoryByName(cmdbDataProperties.getEnumCategoryNameOfDiffConf());
+        if (cat == null) {
+            throw new WecubeCoreException(String.format("Can not find cat with name [%s].",
+                    cmdbDataProperties.getEnumCategoryNameOfDiffConf()));
+        }
+        return cmdbServiceV2Stub.getEnumCodesByCategoryId(cat.getCatId());
+    }
+
+    public List<CiTypeDto> getCiTypes(Boolean withAttributes, String status) {
+        return cmdbServiceV2Stub.getAllCiTypes(withAttributes, status);
+    }
+
+    public PaginationQueryResult<CatCodeDto> querySystemEnumCodesWithRefResources(PaginationQuery queryObject) {
+        queryObject.addEqualsFilter(CONSTANT_CAT_CAT_TYPE, cmdbDataProperties.getEnumCategoryTypeSystem());
+        queryObject.addReferenceResource("cat");
+        queryObject.addReferenceResource(CONSTANT_CAT_CAT_TYPE);
+        return cmdbServiceV2Stub.queryEnumCodes(queryObject);
+    }
+
+    public void deleteCiData(int ciTypeId, Object[] ids) {
+        cmdbServiceV2Stub.deleteCiData(ciTypeId, ids);
+
+    }
 }
