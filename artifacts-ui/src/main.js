@@ -4,7 +4,7 @@ import router from './router'
 import ViewUI from "view-design";
 import "view-design/dist/styles/iview.css";
 import ArtifactsSimpleTable from "../src/components/simple-table.vue";
-import ArtifactsAttrInput from "../src/pages/components/attr-input.vue";
+import ArtifactsAttrInput from "../src/components/attr-input.vue";
 
 Vue.component("ArtifactsSimpleTable", ArtifactsSimpleTable);
 Vue.component("ArtifactsAttrInput", ArtifactsAttrInput);
