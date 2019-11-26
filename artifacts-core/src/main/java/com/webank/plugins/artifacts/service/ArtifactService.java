@@ -23,6 +23,7 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CategoryDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataTreeDto;
+import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiTypeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.OperateCiDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.Dialect;
@@ -35,6 +36,8 @@ public class ArtifactService {
 	private static final String CONSTANT_FIX_DATE = "fixed_date";
 	private static final String S3_BUCKET_NAME_FOR_ARTIFACT = "wecube-artifact";
 	private static final String S3_KEY_DELIMITER = "_";
+    private static final String CONSTANT_CAT_CAT_TYPE = "cat.catType";
+
 
 	@Autowired
 	private CmdbServiceV2Stub cmdbServiceV2Stub;
@@ -264,10 +267,17 @@ public class ArtifactService {
 		return cmdbServiceV2Stub.getEnumCodesByCategoryId(cat.getCatId());
 	}
 
-	public Object getCiTypes(Boolean withAttributes, String status) {
+	public List<CiTypeDto> getCiTypes(Boolean withAttributes, String status) {
 		return cmdbServiceV2Stub.getAllCiTypes(withAttributes,status);
 	}
 	public void deleteCiTypes(Integer... ids) {
 		cmdbServiceV2Stub.deleteCiTypes(ids);
+	}
+
+	public PaginationQueryResult<CatCodeDto> querySystemEnumCodesWithRefResources(PaginationQuery queryObject) {
+		 queryObject.addEqualsFilter(CONSTANT_CAT_CAT_TYPE, cmdbDataProperties.getEnumCategoryTypeSystem());
+	     queryObject.addReferenceResource("cat");
+	     queryObject.addReferenceResource(CONSTANT_CAT_CAT_TYPE);
+		return cmdbServiceV2Stub.queryEnumCodes(queryObject);
 	}
 }
