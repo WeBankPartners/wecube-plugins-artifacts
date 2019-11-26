@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import router from "./router-plugin";
 import ArtifactsSimpleTable from "../src/components/simple-table.vue";
-import ArtifactsAttrInput from "../src/pages/components/attr-input";
+import ArtifactsAttrInput from "../src/components/attr-input.vue";
 
 Vue.component("ArtifactsSimpleTable", ArtifactsSimpleTable);
 Vue.component("ArtifactsAttrInput", ArtifactsAttrInput);
