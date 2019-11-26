@@ -34,7 +34,7 @@
     <Col span="17" offset="1">
       <Card v-if="guid" class="artifact-management-top-card">
         <Upload
-          :action="`/unit-designs/${guid}/packages/upload`"
+          :action="`/artifacts/unit-designs/${guid}/packages/upload`"
           :headers="setUploadActionHeader"
           :on-success="uploadPackagesSuccess"
           slot="title"
