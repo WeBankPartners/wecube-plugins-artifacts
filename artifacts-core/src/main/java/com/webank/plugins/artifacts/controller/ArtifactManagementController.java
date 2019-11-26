@@ -178,5 +178,11 @@ public class ArtifactManagementController {
         }
         return okay();
     }
+    
+    @PostMapping("/enum/system/codes")
+    @ResponseBody
+    public JsonResponse querySystemEnumCodesWithRefResources(@RequestBody PaginationQuery queryObject) {
+        return okayWithData(artifactService.querySystemEnumCodesWithRefResources(queryObject));
+    }
 
 }
