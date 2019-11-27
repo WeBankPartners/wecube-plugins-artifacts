@@ -92,9 +92,9 @@ public class ArtifactService {
         String files = String.join("|", packageDomain.getConfigFilesWithPath());
         Map<String, Object> pkg = ImmutableMap.<String, Object>builder()
                 .put("guid", packageId)
-                .put("deploy_file", packageDomain.getDeployFile())
-                .put("start_file", packageDomain.getStartFile())
-                .put("stop_file", packageDomain.getStopFile())
+                .put("deploy_file_path", packageDomain.getDeployFile())
+                .put("start_file_path", packageDomain.getStartFile())
+                .put("stop_file_path", packageDomain.getStopFile())
                 .put("diff_conf_file", files)
                 .build();
         cmdbServiceV2Stub.updateCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
