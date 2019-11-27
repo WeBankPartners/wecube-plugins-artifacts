@@ -3,6 +3,9 @@ package com.webank.plugins.artifacts.support.saltstack;
 import java.util.List;
 import java.util.Map;
 
+import lombok.Data;
+
+@Data
 public class SaltstackRequest<DATATYPE> {
     private List<DATATYPE> inputs;
 
