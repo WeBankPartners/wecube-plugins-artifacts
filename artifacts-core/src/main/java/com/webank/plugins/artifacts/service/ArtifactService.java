@@ -120,7 +120,7 @@ public class ArtifactService {
                 .put("endpoint", retrieveS3EndpointWithKeyByPackageId(packageId))
                 .put("accessKey", applicationProperties.getArtifactsS3AccessKey())
                 .put("secretKey", applicationProperties.getArtifactsS3SecretKey())
-                .put("file_path", filePath)
+                .put("filePath", filePath)
                 .build());
         request.setInputs(inputs);
         return saltstackServiceStub.getReleasedPackagePropertyKeysByFilePath(applicationProperties.getSaltstackServerUrl(), request);
