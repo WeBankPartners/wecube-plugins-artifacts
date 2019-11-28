@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import com.google.common.collect.ImmutableMap;
 import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
-import com.webank.plugins.artifacts.commons.WecubeCoreException;
+import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.domain.PackageDomain;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
@@ -53,7 +53,7 @@ public class ArtifactService {
 
     public String uploadPackageToS3(File file) {
         if (file == null) {
-            throw new WecubeCoreException("Upload package file is required.");
+            throw new PluginException("Upload package file is required.");
         }
 
         String s3Key = genMd5Value(file) + S3_KEY_DELIMITER + file.getName();
@@ -131,7 +131,7 @@ public class ArtifactService {
         PaginationQueryResult<Object> result = cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(),
                 queryObject);
         if (result == null || result.getContents().isEmpty()) {
-            throw new WecubeCoreException(String.format("Package with ID [%s] not found.", packageId));
+            throw new PluginException(String.format("Package with ID [%s] not found.", packageId));
         }
 
         Map pkgData = (Map) result.getContents().get(0);
@@ -157,7 +157,7 @@ public class ArtifactService {
         try {
             md5Value = DigestUtils.md5Hex(FileUtils.readFileToByteArray(file));
         } catch (Exception e) {
-            throw new WecubeCoreException(String.format("Fail to generateMd5 value for file [%s]", file.getName()), e);
+            throw new PluginException(String.format("Fail to generateMd5 value for file [%s]", file.getName()), e);
         }
         return md5Value;
     }
@@ -173,7 +173,7 @@ public class ArtifactService {
                 .queryCiData(cmdbDataProperties.getCiTypeIdOfSystemDesign(), queryObject);
 
         if (ciData == null || ciData.getContents() == null || ciData.getContents().isEmpty()) {
-            throw new WecubeCoreException(String.format("Can not find ci data for guid [%s]", systemDesignId));
+            throw new PluginException(String.format("Can not find ci data for guid [%s]", systemDesignId));
         }
 
         Object fixedDate = ((Map) ((Map) ciData.getContents().get(0)).get("data")).get(CONSTANT_FIX_DATE);
@@ -238,7 +238,7 @@ public class ArtifactService {
     public void saveDiffConfigEnumCodes(CatCodeDto requestCode) {
         CategoryDto cat = cmdbServiceV2Stub.getEnumCategoryByName(cmdbDataProperties.getEnumCategoryNameOfDiffConf());
         if (cat == null) {
-            throw new WecubeCoreException(String.format("Can not find cat with name [%s].",
+            throw new PluginException(String.format("Can not find cat with name [%s].",
                     cmdbDataProperties.getEnumCategoryNameOfDiffConf()));
         }
 
@@ -252,7 +252,7 @@ public class ArtifactService {
     public List<CatCodeDto> getDiffConfigEnumCodes() {
         CategoryDto cat = cmdbServiceV2Stub.getEnumCategoryByName(cmdbDataProperties.getEnumCategoryNameOfDiffConf());
         if (cat == null) {
-            throw new WecubeCoreException(String.format("Can not find cat with name [%s].",
+            throw new PluginException(String.format("Can not find cat with name [%s].",
                     cmdbDataProperties.getEnumCategoryNameOfDiffConf()));
         }
         return cmdbServiceV2Stub.getEnumCodesByCategoryId(cat.getCatId());

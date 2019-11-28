@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
-import com.webank.plugins.artifacts.commons.WecubeCoreException;
+import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.domain.JsonResponse;
 import com.webank.plugins.artifacts.domain.PackageDomain;
 import com.webank.plugins.artifacts.interceptor.UsernameStorage;
@@ -93,7 +93,7 @@ public class ArtifactManagementController {
             @RequestBody Map<String, String> additionalProperties) {
 
         if (additionalProperties.get("currentDir") == null) {
-            throw new WecubeCoreException("Field 'currentDir' is required.");
+            throw new PluginException("Field 'currentDir' is required.");
         }
 
         return okayWithData(
@@ -106,7 +106,7 @@ public class ArtifactManagementController {
             @RequestBody Map<String, String> additionalProperties) {
 
         if (additionalProperties.get("filePath") == null) {
-            throw new WecubeCoreException("Field 'filePath' is required.");
+            throw new PluginException("Field 'filePath' is required.");
         }
 
         return okayWithData(
@@ -148,7 +148,7 @@ public class ArtifactManagementController {
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(multipartFile.getBytes());
         } catch (Exception e) {
-            throw new WecubeCoreException("Fail to convert multipart file to file", e);
+            throw new PluginException("Fail to convert multipart file to file", e);
         }
         return file;
     }
@@ -165,7 +165,7 @@ public class ArtifactManagementController {
         if ("layer".equalsIgnoreCase(groupBy)) {
             return okayWithData(artifactService.getCiTypes(isTrue(withAttributes), status));
         }
-        throw new WecubeCoreException("The parameter group-by is wrong");
+        throw new PluginException("The parameter group-by is wrong");
     }
 
     @PostMapping("/ci-types/{ci-type-id}/ci-data/batch-delete")
@@ -174,7 +174,7 @@ public class ArtifactManagementController {
         try {
             artifactService.deleteCiData(ciTypeId, ciDataIds.toArray());
         } catch (Exception e) {
-            throw new WecubeCoreException("The parameter ciDataIds is wrong", e);
+            throw new PluginException("The parameter ciDataIds is wrong", e);
         }
         return okay();
     }

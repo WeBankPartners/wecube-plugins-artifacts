@@ -8,22 +8,22 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode
 @JsonInclude(Include.NON_EMPTY)
 public abstract class AbstractResourceDto {
-	private String callbackId;
-	private String errorMessage;
+    private String callbackId;
+    private String errorMessage;
 
-	public String getCallbackId() {
-		return callbackId;
-	}
+    public String getCallbackId() {
+        return callbackId;
+    }
 
-	public void setCallbackId(String callbackId) {
-		this.callbackId = callbackId;
-	}
+    public void setCallbackId(String callbackId) {
+        this.callbackId = callbackId;
+    }
 
-	public String getErrorMessage() {
-		return errorMessage;
-	}
+    public String getErrorMessage() {
+        return errorMessage;
+    }
 
-	public void setErrorMessage(String errorMessage) {
-		this.errorMessage = errorMessage;
-	}
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
 }

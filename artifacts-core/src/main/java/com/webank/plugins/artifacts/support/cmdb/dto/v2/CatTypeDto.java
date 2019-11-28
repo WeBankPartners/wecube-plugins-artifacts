@@ -9,13 +9,15 @@ import lombok.ToString;
 import java.util.LinkedList;
 import java.util.List;
 
-@Data @EqualsAndHashCode(callSuper = true) @ToString(callSuper = true)
+@Data
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 @JsonInclude(Include.NON_EMPTY)
 public class CatTypeDto extends AbstractResourceDto {
-	private Integer catTypeId;
+    private Integer catTypeId;
     private Integer ciTypeId;
-	private String catTypeName;
-	private String description;
-	private List<CategoryDto> cats = new LinkedList<>();
+    private String catTypeName;
+    private String description;
+    private List<CategoryDto> cats = new LinkedList<>();
 
 }

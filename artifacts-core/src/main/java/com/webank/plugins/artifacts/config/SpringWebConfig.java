@@ -20,7 +20,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @Configuration
 @EnableWebMvc
 @EnableSwagger2
-@ComponentScan({ "com.webank.plugins.wecmdb.controller" })
+@ComponentScan({ "com.webank.plugins.artifacts.controller" })
 public class SpringWebConfig implements WebMvcConfigurer {
 
     @Autowired
