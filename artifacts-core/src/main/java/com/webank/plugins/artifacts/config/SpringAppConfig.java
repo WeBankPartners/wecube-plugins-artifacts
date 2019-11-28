@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
 
 @Configuration
-@EnableConfigurationProperties({CmdbDataProperties.class})
+@EnableConfigurationProperties({ CmdbDataProperties.class })
 @ComponentScan({ "com.webank.plugins.artifacts" })
 public class SpringAppConfig {
 

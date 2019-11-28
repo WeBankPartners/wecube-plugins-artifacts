@@ -1,6 +1,5 @@
 package com.webank.plugins.artifacts.support.cmdb.dto.v2;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -214,7 +213,6 @@ public class CiTypeAttrDto extends AbstractResourceDto {
         this.isAccessControlled = isAccessControlled;
     }
 
-
     public CiTypeDto getCiType() {
         return ciType;
     }
@@ -222,6 +220,7 @@ public class CiTypeAttrDto extends AbstractResourceDto {
     public void setCiType(CiTypeDto ciType) {
         this.ciType = ciType;
     }
+
     public Boolean getIsAuto() {
         return isAuto;
     }
@@ -229,7 +228,7 @@ public class CiTypeAttrDto extends AbstractResourceDto {
     public void setIsAuto(Boolean isAuto) {
         this.isAuto = isAuto;
     }
-    
+
     public Boolean getIsDisplayed() {
         return isDisplayed;
     }

@@ -19,4 +19,3 @@ public class CiDataTreeDto {
     private Object data;
     private List<CiDataTreeDto> children = new LinkedList<>();
 }
-

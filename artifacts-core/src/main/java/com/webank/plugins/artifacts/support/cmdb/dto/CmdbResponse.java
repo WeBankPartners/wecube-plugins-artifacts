@@ -1,6 +1,5 @@
 package com.webank.plugins.artifacts.support.cmdb.dto;
 
-
 import lombok.Data;
 
 import java.util.List;
@@ -14,10 +13,13 @@ public class CmdbResponse<DATATYPE> {
 
     private DATATYPE data;
 
-    public static class DefaultCmdbResponse extends CmdbResponse<Object> {}
+    public static class DefaultCmdbResponse extends CmdbResponse<Object> {
+    }
 
-    public static class IntegerCmdbResponse extends CmdbResponse<Integer> {}
+    public static class IntegerCmdbResponse extends CmdbResponse<Integer> {
+    }
 
-    public static class ListDataResponse extends CmdbResponse<List> {}
+    public static class ListDataResponse extends CmdbResponse<List> {
+    }
 
 }
