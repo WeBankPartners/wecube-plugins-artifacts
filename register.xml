@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package name="artifacts" version="{{VERSION}}"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="plugin-config-v2.xsd">
+
+    <!-- 1.依赖分析 - 描述运行本插件包需要的其他插件包 -->
+    <packageDependencies>
+        <packageDependency name='wecmdb' version='v0.1'/>
+        <packageDependency name='saltstack' version='v0.1'/>
+    </packageDependencies>
+         
+    <!-- 2.菜单注入 - 描述运行本插件包需要注入的菜单 -->
+    <menus>
+        <menu code='IMPLEMENTATION_ARTIFACT_MANAGEMENT' cat='IMPLEMENTATION' displayName="Artifacts Management">/artifacts/implementation/artifact-management</menu>
+    </menus>
+
+    <!-- 3.数据模型 - 描述本插件包的数据模型,并且描述和Framework数据模型的关系 -->
+    <dataModel>
+    </dataModel>
+
+    <!-- 4.系统参数 - 描述运行本插件包需要的系统参数 -->
+    <systemParameters>
+    </systemParameters>
+
+    <!-- 5.权限设定 -->
+    <authorities>
+    </authorities>
+
+    <!-- 6.运行资源 - 描述部署运行本插件包需要的基础资源(如主机、虚拟机、容器、数据库等) -->
+    <resourceDependencies>
+        <docker imageName="{{REPOSITORY}}:{{VERSION}}" containerName="wecube-plugins-artifacts" portBindings="{{host_port}}:8081" envVariables="WECMDB_SERVER_URL={{WECMDB_SERVER_URL}},SALTSTACK_SERVER_URL={{SALTSTACK_SERVER_URL}},ARTIFACTS_S3_SERVER_URL={{ARTIFACTS_S3_SERVER_URL}},ARTIFACTS_S3_ACCESS_KEY={{ARTIFACTS_S3_ACCESS_KEY}},ARTIFACTS_S3_SECRET_KEY={{ARTIFACTS_S3_SECRET_KEY}}"/>
+    </resourceDependencies>
+
+    <!-- 7.插件列表 - 描述插件包中单个插件的输入和输出 -->
+    <plugins>
+    </plugins>
+</package>

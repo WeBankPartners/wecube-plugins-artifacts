@@ -2,7 +2,7 @@ import Artifacts from './views/artifacts.vue'
 
 export default [
   {
-    path: '/',
+    path: '/artifacts/implementation/artifact-management',
     name: 'artifacts',
     component: Artifacts
   }

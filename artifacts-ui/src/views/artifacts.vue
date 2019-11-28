@@ -34,14 +34,14 @@
     <Col span="17" offset="1">
       <Card v-if="guid" class="artifact-management-top-card">
         <Upload
-          :action="`/artifact/unit-designs/${guid}/packages/upload`"
+          :action="`/artifacts/unit-designs/${guid}/packages/upload`"
           :headers="setUploadActionHeader"
           :on-success="uploadPackagesSuccess"
           slot="title"
         >
           <Button icon="ios-cloud-upload-outline">上传新包</Button>
         </Upload>
-        <SimpleTable
+        <ArtifactsSimpleTable
           :loading="tableLoading"
           :columns="tableColumns"
           :data="tableData"
@@ -49,7 +49,7 @@
           @pageChange="pageChange"
           @pageSizeChange="pageSizeChange"
           @rowClick="rowClick"
-        ></SimpleTable>
+        ></ArtifactsSimpleTable>
         <Modal
           v-model="isShowFilesModal"
           title="脚本配置"
@@ -74,7 +74,7 @@
                 >选择文件</Button
               >
             </div>
-            <span>{{ currentPackage.start_file || "未选择" }}</span>
+            <span>{{ currentPackage.start_file_path || "未选择" }}</span>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
@@ -83,7 +83,7 @@
                 >选择文件</Button
               >
             </div>
-            <span>{{ currentPackage.stop_file || "未选择" }}</span>
+            <span>{{ currentPackage.stop_file_path || "未选择" }}</span>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
@@ -92,7 +92,7 @@
                 >选择文件</Button
               >
             </div>
-            <span>{{ currentPackage.deploy_file || "未选择" }}</span>
+            <span>{{ currentPackage.deploy_file_path || "未选择" }}</span>
           </Card>
         </Modal>
         <Modal
@@ -174,17 +174,17 @@ export default {
         },
         {
           title: "选择启动脚本",
-          key: "start_file",
+          key: "start_file_path",
           inputType: "radio"
         },
         {
           title: "选择停止脚本",
-          key: "stop_file",
+          key: "stop_file_path",
           inputType: "radio"
         },
         {
           title: "选择部署脚本",
-          key: "deploy_file",
+          key: "deploy_file_path",
           inputType: "radio"
         }
       ],
@@ -215,15 +215,15 @@ export default {
         },
         {
           title: "启动脚本",
-          key: "start_file"
+          key: "start_file_path"
         },
         {
           title: "停止脚本",
-          key: "stop_file"
+          key: "stop_file_path"
         },
         {
           title: "部署脚本",
-          key: "deploy_file"
+          key: "deploy_file_path"
         },
         {
           title: "操作",
@@ -265,7 +265,7 @@ export default {
           title: "CMDB-ATTR",
           render: (h, params) => {
             return params.row.attrInputValue ? (
-              <AttrInput
+              <ArtifactsAttrInput
                 style="margin-top:5px;"
                 allCiTypes={this.ciTypes}
                 rootCiType={15}
@@ -277,7 +277,7 @@ export default {
               />
             ) : (
               <div style="align-items:center;display:flex;">
-                <AttrInput
+                <ArtifactsAttrInput
                   style="margin-top:5px;width:calc(100% - 55px);"
                   allCiTypes={this.ciTypes}
                   rootCiType={15}
@@ -446,7 +446,7 @@ export default {
       if (status === "OK") {
         const diffConfigEnums = await getDiffConfigEnumCodes();
         if (diffConfigEnums.status === "OK") {
-          const result = data.outputs[0].config_key_infos.map((_, i) => {
+          const result = data.outputs[0].configKeyInfos.map((_, i) => {
             _.index = i + 1;
             const found = diffConfigEnums.data.find(
               item => item.value === _.key
@@ -464,9 +464,9 @@ export default {
       this.loadingForSave = true;
       const obj = {
         configFilesWithPath: this.diffTabData.split("|"),
-        startFile: this.currentPackage.start_file || "",
-        stopFile: this.currentPackage.stop_file || "",
-        deployFile: this.currentPackage.deploy_file || ""
+        startFile: this.currentPackage.start_file_path || "",
+        stopFile: this.currentPackage.stop_file_path || "",
+        deployFile: this.currentPackage.deploy_file_path || ""
       };
       let { status, data, message } = await saveConfigFiles(
         this.guid,

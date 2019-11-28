@@ -1,6 +1,6 @@
 import Vue from "vue";
 import axios from "axios";
-export const baseURL = window.request ? "/weartifacts/weartifacts/ui/v2" : "/weartifacts/ui/v2";
+export const baseURL = "artifacts";
 export const req = axios.create({
   withCredentials: true,
   baseURL,
@@ -11,7 +11,7 @@ const throwError = res => new Error(res.message || "error");
 req.interceptors.response.use(
   res => {
     if (res.status === 200) {
-      if (res.data.statusCode.startsWith("ERR")) {
+      if (res.data.status.startsWith("ERR")) {
         const errorMes = Array.isArray(res.data.data)
           ? res.data.data.map(_ => _.errorMessage).join("<br/>")
           : res.data.statusMessage;
@@ -21,12 +21,8 @@ req.interceptors.response.use(
           duration: 0
         });
       }
-      if (!res.headers["username"]) {
-        window.location.href = "/weartifacts/logout";
-      }
       return {
-        ...res.data,
-        user: res.headers["username"] || " - "
+        ...res.data
       };
     } else {
       return {
