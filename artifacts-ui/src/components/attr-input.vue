@@ -17,7 +17,7 @@
           <ul v-for="opt in options" :key="opt.attrId">
             <li class="" @click="optClickHandler(opt)">
               {{
-                (opt.inputType === "ref" || opt.inputType === "multiref")
+                (opt.inputType === "ref" || opt.inputType === "multiRef")
                   ? `( ${opt.ciTypeAttrName} ) ${opt.ciTypeName}`
                   : opt.ciTypeAttrName
               }}
@@ -171,7 +171,7 @@ export default {
             const ciTypeAttrName = this.ciTypeAttributeObj[_.ciTypeAttrId].name;
             const ciTypeName = this.ciTypesObj[_.ciTypeId].name;
             const newVal =
-              (this.ciTypeAttributeObj[_.ciTypeAttrId].inputType === "ref" || this.ciTypeAttributeObj[_.ciTypeAttrId].inputType === "multiref")
+              (this.ciTypeAttributeObj[_.ciTypeAttrId].inputType === "ref" || this.ciTypeAttributeObj[_.ciTypeAttrId].inputType === "multiRef")
                 ? `(${ciTypeAttrName})${ciTypeName} `
                 : ciTypeAttrName + " ";
             val = val + refVal + newVal;
@@ -197,7 +197,7 @@ export default {
       const last = this.routine[this.routine.length - 1];
       const isRef =
         !last.isReferedFromParent ||
-        (this.ciTypeAttributeObj[last.ciTypeAttrId].inputType === "ref" || this.ciTypeAttributeObj[last.ciTypeAttrId].inputType === "multiref");
+        (this.ciTypeAttributeObj[last.ciTypeAttrId].inputType === "ref" || this.ciTypeAttributeObj[last.ciTypeAttrId].inputType === "multiRef");
       if (isRef) {
         const id = this.routine[this.routine.length - 1].ciTypeId;
         if (operator === ".") {
@@ -210,12 +210,12 @@ export default {
                 attr.push({
                   ..._,
                   ciTypeName:
-                    (_.inputType === "ref" || _.inputType === "multiref")
+                    (_.inputType === "ref" || _.inputType === "multiRef")
                       ? this.allCi.find(i => i.ciTypeId === _.referenceId).name
                       : this.allCi.find(i => i.ciTypeId === _.ciTypeId).name,
                   ciTypeAttrName: _.name,
                   isReferedFromParent: 1,
-                  id: (_.inputType === "ref" || _.inputType === "multiref") ? _.referenceId : _.ciTypeId
+                  id: (_.inputType === "ref" || _.inputType === "multiRef") ? _.referenceId : _.ciTypeId
                 });
               }
             });
@@ -300,12 +300,12 @@ export default {
     optClickHandler(item) {
       this.optionsHide = false;
       const newValue =
-        (item.inputType === "ref" || item.inputType === "multiref")
+        (item.inputType === "ref" || item.inputType === "multiRef")
           ? `(${item.ciTypeAttrName})${item.ciTypeName} `
           : item.ciTypeAttrName + " ";
       this.inputVal = this.inputVal + newValue;
       this.inputValBackup = this.inputVal;
-      const id = (item.inputType === "ref" || item.inputType === "multiref") ? item.referenceId : item.ciTypeId;
+      const id = (item.inputType === "ref" || item.inputType === "multiRef") ? item.referenceId : item.ciTypeId;
       this.routine.push({
         ...item,
         ciTypeId: item.id,
