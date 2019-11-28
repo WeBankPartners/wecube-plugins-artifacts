@@ -26,6 +26,7 @@ artifacts_s3_secret_key=secret_key
 
 saltstack_server_url=http://10.0.2.12:20000
 wecmdb_server_url=http://10.0.0.8:8080/wecmdb
+wecube_platform_server_url=http://10.0.0.8:19090/platform
 
 .PHONY:package
 package: image
@@ -35,6 +36,7 @@ package: image
 	cd package && cp ../register.xml .
 	cd package && sed -i "s~{{REPOSITORY}}~$(project_name)~g" register.xml
 	cd package && sed -i "s~{{VERSION}}~$(version)~g" register.xml
+	cd package && sed -i "s~{{WECUBE_PLATFORM_SERVER_URL}}~$(wecube_platform_server_url)~g" register.xml
 	cd package && sed -i "s~{{WECMDB_SERVER_URL}}~$(wecmdb_server_url)~g" register.xml
 	cd package && sed -i "s~{{SALTSTACK_SERVER_URL}}~$(saltstack_server_url)~g" register.xml
 	cd package && sed -i "s~{{ARTIFACTS_S3_SERVER_URL}}~$(artifacts_s3_server_url)~g" register.xml
