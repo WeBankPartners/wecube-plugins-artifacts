@@ -42,6 +42,7 @@
           <Button icon="ios-cloud-upload-outline">上传新包</Button>
         </Upload>
         <ArtifactsSimpleTable
+          class="artifact-management-package-table"
           :loading="tableLoading"
           :columns="tableColumns"
           :data="tableData"
@@ -145,6 +146,8 @@ import {
   getAllSystemEnumCodes
 } from "@/api/server.js";
 
+const rootCiTypeId = 12
+
 export default {
   name: "artifacts",
   data() {
@@ -194,36 +197,43 @@ export default {
       tableColumns: [
         {
           title: "包名",
-          key: "name"
+          key: "name",
+          render: (h, params) => this.renderCell(params.row.name)
         },
         {
           title: "上传时间",
-          width: 150,
+          width: 120,
           key: "upload_time"
         },
         {
           title: "MD5值",
-          key: "md5_value"
+          key: "md5_value",
+          render: (h, params) => this.renderCell(params.row.md5_value)
         },
         {
           title: "上传人",
-          key: "updated_by"
+          key: "updated_by",
+          render: (h, params) => this.renderCell(params.row.updated_by)
         },
         {
           title: "差异化文件",
-          key: "diff_conf_file"
+          key: "diff_conf_file",
+          render: (h, params) => this.renderCell(params.row.diff_conf_file)
         },
         {
           title: "启动脚本",
-          key: "start_file_path"
+          key: "start_file_path",
+          render: (h, params) => this.renderCell(params.row.start_file_path)
         },
         {
           title: "停止脚本",
-          key: "stop_file_path"
+          key: "stop_file_path",
+          render: (h, params) => this.renderCell(params.row.stop_file_path)
         },
         {
           title: "部署脚本",
-          key: "deploy_file_path"
+          key: "deploy_file_path",
+          render: (h, params) => this.renderCell(params.row.deploy_file_path)
         },
         {
           title: "操作",
@@ -268,7 +278,7 @@ export default {
               <ArtifactsAttrInput
                 style="margin-top:5px;"
                 allCiTypes={this.ciTypes}
-                rootCiType={15}
+                rootCiType={rootCiTypeId}
                 isReadOnly={true}
                 ciTypesObj={this.ciTypesObj}
                 ciTypeAttributeObj={this.ciTypeAttributeObj}
@@ -280,7 +290,7 @@ export default {
                 <ArtifactsAttrInput
                   style="margin-top:5px;width:calc(100% - 55px);"
                   allCiTypes={this.ciTypes}
-                  rootCiType={15}
+                  rootCiType={rootCiTypeId}
                   ciTypesObj={this.ciTypesObj}
                   ciTypeAttributeObj={this.ciTypeAttributeObj}
                   onUpdateRoutine={val => this.updateRoutine(val, params.index)}
@@ -321,6 +331,14 @@ export default {
     }
   },
   methods: {
+    renderCell(content) {
+      return (
+        <Tooltip style="width: 100%;" >
+          <span slot="content" style="white-space:normal;">{content} </span>
+          <div style="width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{content}</div>
+        </Tooltip>
+      )
+    },
     uploadPackagesSuccess(response, file, fileList) {
       if (response.status === "ERROR") {
         this.$Notice.error({
