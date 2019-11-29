@@ -359,6 +359,7 @@ export default {
     }
   },
   mounted() {
+    console.log("[attr-input.vue]props:", this.props)
     this.formatAllCiType();
     this.restoreOpeation();
     if (document.querySelector(".attr-ul")) {

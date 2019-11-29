@@ -132,7 +132,7 @@
 <script>
 import {
   getPackageCiTypeId,
-  getAllCITypes,
+  getAllCITypesWithAttr,
   getSystemDesignVersions,
   getSystemDesignVersion,
   queryPackages,
@@ -378,16 +378,17 @@ export default {
         this.packageCiType = packageCiType.data;
       }
     },
-    async getAllCITypes() {
-      let { status, data, message } = await getAllCITypes();
+    async getAllCITypesWithAttr() {
+      let { status, data, message } = await getAllCITypesWithAttr([
+        "notCreated",
+        "created",
+        "dirty"
+      ]);
       if (status === "OK") {
         let ciTypes = {};
         let ciTypeAttrs = {};
 
         let tempCITypes = JSON.parse(JSON.stringify(data));
-        tempCITypes.forEach(_ => {
-          _.ciTypes && _.ciTypes.filter(i => i.status !== "decommissioned");
-        });
         this.ciTypes = tempCITypes;
 
         data.forEach(citype => {
@@ -400,6 +401,8 @@ export default {
         });
         this.ciTypesObj = ciTypes;
         this.ciTypeAttributeObj = ciTypeAttrs;
+        console.log("[artifacts.vue]ciTypesObj:", JSON.parse(JSON.stringify(this.ciTypesObj)))
+        console.log("[artifacts.vue]ciTypeAttributeObj:", JSON.parse(JSON.stringify(this.ciTypeAttributeObj)))
       }
     },
 
@@ -770,7 +773,7 @@ export default {
   },
   created() {
     this.fetchData();
-    this.getAllCITypes();
+    this.getAllCITypesWithAttr();
     this.getAllSystemEnumCodes();
   }
 };
