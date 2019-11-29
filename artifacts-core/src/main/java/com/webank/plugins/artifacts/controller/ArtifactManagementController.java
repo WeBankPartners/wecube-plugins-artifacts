@@ -1,8 +1,10 @@
 package com.webank.plugins.artifacts.controller;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static com.webank.plugins.artifacts.domain.JsonResponse.okay;
 import static com.webank.plugins.artifacts.domain.JsonResponse.okayWithData;
 import static com.webank.plugins.artifacts.utils.BooleanUtils.isTrue;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,6 +31,7 @@ import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.OperateCiDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
+import static com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.defaultQueryObject;
 
 @RestController
 public class ArtifactManagementController {
@@ -181,5 +184,20 @@ public class ArtifactManagementController {
     public JsonResponse querySystemEnumCodesWithRefResources(@RequestBody PaginationQuery queryObject) {
         return okayWithData(artifactService.querySystemEnumCodesWithRefResources(queryObject));
     }
-
+    
+    @GetMapping("/ci-types/{ci-type-id}/references/by")
+    @ResponseBody
+    public JsonResponse getCiTypeReferenceBy(@PathVariable(value = "ci-type-id") int ciTypeId) {
+        return okayWithData(artifactService.getCiTypeReferenceBy(ciTypeId));
+    }
+    
+    @GetMapping("/ci-types/{ci-type-id}/attributes")
+    @ResponseBody
+    public JsonResponse getCiTypeAttributes(@PathVariable(value = "ci-type-id") int ciTypeId, @RequestParam(name = "accept-input-types", required = false) String acceptInputTypes) {
+        if (isNotEmpty(acceptInputTypes)) {
+            return okayWithData(cmdbServiceV2Stub.queryCiTypeAttributes(defaultQueryObject("ciTypeId", ciTypeId).addInFilter("inputType", newArrayList(acceptInputTypes.split(",")))));
+        } else {
+            return okayWithData(cmdbServiceV2Stub.getCiTypeAttributesByCiTypeId(ciTypeId));
+        }
+    }
 }

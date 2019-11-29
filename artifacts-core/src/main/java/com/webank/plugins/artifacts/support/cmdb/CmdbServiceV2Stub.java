@@ -19,10 +19,12 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CategoryDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataTreeDto;
+import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiTypeAttrDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiTypeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.CiDataQueryResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.CiDataVersionDetailResultResponse;
+import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.CiTypeAttributeQueryResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.CiTypeQueryResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.EnumCategoryQueryResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.EnumCodeListResultResponse;
@@ -34,6 +36,8 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
 
 @Service
 public class CmdbServiceV2Stub {
+	
+    private static final String CONSTANT_CI_TYPE_ID = "ciTypeId";
 
     private static final String CONSTANT_CAT_ID = "catId";
     private static final String CONSTANT_SEQ_NO = "seqNo";
@@ -48,6 +52,9 @@ public class CmdbServiceV2Stub {
 
     private static final String ENUM_CODE_CREATE = "/enum/codes/create";
     private static final String ENUM_CODE_QUERY = "/enum/codes/retrieve";
+    
+    private static final String CITYPE_ATTRIBUTE_QUERY = "/ciTypeAttrs/retrieve";
+
 
     private static final String CITYPE_QUERY = "/ciTypes/retrieve";
 
@@ -182,5 +189,14 @@ public class CmdbServiceV2Stub {
         }
         return path;
     }
+    public List<CiTypeAttrDto> queryCiTypeAttributes(PaginationQuery queryObject) {
+        PaginationQueryResult<CiTypeAttrDto> queryResult = query(CITYPE_ATTRIBUTE_QUERY, queryObject, CiTypeAttributeQueryResultResponse.class);
+        return queryResult.getContents();
+    }
+    
+    public List<CiTypeAttrDto> getCiTypeAttributesByCiTypeId(Integer ciTypeId) {
+        return queryCiTypeAttributes(defaultQueryObject(CONSTANT_CI_TYPE_ID, ciTypeId).ascendingSortBy("displaySeqNo"));
+    }
+
 
 }
