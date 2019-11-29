@@ -19,8 +19,12 @@
     </dataModel>
 
     <!-- 4.系统参数 - 描述运行本插件包需要的系统参数 -->
-    <systemParameters>
-    </systemParameters>
+	<systemParameters>
+		<systemParameter name="SALTSTACK_SERVER_URL" defaultValue='http://localhost:8082' scopeType='plugin-package' />
+		<systemParameter name="ARTIFACTS_S3_SERVER_URL" defaultValue='http://localhost:9000' scopeType='plugin-package' />
+		<systemParameter name="ARTIFACTS_S3_ACCESS_KEY" defaultValue='access_key' scopeType='plugin-package' />
+		<systemParameter name="ARTIFACTS_S3_SECRET_KEY" defaultValue='secret_key' scopeType='plugin-package' />
+	</systemParameters>
 
     <!-- 5.权限设定 -->
     <authorities>
@@ -28,7 +32,7 @@
 
     <!-- 6.运行资源 - 描述部署运行本插件包需要的基础资源(如主机、虚拟机、容器、数据库等) -->
     <resourceDependencies>
-        <docker imageName="{{REPOSITORY}}:{{VERSION}}" containerName="wecube-plugins-artifacts" portBindings="{{ALLOCATE_PORT}}:8081" envVariables="WECUBE_PLATFORM_SERVER_URL={{WECUBE_PLATFORM_SERVER_URL}},WECMDB_SERVER_URL={{WECMDB_SERVER_URL}},SALTSTACK_SERVER_URL={{SALTSTACK_SERVER_URL}},ARTIFACTS_S3_SERVER_URL={{ARTIFACTS_S3_SERVER_URL}},ARTIFACTS_S3_ACCESS_KEY={{ARTIFACTS_S3_ACCESS_KEY}},ARTIFACTS_S3_SECRET_KEY={{ARTIFACTS_S3_SECRET_KEY}}"/>
+        <docker imageName="{{REPOSITORY}}:{{VERSION}}" containerName="wecube-plugins-artifacts" portBindings="{{ALLOCATE_PORT}}:8081" envVariables="WECMDB_SERVER_URL={{CMDB_URL}},SALTSTACK_SERVER_URL={{SALTSTACK_SERVER_URL}},ARTIFACTS_S3_SERVER_URL={{ARTIFACTS_S3_SERVER_URL}},ARTIFACTS_S3_ACCESS_KEY={{ARTIFACTS_S3_ACCESS_KEY}},ARTIFACTS_S3_SECRET_KEY={{ARTIFACTS_S3_SECRET_KEY}}"/>
     </resourceDependencies>
 
     <!-- 7.插件列表 - 描述插件包中单个插件的输入和输出 -->
