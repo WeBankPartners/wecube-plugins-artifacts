@@ -162,10 +162,7 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse getCiTypes(@RequestParam(name = "group-by", required = false) String groupBy, @RequestParam(name = "with-attributes", required = false) String withAttributes,
             @RequestParam(name = "status", required = false) String status) {
-        if ("layer".equalsIgnoreCase(groupBy)) {
-            return okayWithData(artifactService.getCiTypes(isTrue(withAttributes), status));
-        }
-        throw new PluginException("The parameter group-by is wrong");
+        return okayWithData(artifactService.getCiTypes(isTrue(withAttributes), status));
     }
 
     @PostMapping("/ci-types/{ci-type-id}/ci-data/batch-delete")
