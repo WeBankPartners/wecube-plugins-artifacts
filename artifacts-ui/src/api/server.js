@@ -33,5 +33,5 @@ export const saveDiffConfigEnumCodes = data =>
 export const getDiffConfigEnumCodes = () =>
   req.get("/enum/codes/diff-config/query");
 export const getAllSystemEnumCodes = data => req.post(`/enum/system/codes`, data);
-export const getRefCiTypeFrom = id => req.get(`/cmdb/ci-types/${id}/references/by`)
-export const getCiTypeAttr = id => req.get(`/cmdb/ci-types/${id}/attributes`);
+export const getRefCiTypeFrom = id => req.get(`/ci-types/${id}/references/by`)
+export const getCiTypeAttr = id => req.get(`/ci-types/${id}/attributes`);
