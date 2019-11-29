@@ -132,7 +132,7 @@
 <script>
 import {
   getPackageCiTypeId,
-  getAllCITypesByLayerWithAttr,
+  getAllCITypesWithAttr,
   getSystemDesignVersions,
   getSystemDesignVersion,
   queryPackages,
@@ -146,7 +146,8 @@ import {
   getAllSystemEnumCodes
 } from "@/api/server.js";
 
-const rootCiTypeId = 12
+// 业务运行实例ciTypeId
+const rootCiTypeId = 14
 
 export default {
   name: "artifacts",
@@ -378,32 +379,24 @@ export default {
         this.packageCiType = packageCiType.data;
       }
     },
-    async getAllCITypesByLayerWithAttr() {
-      let { status, data, message } = await getAllCITypesByLayerWithAttr([
+    async getAllCITypesWithAttr() {
+      let { status, data, message } = await getAllCITypesWithAttr([
         "notCreated",
         "created",
-        "dirty",
-        "decommissioned"
+        "dirty"
       ]);
       if (status === "OK") {
         let ciTypes = {};
         let ciTypeAttrs = {};
 
         let tempCITypes = JSON.parse(JSON.stringify(data));
-        tempCITypes.forEach(_ => {
-          _.ciTypes && _.ciTypes.filter(i => i.status !== "decommissioned");
-        });
         this.ciTypes = tempCITypes;
 
-        data.forEach(layer => {
-          if (layer.ciTypes instanceof Array) {
-            layer.ciTypes.forEach(citype => {
-              ciTypes[citype.ciTypeId] = citype;
-              if (citype.attributes instanceof Array) {
-                citype.attributes.forEach(citypeAttr => {
-                  ciTypeAttrs[citypeAttr.ciTypeAttrId] = citypeAttr;
-                });
-              }
+        data.forEach(citype => {
+          ciTypes[citype.ciTypeId] = citype;
+          if (citype.attributes instanceof Array) {
+            citype.attributes.forEach(citypeAttr => {
+              ciTypeAttrs[citypeAttr.ciTypeAttrId] = citypeAttr;
             });
           }
         });
@@ -779,7 +772,7 @@ export default {
   },
   created() {
     this.fetchData();
-    this.getAllCITypesByLayerWithAttr();
+    this.getAllCITypesWithAttr();
     this.getAllSystemEnumCodes();
   }
 };
