@@ -132,7 +132,7 @@
 <script>
 import {
   getPackageCiTypeId,
-  getAllCITypesByLayerWithAttr,
+  getAllCITypes,
   getSystemDesignVersions,
   getSystemDesignVersion,
   queryPackages,
@@ -378,13 +378,8 @@ export default {
         this.packageCiType = packageCiType.data;
       }
     },
-    async getAllCITypesByLayerWithAttr() {
-      let { status, data, message } = await getAllCITypesByLayerWithAttr([
-        "notCreated",
-        "created",
-        "dirty",
-        "decommissioned"
-      ]);
+    async getAllCITypes() {
+      let { status, data, message } = await getAllCITypes();
       if (status === "OK") {
         let ciTypes = {};
         let ciTypeAttrs = {};
@@ -775,7 +770,7 @@ export default {
   },
   created() {
     this.fetchData();
-    this.getAllCITypesByLayerWithAttr();
+    this.getAllCITypes();
     this.getAllSystemEnumCodes();
   }
 };
