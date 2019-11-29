@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import router from "./router-plugin";
+import ViewUI from "view-design";
 import ArtifactsSimpleTable from "../src/components/simple-table.vue";
 import ArtifactsAttrInput from "../src/components/attr-input.vue";
 import locale from "view-design/dist/locale/en-US";
