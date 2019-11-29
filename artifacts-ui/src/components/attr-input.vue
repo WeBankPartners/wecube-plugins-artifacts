@@ -117,12 +117,15 @@ export default {
   },
   watch: {
     cmdbColumnSource(val) {
+      console.log('[watch][cmdbColumnSource]', val)
       this.restoreOpeation();
     },
     ciTypeAttributeObj(val) {
+      console.log('[watch][ciTypeAttributeObj]', val)
       this.restoreOpeation();
     },
     rootCiType(val) {
+      console.log('[watch][rootCiType]', val)
       if (!val) {
         return;
       }
@@ -139,9 +142,11 @@ export default {
       this.$emit("change", this.getValue(this.routine));
     },
     allCiTypes(val) {
+      console.log('[watch][allCiTypes]', val)
       this.formatAllCiType();
     },
     routine(val) {
+      console.log('[watch][routine]', val)
       this.$emit(
         "updateRoutine",
         this.getValue(val).cmdbColumnCriteria.routine
@@ -162,6 +167,7 @@ export default {
   },
   methods: {
     restoreOpeation() {
+      console.log('[methods][restoreOpeation]', this.cmdbColumnSource, this.ciTypeAttributeObj);
       if (this.cmdbColumnSource && this.ciTypeAttributeObj) {
         this.routine = JSON.parse(this.cmdbColumnSource);
         let val = this.ciTypesObj[this.routine[0].ciTypeId].name + " ";
@@ -194,6 +200,7 @@ export default {
       }
     },
     async getNextRef(operator) {
+      console.log('[methods][getNextRef]', this.routine);
       const last = this.routine[this.routine.length - 1];
       const isRef =
         !last.isReferedFromParent ||
@@ -203,6 +210,7 @@ export default {
         if (operator === ".") {
           this.inputVal = this.inputVal + operator;
           let { statusCode, data, message } = await getCiTypeAttr(id);
+          console.log('[async][getCiTypeAttr]', this.data);
           if (statusCode === "OK") {
             let attr = [];
             data.forEach(_ => {
@@ -254,11 +262,14 @@ export default {
       }
     },
     formatAllCiType() {
+      console.log('[methods][formatAllCiType][allCiTypes]', this.allCiTypes);
       this.allCiTypes.forEach(_ => {
         this.allCi = this.allCi.concat(_.ciTypes ? [..._.ciTypes] : []);
       });
+      console.log('[methods][formatAllCiType][allCi]', this.allCi);
     },
     inputHandler(v) {
+      console.log('[methods][formatAllCiType]', v);
       if (!v.data) {
         let valList = this.inputVal.split(" ");
         let val = "";
@@ -298,6 +309,7 @@ export default {
       }
     },
     optClickHandler(item) {
+      console.log('[methods][optClickHandler]', item);
       this.optionsHide = false;
       const newValue =
         (item.inputType === "ref" || item.inputType === "multiRef")
@@ -317,6 +329,7 @@ export default {
       this.$emit("change", this.getValue(this.routine));
     },
     getValue(data) {
+      console.log('[methods][getValue]', data);
       let val = {
         cmdbColumnCriteria: {
           routine: [],
@@ -351,9 +364,11 @@ export default {
       return val;
     },
     blurHandler() {
+      console.log('[methods][blurHandler]');
       this.optionsHide = false;
     },
     rootCiTypeChange(opt) {
+      console.log('[methods][rootCiTypeChange]', opt);
       this.$emit("handleRootCiTypeChange", opt.ciTypeId);
       this.optionsHide = false;
     }
