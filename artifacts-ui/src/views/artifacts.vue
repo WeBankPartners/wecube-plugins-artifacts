@@ -146,7 +146,8 @@ import {
   getAllSystemEnumCodes
 } from "@/api/server.js";
 
-const rootCiTypeId = 12
+// 业务运行实例ciTypeId
+const rootCiTypeId = 14
 
 export default {
   name: "artifacts",
@@ -401,8 +402,6 @@ export default {
         });
         this.ciTypesObj = ciTypes;
         this.ciTypeAttributeObj = ciTypeAttrs;
-        console.log("[artifacts.vue]ciTypesObj:", JSON.parse(JSON.stringify(this.ciTypesObj)))
-        console.log("[artifacts.vue]ciTypeAttributeObj:", JSON.parse(JSON.stringify(this.ciTypeAttributeObj)))
       }
     },
 
