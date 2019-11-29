@@ -395,15 +395,11 @@ export default {
         });
         this.ciTypes = tempCITypes;
 
-        data.forEach(layer => {
-          if (layer.ciTypes instanceof Array) {
-            layer.ciTypes.forEach(citype => {
-              ciTypes[citype.ciTypeId] = citype;
-              if (citype.attributes instanceof Array) {
-                citype.attributes.forEach(citypeAttr => {
-                  ciTypeAttrs[citypeAttr.ciTypeAttrId] = citypeAttr;
-                });
-              }
+        data.forEach(citype => {
+          ciTypes[citype.ciTypeId] = citype;
+          if (citype.attributes instanceof Array) {
+            citype.attributes.forEach(citypeAttr => {
+              ciTypeAttrs[citypeAttr.ciTypeAttrId] = citypeAttr;
             });
           }
         });
