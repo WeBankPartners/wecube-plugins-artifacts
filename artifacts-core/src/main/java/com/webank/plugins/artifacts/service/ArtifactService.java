@@ -3,6 +3,7 @@ package com.webank.plugins.artifacts.service;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CategoryDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataTreeDto;
+import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiTypeAttrDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiTypeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.OperateCiDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
@@ -38,6 +40,8 @@ public class ArtifactService {
     private static final String S3_BUCKET_NAME_FOR_ARTIFACT = "wecube-artifacts";
     private static final String S3_KEY_DELIMITER = "_";
     private static final String CONSTANT_CAT_CAT_TYPE = "cat.catType";
+    private static final String CONSTANT_INPUT_TYPE = "inputType";
+    private static final String CONSTANT_CI_TYPE = "ciType";
 
     @Autowired
     private CmdbServiceV2Stub cmdbServiceV2Stub;
@@ -272,5 +276,11 @@ public class ArtifactService {
     public void deleteCiData(int ciTypeId, Object[] ids) {
         cmdbServiceV2Stub.deleteCiData(ciTypeId, ids);
 
+    }
+    
+    public List<CiTypeAttrDto> getCiTypeReferenceBy(Integer ciTypeId) {
+        PaginationQuery queryObject = new PaginationQuery().addEqualsFilter("referenceId", ciTypeId).addInFilter(CONSTANT_INPUT_TYPE, Arrays.asList("ref", "multiRef")).addReferenceResource(CONSTANT_CI_TYPE);
+        queryObject.addReferenceResource(CONSTANT_CI_TYPE);
+        return cmdbServiceV2Stub.queryCiTypeAttributes(queryObject);
     }
 }
