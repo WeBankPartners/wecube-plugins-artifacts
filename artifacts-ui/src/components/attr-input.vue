@@ -263,9 +263,10 @@ export default {
     },
     formatAllCiType() {
       console.log('[methods][formatAllCiType][allCiTypes]', this.allCiTypes);
-      this.allCiTypes.forEach(_ => {
-        this.allCi = this.allCi.concat(_.ciTypes ? [..._.ciTypes] : []);
-      });
+      // this.allCiTypes.forEach(_ => {
+      //   this.allCi = this.allCi.concat(_.ciTypes ? [..._.ciTypes] : []);
+      // });
+      this.allCi = this.allCiTypes.map(_)
       console.log('[methods][formatAllCiType][allCi]', this.allCi);
     },
     inputHandler(v) {
