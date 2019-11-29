@@ -11,12 +11,7 @@ if (window.request) {
 
 // artifact manage
 export const getPackageCiTypeId = () => req.get("/getPackageCiTypeId");
-export const getAllCITypesByLayerWithAttr = data => {
-  const status = data.toString();
-  return req.get(
-    `/ci-types?group-by=layer&with-attributes=yes&status=${status}`
-  );
-};
+export const getAllCITypes = data => req.get("/ci-types");
 export const getSystemDesignVersions = () => req.get(`/system-design-versions`);
 export const getSystemDesignVersion = version => req.get(`/system-design-versions/${version}`);
 export const queryPackages = (guid, data) => req.post(`/unit-designs/${guid}/packages/query`, data);
