@@ -141,13 +141,17 @@ import {
   getFiles,
   getKeys,
   saveConfigFiles,
-  saveDiffConfigEnumCodes,
-  getDiffConfigEnumCodes,
+  createEntity,
+  retrieveEntity,
   getAllSystemEnumCodes
 } from "@/api/server.js";
 
 // 业务运行实例ciTypeId
 const rootCiTypeId = 14
+// cmdb插件包名
+const cmdbPackageName = "wecmdb"
+// 差异变量key_name
+const entityName = "diff_configuration"
 
 export default {
   name: "artifacts",
@@ -157,8 +161,6 @@ export default {
       statusOperations: [],
       systemDesignVersions: [],
       systemDesignVersion: "",
-      ciTypesObj: {},
-      ciTypeAttributeObj: {},
       ciTypes: [],
       treeData: [],
       treeLoading: false,
@@ -279,22 +281,18 @@ export default {
               <ArtifactsAttrInput
                 style="margin-top:5px;"
                 allCiTypes={this.ciTypes}
-                rootCiType={rootCiTypeId}
+                rootCiTypeId={rootCiTypeId}
                 isReadOnly={true}
-                ciTypesObj={this.ciTypesObj}
-                ciTypeAttributeObj={this.ciTypeAttributeObj}
-                sourceData={params.row.attrInputValue}
-                onUpdateRoutine={val => this.updateRoutine(val, params.index)}
+                v-model={params.row.attrInputValue}
               />
             ) : (
               <div style="align-items:center;display:flex;">
                 <ArtifactsAttrInput
                   style="margin-top:5px;width:calc(100% - 55px);"
                   allCiTypes={this.ciTypes}
-                  rootCiType={rootCiTypeId}
-                  ciTypesObj={this.ciTypesObj}
-                  ciTypeAttributeObj={this.ciTypeAttributeObj}
-                  onUpdateRoutine={val => this.updateRoutine(val, params.index)}
+                  rootCiTypeId={rootCiTypeId}
+                  v-model={params.row.attrInputValue}
+                  onUpdateValue={val => this.updateAttrInputValue(val, params.index)}
                 />
                 <Button
                   size="small"
@@ -386,22 +384,7 @@ export default {
         "dirty"
       ]);
       if (status === "OK") {
-        let ciTypes = {};
-        let ciTypeAttrs = {};
-
-        let tempCITypes = JSON.parse(JSON.stringify(data));
-        this.ciTypes = tempCITypes;
-
-        data.forEach(citype => {
-          ciTypes[citype.ciTypeId] = citype;
-          if (citype.attributes instanceof Array) {
-            citype.attributes.forEach(citypeAttr => {
-              ciTypeAttrs[citypeAttr.ciTypeAttrId] = citypeAttr;
-            });
-          }
-        });
-        this.ciTypesObj = ciTypes;
-        this.ciTypeAttributeObj = ciTypeAttrs;
+        this.ciTypes = JSON.parse(JSON.stringify(data));
       }
     },
 
@@ -455,15 +438,15 @@ export default {
         filePath: options.path
       });
       if (status === "OK") {
-        const diffConfigEnums = await getDiffConfigEnumCodes();
-        if (diffConfigEnums.status === "OK") {
+        const diffConfigs = await retrieveEntity(cmdbPackageName, entityName);
+        if (diffConfigs.status === "OK") {
           const result = data.outputs[0].configKeyInfos.map((_, i) => {
             _.index = i + 1;
-            const found = diffConfigEnums.data.find(
-              item => item.value === _.key
+            const found = diffConfigs.data.find(
+              item => item.variable_name === _.key
             );
             if (found) {
-              _.attrInputValue = found.code;
+              _.attrInputValue = found.variable_value;
             }
             return _;
           });
@@ -493,8 +476,8 @@ export default {
       this.queryPackages();
       this.getTabDatas(this.diffTabData);
     },
-    async saveDiffConfigEnumCodes(obj) {
-      let { status, data, message } = await saveDiffConfigEnumCodes(obj);
+    async createEntity(obj) {
+      let { status, data, message } = await createEntity(cmdbPackageName, entityName, obj);
       if (status === "OK") {
         this.$Notice.success({
           title: "保存成功"
@@ -721,14 +704,15 @@ export default {
         }
       });
     },
-    updateRoutine(val, row) {
-      this.tabData[this.nowTab].tableData[row].routine = JSON.stringify(val);
+    updateAttrInputValue(val, row) {
+      this.tabData[this.nowTab].tableData[row].variableName = val;
     },
     saveAttr(row) {
-      this.saveDiffConfigEnumCodes({
-        value: this.tabData[this.nowTab].tableData[row].key,
-        code: this.tabData[this.nowTab].tableData[row].routine
-      });
+      const obj = [{
+        variable_name: this.tabData[this.nowTab].tableData[row].variableName,
+        variable_value: this.tabData[this.nowTab].tableData[row].key,
+      }]
+      this.createEntity(obj);
     },
     async getAllSystemEnumCodes() {
       const { status, data, message } = await getAllSystemEnumCodes({
