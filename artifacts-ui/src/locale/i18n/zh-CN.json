@@ -1,4 +1,8 @@
 {
-  "please_select_without_refrence": "请选择非引用属性",
-  "please_input_legitimate_character": "请输入正确的操作符 . 或 -"
+  "attr_input_legitimate_character_tips": "请输入 { 触发规则填充",
+  "please_select_ci_type": "请选择CI类型",
+  "attr_input_legitimate_operation_character_tips": "请输入正确的操作符 . 或 -",
+  "please_select_enum": "请选择枚举值",
+  "attr_input_close_rule_tips": "请输入操作符 } 闭合当前规则",
+  "attr_input_save_tips": "请保存填充规则"
 }

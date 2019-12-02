@@ -28,10 +28,8 @@ export const operateCiState = (ciTypeId, guid, op) => {
 export const getFiles = (guid, packageId, data) => req.post(`/unit-designs/${guid}/packages/${packageId}/files/query`, data);
 export const getKeys = (guid, packageId, data) => req.post(`/unit-designs/${guid}/packages/${packageId}/property-keys/query`, data);
 export const saveConfigFiles = (guid, packageId, data) => req.post(`/unit-designs/${guid}/packages/${packageId}/save`, data);
-export const saveDiffConfigEnumCodes = data =>
-  req.post("/enum/codes/diff-config/save", data);
-export const getDiffConfigEnumCodes = () =>
-  req.get("/enum/codes/diff-config/query");
+export const retrieveEntity = (packageName, entityName) => req.get(`/platform/v1/packages/${packageName}/entities/${entityName}/retrieve`);
+export const createEntity = (packageName, entityName, data) => req.post(`/platform/v1/packages/${packageName}/entities/${entityName}/create`, data);
 export const getAllSystemEnumCodes = data => req.post(`/enum/system/codes`, data);
 export const getRefCiTypeFrom = id => req.get(`/ci-types/${id}/references/by`)
 export const getCiTypeAttr = id => req.get(`/ci-types/${id}/attributes`);

@@ -1,4 +1,8 @@
 {
-  "please_select_without_refrence": "Please selete non reference attrubuite",
-  "please_input_legitimate_character": "Please input correct operator . or -"
+  "attr_input_legitimate_character_tips": "Please input '{' for listing CI types and it's attributes",
+  "please_select_ci_type": "Please selete CI type",
+  "attr_input_legitimate_operation_character_tips": "Please input correct operator . or -",
+  "please_select_enum": "Please select enum value",
+  "attr_input_close_rule_tips": "Please input operator '}' to close current rule",
+  "attr_input_save_tips": "Please save the rule"
 }
