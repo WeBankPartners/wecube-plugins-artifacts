@@ -705,12 +705,12 @@ export default {
       });
     },
     updateAttrInputValue(val, row) {
-      this.tabData[this.nowTab].tableData[row].variableName = val;
+      this.tabData[this.nowTab].tableData[row].variableValue = val;
     },
     saveAttr(row) {
       const obj = [{
-        variable_name: this.tabData[this.nowTab].tableData[row].variableName,
-        variable_value: this.tabData[this.nowTab].tableData[row].key,
+        variable_name: this.tabData[this.nowTab].tableData[row].key,
+        variable_value: this.tabData[this.nowTab].tableData[row].variableValue,
       }]
       this.createEntity(obj);
     },
