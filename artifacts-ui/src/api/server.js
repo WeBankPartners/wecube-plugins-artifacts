@@ -30,6 +30,7 @@ export const getKeys = (guid, packageId, data) => req.post(`/unit-designs/${guid
 export const saveConfigFiles = (guid, packageId, data) => req.post(`/unit-designs/${guid}/packages/${packageId}/save`, data);
 export const retrieveEntity = (packageName, entityName) => req.get(`/platform/v1/packages/${packageName}/entities/${entityName}/retrieve`);
 export const createEntity = (packageName, entityName, data) => req.post(`/platform/v1/packages/${packageName}/entities/${entityName}/create`, data);
+export const updateEntity = (packageName, entityName, data) => req.post(`/platform/v1/packages/${packageName}/entities/${entityName}/update`, data);
 export const getAllSystemEnumCodes = data => req.post(`/enum/system/codes`, data);
 export const getRefCiTypeFrom = id => req.get(`/ci-types/${id}/references/by`)
 export const getCiTypeAttr = id => req.get(`/ci-types/${id}/attributes`);

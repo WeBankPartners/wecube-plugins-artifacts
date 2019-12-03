@@ -101,12 +101,25 @@ export default {
     }
   },
   mounted() {
+    this.initDisplayValue()
     this.displayInputData();
   },
   methods: {
+    initDisplayValue() {
+      if (this.$refs && this.$refs.textarea) {
+        this.$refs.textarea.value = ""
+      }
+    },
     inputHandler(v) {
       if (this.inputRuleStatus === 1) {
         if (v.data === "{") {
+          if (this.attrInputArray.length) {
+            this.$Message.error({
+              content: this.$t("attr_input_save_tips")
+            })
+            this.$refs.textarea.value = this.inputVal;
+            return
+          }
           if (this.rootCiTypeId) {
             this.inputVal =
               this.$refs.textarea.value +
@@ -125,16 +138,11 @@ export default {
           }
           this.inputRuleStatus = 0;
         } else if (v.inputType === "deleteContentBackward") {
-          if (this.attrInputLastObjValue.length) {
-            this.inputVal = this.inputVal.substr(0, this.inputVal.length - 1);
-            this.setAutoData();
-          } else {
-            this.attrInputArray.splice(-2, 2);
-            this.inputVal = this.inputVal.substr(
-              0,
-              this.inputVal.lastIndexOf("{")
-            );
-          }
+          this.attrInputArray.splice(-2, 2);
+          this.inputVal = this.inputVal.substr(
+            0,
+            this.inputVal.lastIndexOf("{")
+          );
           if (this.inputVal) {
             this.$emit("updateValue", JSON.stringify(this.attrInputArray));
           } else {

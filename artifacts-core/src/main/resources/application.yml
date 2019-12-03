@@ -17,7 +17,7 @@ plugins:
   pacakge-name: artifacts
   wecube-platform-server-url: http://localhost:8080/platform
 
-  wecmdb-server-url: http://localhost:8080/wecmdb
+  wecmdb-server-url: http://localhost:18080/wecmdb
 
   saltstack-server-url: http://localhost:8082
 
