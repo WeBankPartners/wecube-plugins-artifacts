@@ -142,6 +142,7 @@ import {
   getKeys,
   saveConfigFiles,
   createEntity,
+  updateEntity,
   retrieveEntity,
   getAllSystemEnumCodes
 } from "@/api/server.js";
@@ -150,8 +151,10 @@ import {
 const rootCiTypeId = 14
 // cmdb插件包名
 const cmdbPackageName = "wecmdb"
-// 差异变量key_name
-const entityName = "diff_configuration"
+// 差异配置key_name
+const DIFF_CONFIGURATION = "diff_configuration"
+// 部署包key_name
+const DEPLOY_PACKAGE = "deploy_package"
 
 export default {
   name: "artifacts",
@@ -295,6 +298,7 @@ export default {
                   onUpdateValue={val => this.updateAttrInputValue(val, params.index)}
                 />
                 <Button
+                  disabled={!params.row.variableValue}
                   size="small"
                   type="primary"
                   style="margin-left:10px"
@@ -438,7 +442,7 @@ export default {
         filePath: options.path
       });
       if (status === "OK") {
-        const diffConfigs = await retrieveEntity(cmdbPackageName, entityName);
+        const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION);
         if (diffConfigs.status === "OK") {
           const result = data.outputs[0].configKeyInfos.map((_, i) => {
             _.index = i + 1;
@@ -447,6 +451,8 @@ export default {
             );
             if (found) {
               _.attrInputValue = found.variable_value;
+            } else {
+              _.attrInputValue = ""
             }
             return _;
           });
@@ -477,12 +483,29 @@ export default {
       this.getTabDatas(this.diffTabData);
     },
     async createEntity(obj) {
-      let { status, data, message } = await createEntity(cmdbPackageName, entityName, obj);
+      const { status, data, message } = await createEntity(cmdbPackageName, DIFF_CONFIGURATION, obj);
       if (status === "OK") {
-        this.$Notice.success({
-          title: "保存成功"
-        });
-        this.getKeys(this.tabData[this.nowTab]);
+        this.updateEntity(data[0].id)
+      }
+    },
+    async updateEntity(id) {
+      const packagesData = await retrieveEntity(cmdbPackageName, DEPLOY_PACKAGE)
+      const newPackageId = packagesData.data[0].id
+      if (packagesData.status === "OK") {
+        const found = packagesData.data.find(_ => _.id === this.packageId)
+        if (found) {
+          const updataObj = [{
+            id: this.packageId,
+            diff_conf_variable: found.diff_conf_variable.push(newPackageId)
+          }]
+          const updateData = await updateEntity(cmdbPackageName, DEPLOY_PACKAGE, updataObj)
+          if (updateData.status === "OK") {
+            this.$Notice.success({
+              title: "保存成功"
+            });
+            this.getKeys(this.tabData[this.nowTab]);
+          }
+        }
       }
     },
     selectSystemDesignVersion(guid) {
@@ -705,14 +728,16 @@ export default {
       });
     },
     updateAttrInputValue(val, row) {
-      this.tabData[this.nowTab].tableData[row].variableValue = val;
+      this.$set(this.tabData[this.nowTab].tableData[row], "variableValue", val)
     },
     saveAttr(row) {
       const obj = [{
         variable_name: this.tabData[this.nowTab].tableData[row].key,
         variable_value: this.tabData[this.nowTab].tableData[row].variableValue,
       }]
-      this.createEntity(obj);
+      if (obj[0].variable_value) {
+        this.createEntity(obj);
+      }
     },
     async getAllSystemEnumCodes() {
       const { status, data, message } = await getAllSystemEnumCodes({
