@@ -547,7 +547,7 @@ export default {
         }
       }
     },
-    updatePackages() {
+    updatePackages(allKeys) {
       // 更新部署包关联的所有差异配置变量
       const ids = Object.keys(allKeys).map(_ => allKeys[_].id)
       this.updateEntity({
