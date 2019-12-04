@@ -585,14 +585,14 @@ export default {
       const { packageName, entityName } = params
       const { status, data, message } = await createEntity(packageName, entityName, params.data);
       if (status === "OK") {
-        params.callback && callback(data)
+        params.callback && params.callback(data)
       }
     },
     async updateEntity(params) {
       const { packageName, entityName } = params
       const { status, data, message } = await updateEntity(packageName, entityName, params.data)
       if (status === "OK") {
-        params.callback && callback(data)
+        params.callback && params.callback(data)
       }
     },
     selectSystemDesignVersion(guid) {
