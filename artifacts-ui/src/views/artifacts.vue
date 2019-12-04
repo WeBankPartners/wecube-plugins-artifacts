@@ -146,6 +146,8 @@ import {
   retrieveEntity,
   getAllSystemEnumCodes
 } from "@/api/server.js";
+import iconFile from "../assets/file.png"
+import iconFolder from "../assets/folder.png"
 
 // 业务运行实例ciTypeId
 const rootCiTypeId = 14
@@ -580,16 +582,27 @@ export default {
         };
         if (_.isDir) {
           obj.children = [{}];
+          obj.render = (h, params) => (
+            <span>
+              <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
+              <span>{_.name}</span>
+            </span>
+          )
         } else {
           obj.render = (h, params) => {
             return this.currentTreeModal.inputType === "checkbox" ? (
               <Checkbox
+                style="position:relative;right:24px;"
                 on-on-change={value => this.checkboxChange(value, params.data)}
               >
+                <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                 <span>{params.data.title}</span>
               </Checkbox>
             ) : (
-              <Radio label={params.data.path}>
+              <Radio
+                style="position:relative;right:20px;"
+                label={params.data.path}>
+                <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                 <span>{params.data.title}</span>
               </Radio>
             );
@@ -814,6 +827,12 @@ export default {
     &:first-of-type {
       margin-top: 0;
     }
+  }
+
+  &-icon {
+    margin: 0 2px;
+    position: relative;
+    top: 3px;
   }
 }
 </style>
