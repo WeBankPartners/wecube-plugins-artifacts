@@ -106,8 +106,10 @@ export default {
   methods: {
     inputHandler(v) {
       if (this.inputRuleStatus === 1) {
+        // inputRuleStatus为1时，当前处于花括号外，只能输入 { 或进行删除
         if (v.data === "{") {
           if (this.attrInputArray.length) {
+            // 表达式只能有一对花括号，输入第二对花括号时需要将其禁止
             this.$Message.error({
               content: this.$t("attr_input_save_tips")
             })
@@ -115,6 +117,7 @@ export default {
             return
           }
           if (this.rootCiTypeId) {
+            // 输入 { 后，实际执行的逻辑
             this.inputVal =
               this.$refs.textarea.value +
               " " +
@@ -132,6 +135,7 @@ export default {
           }
           this.inputRuleStatus = 0;
         } else if (v.inputType === "deleteContentBackward") {
+          // 点击 Backspace 按钮时
           this.attrInputArray.splice(-2, 2);
           this.inputVal = this.inputVal.substr(
             0,
@@ -144,6 +148,7 @@ export default {
             this.$emit("updateValue", "");
           }
         } else {
+          // 除输入 { 及 Backspace 情况下阻止输入并弹出提示
           this.$refs.textarea.value = this.inputVal;
           if (this.attrInputArray.length) {
             this.$Message.error({
@@ -156,61 +161,66 @@ export default {
           }
         }
       } else {
+        // inputRuleStatus为0时，当前处于花括号内，需要处理 references by 及查询其拥有属性
         if (v.data) {
           if (!this.attrInputLastObjValue) {
             this.$refs.textarea.value = this.inputVal;
             this.$Message.error({
               content: this.$t("please_select_ci_type")
             });
-          } else {
-            const objList = JSON.parse(this.attrInputLastObjValue);
-            const obj = objList[objList.length - 1];
-            if (
-              !obj.parentRs ||
-              this.ciTypeAttrsObj[obj.parentRs.attrId].inputType === "ref" || this.ciTypeAttrsObj[obj.parentRs.attrId].inputType === "multiRef"
-            ) {
-              if (v.data === "." || v.data === "-") {
-                if (
-                  this.inputVal[this.inputVal.length - 1] === "." ||
-                  this.inputVal[this.inputVal.length - 1] === "-"
-                ) {
-                  this.inputVal = this.inputVal.replace(/.$/, v.data);
-                } else {
-                  this.inputVal = this.$refs.textarea.value;
-                }
-                this.optionsHide = true;
-                this.getNextRef(v.data);
+            return
+          }
+          const objList = JSON.parse(this.attrInputLastObjValue);
+          const obj = objList[objList.length - 1];
+          if (
+            !obj.parentRs ||
+            this.ciTypeAttrsObj[obj.parentRs.attrId].inputType === "ref" || this.ciTypeAttrsObj[obj.parentRs.attrId].inputType === "multiRef"
+          ) {
+            if (v.data === "." || v.data === "-") {
+              // 在花括号内只能输入 . 和 -
+              if (
+                this.inputVal[this.inputVal.length - 1] === "." ||
+                this.inputVal[this.inputVal.length - 1] === "-"
+              ) {
+                this.inputVal = this.inputVal.replace(/.$/, v.data);
               } else {
-                this.$refs.textarea.value = this.inputVal;
-                this.$Message.error({
-                  content: this.$t(
-                    "attr_input_legitimate_operation_character_tips"
-                  )
-                });
+                this.inputVal = this.$refs.textarea.value;
               }
-            } else if (
-              !obj.parentRs ||
-              ((this.ciTypeAttrsObj[obj.parentRs.attrId].inputType === "select" || this.ciTypeAttrsObj[obj.parentRs.attrId].inputType === "multiSelect") &&
-                !obj.enumCodeAttr)
-            ) {
+              this.optionsHide = true;
+              this.getNextRef(v.data);
+            } else {
               this.$refs.textarea.value = this.inputVal;
               this.$Message.error({
-                content: this.$t("please_select_enum")
+                content: this.$t(
+                  "attr_input_legitimate_operation_character_tips"
+                )
               });
+            }
+          } else if (
+            // 当选择了一个 select 类型及 multiSelect 类型后，需要制定其使用枚举的具体属性，否则阻止后续输入并弹出提示
+            !obj.parentRs ||
+            ((this.ciTypeAttrsObj[obj.parentRs.attrId].inputType === "select" || this.ciTypeAttrsObj[obj.parentRs.attrId].inputType === "multiSelect") &&
+              !obj.enumCodeAttr)
+          ) {
+            this.$refs.textarea.value = this.inputVal;
+            this.$Message.error({
+              content: this.$t("please_select_enum")
+            });
+          } else {
+            // 输入 } 关闭表达式的输入，并且 inputRuleStatus 状态改为1，标记当前输入状态在花括号外
+            if (v.data === "}") {
+              this.$emit("updateValue", JSON.stringify(this.attrInputArray));
+              this.inputVal = this.$refs.textarea.value;
+              this.inputRuleStatus = 1;
             } else {
-              if (v.data === "}") {
-                this.$emit("updateValue", JSON.stringify(this.attrInputArray));
-                this.inputVal = this.$refs.textarea.value;
-                this.inputRuleStatus = 1;
-              } else {
-                this.$refs.textarea.value = this.inputVal;
-                this.$Message.error({
-                  content: this.$t("attr_input_close_rule_tips")
-                });
-              }
+              this.$refs.textarea.value = this.inputVal;
+              this.$Message.error({
+                content: this.$t("attr_input_close_rule_tips")
+              });
             }
           }
         } else if (v.inputType === "deleteContentBackward") {
+          // 在输入表达式时，Backspace每次删除一个表达式的节点而非一个字符
           if (
             this.attrInputLastObjValue !== "[]" &&
             this.attrInputLastObjValue !== ""
