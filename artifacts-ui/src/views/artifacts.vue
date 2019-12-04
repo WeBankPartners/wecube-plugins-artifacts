@@ -543,6 +543,16 @@ export default {
             this.$set(this.tabData[tabIndex], "tableData", result);
           })
         }
+        // 更新部署包关联的所有差异配置变量
+        const ids = Object.keys(allKeys).map(_ => allKeys[_].id)
+        this.updateEntity({
+          packageName: cmdbPackageName,
+          entityName: DEPLOY_PACKAGE,
+          data: [{
+            id: this.packageId,
+            diff_conf_variable: ids
+          }]
+        })
       }
     },
     async saveConfigFiles() {
@@ -568,20 +578,17 @@ export default {
       this.getTabDatas(this.diffTabData);
     },
     async createEntity(params) {
-      const { packageName, entityName, callback } = params
+      const { packageName, entityName } = params
       const { status, data, message } = await zcreateEntity(packageName, entityName, params.data);
       if (status === "OK") {
-        callback(data)
+        params.callback && callback(data)
       }
     },
     async updateEntity(params) {
       const { packageName, entityName } = params
       const { status, data, message } = await updateEntity(packageName, entityName, params.data)
       if (status === "OK") {
-        this.$Notice.success({
-          title: "保存成功"
-        });
-        this.getKeys(this.tabData[this.nowTab]);
+        params.callback && callback(data)
       }
     },
     selectSystemDesignVersion(guid) {
@@ -830,7 +837,13 @@ export default {
       const params = {
         packageName: cmdbPackageName,
         entityName: DIFF_CONFIGURATION,
-        data
+        data,
+        callback: () => {
+          this.$Notice.success({
+            title: "保存成功"
+          });
+          this.getKeys(this.tabData[this.nowTab]);
+        }
       }
       this.updateEntity(params)
     },
