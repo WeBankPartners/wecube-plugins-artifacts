@@ -538,7 +538,8 @@ export default {
             const result = tableData.map(_ => {
               return {
                 ..._,
-                ...allKeys[_.key]
+                ...allKeys[_.key],
+                attrInputValue: allKeys[_.key].variable_value
               }
             })
             this.updatePackages(allKeys)
