@@ -454,39 +454,93 @@ export default {
             );
             if (found) {
               _.attrInputValue = found.variable_value;
-              _.isExist = true
               _.id = found.id
-            } else {
-              _.attrInputValue = ""
-              _.isExist = false
-              newKeys.push({
-                variable_name: _.key,
-                variable_value: ""
-              })
             }
             return _;
           });
+          this.$set(options, "tableData", result);
+        }
+      }
+    },
+    async getAllKeys(tabList) {
+      if (!tabList.length) return
+      // 查出每个文件下的差异化变量名，并将其存在 allKeys 中
+      const promiseArray = tabList.map(_ => getKeys(this.guid, this.packageId, { filePath: _.path }))
+      const res = await Promise.all(promiseArray)
+      let allKeys = {}
+      let newDiffConfigs = []
+      let tabData = res.map((tab, tabIndex) => {
+        if (tab.status === "OK") {
+          const tableData = tab.data.outputs[0].configKeyInfos.forEach((_, i) => {
+            allKeys[_.key] = {
+              variable_name: _.key,
+              variable_value: ""
+            }
+            return {
+              index: i + 1,
+              key: _.key,
+              attrInputValue: "",
+              id: ""
+            }
+          })
+          return tableData
+        } else {
+          return []
+        }
+      })
+      // 查出所有差异化变量的信息
+      const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION);
+      if (diffConfigs.status === "OK") {
+        Object.keys(allKeys).forEach(key => {
+          const found = diffConfigs.data.find(diffConfig => {
+            // 如果一个差异化变量已创建，则将其 id 及 variable_value 赋值给 allKeys 中对应的变量
+            if (diffConfigs.variable_name === key) {
+              allKeys[key].id = diffConfig.id,
+              allKeys[key].variable_value = diffConfig.variable_value
+              return true
+            }
+          })
+          if (!found) {
+            // 如果该差异化变量未创建，则需创建一个 variable_value 值为空的变量，此处将所有未创建的变量存入 newDiffConfigs 数组
+            newDiffConfigs.push({
+              variable_name: key,
+              variable_value: ""
+            })
+          }
+        })
+        if (newDiffConfigs.length) {
+          // 将 newDiffConfigs 数组里所有未创建的差异化变量统一创建，并获取其 id
           const params = {
             packageName: cmdbPackageName,
             entityName: DIFF_CONFIGURATION,
-            data: newKeys,
+            data: newDiffConfigs,
             callback: v => {
-              v.forEach(newkey => {
-                const found = result.find((_, i) => {
-                  if (_.key === newkey.variable_name) {
-                    result[i].id = found.id
-                    return true
+              v.forEach(_ => {
+                allKeys[_.variable_name].id = _.id
+              })
+              // 更新 tabData 的信息
+              tabData.forEach((tableData, tabIndex) => {
+                const result = tableData.map(_ => {
+                  return {
+                    ..._,
+                    ...allKeys[_.key]
                   }
                 })
+                this.$set(this.tabData[tabIndex], "tableData", result);
               })
-              this.$set(options, "tableData", result);
             }
           }
-          if (newKeys.length) {
-            this.createEntity(params)
-          } else {
-            this.$set(options, "tableData", result);
-          }
+          this.createEntity(params)
+        } else {
+          tabData.forEach((tableData, tabIndex) => {
+            const result = tableData.map(_ => {
+              return {
+                ..._,
+                ...allKeys[_.key]
+              }
+            })
+            this.$set(this.tabData[tabIndex], "tableData", result);
+          })
         }
       }
     },
@@ -704,7 +758,7 @@ export default {
           };
         });
         this.activeTab = this.tabData.length ? this.tabData[0].title : "";
-        this.getKeys(this.tabData[0]);
+        this.getAllKeys(this.tabData)
       } else {
         this.tabData = [];
       }
