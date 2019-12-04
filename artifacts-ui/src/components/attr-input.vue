@@ -101,15 +101,9 @@ export default {
     }
   },
   mounted() {
-    this.initDisplayValue()
     this.displayInputData();
   },
   methods: {
-    initDisplayValue() {
-      if (this.$refs && this.$refs.textarea) {
-        this.$refs.textarea.value = ""
-      }
-    },
     inputHandler(v) {
       if (this.inputRuleStatus === 1) {
         if (v.data === "{") {
