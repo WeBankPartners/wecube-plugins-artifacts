@@ -446,6 +446,7 @@ export default {
       if (status === "OK") {
         const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION);
         if (diffConfigs.status === "OK") {
+          let newKeys = []
           const result = data.outputs[0].configKeyInfos.map((_, i) => {
             _.index = i + 1;
             const found = diffConfigs.data.find(
@@ -453,12 +454,37 @@ export default {
             );
             if (found) {
               _.attrInputValue = found.variable_value;
+              _.isExist = true
+              _.id = found.id
             } else {
               _.attrInputValue = ""
+              _.isExist = false
+              newKeys.push({
+                variable_name: _.key,
+                variable_value: ""
+              })
             }
             return _;
           });
-          this.$set(options, "tableData", result);
+          const params = {
+            packageName: cmdbPackageName,
+            entityName: DIFF_CONFIGURATION,
+            data: newKeys,
+            callback: v => {
+              v.forEach(newkey => {
+                const found = result.find((_, i) => _. key === newkey.variable_name)
+                if (found) {
+                  result[i].id = found.id
+                }
+              })
+              this.$set(options, "tableData", result);
+            }
+          }
+          if (newKeys.length) {
+            this.createEntity(params)
+          } else {
+            this.$set(options, "tableData", result);
+          }
         }
       }
     },
@@ -484,30 +510,21 @@ export default {
       this.queryPackages();
       this.getTabDatas(this.diffTabData);
     },
-    async createEntity(obj) {
-      const { status, data, message } = await createEntity(cmdbPackageName, DIFF_CONFIGURATION, obj);
+    async createEntity(params) {
+      const { packageName, entityName, callback } = params
+      const { status, data, message } = await createEntity(packageName, entityName, params.data);
       if (status === "OK") {
-        this.updateEntity(data[0].id)
+        callback(data)
       }
     },
-    async updateEntity(id) {
-      const packagesData = await retrieveEntity(cmdbPackageName, DEPLOY_PACKAGE)
-      const newPackageId = packagesData.data[0].id
-      if (packagesData.status === "OK") {
-        const found = packagesData.data.find(_ => _.id === this.packageId)
-        if (found) {
-          const updataObj = [{
-            id: this.packageId,
-            diff_conf_variable: found.diff_conf_variable.push(newPackageId)
-          }]
-          const updateData = await updateEntity(cmdbPackageName, DEPLOY_PACKAGE, updataObj)
-          if (updateData.status === "OK") {
-            this.$Notice.success({
-              title: "保存成功"
-            });
-            this.getKeys(this.tabData[this.nowTab]);
-          }
-        }
+    async updateEntity(params) {
+      const { packageName, entityName } = params
+      const { status, data, message } = await updateEntity(packageName, entityName, params.data)
+      if (status === "OK") {
+        this.$Notice.success({
+          title: "保存成功"
+        });
+        this.getKeys(this.tabData[this.nowTab]);
       }
     },
     selectSystemDesignVersion(guid) {
@@ -745,12 +762,20 @@ export default {
     },
     saveAttr(row) {
       const obj = [{
-        variable_name: this.tabData[this.nowTab].tableData[row].key,
+        id: this.tabData[this.nowTab].tableData[row].id,
         variable_value: this.tabData[this.nowTab].tableData[row].variableValue,
       }]
       if (obj[0].variable_value) {
-        this.createEntity(obj);
+        this.updateDiffConfig(obj);
       }
+    },
+    async updateDiffConfig(data) {
+      const params = {
+        packageName: cmdbPackageName,
+        entityName: DIFF_CONFIGURATION,
+        data
+      }
+      this.updateEntity(params)
     },
     async getAllSystemEnumCodes() {
       const { status, data, message } = await getAllSystemEnumCodes({
