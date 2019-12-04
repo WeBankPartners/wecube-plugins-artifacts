@@ -472,10 +472,12 @@ export default {
             data: newKeys,
             callback: v => {
               v.forEach(newkey => {
-                const found = result.find((_, i) => _. key === newkey.variable_name)
-                if (found) {
-                  result[i].id = found.id
-                }
+                const found = result.find((_, i) => {
+                  if (_.key === newkey.variable_name) {
+                    result[i].id = found.id
+                    return true
+                  }
+                })
               })
               this.$set(options, "tableData", result);
             }
