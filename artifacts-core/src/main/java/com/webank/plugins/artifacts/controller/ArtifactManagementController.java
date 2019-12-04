@@ -1,8 +1,10 @@
 package com.webank.plugins.artifacts.controller;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static com.webank.plugins.artifacts.domain.JsonResponse.okay;
 import static com.webank.plugins.artifacts.domain.JsonResponse.okayWithData;
 import static com.webank.plugins.artifacts.utils.BooleanUtils.isTrue;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -20,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
-import com.webank.plugins.artifacts.commons.WecubeCoreException;
+import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.domain.JsonResponse;
 import com.webank.plugins.artifacts.domain.PackageDomain;
 import com.webank.plugins.artifacts.interceptor.UsernameStorage;
@@ -29,6 +31,7 @@ import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.OperateCiDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
+import static com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.defaultQueryObject;
 
 @RestController
 public class ArtifactManagementController {
@@ -93,7 +96,7 @@ public class ArtifactManagementController {
             @RequestBody Map<String, String> additionalProperties) {
 
         if (additionalProperties.get("currentDir") == null) {
-            throw new WecubeCoreException("Field 'currentDir' is required.");
+            throw new PluginException("Field 'currentDir' is required.");
         }
 
         return okayWithData(
@@ -106,7 +109,7 @@ public class ArtifactManagementController {
             @RequestBody Map<String, String> additionalProperties) {
 
         if (additionalProperties.get("filePath") == null) {
-            throw new WecubeCoreException("Field 'filePath' is required.");
+            throw new PluginException("Field 'filePath' is required.");
         }
 
         return okayWithData(
@@ -148,7 +151,7 @@ public class ArtifactManagementController {
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(multipartFile.getBytes());
         } catch (Exception e) {
-            throw new WecubeCoreException("Fail to convert multipart file to file", e);
+            throw new PluginException("Fail to convert multipart file to file", e);
         }
         return file;
     }
@@ -162,10 +165,7 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse getCiTypes(@RequestParam(name = "group-by", required = false) String groupBy, @RequestParam(name = "with-attributes", required = false) String withAttributes,
             @RequestParam(name = "status", required = false) String status) {
-        if ("layer".equalsIgnoreCase(groupBy)) {
-            return okayWithData(artifactService.getCiTypes(isTrue(withAttributes), status));
-        }
-        throw new WecubeCoreException("The parameter group-by is wrong");
+        return okayWithData(artifactService.getCiTypes(isTrue(withAttributes), status));
     }
 
     @PostMapping("/ci-types/{ci-type-id}/ci-data/batch-delete")
@@ -174,7 +174,7 @@ public class ArtifactManagementController {
         try {
             artifactService.deleteCiData(ciTypeId, ciDataIds.toArray());
         } catch (Exception e) {
-            throw new WecubeCoreException("The parameter ciDataIds is wrong", e);
+            throw new PluginException("The parameter ciDataIds is wrong", e);
         }
         return okay();
     }
@@ -184,5 +184,20 @@ public class ArtifactManagementController {
     public JsonResponse querySystemEnumCodesWithRefResources(@RequestBody PaginationQuery queryObject) {
         return okayWithData(artifactService.querySystemEnumCodesWithRefResources(queryObject));
     }
-
+    
+    @GetMapping("/ci-types/{ci-type-id}/references/by")
+    @ResponseBody
+    public JsonResponse getCiTypeReferenceBy(@PathVariable(value = "ci-type-id") int ciTypeId) {
+        return okayWithData(artifactService.getCiTypeReferenceBy(ciTypeId));
+    }
+    
+    @GetMapping("/ci-types/{ci-type-id}/attributes")
+    @ResponseBody
+    public JsonResponse getCiTypeAttributes(@PathVariable(value = "ci-type-id") int ciTypeId, @RequestParam(name = "accept-input-types", required = false) String acceptInputTypes) {
+        if (isNotEmpty(acceptInputTypes)) {
+            return okayWithData(cmdbServiceV2Stub.queryCiTypeAttributes(defaultQueryObject("ciTypeId", ciTypeId).addInFilter("inputType", newArrayList(acceptInputTypes.split(",")))));
+        } else {
+            return okayWithData(cmdbServiceV2Stub.getCiTypeAttributesByCiTypeId(ciTypeId));
+        }
+    }
 }

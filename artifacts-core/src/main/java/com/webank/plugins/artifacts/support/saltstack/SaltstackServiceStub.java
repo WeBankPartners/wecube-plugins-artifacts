@@ -22,40 +22,40 @@ public class SaltstackServiceStub {
 
     public ResultData<Object> getReleasedPackageFilesByCurrentDir(String saltstackServerUrl,
             SaltstackRequest<Map<String, Object>> request) {
-        return callSaltstackInterface(asSaltstackServerUrl(saltstackServerUrl, INF_RELEASED_PACKAGE_LIST_DIR), request);
+        return post(asServerUrl(saltstackServerUrl, INF_RELEASED_PACKAGE_LIST_DIR), request);
     }
-    
-    public ResultData<Object> getReleasedPackagePropertyKeysByFilePath(String instanceAddress,
+
+    public ResultData<Object> getReleasedPackagePropertyKeysByFilePath(String saltstackServerUrl,
             SaltstackRequest<Map<String, Object>> request) {
-        return callSaltstackInterface(asSaltstackServerUrl(instanceAddress, INF_RELEASED_PACKAGE_PROPERTY_KEY), request);
+        return post(asServerUrl(saltstackServerUrl, INF_RELEASED_PACKAGE_PROPERTY_KEY), request);
     }
-    
-    private ResultData<Object> callSaltstackInterface(String targetUrl, SaltstackRequest parameters) {
+
+    private ResultData<Object> post(String targetUrl, SaltstackRequest parameters) {
         log.info("About to call {} with parameters: {} ", targetUrl, parameters);
         SaltstackResponse<Object> response = restTemplate.postForObject(targetUrl, parameters, DefaultSaltstackResponse.class);
-        log.info("Plugin response: {} ", response);
-        validateSaltstackResponse(response, false);
+        log.info("Saltstack plugin response: {} ", response);
+        validateResponse(response, false);
 
         return response.getResultData();
     }
 
-    private void validateSaltstackResponse(SaltstackResponse SaltstackResponse, boolean dataRequired) {
-        if (SaltstackResponse == null) {
-            throw new SaltstackRemoteCallException("Plugin call failure due to no response.");
+    private void validateResponse(SaltstackResponse response, boolean dataRequired) {
+        if (response == null) {
+            throw new SaltstackRemoteCallException("Saltstack plugin failure due to no response.");
         }
-        if (!SaltstackResponse.RESULT_CODE_OK.equalsIgnoreCase(SaltstackResponse.getResultCode())) {
-            throw new SaltstackRemoteCallException("Plugin call error: " + SaltstackResponse.getResultMessage(), SaltstackResponse);
+        if (!SaltstackResponse.RESULT_CODE_OK.equalsIgnoreCase(response.getResultCode())) {
+            throw new SaltstackRemoteCallException("Saltstack plugin call error: " + response.getResultMessage(), response);
         }
-        if (dataRequired && SaltstackResponse.getOutputs() == null) {
-            throw new SaltstackRemoteCallException("Plugin call failure due to unexpected empty response.", SaltstackResponse);
+        if (dataRequired && response.getOutputs() == null) {
+            throw new SaltstackRemoteCallException("Saltstack plugin call failure due to unexpected empty response.", response);
         }
     }
 
-    private String asSaltstackServerUrl(String saltstackServerUrl, String originPath, Object... pathVariables) {
+    private String asServerUrl(String serverUrl, String originPath, Object... pathVariables) {
         String solvedPath = originPath;
         if (pathVariables != null && pathVariables.length > 0) {
             solvedPath = String.format(originPath, pathVariables);
         }
-        return saltstackServerUrl + solvedPath;
+        return serverUrl + solvedPath;
     }
 }

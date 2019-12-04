@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
-import com.webank.plugins.artifacts.commons.WecubeCoreException;
+import com.webank.plugins.artifacts.commons.PluginException;
 
 public class HttpServletResponseWriter {
 
@@ -47,7 +47,7 @@ public class HttpServletResponseWriter {
             outputStream.write(body);
             outputStream.flush();
         } catch (Exception e) {
-            throw new WecubeCoreException(String.format("Failed to write http servlet response data due to %s ", e.getMessage()));
+            throw new PluginException(String.format("Failed to write http servlet response data due to %s ", e.getMessage()));
         } finally {
             try {
                 if (outputStream != null) {

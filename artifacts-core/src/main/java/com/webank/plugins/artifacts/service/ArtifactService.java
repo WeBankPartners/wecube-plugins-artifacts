@@ -3,6 +3,7 @@ package com.webank.plugins.artifacts.service;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -15,13 +16,14 @@ import org.springframework.stereotype.Service;
 import com.google.common.collect.ImmutableMap;
 import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
-import com.webank.plugins.artifacts.commons.WecubeCoreException;
+import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.domain.PackageDomain;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CategoryDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataTreeDto;
+import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiTypeAttrDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiTypeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.OperateCiDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
@@ -38,6 +40,8 @@ public class ArtifactService {
     private static final String S3_BUCKET_NAME_FOR_ARTIFACT = "wecube-artifacts";
     private static final String S3_KEY_DELIMITER = "_";
     private static final String CONSTANT_CAT_CAT_TYPE = "cat.catType";
+    private static final String CONSTANT_INPUT_TYPE = "inputType";
+    private static final String CONSTANT_CI_TYPE = "ciType";
 
     @Autowired
     private CmdbServiceV2Stub cmdbServiceV2Stub;
@@ -53,7 +57,7 @@ public class ArtifactService {
 
     public String uploadPackageToS3(File file) {
         if (file == null) {
-            throw new WecubeCoreException("Upload package file is required.");
+            throw new PluginException("Upload package file is required.");
         }
 
         String s3Key = genMd5Value(file) + S3_KEY_DELIMITER + file.getName();
@@ -131,7 +135,7 @@ public class ArtifactService {
         PaginationQueryResult<Object> result = cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(),
                 queryObject);
         if (result == null || result.getContents().isEmpty()) {
-            throw new WecubeCoreException(String.format("Package with ID [%s] not found.", packageId));
+            throw new PluginException(String.format("Package with ID [%s] not found.", packageId));
         }
 
         Map pkgData = (Map) result.getContents().get(0);
@@ -157,7 +161,7 @@ public class ArtifactService {
         try {
             md5Value = DigestUtils.md5Hex(FileUtils.readFileToByteArray(file));
         } catch (Exception e) {
-            throw new WecubeCoreException(String.format("Fail to generateMd5 value for file [%s]", file.getName()), e);
+            throw new PluginException(String.format("Fail to generateMd5 value for file [%s]", file.getName()), e);
         }
         return md5Value;
     }
@@ -173,7 +177,7 @@ public class ArtifactService {
                 .queryCiData(cmdbDataProperties.getCiTypeIdOfSystemDesign(), queryObject);
 
         if (ciData == null || ciData.getContents() == null || ciData.getContents().isEmpty()) {
-            throw new WecubeCoreException(String.format("Can not find ci data for guid [%s]", systemDesignId));
+            throw new PluginException(String.format("Can not find ci data for guid [%s]", systemDesignId));
         }
 
         Object fixedDate = ((Map) ((Map) ciData.getContents().get(0)).get("data")).get(CONSTANT_FIX_DATE);
@@ -238,7 +242,7 @@ public class ArtifactService {
     public void saveDiffConfigEnumCodes(CatCodeDto requestCode) {
         CategoryDto cat = cmdbServiceV2Stub.getEnumCategoryByName(cmdbDataProperties.getEnumCategoryNameOfDiffConf());
         if (cat == null) {
-            throw new WecubeCoreException(String.format("Can not find cat with name [%s].",
+            throw new PluginException(String.format("Can not find cat with name [%s].",
                     cmdbDataProperties.getEnumCategoryNameOfDiffConf()));
         }
 
@@ -252,7 +256,7 @@ public class ArtifactService {
     public List<CatCodeDto> getDiffConfigEnumCodes() {
         CategoryDto cat = cmdbServiceV2Stub.getEnumCategoryByName(cmdbDataProperties.getEnumCategoryNameOfDiffConf());
         if (cat == null) {
-            throw new WecubeCoreException(String.format("Can not find cat with name [%s].",
+            throw new PluginException(String.format("Can not find cat with name [%s].",
                     cmdbDataProperties.getEnumCategoryNameOfDiffConf()));
         }
         return cmdbServiceV2Stub.getEnumCodesByCategoryId(cat.getCatId());
@@ -272,5 +276,11 @@ public class ArtifactService {
     public void deleteCiData(int ciTypeId, Object[] ids) {
         cmdbServiceV2Stub.deleteCiData(ciTypeId, ids);
 
+    }
+    
+    public List<CiTypeAttrDto> getCiTypeReferenceBy(Integer ciTypeId) {
+        PaginationQuery queryObject = new PaginationQuery().addEqualsFilter("referenceId", ciTypeId).addInFilter(CONSTANT_INPUT_TYPE, Arrays.asList("ref", "multiRef")).addReferenceResource(CONSTANT_CI_TYPE);
+        queryObject.addReferenceResource(CONSTANT_CI_TYPE);
+        return cmdbServiceV2Stub.queryCiTypeAttributes(queryObject);
     }
 }

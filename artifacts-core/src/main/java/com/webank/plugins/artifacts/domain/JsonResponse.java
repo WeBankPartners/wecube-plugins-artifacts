@@ -1,5 +1,12 @@
 package com.webank.plugins.artifacts.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class JsonResponse {
     public final static String STATUS_OK = "OK";
     public final static String STATUS_ERROR = "ERROR";
@@ -8,31 +15,7 @@ public class JsonResponse {
     private String message;
     private Object data;
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public Object getData() {
-        return data;
-    }
-
-    public void setData(Object data) {
-        this.data = data;
-    }
-
-    public JsonResponse withData(Object data){
+    public JsonResponse withData(Object data) {
         this.data = data;
         return this;
     }
