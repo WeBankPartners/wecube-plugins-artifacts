@@ -471,7 +471,7 @@ export default {
       let newDiffConfigs = []
       let tabData = res.map((tab, tabIndex) => {
         if (tab.status === "OK") {
-          const tableData = tab.data.outputs[0].configKeyInfos.forEach((_, i) => {
+          const tableData = tab.data.outputs[0].configKeyInfos.map((_, i) => {
             allKeys[_.key] = {
               variable_name: _.key,
               variable_value: ""
@@ -523,7 +523,8 @@ export default {
                 const result = tableData.map(_ => {
                   return {
                     ..._,
-                    ...allKeys[_.key]
+                    ...allKeys[_.key],
+                    attrInputValue: allKeys[_.key].variable_value
                   }
                 })
                 this.$set(this.tabData[tabIndex], "tableData", result);
@@ -568,7 +569,7 @@ export default {
     },
     async createEntity(params) {
       const { packageName, entityName, callback } = params
-      const { status, data, message } = await createEntity(packageName, entityName, params.data);
+      const { status, data, message } = await zcreateEntity(packageName, entityName, params.data);
       if (status === "OK") {
         callback(data)
       }
