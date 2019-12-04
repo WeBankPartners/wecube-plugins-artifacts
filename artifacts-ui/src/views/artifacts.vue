@@ -527,6 +527,7 @@ export default {
                     attrInputValue: allKeys[_.key].variable_value
                   }
                 })
+                this.updatePackages(allKeys)
                 this.$set(this.tabData[tabIndex], "tableData", result);
               })
             }
@@ -540,22 +541,25 @@ export default {
                 ...allKeys[_.key]
               }
             })
+            this.updatePackages(allKeys)
             this.$set(this.tabData[tabIndex], "tableData", result);
           })
         }
-        // 更新部署包关联的所有差异配置变量
-        const ids = Object.keys(allKeys).map(_ => allKeys[_].id)
-        this.updateEntity({
-          packageName: cmdbPackageName,
-          entityName: DEPLOY_PACKAGE,
-          data: [{
-            id: this.packageId,
-            diff_conf_variable: ids
-          }]
-        })
       }
     },
-    async saveConfigFiles() {
+    updatePackages() {
+      // 更新部署包关联的所有差异配置变量
+      const ids = Object.keys(allKeys).map(_ => allKeys[_].id)
+      this.updateEntity({
+        packageName: cmdbPackageName,
+        entityName: DEPLOY_PACKAGE,
+        data: [{
+          id: this.packageId,
+          diff_conf_variable: ids
+        }]
+      })
+    },
+    async saveConfigFiles(updatePackages) {
       this.loadingForSave = true;
       const obj = {
         configFilesWithPath: this.diffTabData.split("|"),
@@ -579,7 +583,7 @@ export default {
     },
     async createEntity(params) {
       const { packageName, entityName } = params
-      const { status, data, message } = await zcreateEntity(packageName, entityName, params.data);
+      const { status, data, message } = await createEntity(packageName, entityName, params.data);
       if (status === "OK") {
         params.callback && callback(data)
       }
