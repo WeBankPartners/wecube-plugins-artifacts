@@ -22,7 +22,7 @@ public class ApplicationProperties {
     private String artifactsS3SecretKey = "";
     private Map<String, String> customHeaders = new LinkedHashMap<>();
     private Set<String> sensitiveHeaders = null;
-    
+
     @Data
     @ConfigurationProperties(prefix = "plugins")
     public class CmdbDataProperties {

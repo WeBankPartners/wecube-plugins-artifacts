@@ -42,6 +42,7 @@
           <Button icon="ios-cloud-upload-outline">上传新包</Button>
         </Upload>
         <ArtifactsSimpleTable
+          class="artifact-management-package-table"
           :loading="tableLoading"
           :columns="tableColumns"
           :data="tableData"
@@ -131,7 +132,7 @@
 <script>
 import {
   getPackageCiTypeId,
-  getAllCITypesByLayerWithAttr,
+  getAllCITypesWithAttr,
   getSystemDesignVersions,
   getSystemDesignVersion,
   queryPackages,
@@ -140,10 +141,22 @@ import {
   getFiles,
   getKeys,
   saveConfigFiles,
-  saveDiffConfigEnumCodes,
-  getDiffConfigEnumCodes,
+  createEntity,
+  updateEntity,
+  retrieveEntity,
   getAllSystemEnumCodes
 } from "@/api/server.js";
+import iconFile from "../assets/file.png"
+import iconFolder from "../assets/folder.png"
+
+// 业务运行实例ciTypeId
+const rootCiTypeId = 14
+// cmdb插件包名
+const cmdbPackageName = "wecmdb"
+// 差异配置key_name
+const DIFF_CONFIGURATION = "diff_configuration"
+// 部署包key_name
+const DEPLOY_PACKAGE = "deploy_package"
 
 export default {
   name: "artifacts",
@@ -153,8 +166,6 @@ export default {
       statusOperations: [],
       systemDesignVersions: [],
       systemDesignVersion: "",
-      ciTypesObj: {},
-      ciTypeAttributeObj: {},
       ciTypes: [],
       treeData: [],
       treeLoading: false,
@@ -194,36 +205,43 @@ export default {
       tableColumns: [
         {
           title: "包名",
-          key: "name"
+          key: "name",
+          render: (h, params) => this.renderCell(params.row.name)
         },
         {
           title: "上传时间",
-          width: 150,
+          width: 120,
           key: "upload_time"
         },
         {
           title: "MD5值",
-          key: "md5_value"
+          key: "md5_value",
+          render: (h, params) => this.renderCell(params.row.md5_value)
         },
         {
           title: "上传人",
-          key: "updated_by"
+          key: "updated_by",
+          render: (h, params) => this.renderCell(params.row.updated_by)
         },
         {
           title: "差异化文件",
-          key: "diff_conf_file"
+          key: "diff_conf_file",
+          render: (h, params) => this.renderCell(params.row.diff_conf_file)
         },
         {
           title: "启动脚本",
-          key: "start_file_path"
+          key: "start_file_path",
+          render: (h, params) => this.renderCell(params.row.start_file_path)
         },
         {
           title: "停止脚本",
-          key: "stop_file_path"
+          key: "stop_file_path",
+          render: (h, params) => this.renderCell(params.row.stop_file_path)
         },
         {
           title: "部署脚本",
-          key: "deploy_file_path"
+          key: "deploy_file_path",
+          render: (h, params) => this.renderCell(params.row.deploy_file_path)
         },
         {
           title: "操作",
@@ -268,24 +286,21 @@ export default {
               <ArtifactsAttrInput
                 style="margin-top:5px;"
                 allCiTypes={this.ciTypes}
-                rootCiType={15}
+                rootCiTypeId={rootCiTypeId}
                 isReadOnly={true}
-                ciTypesObj={this.ciTypesObj}
-                ciTypeAttributeObj={this.ciTypeAttributeObj}
-                sourceData={params.row.attrInputValue}
-                onUpdateRoutine={val => this.updateRoutine(val, params.index)}
+                v-model={params.row.attrInputValue}
               />
             ) : (
               <div style="align-items:center;display:flex;">
                 <ArtifactsAttrInput
                   style="margin-top:5px;width:calc(100% - 55px);"
                   allCiTypes={this.ciTypes}
-                  rootCiType={15}
-                  ciTypesObj={this.ciTypesObj}
-                  ciTypeAttributeObj={this.ciTypeAttributeObj}
-                  onUpdateRoutine={val => this.updateRoutine(val, params.index)}
+                  rootCiTypeId={rootCiTypeId}
+                  v-model={params.row.attrInputValue}
+                  onUpdateValue={val => this.updateAttrInputValue(val, params.index)}
                 />
                 <Button
+                  disabled={!params.row.variableValue}
                   size="small"
                   type="primary"
                   style="margin-left:10px"
@@ -321,6 +336,14 @@ export default {
     }
   },
   methods: {
+    renderCell(content) {
+      return (
+        <Tooltip style="width: 100%;" >
+          <span slot="content" style="white-space:normal;">{content} </span>
+          <div style="width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{content}</div>
+        </Tooltip>
+      )
+    },
     uploadPackagesSuccess(response, file, fileList) {
       if (response.status === "ERROR") {
         this.$Notice.error({
@@ -360,37 +383,14 @@ export default {
         this.packageCiType = packageCiType.data;
       }
     },
-    async getAllCITypesByLayerWithAttr() {
-      let { status, data, message } = await getAllCITypesByLayerWithAttr([
+    async getAllCITypesWithAttr() {
+      let { status, data, message } = await getAllCITypesWithAttr([
         "notCreated",
         "created",
-        "dirty",
-        "decommissioned"
+        "dirty"
       ]);
       if (status === "OK") {
-        let ciTypes = {};
-        let ciTypeAttrs = {};
-
-        let tempCITypes = JSON.parse(JSON.stringify(data));
-        tempCITypes.forEach(_ => {
-          _.ciTypes && _.ciTypes.filter(i => i.status !== "decommissioned");
-        });
-        this.ciTypes = tempCITypes;
-
-        data.forEach(layer => {
-          if (layer.ciTypes instanceof Array) {
-            layer.ciTypes.forEach(citype => {
-              ciTypes[citype.ciTypeId] = citype;
-              if (citype.attributes instanceof Array) {
-                citype.attributes.forEach(citypeAttr => {
-                  ciTypeAttrs[citypeAttr.ciTypeAttrId] = citypeAttr;
-                });
-              }
-            });
-          }
-        });
-        this.ciTypesObj = ciTypes;
-        this.ciTypeAttributeObj = ciTypeAttrs;
+        this.ciTypes = JSON.parse(JSON.stringify(data));
       }
     },
 
@@ -444,15 +444,17 @@ export default {
         filePath: options.path
       });
       if (status === "OK") {
-        const diffConfigEnums = await getDiffConfigEnumCodes();
-        if (diffConfigEnums.status === "OK") {
+        const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION);
+        if (diffConfigs.status === "OK") {
           const result = data.outputs[0].configKeyInfos.map((_, i) => {
             _.index = i + 1;
-            const found = diffConfigEnums.data.find(
-              item => item.value === _.key
+            const found = diffConfigs.data.find(
+              item => item.variable_name === _.key
             );
             if (found) {
-              _.attrInputValue = found.code;
+              _.attrInputValue = found.variable_value;
+            } else {
+              _.attrInputValue = ""
             }
             return _;
           });
@@ -482,13 +484,30 @@ export default {
       this.queryPackages();
       this.getTabDatas(this.diffTabData);
     },
-    async saveDiffConfigEnumCodes(obj) {
-      let { status, data, message } = await saveDiffConfigEnumCodes(obj);
+    async createEntity(obj) {
+      const { status, data, message } = await createEntity(cmdbPackageName, DIFF_CONFIGURATION, obj);
       if (status === "OK") {
-        this.$Notice.success({
-          title: "保存成功"
-        });
-        this.getKeys(this.tabData[this.nowTab]);
+        this.updateEntity(data[0].id)
+      }
+    },
+    async updateEntity(id) {
+      const packagesData = await retrieveEntity(cmdbPackageName, DEPLOY_PACKAGE)
+      const newPackageId = packagesData.data[0].id
+      if (packagesData.status === "OK") {
+        const found = packagesData.data.find(_ => _.id === this.packageId)
+        if (found) {
+          const updataObj = [{
+            id: this.packageId,
+            diff_conf_variable: found.diff_conf_variable.push(newPackageId)
+          }]
+          const updateData = await updateEntity(cmdbPackageName, DEPLOY_PACKAGE, updataObj)
+          if (updateData.status === "OK") {
+            this.$Notice.success({
+              title: "保存成功"
+            });
+            this.getKeys(this.tabData[this.nowTab]);
+          }
+        }
       }
     },
     selectSystemDesignVersion(guid) {
@@ -563,16 +582,27 @@ export default {
         };
         if (_.isDir) {
           obj.children = [{}];
+          obj.render = (h, params) => (
+            <span>
+              <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
+              <span>{_.name}</span>
+            </span>
+          )
         } else {
           obj.render = (h, params) => {
             return this.currentTreeModal.inputType === "checkbox" ? (
               <Checkbox
+                style="position:relative;right:24px;"
                 on-on-change={value => this.checkboxChange(value, params.data)}
               >
+                <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                 <span>{params.data.title}</span>
               </Checkbox>
             ) : (
-              <Radio label={params.data.path}>
+              <Radio
+                style="position:relative;right:20px;"
+                label={params.data.path}>
+                <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                 <span>{params.data.title}</span>
               </Radio>
             );
@@ -710,14 +740,17 @@ export default {
         }
       });
     },
-    updateRoutine(val, row) {
-      this.tabData[this.nowTab].tableData[row].routine = JSON.stringify(val);
+    updateAttrInputValue(val, row) {
+      this.$set(this.tabData[this.nowTab].tableData[row], "variableValue", val)
     },
     saveAttr(row) {
-      this.saveDiffConfigEnumCodes({
-        value: this.tabData[this.nowTab].tableData[row].key,
-        code: this.tabData[this.nowTab].tableData[row].routine
-      });
+      const obj = [{
+        variable_name: this.tabData[this.nowTab].tableData[row].key,
+        variable_value: this.tabData[this.nowTab].tableData[row].variableValue,
+      }]
+      if (obj[0].variable_value) {
+        this.createEntity(obj);
+      }
     },
     async getAllSystemEnumCodes() {
       const { status, data, message } = await getAllSystemEnumCodes({
@@ -761,7 +794,7 @@ export default {
   },
   created() {
     this.fetchData();
-    this.getAllCITypesByLayerWithAttr();
+    this.getAllCITypesWithAttr();
     this.getAllSystemEnumCodes();
   }
 };
@@ -794,6 +827,12 @@ export default {
     &:first-of-type {
       margin-top: 0;
     }
+  }
+
+  &-icon {
+    margin: 0 2px;
+    position: relative;
+    top: 3px;
   }
 }
 </style>

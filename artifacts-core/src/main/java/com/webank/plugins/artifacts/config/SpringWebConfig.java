@@ -20,7 +20,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @Configuration
 @EnableWebMvc
 @EnableSwagger2
-@ComponentScan({ "com.webank.plugins.wecmdb.controller" })
+@ComponentScan({ "com.webank.plugins.artifacts.controller" })
 public class SpringWebConfig implements WebMvcConfigurer {
 
     @Autowired
@@ -30,16 +30,6 @@ public class SpringWebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(apiAccessInterceptor).addPathPatterns("/**");
         WebMvcConfigurer.super.addInterceptors(registry);
-    }
-
-    @Autowired
-    private RestTemplateInterceptor restTemplateInterceptor;
-
-    @Bean
-    public RestTemplate restTemplate() {
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.setInterceptors(Collections.singletonList(restTemplateInterceptor));
-        return restTemplate;
     }
 
     @Override

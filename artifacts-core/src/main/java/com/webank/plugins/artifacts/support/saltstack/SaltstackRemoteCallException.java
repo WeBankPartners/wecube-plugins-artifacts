@@ -26,7 +26,7 @@ public class SaltstackRemoteCallException extends RemoteCallException {
 
     @Override
     public String getErrorMessage() {
-        return String.format("%s (PLUGIN_ERROR_CODE: %s)", this.getMessage(), getStatusCode(SaltstackResponse));
+        return String.format("%s (Call Saltstack meet error: %s)", this.getMessage(), getStatusCode(SaltstackResponse));
     }
 
     @Override

@@ -1,380 +1,440 @@
 <template>
   <div class="attr_input">
     <Poptip v-if="!isReadOnly" v-model="optionsHide" placement="bottom">
-      <div ref="wecube_cmdb_attr" class="input_in">
+      <div class="input_in">
         <textarea
           ref="textarea"
-          :rows="1.5"
+          :rows="2"
           @input="inputHandler"
           :value="inputVal"
         ></textarea>
-        <span class="wecube-error-message">{{
-          $t("please_select_without_refrence")
-        }}</span>
       </div>
       <div slot="content">
-        <div v-if="rootCiType" class="attr-ul">
-          <ul v-for="opt in options" :key="opt.attrId">
-            <li class="" @click="optClickHandler(opt)">
+        <div class="attr-ul">
+          <ul v-for="opt in allCi" :key="opt.ciTypeId">
+            <li @click="selectCiType(opt)">{{ opt.name }}</li>
+          </ul>
+          <ul v-for="opt in attrNameArray" :key="opt.attrId">
+            <li @click="selectAttr(opt)">
               {{
-                opt.inputType === "ref"
+                (opt.inputType === "ref" || opt.inputType === "multiRef")
                   ? `( ${opt.ciTypeAttrName} ) ${opt.ciTypeName}`
                   : opt.ciTypeAttrName
               }}
             </li>
           </ul>
-        </div>
-        <div v-else class="attr-ul">
-          <ul v-for="opt in allCi" :key="opt.ciTypeId">
-            <li @click="() => rootCiTypeChange(opt)">{{ opt.name }}</li>
+          <ul v-if="isShowSelect" v-for="item in enumCodes" :key="item">
+            <li @click="selectEnumCode(item)">{{ item }}</li>
           </ul>
         </div>
       </div>
     </Poptip>
-    <span v-else>{{ displayValue }}</span>
+    <span v-else>{{inputVal}}</span>
   </div>
 </template>
+
 <script>
 import { getRefCiTypeFrom, getCiTypeAttr } from "@/api/server.js";
 export default {
   data() {
     return {
       optionsHide: false,
-      isRefFromParent: null,
-      allCi: [],
       options: [],
       inputVal: "",
-      inputValBackup: "",
-      routine: []
+      optests: [],
+      routine: [],
+      allCi: [],
+      attrNameArray: [],
+      isShowSelect: false,
+      enumCodes: ["id", "code", "value", "groupCodeId"],
+      attrInputArray: [],
+      inputRuleStatus: 1 // 0 - 花括号内 ; 1 - 花括号外
     };
   },
-  computed: {
-    displayValue() {
-      if (this.sourceData) {
-        const data = JSON.parse(this.sourceData);
-        return data
-          .map(_ => {
-            let ciType = "";
-            let ciTypeAttr = "";
-            let refType = "";
-            ciType = this.ciTypesObj[_.ciTypeId].name;
-            if (_.parentRs) {
-              refType = _.parentRs.isReferedFromParent === 1 ? "." : "-";
-              ciTypeAttr = `(${
-                this.ciTypeAttributeObj[_.parentRs.attrId].name
-              })`;
-              if (
-                this.ciTypeAttributeObj[_.parentRs.attrId].inputType !== "ref"
-              ) {
-                ciTypeAttr = this.ciTypeAttributeObj[_.parentRs.attrId].name;
-                return refType + ciTypeAttr;
-              }
-            }
-            return refType + ciTypeAttr + ciType;
-          })
-          .join(" ");
-      }
-    }
-  },
   props: {
-    value: {
-      required: false
-    },
-    rootCiType: {
-      default: ""
-    },
     allCiTypes: {
-      type: Array
-    },
-    cmdbColumnSource: {
-      default: ""
-    },
-    canReSelectCiType: {
-      default: false,
-      required: false
+      required: true,
+      default: []
     },
     isReadOnly: {
-      default: false,
-      required: false
+      required: false,
+      default: false
     },
-    ciTypesObj: {
-      default: null,
-      required: false
+    value: {
+      required: true,
+      default: ""
     },
-    ciTypeAttributeObj: {
-      default: null,
+    rootCiTypeId: {
       required: false
+    }
+  },
+  computed: {
+    ciTypesObj() {
+      let obj = {};
+      this.allCiTypes.forEach(_ => {
+        obj[_.ciTypeId] = _;
+      });
+      return obj;
     },
-    sourceData: {
-      type: String,
-      required: false
+    ciTypeAttrsObj() {
+      let obj = {};
+      this.allCiTypes.forEach(ciType => {
+        ciType.attributes.forEach(attr => {
+          obj[attr.ciTypeAttrId] = attr;
+        });
+      });
+      return obj;
     },
-    isEndWithCIType: {
-      type: Boolean,
-      default: false,
-      required: false
+    attrInputLastObjValue() {
+      return this.attrInputArray[this.attrInputArray.length - 1].value;
     }
   },
   watch: {
-    cmdbColumnSource(val) {
-      this.restoreOpeation();
-    },
-    ciTypeAttributeObj(val) {
-      this.restoreOpeation();
-    },
-    rootCiType(val) {
-      if (!val) {
-        return;
-      }
-      this.routine = [];
-      if (val) {
-        const ci = this.allCi.find(_ => _.ciTypeId === val);
-        this.routine.push({
-          ciTypeId: ci.ciTypeId,
-          ciTypeName: ci.name
-        });
-        this.inputVal = ci.name + " ";
-      }
-      this.$emit("input", this.getValue(this.routine));
-      this.$emit("change", this.getValue(this.routine));
-    },
-    allCiTypes(val) {
-      this.formatAllCiType();
-    },
-    routine(val) {
-      this.$emit(
-        "updateRoutine",
-        this.getValue(val).cmdbColumnCriteria.routine
-      );
-      const attrId = val[val.length - 1].ciTypeAttrId;
-      if (attrId) {
-        if (
-          this.ciTypeAttributeObj[attrId].inputType === "ref" ||
-          this.ciTypeAttributeObj[attrId].inputType === "multiRef"
-        ) {
-          !this.isEndWithCIType &&
-            this.$refs["wecube_cmdb_attr"].classList.add("wecube-error");
-        } else {
-          this.$refs["wecube_cmdb_attr"].classList.remove("wecube-error");
-        }
-      }
-    }
-  },
-  methods: {
-    restoreOpeation() {
-      if (this.cmdbColumnSource && this.ciTypeAttributeObj) {
-        this.routine = JSON.parse(this.cmdbColumnSource);
-        let val = this.ciTypesObj[this.routine[0].ciTypeId].name + " ";
-        this.routine.forEach((_, i) => {
-          if (i > 0) {
-            const refVal = _.isReferedFromParent === 1 ? "." : "-";
-            const ciTypeAttrName = this.ciTypeAttributeObj[_.ciTypeAttrId].name;
-            const ciTypeName = this.ciTypesObj[_.ciTypeId].name;
-            const newVal =
-              this.ciTypeAttributeObj[_.ciTypeAttrId].inputType === "ref"
-                ? `(${ciTypeAttrName})${ciTypeName} `
-                : ciTypeAttrName + " ";
-            val = val + refVal + newVal;
-          }
-        });
-        this.inputVal = val;
-        this.$emit("input", this.getValue(this.routine));
-        this.$emit("change", this.getValue(this.routine));
-      } else {
-        if (this.rootCiType) {
-          const ci = this.allCi.find(_ => _.ciTypeId === this.rootCiType);
-          this.routine.push({
-            ciTypeId: ci.ciTypeId,
-            ciTypeName: ci.name
-          });
-          this.inputVal = ci.name + " ";
-          this.$emit("input", this.getValue(this.routine));
-          this.$emit("change", this.getValue(this.routine));
-        }
+    optionsHide() {
+      let doms = document.getElementsByClassName("attr-ul");
+      for (let i = 0; i < doms.length; i++) {
+        doms[i].style.width = this.$refs.textarea.clientWidth + "px";
       }
     },
-    async getNextRef(operator) {
-      const last = this.routine[this.routine.length - 1];
-      const isRef =
-        !last.isReferedFromParent ||
-        this.ciTypeAttributeObj[last.ciTypeAttrId].inputType === "ref";
-      if (isRef) {
-        const id = this.routine[this.routine.length - 1].ciTypeId;
-        if (operator === ".") {
-          this.inputVal = this.inputVal + operator;
-          let { statusCode, data, message } = await getCiTypeAttr(id);
-          if (statusCode === "OK") {
-            let attr = [];
-            data.forEach(_ => {
-              if (_.status === "created") {
-                attr.push({
-                  ..._,
-                  ciTypeName:
-                    _.inputType === "ref"
-                      ? this.allCi.find(i => i.ciTypeId === _.referenceId).name
-                      : this.allCi.find(i => i.ciTypeId === _.ciTypeId).name,
-                  ciTypeAttrName: _.name,
-                  isReferedFromParent: 1,
-                  id: _.inputType === "ref" ? _.referenceId : _.ciTypeId
-                });
-              }
-            });
-            this.options = this.isEndWithCIType
-              ? attr.filter(
-                  _ => _.inputType === "ref" || _.inputType === "multiRef"
-                )
-              : attr;
-          } else {
-            this.$Message.error({
-              content: message
-            });
-          }
-        }
-        if (operator === "-") {
-          this.inputVal = this.inputVal + operator;
-          let { statusCode, data, message } = await getRefCiTypeFrom(id);
-          if (statusCode === "OK") {
-            this.options = data.map(_ => {
-              let found = this.allCi.find(i => i.ciTypeId === _.ciTypeId);
-              return {
-                ..._,
-                ciTypeName: found ? found.name : "",
-                ciTypeAttrName: _.name,
-                ciTypeAttrId: _.ciTypeAttrId,
-                isReferedFromParent: 0,
-                id: _.ciTypeId
-              };
-            });
-          } else {
-            this.$Message.error({
-              content: message
-            });
-          }
-        }
-      }
-    },
-    formatAllCiType() {
-      this.allCiTypes.forEach(_ => {
-        this.allCi = this.allCi.concat(_.ciTypes ? [..._.ciTypes] : []);
-      });
-    },
-    inputHandler(v) {
-      if (!v.data) {
-        let valList = this.inputVal.split(" ");
-        let val = "";
-        if (valList.length > 2) {
-          valList.splice(-2, 2);
-          valList.forEach(_ => {
-            val += _ + " ";
-          });
-          this.inputVal = val;
-          this.routine.splice(-1, 1);
-          this.$emit("input", this.getValue(this.routine));
-          this.$emit("change", this.getValue(this.routine));
-        } else if (valList.length <= 2 && this.canReSelectCiType) {
-          this.inputVal = "";
-          this.routine = [];
-          this.$emit("input", this.getValue(this.routine));
-          this.$emit("change", this.getValue(this.routine));
-          this.$emit("handleRootCiTypeChange", "");
-        }
-        this.$refs.textarea.value = this.inputVal;
-        return;
-      }
-      if (!(v.data === "." || v.data === "-")) {
-        this.$Message.error({
-          content: this.$t("please_input_legitimate_character")
-        });
-        this.$refs.textarea.value = this.inputVal;
-      } else {
-        if (
-          this.inputVal[this.inputVal.length - 1] === "." ||
-          this.inputVal[this.inputVal.length - 1] === "-"
-        ) {
-          this.inputVal = this.inputVal.substr(0, this.inputVal.length - 1);
-        }
-        this.routine.length > 0 && this.getNextRef(v.data);
-        this.optionsHide = true;
-      }
-    },
-    optClickHandler(item) {
-      this.optionsHide = false;
-      const newValue =
-        item.inputType === "ref"
-          ? `(${item.ciTypeAttrName})${item.ciTypeName} `
-          : item.ciTypeAttrName + " ";
-      this.inputVal = this.inputVal + newValue;
-      this.inputValBackup = this.inputVal;
-      const id = item.inputType === "ref" ? item.referenceId : item.ciTypeId;
-      this.routine.push({
-        ...item,
-        ciTypeId: item.id,
-        ciTypeName: this.allCi.find(i => i.ciTypeId === item.id).name
-      });
-      this.options = [];
-      this.$refs["textarea"].focus();
-      this.$emit("input", this.getValue(this.routine));
-      this.$emit("change", this.getValue(this.routine));
-    },
-    getValue(data) {
-      let val = {
-        cmdbColumnCriteria: {
-          routine: [],
-          attribute: {
-            attrId: "",
-            isCondition: true,
-            isDiaplayed: true
-          }
-        },
-        cmdbColumnSource: []
-      };
-      data.forEach((_, i) => {
-        if (i === 0) {
-          val.cmdbColumnSource.push({ ciTypeId: _.ciTypeId });
-          val.cmdbColumnCriteria.routine.push({ ciTypeId: _.ciTypeId });
-        } else {
-          val.cmdbColumnCriteria.routine.push({
-            ciTypeId: _.ciTypeId,
-            parentRs: {
-              attrId: _.ciTypeAttrId,
-              isReferedFromParent: _.isReferedFromParent
-            }
-          });
-          val.cmdbColumnCriteria.attribute.attrId = _.ciTypeAttrId;
-          val.cmdbColumnSource.push({
-            ciTypeId: _.ciTypeId,
-            ciTypeAttrId: _.ciTypeAttrId,
-            isReferedFromParent: _.isReferedFromParent
-          });
-        }
-      });
-      return val;
-    },
-    blurHandler() {
-      this.optionsHide = false;
-    },
-    rootCiTypeChange(opt) {
-      this.$emit("handleRootCiTypeChange", opt.ciTypeId);
-      this.optionsHide = false;
+    allCiTypes() {
+      this.displayInputData();
     }
   },
   mounted() {
-    this.formatAllCiType();
-    this.restoreOpeation();
-    if (document.querySelector(".attr-ul")) {
-      document.querySelector(".attr-ul").style.width =
-        document.querySelector(".input_in textarea").clientWidth + "px";
+    this.displayInputData();
+  },
+  methods: {
+    inputHandler(v) {
+      if (this.inputRuleStatus === 1) {
+        // inputRuleStatus为1时，当前处于花括号外，只能输入 { 或进行删除
+        if (v.data === "{") {
+          if (this.attrInputArray.length) {
+            // 表达式只能有一对花括号，输入第二对花括号时需要将其禁止
+            this.$Message.error({
+              content: this.$t("attr_input_save_tips")
+            })
+            this.$refs.textarea.value = this.inputVal;
+            return
+          }
+          if (this.rootCiTypeId) {
+            // 输入 { 后，实际执行的逻辑
+            this.inputVal =
+              this.$refs.textarea.value +
+              " " +
+              this.ciTypesObj[this.rootCiTypeId].name +
+              " ";
+            const val = [
+              {
+                ciTypeId: this.rootCiTypeId
+              }
+            ];
+            this.attrInputArray.push({
+              type: "rule",
+              value: JSON.stringify(val)
+            });
+          }
+          this.inputRuleStatus = 0;
+        } else if (v.inputType === "deleteContentBackward") {
+          // 点击 Backspace 按钮时
+          this.attrInputArray.splice(-2, 2);
+          this.inputVal = this.inputVal.substr(
+            0,
+            this.inputVal.lastIndexOf("{")
+          );
+          if (this.inputVal) {
+            this.$emit("updateValue", JSON.stringify(this.attrInputArray));
+          } else {
+            this.attrInputArray = [];
+            this.$emit("updateValue", "");
+          }
+        } else {
+          // 除输入 { 及 Backspace 情况下阻止输入并弹出提示
+          this.$refs.textarea.value = this.inputVal;
+          if (this.attrInputArray.length) {
+            this.$Message.error({
+              content: this.$t("attr_input_save_tips")
+            })
+          } else {
+            this.$Message.error({
+              content: this.$t("attr_input_legitimate_character_tips")
+            });
+          }
+        }
+      } else {
+        // inputRuleStatus为0时，当前处于花括号内，需要处理 references by 及查询其拥有属性
+        if (v.data) {
+          if (!this.attrInputLastObjValue) {
+            this.$refs.textarea.value = this.inputVal;
+            this.$Message.error({
+              content: this.$t("please_select_ci_type")
+            });
+            return
+          }
+          const objList = JSON.parse(this.attrInputLastObjValue);
+          const obj = objList[objList.length - 1];
+          if (
+            !obj.parentRs ||
+            this.ciTypeAttrsObj[obj.parentRs.attrId].inputType === "ref" || this.ciTypeAttrsObj[obj.parentRs.attrId].inputType === "multiRef"
+          ) {
+            if (v.data === "." || v.data === "-") {
+              // 在花括号内只能输入 . 和 -
+              if (
+                this.inputVal[this.inputVal.length - 1] === "." ||
+                this.inputVal[this.inputVal.length - 1] === "-"
+              ) {
+                this.inputVal = this.inputVal.replace(/.$/, v.data);
+              } else {
+                this.inputVal = this.$refs.textarea.value;
+              }
+              this.optionsHide = true;
+              this.getNextRef(v.data);
+            } else {
+              this.$refs.textarea.value = this.inputVal;
+              this.$Message.error({
+                content: this.$t(
+                  "attr_input_legitimate_operation_character_tips"
+                )
+              });
+            }
+          } else if (
+            // 当选择了一个 select 类型及 multiSelect 类型后，需要制定其使用枚举的具体属性，否则阻止后续输入并弹出提示
+            !obj.parentRs ||
+            ((this.ciTypeAttrsObj[obj.parentRs.attrId].inputType === "select" || this.ciTypeAttrsObj[obj.parentRs.attrId].inputType === "multiSelect") &&
+              !obj.enumCodeAttr)
+          ) {
+            this.$refs.textarea.value = this.inputVal;
+            this.$Message.error({
+              content: this.$t("please_select_enum")
+            });
+          } else {
+            // 输入 } 关闭表达式的输入，并且 inputRuleStatus 状态改为1，标记当前输入状态在花括号外
+            if (v.data === "}") {
+              this.$emit("updateValue", JSON.stringify(this.attrInputArray));
+              this.inputVal = this.$refs.textarea.value;
+              this.inputRuleStatus = 1;
+            } else {
+              this.$refs.textarea.value = this.inputVal;
+              this.$Message.error({
+                content: this.$t("attr_input_close_rule_tips")
+              });
+            }
+          }
+        } else if (v.inputType === "deleteContentBackward") {
+          // 在输入表达式时，Backspace每次删除一个表达式的节点而非一个字符
+          if (
+            this.attrInputLastObjValue !== "[]" &&
+            this.attrInputLastObjValue !== ""
+          ) {
+            let val = JSON.parse(this.attrInputLastObjValue);
+            this.isShowSelect = false;
+            if (this.rootCiTypeId && val.length === 1) {
+              this.attrNameArray = [];
+              this.optionsHide = false;
+              this.attrInputArray.splice(-1, 1);
+              this.inputVal = this.inputVal.substr(
+                0,
+                this.inputVal.lastIndexOf("{")
+              );
+              if (!this.inputVal) {
+                this.attrInputArray = [];
+                this.$emit("updateValue", "");
+              }
+              this.inputRuleStatus = 1;
+              this.optionsHide = false;
+              return;
+            }
+            let lastAttrVal = "";
+            const lastAttrObj = val[val.length - 1];
+            const ciTypeName = this.ciTypesObj[lastAttrObj.ciTypeId].name;
+            let ciTypeAttrName = "";
+            if (lastAttrObj.parentRs) {
+              const attrName = this.ciTypeAttrsObj[lastAttrObj.parentRs.attrId]
+                .name;
+              lastAttrVal +=
+                lastAttrObj.parentRs.isReferedFromParent === 1 ? "." : "-";
+              if (
+                this.ciTypeAttrsObj[lastAttrObj.parentRs.attrId].inputType === "ref" || this.ciTypeAttrsObj[lastAttrObj.parentRs.attrId].inputType === "multiRef"
+              ) {
+                ciTypeAttrName = `(${attrName})${ciTypeName} `;
+              } else {
+                ciTypeAttrName = `${attrName} `;
+              }
+              lastAttrVal += ciTypeAttrName;
+            } else {
+              lastAttrVal += ciTypeName;
+            }
+            this.inputVal = this.inputVal.substr(
+              0,
+              this.inputVal.lastIndexOf(lastAttrVal)
+            );
+            val.splice(-1, 1);
+            this.attrInputArray[
+              this.attrInputArray.length - 1
+            ].value = JSON.stringify(val);
+            if (this.inputVal[this.inputVal.length - 2] === "{") {
+              this.allCi = this.allCiTypes;
+              this.optionsHide = true;
+            } else {
+              this.attrNameArray = [];
+              this.optionsHide = false;
+            }
+          } else {
+            this.attrInputArray.splice(-1, 1);
+            this.inputVal = this.inputVal.substr(
+              0,
+              this.inputVal.lastIndexOf("{")
+            );
+            this.inputRuleStatus = 1;
+            this.allCi = [];
+            this.optionsHide = false;
+            if (!this.inputVal) {
+              this.$emit("updateValue", "");
+              this.attrInputArray = [];
+            }
+          }
+        } else {
+          this.$refs.textarea.value = this.inputVal;
+        }
+      }
+    },
+    setAutoData() {
+      let val = this.inputVal.split(/[\{\}]/);
+      this.attrInputArray[this.attrInputArray.length - 1].value =
+        val[val.length - 1];
+    },
+    async getNextRef(operator) {
+      const objList = JSON.parse(this.attrInputLastObjValue);
+      const obj = objList[objList.length - 1];
+      let attrArray = [];
+      if (operator === ".") {
+        let { status, data, message } = await getCiTypeAttr(obj.ciTypeId);
+        if (status === "OK") {
+          data.forEach(_ => {
+            attrArray.push({
+              ..._,
+              ciTypeName:
+                (_.inputType === "ref" || _.inputType === "multiRef")
+                  ? this.allCiTypes.find(i => i.ciTypeId === _.referenceId).name
+                  : this.allCiTypes.find(i => i.ciTypeId === _.ciTypeId).name,
+              ciTypeAttrName: _.name,
+              isReferedFromParent: 1,
+              id: (_.inputType === "ref" || _.inputType === "multiRef") ? _.referenceId : _.ciTypeId
+            });
+          });
+          this.attrNameArray = attrArray;
+        }
+      } else if (operator === "-") {
+        let { status, data, message } = await getRefCiTypeFrom(obj.ciTypeId);
+        if (status === "OK") {
+          attrArray = data.map(_ => {
+            return {
+              ..._,
+              ciTypeName: this.allCiTypes.find(i => i.ciTypeId === _.ciTypeId)
+                .name,
+              ciTypeAttrName: _.name,
+              isReferedFromParent: 0,
+              id: _.ciTypeId
+            };
+          });
+          this.attrNameArray = attrArray;
+        }
+      }
+    },
+    selectCiType(opt) {
+      this.optionsHide = false;
+      this.attrInputArray[this.attrInputArray.length - 1].value = JSON.stringify([
+        {
+          ciTypeId: opt.ciTypeId
+        }
+      ]);
+      this.inputVal += opt.name + " ";
+      this.allCi = [];
+      this.$refs.textarea.focus();
+    },
+    selectAttr(opt) {
+      this.optionsHide = false;
+      const val = {
+        ciTypeId: opt.id,
+        parentRs: {
+          attrId: opt.ciTypeAttrId,
+          isReferedFromParent: opt.isReferedFromParent
+        }
+      };
+      let result = JSON.parse(this.attrInputLastObjValue);
+      result.push(val);
+      this.attrInputArray[this.attrInputArray.length - 1].value = JSON.stringify(
+        result
+      );
+      this.inputVal +=
+        (opt.inputType === "ref" || opt.inputType === "multiRef")
+          ? `(${opt.ciTypeAttrName})${opt.ciTypeName} `
+          : opt.ciTypeAttrName + " ";
+      this.attrNameArray = [];
+      this.$refs.textarea.focus();
+      if (opt.inputType === "select" || opt.inputType ===  "multiSelect") {
+        this.isShowSelect = true;
+        this.optionsHide = true;
+      }
+    },
+    selectEnumCode(code) {
+      this.optionsHide = false;
+      this.isShowSelect = false;
+      this.inputVal += `.${code} `;
+      let result = JSON.parse(this.attrInputLastObjValue);
+      result[result.length - 1].enumCodeAttr = code;
+      this.attrInputArray[this.attrInputArray.length - 1].value = JSON.stringify(
+        result
+      );
+      this.$refs.textarea.focus();
+    },
+    displayInputData() {
+      if (!this.allCiTypes.length || !this.value) {
+        return;
+      }
+      this.inputVal = "";
+      this.attrInputArray = JSON.parse(this.value);
+      if (
+        this.attrInputArray[this.attrInputArray.length - 1].type !== "delimiter"
+      ) {
+        this.attrInputArray.push({ type: "delimiter", value: "" });
+      }
+      this.attrInputArray.forEach(_ => {
+        if (_.type === "delimiter") {
+          this.inputVal += _.value;
+        } else {
+          let val = "{ ";
+          let data = JSON.parse(_.value);
+          data.forEach(item => {
+            const ciTypeName = this.ciTypesObj[item.ciTypeId].name;
+            if (item.parentRs) {
+              const refType =
+                item.parentRs.isReferedFromParent === 1 ? "." : "-";
+              const attrName = this.ciTypeAttrsObj[item.parentRs.attrId].name;
+              if (
+                this.ciTypeAttrsObj[item.parentRs.attrId].inputType === "ref" || this.ciTypeAttrsObj[item.parentRs.attrId].inputType === "multiRef"
+              ) {
+                val += `${refType}(${attrName})${ciTypeName} `;
+              } else if (
+                this.ciTypeAttrsObj[item.parentRs.attrId].inputType === "select" || this.ciTypeAttrsObj[item.parentRs.attrId].inputType === "multiSelect"
+              ) {
+                val += `${refType}${attrName} .${item.enumCodeAttr} `;
+              } else {
+                val += `${refType}${attrName} `;
+              }
+            } else {
+              val += ciTypeName + " ";
+            }
+          });
+          val += "}";
+          this.inputVal += val;
+        }
+      });
     }
   }
 };
 </script>
+
 <style lang="scss">
-* {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-  font-size: 14px;
-}
 .attr-ul {
   width: 100%;
   z-index: 3000;
@@ -390,32 +450,11 @@ export default {
 }
 .input_in {
   width: 100%;
-  display: flex;
-  flex-direction: column;
-
-  textarea {
-    font-size: 11px;
-    line-height: 28px;
-    width: 100%;
-    border-radius: 5px;
-  }
-  .wecube-error-message {
-    display: none;
-  }
-
-  &.wecube-error {
-    textarea {
-      border: 1px solid #f00;
-    }
-    .wecube-error-message {
-      display: block;
-      height: 20px;
-      line-height: 16px;
-      color: #f00;
-      padding: 2px 0;
-      font-size: 12px;
-    }
-  }
+}
+.input_in textarea {
+  font-size: 11px;
+  line-height: 20px;
+  width: 100%;
 }
 .attr-ul ul {
   width: 100%;
