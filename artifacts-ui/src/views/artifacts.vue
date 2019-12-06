@@ -2,7 +2,7 @@
   <Row id="weArtifacts" class="artifact-management">
     <Col span="6">
       <Card>
-        <p slot="title">系统设计版本</p>
+        <p slot="title">{{ $t("artifacts_system_design_version") }}</p>
         <Select
           @on-change="selectSystemDesignVersion"
           label-in-name
@@ -21,12 +21,12 @@
         </Select>
       </Card>
       <Card class="artifact-management-bottom-card">
-        <p slot="title">系统设计列表</p>
+        <p slot="title">{{ $t("artifacts_system_design_list") }}</p>
         <div class="artifact-management-tree-body">
           <Tree :data="treeData" @on-select-change="selectTreeNode"></Tree>
           <Spin size="large" fix v-if="treeLoading">
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
-            <div>loading...</div>
+            <div>{{ $t("artifacts_loading") }}</div>
           </Spin>
         </div>
       </Card>
@@ -39,7 +39,7 @@
           :on-success="uploadPackagesSuccess"
           slot="title"
         >
-          <Button icon="ios-cloud-upload-outline">上传新包</Button>
+          <Button icon="ios-cloud-upload-outline">{{ $t("artifacts_upload_new_package") }}</Button>
         </Upload>
         <ArtifactsSimpleTable
           class="artifact-management-package-table"
@@ -53,47 +53,47 @@
         ></ArtifactsSimpleTable>
         <Modal
           v-model="isShowFilesModal"
-          title="脚本配置"
-          okText="保存"
+          :title="$t('artifacts_script_configuration')"
+          :okText="$t('artifacts_save')"
           :loading="loadingForSave"
           @on-ok="saveConfigFiles"
           @on-cancel="closeModal"
         >
           <Card class="artifact-management-files-card">
             <div slot="title">
-              <span>差异化文件</span>
+              <span>{{ $t("artifacts_config_files") }}</span>
               <Button @click="() => showTreeModal(0)" size="small"
-                >选择文件</Button
+                >{{ $t("artifacts_select_file") }}</Button
               >
             </div>
-            <span>{{ currentPackage.diff_conf_file || "未选择" }}</span>
+            <span>{{ currentPackage.diff_conf_file || $t("artifacts_unselected") }}</span>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
-              <span>启动脚本</span>
+              <span>{{ $t("artifacts_start_script") }}</span>
               <Button @click="() => showTreeModal(1)" size="small"
-                >选择文件</Button
+                >{{ $t("artifacts_select_file") }}</Button
               >
             </div>
-            <span>{{ currentPackage.start_file_path || "未选择" }}</span>
+            <span>{{ currentPackage.start_file_path || $t("artifacts_unselected") }}</span>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
-              <span>停止脚本</span>
+              <span>{{ $t("artifacts_stop_script") }}</span>
               <Button @click="() => showTreeModal(2)" size="small"
-                >选择文件</Button
+                >{{ $t("artifacts_select_file") }}</Button
               >
             </div>
-            <span>{{ currentPackage.stop_file_path || "未选择" }}</span>
+            <span>{{ currentPackage.stop_file_path || $t("artifacts_unselected") }}</span>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
-              <span>部署脚本</span>
+              <span>{{ $t("artifacts_deploy_script") }}</span>
               <Button @click="() => showTreeModal(3)" size="small"
-                >选择文件</Button
+                >{{ $t("artifacts_select_file") }}</Button
               >
             </div>
-            <span>{{ currentPackage.deploy_file_path || "未选择" }}</span>
+            <span>{{ currentPackage.deploy_file_path || $t("artifacts_unselected") }}</span>
           </Card>
         </Modal>
         <Modal
@@ -179,22 +179,22 @@ export default {
       isShowTreeModal: false,
       treeModalOpt: [
         {
-          title: "选择差异化文件",
+          title: this.$t("artifacts_select_config_files"),
           key: "diff_conf_file",
           inputType: "checkbox"
         },
         {
-          title: "选择启动脚本",
+          title: this.$t("artifacts_select_start_script"),
           key: "start_file_path",
           inputType: "radio"
         },
         {
-          title: "选择停止脚本",
+          title: this.$t("artifacts_select_stop_script"),
           key: "stop_file_path",
           inputType: "radio"
         },
         {
-          title: "选择部署脚本",
+          title: this.$t("artifacts_select_deploy_script"),
           key: "deploy_file_path",
           inputType: "radio"
         }
@@ -204,47 +204,47 @@ export default {
       tableData: [],
       tableColumns: [
         {
-          title: "包名",
+          title: this.$t("artifacts_package_name"),
           key: "name",
           render: (h, params) => this.renderCell(params.row.name)
         },
         {
-          title: "上传时间",
+          title: this.$t("artifacts_upload_time"),
           width: 120,
           key: "upload_time"
         },
         {
-          title: "MD5值",
+          title: this.$t("artifacts_md5_value"),
           key: "md5_value",
           render: (h, params) => this.renderCell(params.row.md5_value)
         },
         {
-          title: "上传人",
+          title: this.$t("artifacts_uploaded_by"),
           key: "updated_by",
           render: (h, params) => this.renderCell(params.row.updated_by)
         },
         {
-          title: "差异化文件",
+          title: this.$t("artifacts_config_files"),
           key: "diff_conf_file",
           render: (h, params) => this.renderCell(params.row.diff_conf_file)
         },
         {
-          title: "启动脚本",
+          title: this.$t("artifacts_start_script"),
           key: "start_file_path",
           render: (h, params) => this.renderCell(params.row.start_file_path)
         },
         {
-          title: "停止脚本",
+          title: this.$t("artifacts_stop_script"),
           key: "stop_file_path",
           render: (h, params) => this.renderCell(params.row.stop_file_path)
         },
         {
-          title: "部署脚本",
+          title: this.$t("artifacts_deploy_script"),
           key: "deploy_file_path",
           render: (h, params) => this.renderCell(params.row.deploy_file_path)
         },
         {
-          title: "操作",
+          title: this.$t("artifacts_action"),
           key: "state",
           width: 150,
           render: (h, params) => {
@@ -267,20 +267,20 @@ export default {
       selectNode: [],
       attrsTableColomnOptions: [
         {
-          title: "序号",
+          title: this.$t("artifacts_property_seq"),
           key: "index",
           width: 60
         },
         {
-          title: "文件行号",
+          title: this.$t("artifacts_line_number"),
           key: "line"
         },
         {
-          title: "properties-key",
+          title: this.$t("artifacts_property_name"),
           key: "key"
         },
         {
-          title: "CMDB-ATTR",
+          title: this.$t("artifacts_property_value_fill_rule"),
           render: (h, params) => {
             return params.row.attrInputValue ? (
               <ArtifactsAttrInput
@@ -306,7 +306,7 @@ export default {
                   style="margin-left:10px"
                   onClick={() => this.saveAttr(params.index)}
                 >
-                  保存
+                  { this.$t("artifacts_save") }
                 </Button>
               </div>
             );
@@ -576,7 +576,7 @@ export default {
       if (status === "OK") {
         this.loadingForSave = false;
         this.$Notice.success({
-          title: "保存成功"
+          title: this.$t("artifacts_successed")
         });
       }
       this.queryPackages();
@@ -845,7 +845,7 @@ export default {
         data,
         callback: () => {
           this.$Notice.success({
-            title: "保存成功"
+            title: this.$t("artifacts_successed")
           });
           this.getKeys(this.tabData[this.nowTab]);
         }
@@ -881,7 +881,7 @@ export default {
           .map(_ => {
             return {
               type: _.code,
-              label: _.code !== "update" ? _.value : "配置",
+              label: _.code !== "update" ? _.value : this.$t("artifacts_configuration"),
               props: {
                 type: buttonTypes[_.code] || "info",
                 size: "small"

@@ -111,7 +111,7 @@ export default {
           if (this.attrInputArray.length) {
             // 表达式只能有一对花括号，输入第二对花括号时需要将其禁止
             this.$Message.error({
-              content: this.$t("attr_input_save_tips")
+              content: this.$t("artifacts_attr_input_save_tips")
             })
             this.$refs.textarea.value = this.inputVal;
             return
@@ -152,11 +152,11 @@ export default {
           this.$refs.textarea.value = this.inputVal;
           if (this.attrInputArray.length) {
             this.$Message.error({
-              content: this.$t("attr_input_save_tips")
+              content: this.$t("artifacts_attr_input_save_tips")
             })
           } else {
             this.$Message.error({
-              content: this.$t("attr_input_legitimate_character_tips")
+              content: this.$t("artifacts_attr_input_legitimate_character_tips")
             });
           }
         }
@@ -166,7 +166,7 @@ export default {
           if (!this.attrInputLastObjValue) {
             this.$refs.textarea.value = this.inputVal;
             this.$Message.error({
-              content: this.$t("please_select_ci_type")
+              content: this.$t("artifacts_please_select_ci_type")
             });
             return
           }
@@ -204,7 +204,7 @@ export default {
           ) {
             this.$refs.textarea.value = this.inputVal;
             this.$Message.error({
-              content: this.$t("please_select_enum")
+              content: this.$t("artifacts_please_select_enum")
             });
           } else {
             // 输入 } 关闭表达式的输入，并且 inputRuleStatus 状态改为1，标记当前输入状态在花括号外
@@ -215,7 +215,7 @@ export default {
             } else {
               this.$refs.textarea.value = this.inputVal;
               this.$Message.error({
-                content: this.$t("attr_input_close_rule_tips")
+                content: this.$t("artifacts_attr_input_close_rule_tips")
               });
             }
           }
