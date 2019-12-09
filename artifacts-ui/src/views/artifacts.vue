@@ -2,7 +2,7 @@
   <Row id="weArtifacts" class="artifact-management">
     <Col span="6">
       <Card>
-        <p slot="title">系统设计版本</p>
+        <p slot="title">{{ $t("artifacts_system_design_version") }}</p>
         <Select
           @on-change="selectSystemDesignVersion"
           label-in-name
@@ -21,12 +21,12 @@
         </Select>
       </Card>
       <Card class="artifact-management-bottom-card">
-        <p slot="title">系统设计列表</p>
+        <p slot="title">{{ $t("artifacts_system_design_list") }}</p>
         <div class="artifact-management-tree-body">
           <Tree :data="treeData" @on-select-change="selectTreeNode"></Tree>
           <Spin size="large" fix v-if="treeLoading">
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
-            <div>loading...</div>
+            <div>{{ $t("artifacts_loading") }}</div>
           </Spin>
         </div>
       </Card>
@@ -39,7 +39,7 @@
           :on-success="uploadPackagesSuccess"
           slot="title"
         >
-          <Button icon="ios-cloud-upload-outline">上传新包</Button>
+          <Button icon="ios-cloud-upload-outline">{{ $t("artifacts_upload_new_package") }}</Button>
         </Upload>
         <ArtifactsSimpleTable
           class="artifact-management-package-table"
@@ -53,47 +53,47 @@
         ></ArtifactsSimpleTable>
         <Modal
           v-model="isShowFilesModal"
-          title="脚本配置"
-          okText="保存"
+          :title="$t('artifacts_script_configuration')"
+          :okText="$t('artifacts_save')"
           :loading="loadingForSave"
           @on-ok="saveConfigFiles"
           @on-cancel="closeModal"
         >
           <Card class="artifact-management-files-card">
             <div slot="title">
-              <span>差异化文件</span>
+              <span>{{ $t("artifacts_config_files") }}</span>
               <Button @click="() => showTreeModal(0)" size="small"
-                >选择文件</Button
+                >{{ $t("artifacts_select_file") }}</Button
               >
             </div>
-            <span>{{ currentPackage.diff_conf_file || "未选择" }}</span>
+            <span>{{ currentPackage.diff_conf_file || $t("artifacts_unselected") }}</span>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
-              <span>启动脚本</span>
+              <span>{{ $t("artifacts_start_script") }}</span>
               <Button @click="() => showTreeModal(1)" size="small"
-                >选择文件</Button
+                >{{ $t("artifacts_select_file") }}</Button
               >
             </div>
-            <span>{{ currentPackage.start_file_path || "未选择" }}</span>
+            <span>{{ currentPackage.start_file_path || $t("artifacts_unselected") }}</span>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
-              <span>停止脚本</span>
+              <span>{{ $t("artifacts_stop_script") }}</span>
               <Button @click="() => showTreeModal(2)" size="small"
-                >选择文件</Button
+                >{{ $t("artifacts_select_file") }}</Button
               >
             </div>
-            <span>{{ currentPackage.stop_file_path || "未选择" }}</span>
+            <span>{{ currentPackage.stop_file_path || $t("artifacts_unselected") }}</span>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
-              <span>部署脚本</span>
+              <span>{{ $t("artifacts_deploy_script") }}</span>
               <Button @click="() => showTreeModal(3)" size="small"
-                >选择文件</Button
+                >{{ $t("artifacts_select_file") }}</Button
               >
             </div>
-            <span>{{ currentPackage.deploy_file_path || "未选择" }}</span>
+            <span>{{ currentPackage.deploy_file_path || $t("artifacts_unselected") }}</span>
           </Card>
         </Modal>
         <Modal
@@ -179,22 +179,22 @@ export default {
       isShowTreeModal: false,
       treeModalOpt: [
         {
-          title: "选择差异化文件",
+          title: this.$t("artifacts_select_config_files"),
           key: "diff_conf_file",
           inputType: "checkbox"
         },
         {
-          title: "选择启动脚本",
+          title: this.$t("artifacts_select_start_script"),
           key: "start_file_path",
           inputType: "radio"
         },
         {
-          title: "选择停止脚本",
+          title: this.$t("artifacts_select_stop_script"),
           key: "stop_file_path",
           inputType: "radio"
         },
         {
-          title: "选择部署脚本",
+          title: this.$t("artifacts_select_deploy_script"),
           key: "deploy_file_path",
           inputType: "radio"
         }
@@ -204,47 +204,47 @@ export default {
       tableData: [],
       tableColumns: [
         {
-          title: "包名",
+          title: this.$t("artifacts_package_name"),
           key: "name",
           render: (h, params) => this.renderCell(params.row.name)
         },
         {
-          title: "上传时间",
+          title: this.$t("artifacts_upload_time"),
           width: 120,
           key: "upload_time"
         },
         {
-          title: "MD5值",
+          title: this.$t("artifacts_md5_value"),
           key: "md5_value",
           render: (h, params) => this.renderCell(params.row.md5_value)
         },
         {
-          title: "上传人",
+          title: this.$t("artifacts_uploaded_by"),
           key: "updated_by",
           render: (h, params) => this.renderCell(params.row.updated_by)
         },
         {
-          title: "差异化文件",
+          title: this.$t("artifacts_config_files"),
           key: "diff_conf_file",
           render: (h, params) => this.renderCell(params.row.diff_conf_file)
         },
         {
-          title: "启动脚本",
+          title: this.$t("artifacts_start_script"),
           key: "start_file_path",
           render: (h, params) => this.renderCell(params.row.start_file_path)
         },
         {
-          title: "停止脚本",
+          title: this.$t("artifacts_stop_script"),
           key: "stop_file_path",
           render: (h, params) => this.renderCell(params.row.stop_file_path)
         },
         {
-          title: "部署脚本",
+          title: this.$t("artifacts_deploy_script"),
           key: "deploy_file_path",
           render: (h, params) => this.renderCell(params.row.deploy_file_path)
         },
         {
-          title: "操作",
+          title: this.$t("artifacts_action"),
           key: "state",
           width: 150,
           render: (h, params) => {
@@ -267,20 +267,20 @@ export default {
       selectNode: [],
       attrsTableColomnOptions: [
         {
-          title: "序号",
+          title: this.$t("artifacts_property_seq"),
           key: "index",
           width: 60
         },
         {
-          title: "文件行号",
+          title: this.$t("artifacts_line_number"),
           key: "line"
         },
         {
-          title: "properties-key",
+          title: this.$t("artifacts_property_name"),
           key: "key"
         },
         {
-          title: "CMDB-ATTR",
+          title: this.$t("artifacts_property_value_fill_rule"),
           render: (h, params) => {
             return params.row.attrInputValue ? (
               <ArtifactsAttrInput
@@ -306,7 +306,7 @@ export default {
                   style="margin-left:10px"
                   onClick={() => this.saveAttr(params.index)}
                 >
-                  保存
+                  { this.$t("artifacts_save") }
                 </Button>
               </div>
             );
@@ -446,6 +446,7 @@ export default {
       if (status === "OK") {
         const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION);
         if (diffConfigs.status === "OK") {
+          let newKeys = []
           const result = data.outputs[0].configKeyInfos.map((_, i) => {
             _.index = i + 1;
             const found = diffConfigs.data.find(
@@ -453,8 +454,7 @@ export default {
             );
             if (found) {
               _.attrInputValue = found.variable_value;
-            } else {
-              _.attrInputValue = ""
+              _.id = found.id
             }
             return _;
           });
@@ -462,7 +462,105 @@ export default {
         }
       }
     },
-    async saveConfigFiles() {
+    async getAllKeys(tabList) {
+      if (!tabList.length) return
+      // 查出每个文件下的差异化变量名，并将其存在 allKeys 中
+      const promiseArray = tabList.map(_ => getKeys(this.guid, this.packageId, { filePath: _.path }))
+      const res = await Promise.all(promiseArray)
+      let allKeys = {}
+      let newDiffConfigs = []
+      let tabData = res.map((tab, tabIndex) => {
+        if (tab.status === "OK") {
+          const tableData = tab.data.outputs[0].configKeyInfos.map((_, i) => {
+            allKeys[_.key] = {
+              variable_name: _.key,
+              variable_value: ""
+            }
+            return {
+              index: i + 1,
+              key: _.key,
+              attrInputValue: "",
+              id: ""
+            }
+          })
+          return tableData
+        } else {
+          return []
+        }
+      })
+      // 查出所有差异化变量的信息
+      const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION);
+      if (diffConfigs.status === "OK") {
+        Object.keys(allKeys).forEach(key => {
+          const found = diffConfigs.data.find(diffConfig => {
+            // 如果一个差异化变量已创建，则将其 id 及 variable_value 赋值给 allKeys 中对应的变量
+            if (diffConfig.variable_name === key) {
+              allKeys[key].id = diffConfig.id,
+              allKeys[key].variable_value = diffConfig.variable_value
+              return true
+            }
+          })
+          if (!found) {
+            // 如果该差异化变量未创建，则需创建一个 variable_value 值为空的变量，此处将所有未创建的变量存入 newDiffConfigs 数组
+            newDiffConfigs.push({
+              variable_name: key,
+              variable_value: ""
+            })
+          }
+        })
+        if (newDiffConfigs.length) {
+          // 将 newDiffConfigs 数组里所有未创建的差异化变量统一创建，并获取其 id
+          const params = {
+            packageName: cmdbPackageName,
+            entityName: DIFF_CONFIGURATION,
+            data: newDiffConfigs,
+            callback: v => {
+              v.forEach(_ => {
+                allKeys[_.variable_name].id = _.id
+              })
+              // 更新 tabData 的信息
+              tabData.forEach((tableData, tabIndex) => {
+                const result = tableData.map(_ => {
+                  return {
+                    ..._,
+                    ...allKeys[_.key],
+                    attrInputValue: allKeys[_.key].variable_value
+                  }
+                })
+                this.updatePackages(allKeys)
+                this.$set(this.tabData[tabIndex], "tableData", result);
+              })
+            }
+          }
+          this.createEntity(params)
+        } else {
+          tabData.forEach((tableData, tabIndex) => {
+            const result = tableData.map(_ => {
+              return {
+                ..._,
+                ...allKeys[_.key],
+                attrInputValue: allKeys[_.key].variable_value
+              }
+            })
+            this.updatePackages(allKeys)
+            this.$set(this.tabData[tabIndex], "tableData", result);
+          })
+        }
+      }
+    },
+    updatePackages(allKeys) {
+      // 更新部署包关联的所有差异配置变量
+      const ids = Object.keys(allKeys).map(_ => allKeys[_].id)
+      this.updateEntity({
+        packageName: cmdbPackageName,
+        entityName: DEPLOY_PACKAGE,
+        data: [{
+          id: this.packageId,
+          diff_conf_variable: ids
+        }]
+      })
+    },
+    async saveConfigFiles(updatePackages) {
       this.loadingForSave = true;
       const obj = {
         configFilesWithPath: this.diffTabData.split("|"),
@@ -478,36 +576,24 @@ export default {
       if (status === "OK") {
         this.loadingForSave = false;
         this.$Notice.success({
-          title: "保存成功"
+          title: this.$t("artifacts_successed")
         });
       }
       this.queryPackages();
       this.getTabDatas(this.diffTabData);
     },
-    async createEntity(obj) {
-      const { status, data, message } = await createEntity(cmdbPackageName, DIFF_CONFIGURATION, obj);
+    async createEntity(params) {
+      const { packageName, entityName } = params
+      const { status, data, message } = await createEntity(packageName, entityName, params.data);
       if (status === "OK") {
-        this.updateEntity(data[0].id)
+        params.callback && params.callback(data)
       }
     },
-    async updateEntity(id) {
-      const packagesData = await retrieveEntity(cmdbPackageName, DEPLOY_PACKAGE)
-      const newPackageId = packagesData.data[0].id
-      if (packagesData.status === "OK") {
-        const found = packagesData.data.find(_ => _.id === this.packageId)
-        if (found) {
-          const updataObj = [{
-            id: this.packageId,
-            diff_conf_variable: found.diff_conf_variable.push(newPackageId)
-          }]
-          const updateData = await updateEntity(cmdbPackageName, DEPLOY_PACKAGE, updataObj)
-          if (updateData.status === "OK") {
-            this.$Notice.success({
-              title: "保存成功"
-            });
-            this.getKeys(this.tabData[this.nowTab]);
-          }
-        }
+    async updateEntity(params) {
+      const { packageName, entityName } = params
+      const { status, data, message } = await updateEntity(packageName, entityName, params.data)
+      if (status === "OK") {
+        params.callback && params.callback(data)
       }
     },
     selectSystemDesignVersion(guid) {
@@ -635,7 +721,7 @@ export default {
     },
     async handleDelete(row) {
       this.$Modal.confirm({
-        title: "确认删除？",
+        title: this.$t("delete_confirm"),
         "z-index": 1000000,
         onOk: async () => {
           const { status, data, message } = await deleteCiDatas({
@@ -644,7 +730,7 @@ export default {
           });
           if (status === "OK") {
             this.$Notice.success({
-              title: "Delete data Success",
+              title: this.$t("artifacts_delete_success"),
               desc: message
             });
             this.queryPackages();
@@ -685,7 +771,7 @@ export default {
           };
         });
         this.activeTab = this.tabData.length ? this.tabData[0].title : "";
-        this.getKeys(this.tabData[0]);
+        this.getAllKeys(this.tabData)
       } else {
         this.tabData = [];
       }
@@ -745,12 +831,26 @@ export default {
     },
     saveAttr(row) {
       const obj = [{
-        variable_name: this.tabData[this.nowTab].tableData[row].key,
+        id: this.tabData[this.nowTab].tableData[row].id,
         variable_value: this.tabData[this.nowTab].tableData[row].variableValue,
       }]
       if (obj[0].variable_value) {
-        this.createEntity(obj);
+        this.updateDiffConfig(obj);
       }
+    },
+    updateDiffConfig(data) {
+      const params = {
+        packageName: cmdbPackageName,
+        entityName: DIFF_CONFIGURATION,
+        data,
+        callback: () => {
+          this.$Notice.success({
+            title: this.$t("artifacts_successed")
+          });
+          this.getKeys(this.tabData[this.nowTab]);
+        }
+      }
+      this.updateEntity(params)
     },
     async getAllSystemEnumCodes() {
       const { status, data, message } = await getAllSystemEnumCodes({
@@ -781,7 +881,7 @@ export default {
           .map(_ => {
             return {
               type: _.code,
-              label: _.code !== "update" ? _.value : "配置",
+              label: _.code !== "update" ? _.value : this.$t("artifacts_configuration"),
               props: {
                 type: buttonTypes[_.code] || "info",
                 size: "small"
