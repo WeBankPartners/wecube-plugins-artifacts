@@ -721,7 +721,7 @@ export default {
     },
     async handleDelete(row) {
       this.$Modal.confirm({
-        title: "确认删除？",
+        title: this.$t("delete_confirm"),
         "z-index": 1000000,
         onOk: async () => {
           const { status, data, message } = await deleteCiDatas({
@@ -730,7 +730,7 @@ export default {
           });
           if (status === "OK") {
             this.$Notice.success({
-              title: "Delete data Success",
+              title: this.$t("artifacts_delete_success"),
               desc: message
             });
             this.queryPackages();
@@ -838,7 +838,7 @@ export default {
         this.updateDiffConfig(obj);
       }
     },
-    async updateDiffConfig(data) {
+    updateDiffConfig(data) {
       const params = {
         packageName: cmdbPackageName,
         entityName: DIFF_CONFIGURATION,

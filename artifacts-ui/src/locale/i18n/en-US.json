@@ -31,5 +31,7 @@
   "artifacts_property_value_fill_rule": "Property Value(fill rule)",
   "artifacts_successed": "Successed",
   "artifacts_configuration": "Configuration",
-  "artifacts_loading": "loading..."
+  "artifacts_loading": "loading...",
+  "artifacts_delete_confirm": "Confirm to delete?",
+  "artifacts_delete_success": "Deleted successfully"
 }

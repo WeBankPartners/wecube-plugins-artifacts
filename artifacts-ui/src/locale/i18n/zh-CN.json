@@ -31,5 +31,7 @@
   "artifacts_property_value_fill_rule": "属性值(填充规则)",
   "artifacts_successed": "保存成功",
   "artifacts_configuration": "配置",
-  "artifacts_loading": "加载中..."
+  "artifacts_loading": "加载中...",
+  "artifacts_delete_confirm": "确认删除？",
+  "artifacts_delete_success": "删除成功"
 }

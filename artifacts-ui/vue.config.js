@@ -13,13 +13,15 @@ module.exports = {
   chainWebpack: config => {
     if (process.env.APP_TYPE === "plugin") {
       const img = config.module.rule("images");
-      img.uses.clear();
-      img
-        .use("file-loader")
-        .loader("file-loader")
-        .options({
-          outputPath: "img"
-        });
+      img.uses.clear()
+      img.use('url-loader').loader('url-loader').options({
+        limit: 1000000
+      })
+      const svg = config.module.rule('svg')
+      svg.uses.clear()
+      svg.use('url-loader').loader('url-loader').options({
+        limit: 1000000
+      })
     }
 
     config.when(process.env.APP_TYPE === "plugin", config => {
@@ -40,6 +42,18 @@ module.exports = {
     if (process.env.APP_TYPE === "plugin") {
       config.optimization.splitChunks = {}
       return;
-    } 
+    }
+    if (process.env.NODE_ENV === "production") {
+      return {
+        plugins: [
+          new CompressionPlugin({
+            algorithm: "gzip",
+            test: /\.js$|\.html$|.\css/, //匹配文件名
+            threshold: 10240, //对超过10k的数据压缩
+            deleteOriginalAssets: false //不删除源文件
+          })
+        ]
+      };
+    }
   }
 }
