@@ -15,6 +15,7 @@ import lombok.Data;
 public class ApplicationProperties {
 
     private String wecubePlatformServerUrl = "";
+    private String wecubePlatformToken = "";
     private String wecmdbServerUrl = "";
     private String saltstackServerUrl = "";
     private String artifactsS3ServerUrl = "";

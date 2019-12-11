@@ -16,6 +16,7 @@ spring:
 plugins:
   pacakge-name: artifacts
   wecube-platform-server-url: http://localhost:8080/platform
+  wecube-platform-token: ***REMOVED***
 
   wecmdb-server-url: http://localhost:18080/wecmdb
 
