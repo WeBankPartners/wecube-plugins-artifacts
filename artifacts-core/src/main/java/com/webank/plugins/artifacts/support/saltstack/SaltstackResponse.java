@@ -10,11 +10,8 @@ import lombok.Data;
 public class SaltstackResponse<DATATYPE> {
     public static final String RESULT_CODE_OK = "0";
 
-    @JsonProperty("result_code")
     private String resultCode;
-    @JsonProperty("result_message")
     private String resultMessage;
-    @JsonProperty("results")
     private ResultData<DATATYPE> resultData;
 
     public List<DATATYPE> getOutputs() {
