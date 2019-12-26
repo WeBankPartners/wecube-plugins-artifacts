@@ -12,6 +12,7 @@ public class SaltstackResponse<DATATYPE> {
 
     private String resultCode;
     private String resultMessage;
+    @JsonProperty("results")
     private ResultData<DATATYPE> resultData;
 
     public List<DATATYPE> getOutputs() {
