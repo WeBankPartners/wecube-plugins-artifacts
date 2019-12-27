@@ -300,7 +300,7 @@ export default {
                   allCiTypes={this.ciTypes}
                   specialDelimiters={this.specialDelimiters}
                   rootCiTypeId={rootCiTypeId}
-                  v-model={params.row.autoFillValue}
+                  v-model={params.row.variableValue}
                   onUpdateValue={val => this.updateAutoFillValue(val, params.index)}
                 />
                 <Button
@@ -308,7 +308,7 @@ export default {
                   size="small"
                   type="primary"
                   style="margin-left:10px"
-                  onClick={() => this.saveAttr(params.index)}
+                  onClick={() => this.saveAttr(params.index, params.row.variableValue)}
                 >
                   { this.$t("artifacts_save") }
                 </Button>
@@ -838,10 +838,10 @@ export default {
     updateAutoFillValue(val, row) {
       this.$set(this.tabData[this.nowTab].tableData[row], "variableValue", val)
     },
-    saveAttr(row) {
+    saveAttr(row, value) {
       const obj = [{
         id: this.tabData[this.nowTab].tableData[row].id,
-        variable_value: this.tabData[this.nowTab].tableData[row].variableValue,
+        variable_value: value
       }]
       if (obj[0].variable_value) {
         this.updateDiffConfig(obj);
