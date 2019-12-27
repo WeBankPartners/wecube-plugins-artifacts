@@ -35,3 +35,4 @@ export const updateEntity = (packageName, entityName, data) => req.post(`/platfo
 export const getAllSystemEnumCodes = data => req.post(`/enum/system/codes`, data);
 export const getRefCiTypeFrom = id => req.get(`/ci-types/${id}/references/by`)
 export const getCiTypeAttr = id => req.get(`/ci-types/${id}/attributes`);
+export const getSpecialConnector = () => req.get("/static-data/special-connector");

@@ -200,4 +200,10 @@ public class ArtifactManagementController {
             return okayWithData(cmdbServiceV2Stub.getCiTypeAttributesByCiTypeId(ciTypeId));
         }
     }
+    
+    @GetMapping("/static-data/special-connector")
+    @ResponseBody
+    public JsonResponse getSpecialConnector() {
+        return okayWithData(artifactService.getSpecialConnector());
+    }
 }

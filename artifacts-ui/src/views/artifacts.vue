@@ -144,7 +144,8 @@ import {
   createEntity,
   updateEntity,
   retrieveEntity,
-  getAllSystemEnumCodes
+  getAllSystemEnumCodes,
+  getSpecialConnector
 } from "@/api/server.js";
 import iconFile from "../assets/file.png"
 import iconFolder from "../assets/folder.png"
@@ -167,6 +168,7 @@ export default {
       systemDesignVersions: [],
       systemDesignVersion: "",
       ciTypes: [],
+      specialDelimiters: [],
       treeData: [],
       treeLoading: false,
       loadingForSave: false,
@@ -282,22 +284,24 @@ export default {
         {
           title: this.$t("artifacts_property_value_fill_rule"),
           render: (h, params) => {
-            return params.row.attrInputValue ? (
-              <ArtifactsAttrInput
+            return params.row.autoFillValue ? (
+              <ArtifactsAutoFill
                 style="margin-top:5px;"
                 allCiTypes={this.ciTypes}
+                specialDelimiters={this.specialDelimiters}
                 rootCiTypeId={rootCiTypeId}
                 isReadOnly={true}
-                v-model={params.row.attrInputValue}
+                v-model={params.row.autoFillValue}
               />
             ) : (
               <div style="align-items:center;display:flex;">
-                <ArtifactsAttrInput
+                <ArtifactsAutoFill
                   style="margin-top:5px;width:calc(100% - 55px);"
                   allCiTypes={this.ciTypes}
+                  specialDelimiters={this.specialDelimiters}
                   rootCiTypeId={rootCiTypeId}
-                  v-model={params.row.attrInputValue}
-                  onUpdateValue={val => this.updateAttrInputValue(val, params.index)}
+                  v-model={params.row.autoFillValue}
+                  onUpdateValue={val => this.updateAutoFillValue(val, params.index)}
                 />
                 <Button
                   disabled={!params.row.variableValue}
@@ -336,6 +340,12 @@ export default {
     }
   },
   methods: {
+    async getSpecialConnector() {
+      const res = await getSpecialConnector();
+      if (res.statusCode === "OK") {
+        this.specialDelimiters = res.data
+      }
+    },
     renderCell(content) {
       return (
         <Tooltip style="width: 100%;" >
@@ -453,7 +463,7 @@ export default {
               item => item.variable_name === _.key
             );
             if (found) {
-              _.attrInputValue = found.variable_value;
+              _.autoFillValue = found.variable_value;
               _.id = found.id
             }
             return _;
@@ -479,7 +489,7 @@ export default {
             return {
               index: i + 1,
               key: _.key,
-              attrInputValue: "",
+              autoFillValue: "",
               id: ""
             }
           })
@@ -524,7 +534,7 @@ export default {
                   return {
                     ..._,
                     ...allKeys[_.key],
-                    attrInputValue: allKeys[_.key].variable_value
+                    autoFillValue: allKeys[_.key].variable_value
                   }
                 })
                 this.updatePackages(allKeys)
@@ -539,7 +549,7 @@ export default {
               return {
                 ..._,
                 ...allKeys[_.key],
-                attrInputValue: allKeys[_.key].variable_value
+                autoFillValue: allKeys[_.key].variable_value
               }
             })
             this.updatePackages(allKeys)
@@ -759,7 +769,6 @@ export default {
       this.diffTabData = row.diff_conf_file || "";
       this.isShowFilesModal = true;
     },
-
     getTabDatas(diffFile) {
       if (diffFile) {
         const files = diffFile.split("|");
@@ -826,7 +835,7 @@ export default {
         }
       });
     },
-    updateAttrInputValue(val, row) {
+    updateAutoFillValue(val, row) {
       this.$set(this.tabData[this.nowTab].tableData[row], "variableValue", val)
     },
     saveAttr(row) {
@@ -894,6 +903,7 @@ export default {
   },
   created() {
     this.fetchData();
+    this.getSpecialConnector();
     this.getAllCITypesWithAttr();
     this.getAllSystemEnumCodes();
   }
