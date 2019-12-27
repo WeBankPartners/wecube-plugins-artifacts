@@ -75,4 +75,7 @@ public class CmdbResponses {
 
     public static class QueryOperationDataResponse extends CmdbResponse<List<String>> {
     }
+    
+    public static class SpecialConnectorDtoResponse extends CmdbResponse<List<Map<String,Object>>> {
+    }
 }

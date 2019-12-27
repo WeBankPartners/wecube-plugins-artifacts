@@ -25,6 +25,7 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataTreeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiTypeAttrDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiTypeDto;
+import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.SpecialConnectorDtoResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.OperateCiDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.Dialect;
@@ -282,5 +283,9 @@ public class ArtifactService {
         PaginationQuery queryObject = new PaginationQuery().addEqualsFilter("referenceId", ciTypeId).addInFilter(CONSTANT_INPUT_TYPE, Arrays.asList("ref", "multiRef")).addReferenceResource(CONSTANT_CI_TYPE);
         queryObject.addReferenceResource(CONSTANT_CI_TYPE);
         return cmdbServiceV2Stub.queryCiTypeAttributes(queryObject);
+    }
+    
+    public List<SpecialConnectorDtoResponse> getSpecialConnector() {
+        return cmdbServiceV2Stub.getSpecialConnector();
     }
 }

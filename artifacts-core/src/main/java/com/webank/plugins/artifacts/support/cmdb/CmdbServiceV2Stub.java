@@ -29,6 +29,7 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.CiTypeQuer
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.EnumCategoryQueryResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.EnumCodeListResultResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.EnumCodeQueryResultResponse;
+import com.webank.plugins.artifacts.support.cmdb.dto.v2.CmdbResponses.SpecialConnectorDtoResponse;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.ImageInfoDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.OperateCiDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
@@ -64,6 +65,8 @@ public class CmdbServiceV2Stub {
     private static final String CIDATA_DELETE = "/ci/%d/delete";
     private static final String CIDATA_STATE_OPERATE = "/ci/state/operate";
     private static final String CIDATA_RETRIEVE_VERSION_DETAIL = "/ci/from/%d/to/%d/versions/%s/retrieve";
+    private static final String QUERY_SPECIAL_CONNECTOR = "/static-data/special-connector";
+
 
     @Autowired
     private CmdbRestTemplate template;
@@ -198,5 +201,9 @@ public class CmdbServiceV2Stub {
         return queryCiTypeAttributes(defaultQueryObject(CONSTANT_CI_TYPE_ID, ciTypeId).ascendingSortBy("displaySeqNo"));
     }
 
+    public List<SpecialConnectorDtoResponse> getSpecialConnector() {
+        List<SpecialConnectorDtoResponse> queryResult = template.get(asCmdbUrl(QUERY_SPECIAL_CONNECTOR), SpecialConnectorDtoResponse.class);
+        return queryResult;
+    }
 
 }
