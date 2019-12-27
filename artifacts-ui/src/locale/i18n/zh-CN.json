@@ -33,5 +33,15 @@
   "artifacts_configuration": "配置",
   "artifacts_loading": "加载中...",
   "artifacts_delete_confirm": "确认删除？",
-  "artifacts_delete_success": "删除成功"
+  "artifacts_delete_success": "删除成功",
+  "artifacts_auto_fill_delete_node": "删除此节点",
+  "artifacts_auto_fill_add_filter": "添加过滤条件",
+  "artifacts_auto_fill_add_rule": "添加属性表达式",
+  "artifacts_auto_fill_add_delimiter": "添加连接符",
+  "artifacts_auto_fill_edit_delimiter": "编辑连接符",
+  "artifacts_auto_fill_special_delimiter": "特殊连接符",
+  "artifacts_auto_fill_change_special_delimiter": "更换特殊连接符",
+  "artifacts_auto_fill_filter_modal_title": "过滤条件",
+  "artifacts_auto_fill_filter_modal_button": "添加过滤条件",
+  "artifacts_auto_fill_filter_placeholder": " <-- 点此开始编辑填充规则"
 }
