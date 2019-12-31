@@ -20,10 +20,10 @@
 
     <!-- 4.系统参数 - 描述运行本插件包需要的系统参数 -->
 	<systemParameters>
-		<systemParameter name="SALTSTACK_SERVER_URL" defaultValue="http://localhost:8082" scopeType="plugin-package" />
-		<systemParameter name="ARTIFACTS_S3_SERVER_URL" defaultValue="http://localhost:9000" scopeType="plugin-package" />
-		<systemParameter name="ARTIFACTS_S3_ACCESS_KEY" defaultValue="access_key" scopeType="plugin-package" />
-		<systemParameter name="ARTIFACTS_S3_SECRET_KEY" defaultValue="secret_key" scopeType="plugin-package" />
+		<systemParameter name="SALTSTACK_SERVER_URL" defaultValue="http://localhost:8082" scopeType="artifacts" />
+		<systemParameter name="ARTIFACTS_S3_SERVER_URL" defaultValue="http://localhost:9000" scopeType="artifacts" />
+		<systemParameter name="ARTIFACTS_S3_ACCESS_KEY" defaultValue="access_key" scopeType="artifacts" />
+		<systemParameter name="ARTIFACTS_S3_SECRET_KEY" defaultValue="secret_key" scopeType="artifacts" />
 	</systemParameters>
 
     <!-- 5.权限设定 -->
