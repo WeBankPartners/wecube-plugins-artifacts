@@ -9,6 +9,6 @@ window.component("ArtifactsSimpleTable", ArtifactsSimpleTable);
 window.component("ArtifactsAutoFill", ArtifactsAutoFill);
 
 window.locale("zh-CN", zh_CN);
-window.locale("en_US", en_US);
+window.locale("en-US", en_US);
 
 window.addRoutes && window.addRoutes(router, "artifacts");
