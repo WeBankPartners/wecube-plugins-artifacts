@@ -138,10 +138,8 @@ public class CmdbServiceV2Stub {
         return update(formatString(CIDATA_UPDATE, ciTypeId), ciDatas.toArray(), DefaultCmdbResponse.class);
     }
 
-    public Object deleteCiData(Integer ciTypeId, Object ciData) {
-        ArrayList<Object> ciDatas = new ArrayList<Object>();
-        ciDatas.add(ciData);
-        return delete(formatString(CIDATA_DELETE, ciTypeId), ciDatas.toArray(), DefaultCmdbResponse.class);
+    public Object deleteCiData(Integer ciTypeId, List<String> ids) {
+        return delete(formatString(CIDATA_DELETE, ciTypeId), ids.toArray(), DefaultCmdbResponse.class);
     }
 
     public Object operateCiForState(List<OperateCiDto> operateCiObject, String operation) {

@@ -172,7 +172,7 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse deleteCiData(@PathVariable(value = "ci-type-id") int ciTypeId, @RequestBody List<String> ciDataIds) {
         try {
-            artifactService.deleteCiData(ciTypeId, ciDataIds.toArray());
+            artifactService.deleteCiData(ciTypeId, ciDataIds);
         } catch (Exception e) {
             throw new PluginException("The parameter ciDataIds is wrong", e);
         }
