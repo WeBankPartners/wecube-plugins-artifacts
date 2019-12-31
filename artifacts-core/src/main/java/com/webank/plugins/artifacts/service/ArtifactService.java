@@ -274,7 +274,7 @@ public class ArtifactService {
         return cmdbServiceV2Stub.queryEnumCodes(queryObject);
     }
 
-    public void deleteCiData(int ciTypeId, Object[] ids) {
+    public void deleteCiData(int ciTypeId, List<String> ids) {
         cmdbServiceV2Stub.deleteCiData(ciTypeId, ids);
 
     }
