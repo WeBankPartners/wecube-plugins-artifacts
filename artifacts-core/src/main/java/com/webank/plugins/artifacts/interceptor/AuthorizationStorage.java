@@ -1,9 +1,9 @@
 package com.webank.plugins.artifacts.interceptor;
 
-public class UsernameStorage extends ThreadLocal<String> {
-    private static UsernameStorage instance = new UsernameStorage();
+public class AuthorizationStorage extends ThreadLocal<String> {
+    private static AuthorizationStorage instance = new AuthorizationStorage();
 
-    public static UsernameStorage getIntance() {
+    public static AuthorizationStorage getIntance() {
         return instance;
     }
 }

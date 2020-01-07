@@ -3,6 +3,7 @@ package com.webank.plugins.artifacts.controller;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.webank.plugins.artifacts.domain.JsonResponse.okay;
 import static com.webank.plugins.artifacts.domain.JsonResponse.okayWithData;
+import static com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.defaultQueryObject;
 import static com.webank.plugins.artifacts.utils.BooleanUtils.isTrue;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
@@ -25,13 +26,12 @@ import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProper
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.domain.JsonResponse;
 import com.webank.plugins.artifacts.domain.PackageDomain;
-import com.webank.plugins.artifacts.interceptor.UsernameStorage;
+import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.service.ArtifactService;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.OperateCiDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
-import static com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.defaultQueryObject;
 
 @RestController
 public class ArtifactManagementController {
@@ -65,7 +65,7 @@ public class ArtifactManagementController {
 
         String url = artifactService.uploadPackageToS3(file);
 
-        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, UsernameStorage.getIntance().get(), url));
+        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, AuthorizationStorage.getIntance().get(), url));
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/query")
