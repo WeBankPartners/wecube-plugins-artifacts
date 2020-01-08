@@ -33,13 +33,26 @@
     </Col>
     <Col span="17" offset="1">
       <Card v-if="guid" class="artifact-management-top-card">
+        <Button
+          type="info"
+          ghost
+          icon="ios-cloud-upload-outline"
+          @click="getHeaders"
+        >
+          {{ $t("artifacts_upload_new_package") }}
+        </Button>
         <Upload
+          ref="uploadButton"
+          show-upload-list
+          accept=".zip"
+          name="zip-file"
           :action="`/artifacts/unit-designs/${guid}/packages/upload`"
-          :headers="setUploadActionHeader"
-          :on-success="uploadPackagesSuccess"
+          :headers="headers"
+          :on-success="onSuccess"
+          :on-error="onError"
           slot="title"
         >
-          <Button icon="ios-cloud-upload-outline">{{ $t("artifacts_upload_new_package") }}</Button>
+          <Button style="display:none" icon="ios-cloud-upload-outline">{{ $t("artifacts_upload_new_package") }}</Button>
         </Upload>
         <ArtifactsSimpleTable
           class="artifact-management-package-table"
@@ -163,6 +176,7 @@ export default {
   name: "artifacts",
   data() {
     return {
+      headers: {},
       packageCiType: 0,
       statusOperations: [],
       systemDesignVersions: [],
@@ -320,14 +334,6 @@ export default {
     };
   },
   computed: {
-    setUploadActionHeader() {
-      let uploadToken = document.cookie
-        .split(";")
-        .find(i => i.indexOf("XSRF-TOKEN") !== -1);
-      return {
-        "X-XSRF-TOKEN": uploadToken && uploadToken.split("=")[1]
-      };
-    },
     nowTab() {
       let result = 0;
       this.tabData.find((_, i) => {
@@ -354,15 +360,25 @@ export default {
         </Tooltip>
       )
     },
-    uploadPackagesSuccess(response, file, fileList) {
+    onSuccess(response, file, fileList) {
       if (response.status === "ERROR") {
         this.$Notice.error({
           title: "Error",
           desc: response.message || ""
         });
       } else {
+        this.$Notice.success({
+          title: 'Success',
+          desc: response.message || ''
+        })
         this.queryPackages();
       }
+    },
+    onError (file, filelist) {
+      this.$Notice.error({
+        title: 'Error',
+        desc: file.message || ''
+      })
     },
 
     renderActionButton(params) {
@@ -898,6 +914,50 @@ export default {
               actionType: _.code
             };
           });
+      }
+    },
+    getHeaders () {
+      let refreshRequest = null
+      const currentTime = new Date().getTime()
+      let session = window.sessionStorage
+      const token = JSON.parse(session.getItem('token'))
+      if (token) {
+        const accessToken = token.find(t => t.tokenType === 'accessToken')
+        const expiration = accessToken.expiration * 1 - currentTime
+        if (expiration < 1 * 60 * 1000 && !refreshRequest) {
+          refreshRequest = axios.get('/auth/v1/api/token', {
+            headers: {
+              Authorization:
+                'Bearer ' +
+                token.find(t => t.tokenType === 'refreshToken').token
+            }
+          })
+          refreshRequest.then(
+            res => {
+              session.setItem('token', JSON.stringify(res.data.data))
+              this.setUploadActionHeader()
+              this.$refs.uploadButton.handleClick()
+            },
+            // eslint-disable-next-line handle-callback-err
+            err => {
+              refreshRequest = null
+              window.location.href = window.location.origin + '/#/login'
+            }
+          )
+        } else {
+          this.setUploadActionHeader()
+          this.$refs.uploadButton.handleClick()
+        }
+      } else {
+        window.location.href = window.location.origin + '/#/login'
+      }
+    },
+    setUploadActionHeader () {
+      let session = window.sessionStorage
+      const token = JSON.parse(session.getItem('token'))
+      this.headers = {
+        Authorization:
+          'Bearer ' + token.find(t => t.tokenType === 'accessToken').token
       }
     }
   },
