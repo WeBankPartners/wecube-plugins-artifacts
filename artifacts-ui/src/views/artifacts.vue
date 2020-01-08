@@ -37,6 +37,7 @@
           type="info"
           ghost
           icon="ios-cloud-upload-outline"
+          style="margin-bottom:10px;"
           @click="getHeaders"
         >
           {{ $t("artifacts_upload_new_package") }}
@@ -162,6 +163,7 @@ import {
 } from "@/api/server.js";
 import iconFile from "../assets/file.png"
 import iconFolder from "../assets/folder.png"
+import axios from 'axios'
 
 // 业务运行实例ciTypeId
 const rootCiTypeId = 14
