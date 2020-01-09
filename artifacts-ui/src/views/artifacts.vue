@@ -348,7 +348,7 @@ export default {
   methods: {
     async getSpecialConnector() {
       const res = await getSpecialConnector();
-      if (res.statusCode === "OK") {
+      if (res.status === "OK") {
         this.specialDelimiters = res.data
       }
     },
