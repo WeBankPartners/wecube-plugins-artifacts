@@ -236,8 +236,8 @@ export default {
         },
         {
           title: this.$t("artifacts_uploaded_by"),
-          key: "updated_by",
-          render: (h, params) => this.renderCell(params.row.updated_by)
+          key: "upload_user",
+          render: (h, params) => this.renderCell(params.row.upload_user)
         },
         {
           title: this.$t("artifacts_config_files"),
