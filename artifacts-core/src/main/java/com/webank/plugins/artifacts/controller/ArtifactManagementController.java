@@ -12,6 +12,8 @@ import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,9 +26,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
 import com.webank.plugins.artifacts.commons.PluginException;
+import com.webank.plugins.artifacts.constant.ArtifactsConstants;
 import com.webank.plugins.artifacts.domain.JsonResponse;
 import com.webank.plugins.artifacts.domain.PackageDomain;
-import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.service.ArtifactService;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
@@ -59,13 +61,13 @@ public class ArtifactManagementController {
     @PostMapping("/unit-designs/{unit-design-id}/packages/upload")
     @ResponseBody
     public JsonResponse uploadPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
-            @RequestParam(value = "file", required = false) MultipartFile multipartFile) {
+            @RequestParam(value = "file", required = false) MultipartFile multipartFile, HttpServletRequest request) {
 
         File file = convertMultiPartToFile(multipartFile);
 
         String url = artifactService.uploadPackageToS3(file);
 
-        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, AuthorizationStorage.getIntance().get(), url));
+        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, (String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url));
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/query")

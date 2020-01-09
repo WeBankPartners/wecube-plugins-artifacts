@@ -6,22 +6,22 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import com.webank.plugins.artifacts.constant.ArtifactsConstants;
+import com.webank.plugins.artifacts.utils.JwtUtils;
+
 @Component
 public class ApiAccessInterceptor implements HandlerInterceptor {
-    private static final String KEY_OF_TOKEN = "Authorization";
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        String authorization = request.getHeader(KEY_OF_TOKEN);
+        String authorization = request.getHeader(ArtifactsConstants.KEY_OF_TOKEN);
+        request.setAttribute(ArtifactsConstants.UPLOAD_NAME, JwtUtils.getAuthUserName(authorization));
         if (authorization != null) {
-            response.setHeader(KEY_OF_TOKEN, authorization);
+            response.setHeader(ArtifactsConstants.KEY_OF_TOKEN, authorization);
             AuthorizationStorage.getIntance().set(authorization);
         } else {
-            // TO DO: Hard code for testing only, will remove later on
-            // throw new PluginException("Required parameter 'roleName' is missing in
-            // header.");
-            response.setHeader(KEY_OF_TOKEN, null);
-            AuthorizationStorage.getIntance().set(KEY_OF_TOKEN);
+            response.setHeader(ArtifactsConstants.KEY_OF_TOKEN, null);
+            AuthorizationStorage.getIntance().set(ArtifactsConstants.KEY_OF_TOKEN);
         }
         return true;
     }

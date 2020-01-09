@@ -236,8 +236,8 @@ export default {
         },
         {
           title: this.$t("artifacts_uploaded_by"),
-          key: "updated_by",
-          render: (h, params) => this.renderCell(params.row.updated_by)
+          key: "upload_user",
+          render: (h, params) => this.renderCell(params.row.upload_user)
         },
         {
           title: this.$t("artifacts_config_files"),
@@ -348,7 +348,7 @@ export default {
   methods: {
     async getSpecialConnector() {
       const res = await getSpecialConnector();
-      if (res.statusCode === "OK") {
+      if (res.status === "OK") {
         this.specialDelimiters = res.data
       }
     },
@@ -1002,7 +1002,6 @@ export default {
   &-icon {
     margin: 0 2px;
     position: relative;
-    top: 3px;
   }
 }
 </style>
