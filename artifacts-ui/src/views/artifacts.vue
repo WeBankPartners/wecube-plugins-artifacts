@@ -1002,7 +1002,6 @@ export default {
   &-icon {
     margin: 0 2px;
     position: relative;
-    top: 3px;
   }
 }
 </style>
