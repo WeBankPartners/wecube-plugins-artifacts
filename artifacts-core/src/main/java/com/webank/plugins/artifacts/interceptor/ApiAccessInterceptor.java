@@ -6,7 +6,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import com.webank.plugins.artifacts.commons.ArtifactsConstants;
+import com.webank.plugins.artifacts.constant.ArtifactsConstants;
 import com.webank.plugins.artifacts.utils.JwtUtils;
 
 @Component

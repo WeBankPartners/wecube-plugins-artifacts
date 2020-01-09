@@ -2,7 +2,7 @@ package com.webank.plugins.artifacts.utils;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.webank.plugins.artifacts.commons.ArtifactsConstants;
+import com.webank.plugins.artifacts.constant.ArtifactsConstants;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;

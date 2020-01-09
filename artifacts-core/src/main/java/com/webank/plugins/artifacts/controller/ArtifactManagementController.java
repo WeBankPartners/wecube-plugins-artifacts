@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
 import com.webank.plugins.artifacts.commons.PluginException;
+import com.webank.plugins.artifacts.constant.ArtifactsConstants;
 import com.webank.plugins.artifacts.domain.JsonResponse;
 import com.webank.plugins.artifacts.domain.PackageDomain;
 import com.webank.plugins.artifacts.service.ArtifactService;
@@ -66,7 +67,7 @@ public class ArtifactManagementController {
 
         String url = artifactService.uploadPackageToS3(file);
 
-        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, (String)request.getAttribute("upload_name"), url));
+        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, (String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url));
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/query")

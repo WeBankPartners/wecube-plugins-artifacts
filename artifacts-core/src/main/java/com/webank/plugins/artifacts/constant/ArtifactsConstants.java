@@ -1,4 +1,4 @@
-package com.webank.plugins.artifacts.commons;
+package com.webank.plugins.artifacts.constant;
 
 public class ArtifactsConstants {
     public static final String UPLOAD_NAME = "upload_name";
