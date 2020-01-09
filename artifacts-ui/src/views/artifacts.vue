@@ -45,8 +45,6 @@
         <Upload
           ref="uploadButton"
           show-upload-list
-          accept=".zip"
-          name="zip-file"
           :action="`/artifacts/unit-designs/${guid}/packages/upload`"
           :headers="headers"
           :on-success="onSuccess"
