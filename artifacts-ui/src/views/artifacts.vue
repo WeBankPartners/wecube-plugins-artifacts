@@ -413,7 +413,8 @@ export default {
       let { status, data, message } = await getAllCITypesWithAttr([
         "notCreated",
         "created",
-        "dirty"
+        "dirty",
+        "decommissioned"
       ]);
       if (status === "OK") {
         this.ciTypes = JSON.parse(JSON.stringify(data));
@@ -553,9 +554,9 @@ export default {
                     autoFillValue: allKeys[_.key].variable_value
                   }
                 })
-                this.updatePackages(allKeys)
                 this.$set(this.tabData[tabIndex], "tableData", result);
               })
+              this.updatePackages(allKeys)
             }
           }
           this.createEntity(params)
@@ -568,7 +569,6 @@ export default {
                 autoFillValue: allKeys[_.key].variable_value
               }
             })
-            this.updatePackages(allKeys)
             this.$set(this.tabData[tabIndex], "tableData", result);
           })
         }
