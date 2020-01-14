@@ -1,14 +1,14 @@
-import router from "./router-plugin";
-import ArtifactsSimpleTable from "../src/components/simple-table.vue";
-import ArtifactsAutoFill from "../src/components/auto-fill.js";
-import "./locale/i18n";
-import zh_CN from "./locale/i18n/zh-CN.json";
-import en_US from "./locale/i18n/en-US.json";
+import router from './router-plugin'
+import ArtifactsSimpleTable from '../src/components/simple-table.vue'
+import ArtifactsAutoFill from '../src/components/auto-fill.js'
+import './locale/i18n'
+import zhCN from './locale/i18n/zh-CN.json'
+import enUS from './locale/i18n/en-US.json'
 
-window.component("ArtifactsSimpleTable", ArtifactsSimpleTable);
-window.component("ArtifactsAutoFill", ArtifactsAutoFill);
+window.component('ArtifactsSimpleTable', ArtifactsSimpleTable)
+window.component('ArtifactsAutoFill', ArtifactsAutoFill)
 
-window.locale("zh-CN", zh_CN);
-window.locale("en-US", en_US);
+window.locale('zh-CN', zhCN)
+window.locale('en-US', enUS)
 
-window.addRoutes && window.addRoutes(router, "artifacts");
+window.addRoutes && window.addRoutes(router, 'artifacts')
