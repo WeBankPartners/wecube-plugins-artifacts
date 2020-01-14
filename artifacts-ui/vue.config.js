@@ -3,45 +3,50 @@ module.exports = {
     open: true,
     port: 3000,
     proxy: {
-      "/artifacts": {
-        target: "http://localhost:8081"
+      '/artifacts': {
+        target: 'http://111.230.161.237:19090'
       }
     }
   },
   runtimeCompiler: true,
-  publicPath: "",
+  publicPath: '',
   chainWebpack: config => {
-    if (process.env.APP_TYPE === "plugin") {
-      const img = config.module.rule("images");
+    if (process.env.APP_TYPE === 'plugin') {
+      const img = config.module.rule('images')
       img.uses.clear()
-      img.use('url-loader').loader('url-loader').options({
-        limit: 1000000
-      })
+      img
+        .use('url-loader')
+        .loader('url-loader')
+        .options({
+          limit: 1000000
+        })
       const svg = config.module.rule('svg')
       svg.uses.clear()
-      svg.use('url-loader').loader('url-loader').options({
-        limit: 1000000
-      })
+      svg
+        .use('url-loader')
+        .loader('url-loader')
+        .options({
+          limit: 1000000
+        })
     }
 
-    config.when(process.env.APP_TYPE === "plugin", config => {
+    config.when(process.env.APP_TYPE === 'plugin', config => {
       config
-        .entry("app")
+        .entry('app')
         .clear()
-        .add("./src/main-plugin.js"); //作为插件时
-    });
+        .add('./src/main-plugin.js') // 作为插件时
+    })
     config.when(!process.env.APP_TYPE, config => {
       config
-        .entry("app")
+        .entry('app')
         .clear()
-        .add("./src/main.js"); //独立运行时
-    });
+        .add('./src/main.js') // 独立运行时
+    })
   },
-  productionSourceMap: process.env.APP_TYPE !== "plugin",
+  productionSourceMap: process.env.APP_TYPE !== 'plugin',
   configureWebpack: config => {
-    if (process.env.APP_TYPE === "plugin") {
+    if (process.env.APP_TYPE === 'plugin') {
       config.optimization.splitChunks = {}
-      return;
     }
   }
 }
