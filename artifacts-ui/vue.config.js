@@ -4,7 +4,7 @@ module.exports = {
     port: 3000,
     proxy: {
       '/artifacts': {
-        target: 'http://111.230.161.237:19090'
+        target: 'http://127.0.0.1:19090'
       }
     }
   },
