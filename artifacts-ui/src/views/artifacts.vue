@@ -694,9 +694,7 @@ export default {
       if (this.currentTreeModal.key === 'diff_conf_file') {
         this.diffTabData = ''
         let files = []
-        this.selectNode.forEach((_, index) => {
-          index === 0 ? files.push(_.path) : files.push('/' + _.path)
-        })
+        this.selectNode.forEach(_ => { files.push(_.path) })
         this.diffTabData = files.join('|')
         this.currentPackage.diff_conf_file = files.join('|')
         this.selectNode = []
