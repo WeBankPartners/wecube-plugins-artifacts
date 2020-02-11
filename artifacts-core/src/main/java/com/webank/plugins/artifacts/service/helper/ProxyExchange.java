@@ -88,7 +88,7 @@ public class ProxyExchange {
         if (!path.startsWith(prefix)) {
             throw new IllegalArgumentException("Path does not start with prefix (" + prefix + "): " + path);
         } else {
-            return path.substring(prefix.length());
+            return path;
         }
     }
 
