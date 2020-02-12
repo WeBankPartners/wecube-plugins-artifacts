@@ -5,8 +5,8 @@
 
     <!-- 1.依赖分析 - 描述运行本插件包需要的其他插件包 -->
     <packageDependencies>
-        <packageDependency name="wecmdb" version="v0.1"/>
-        <packageDependency name="saltstack" version="v0.1"/>
+        <packageDependency name="wecmdb" version="v1.4.0"/>
+        <packageDependency name="saltstack" version="v1.8.0"/>
     </packageDependencies>
          
     <!-- 2.菜单注入 - 描述运行本插件包需要注入的菜单 -->
@@ -20,19 +20,18 @@
 
     <!-- 4.系统参数 - 描述运行本插件包需要的系统参数 -->
 	<systemParameters>
-		<systemParameter name="SALTSTACK_SERVER_URL" defaultValue="http://localhost:8082" scopeType="artifacts" />
-		<systemParameter name="ARTIFACTS_S3_SERVER_URL" defaultValue="http://localhost:9000" scopeType="artifacts" />
-		<systemParameter name="ARTIFACTS_S3_ACCESS_KEY" defaultValue="access_key" scopeType="artifacts" />
-		<systemParameter name="ARTIFACTS_S3_SECRET_KEY" defaultValue="secret_key" scopeType="artifacts" />
 	</systemParameters>
 
     <!-- 5.权限设定 -->
     <authorities>
+        <authority systemRoleName="SUPER_ADMIN" >
+            <menu code="IMPLEMENTATION_ARTIFACT_MANAGEMENT" />
+        </authority >
     </authorities>
 
     <!-- 6.运行资源 - 描述部署运行本插件包需要的基础资源(如主机、虚拟机、容器、数据库等) -->
     <resourceDependencies>
-        <docker imageName="{{REPOSITORY}}:{{VERSION}}" containerName="wecube-plugins-artifacts" portBindings="{{ALLOCATE_PORT}}:8081" envVariables="WECUBE_PLATFORM_SERVER_URL={{CORE_ADDR}},WECMDB_SERVER_URL={{CMDB_URL}},SALTSTACK_SERVER_URL={{SALTSTACK_SERVER_URL}},ARTIFACTS_S3_SERVER_URL={{ARTIFACTS_S3_SERVER_URL}},ARTIFACTS_S3_ACCESS_KEY={{ARTIFACTS_S3_ACCESS_KEY}},ARTIFACTS_S3_SECRET_KEY={{ARTIFACTS_S3_SECRET_KEY}}"/>
+        <docker imageName="{{REPOSITORY}}:{{VERSION}}" containerName="{{REPOSITORY}}-{{VERSION}}" portBindings="{{ALLOCATE_PORT}}:8081" envVariables="WECUBE_PLATFORM_SERVER_URL={{CORE_ADDR}},WECMDB_SERVER_URL={{CMDB_URL}},SALTSTACK_SERVER_URL={{SALTSTACK_SERVER_URL}},ARTIFACTS_S3_SERVER_URL={{S3_SERVER_URL}},ARTIFACTS_S3_ACCESS_KEY={{S3_ACCESS_KEY}},ARTIFACTS_S3_SECRET_KEY={{S3_SECRET_KEY}}"/>
     </resourceDependencies>
 
     <!-- 7.插件列表 - 描述插件包中单个插件的输入和输出 -->
