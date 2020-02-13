@@ -34,28 +34,28 @@
               <span>{{ $t('artifacts_config_files') }}</span>
               <Button @click="() => showTreeModal(0, currentPackage.diff_conf_file || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
-            <span>{{ currentPackage.diff_conf_file || $t('artifacts_unselected') }}</span>
+            <Input :placeholder="$t('artifacts_unselected')" type="textarea"  v-model="packageInput.diff_conf_file" />
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
               <span>{{ $t('artifacts_start_script') }}</span>
               <Button @click="() => showTreeModal(1, currentPackage.start_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
-            <span>{{ currentPackage.start_file_path || $t('artifacts_unselected') }}</span>
+            <Input :placeholder="$t('artifacts_unselected')" type="textarea"  v-model="packageInput.start_file_path" />
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
               <span>{{ $t('artifacts_stop_script') }}</span>
               <Button @click="() => showTreeModal(2, currentPackage.stop_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
-            <span>{{ currentPackage.stop_file_path || $t('artifacts_unselected') }}</span>
+            <Input :placeholder="$t('artifacts_unselected')" type="textarea"  v-model="packageInput.stop_file_path" />
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
               <span>{{ $t('artifacts_deploy_script') }}</span>
               <Button @click="() => showTreeModal(3, currentPackage.deploy_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
-            <span>{{ currentPackage.deploy_file_path || $t('artifacts_unselected') }}</span>
+            <Input :placeholder="$t('artifacts_unselected')" type="textarea"  v-model="packageInput.deploy_file_path" />
           </Card>
         </Modal>
         <Modal v-model="isShowTreeModal" :title="currentTreeModal.title" @on-ok="onOk" @on-cancel="closeTreeModal">
@@ -110,6 +110,7 @@ export default {
       filesTreeData: [],
       guid: '',
       currentPackage: {},
+      packageInput: {},
       packageId: '',
       isShowFilesModal: false,
       isShowTreeModal: false,
@@ -477,10 +478,10 @@ export default {
     async saveConfigFiles (updatePackages) {
       this.loadingForSave = true
       const obj = {
-        configFilesWithPath: this.diffTabData.split('|'),
-        startFile: this.currentPackage.start_file_path || '',
-        stopFile: this.currentPackage.stop_file_path || '',
-        deployFile: this.currentPackage.deploy_file_path || ''
+        configFilesWithPath: this.packageInput.diff_conf_file.split('|'),
+        startFile: this.packageInput.start_file_path || '',
+        stopFile: this.packageInput.stop_file_path || '',
+        deployFile: this.packageInput.deploy_file_path || ''
       }
       let { status } = await saveConfigFiles(this.guid, this.packageId, obj)
       if (status === 'OK') {
@@ -490,7 +491,7 @@ export default {
         })
       }
       this.queryPackages()
-      this.getTabDatas(this.diffTabData, true)
+      this.getTabDatas(this.packageInput.diff_conf_file, true)
     },
     async createEntity (params) {
       const { packageName, entityName } = params
@@ -659,6 +660,7 @@ export default {
     showFilesModal (row) {
       this.tabData = []
       this.currentPackage = JSON.parse(JSON.stringify(row))
+      this.packageInput = JSON.parse(JSON.stringify(row))
       this.packageId = this.currentPackage.guid
       this.diffTabData = row.diff_conf_file || ''
       this.isShowFilesModal = true
@@ -697,10 +699,12 @@ export default {
         this.selectNode.forEach(_ => { files.push(_.path) })
         this.diffTabData = files.join('|')
         this.currentPackage.diff_conf_file = files.join('|')
+        this.packageInput.diff_conf_file = files.join('|')
         this.selectNode = []
         this.filesTreeData = []
       } else {
         this.currentPackage[this.currentTreeModal.key] = this.selectFile
+        this.packageInput[this.currentTreeModal.key] = this.selectFile
       }
     },
     closeTreeModal () {
