@@ -32,28 +32,28 @@
           <Card class="artifact-management-files-card">
             <div slot="title">
               <span>{{ $t('artifacts_config_files') }}</span>
-              <Button @click="() => showTreeModal(0, currentPackage.diff_conf_file || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
+              <Button @click="() => showTreeModal(0, packageInput.diff_conf_file || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
             <Input :placeholder="$t('artifacts_unselected')" type="textarea"  v-model="packageInput.diff_conf_file" />
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
               <span>{{ $t('artifacts_start_script') }}</span>
-              <Button @click="() => showTreeModal(1, currentPackage.start_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
+              <Button @click="() => showTreeModal(1, packageInput.start_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
             <Input :placeholder="$t('artifacts_unselected')" type="textarea"  v-model="packageInput.start_file_path" />
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
               <span>{{ $t('artifacts_stop_script') }}</span>
-              <Button @click="() => showTreeModal(2, currentPackage.stop_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
+              <Button @click="() => showTreeModal(2, packageInput.stop_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
             <Input :placeholder="$t('artifacts_unselected')" type="textarea"  v-model="packageInput.stop_file_path" />
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
               <span>{{ $t('artifacts_deploy_script') }}</span>
-              <Button @click="() => showTreeModal(3, currentPackage.deploy_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
+              <Button @click="() => showTreeModal(3, packageInput.deploy_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
             <Input :placeholder="$t('artifacts_unselected')" type="textarea"  v-model="packageInput.deploy_file_path" />
           </Card>
@@ -109,7 +109,6 @@ export default {
       selectFile: '',
       filesTreeData: [],
       guid: '',
-      currentPackage: {},
       packageInput: {
         diff_conf_file: '',
         start_file_path: '',
@@ -141,7 +140,11 @@ export default {
           inputType: 'radio'
         }
       ],
-      currentTreeModal: {},
+      currentTreeModal: {
+        title: '',
+        key: '',
+        input: ''
+      },
       tableLoading: false,
       tableData: [],
       tableColumns: [
@@ -664,15 +667,13 @@ export default {
     },
     showFilesModal (row) {
       this.tabData = []
-      this.currentPackage = JSON.parse(JSON.stringify(row))
-      this.packageInput = JSON.parse(JSON.stringify(row))
-      // 以下4个变量类型需要改为字符串
-      this.packageInput.diff_conf_file = this.packageInput.diff_conf_file || ''
-      this.packageInput.start_file_path = this.packageInput.start_file_path || ''
-      this.packageInput.stop_file_path = this.packageInput.stop_file_path || ''
-      this.packageInput.deploy_file_path = this.packageInput.deploy_file_path || ''
+      // 以下4个变量类型为字符串
+      this.packageInput.diff_conf_file = row.diff_conf_file || ''
+      this.packageInput.start_file_path = row.start_file_path || ''
+      this.packageInput.stop_file_path = row.stop_file_path || ''
+      this.packageInput.deploy_file_path = row.deploy_file_path || ''
 
-      this.packageId = this.currentPackage.guid
+      this.packageId = row.guid
       this.diffTabData = row.diff_conf_file || ''
       this.isShowFilesModal = true
     },
@@ -696,12 +697,20 @@ export default {
       this.currentFiles = files.split('|')
       this.currentTreeModal = this.treeModalOpt[type]
       if (!this.filesTreeData.length) {
-        this.getFiles(this.currentPackage.guid, '')
+        this.getFiles(this.packageId, '')
+      }
+      if (type > 0 && files) {
+        this.selectFile = files
       }
       this.isShowTreeModal = true
     },
     closeModal () {
-      this.currentPackage = {}
+      this.packageInput = {
+        diff_conf_file: '',
+        start_file_path: '',
+        stop_file_path: '',
+        deploy_file_path: ''
+      }
     },
     onOk () {
       if (this.currentTreeModal.key === 'diff_conf_file') {
@@ -709,16 +718,16 @@ export default {
         let files = []
         this.selectNode.forEach(_ => { files.push(_.path) })
         this.diffTabData = files.join('|')
-        this.currentPackage.diff_conf_file = files.join('|')
         this.packageInput.diff_conf_file = files.join('|')
         this.selectNode = []
         this.filesTreeData = []
       } else {
-        this.currentPackage[this.currentTreeModal.key] = this.selectFile
         this.packageInput[this.currentTreeModal.key] = this.selectFile
       }
+      this.selectFile = ''
     },
     closeTreeModal () {
+      this.selectFile = ''
       this.selectNode = []
       this.filesTreeData = []
     },
