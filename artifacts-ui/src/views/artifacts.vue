@@ -110,7 +110,12 @@ export default {
       filesTreeData: [],
       guid: '',
       currentPackage: {},
-      packageInput: {},
+      packageInput: {
+        diff_conf_file: '',
+        start_file_path: '',
+        stop_file_path: '',
+        deploy_file_path: ''
+      },
       packageId: '',
       isShowFilesModal: false,
       isShowTreeModal: false,
@@ -661,6 +666,12 @@ export default {
       this.tabData = []
       this.currentPackage = JSON.parse(JSON.stringify(row))
       this.packageInput = JSON.parse(JSON.stringify(row))
+      // 以下4个变量类型需要改为字符串
+      this.packageInput.diff_conf_file = this.packageInput.diff_conf_file || ''
+      this.packageInput.start_file_path = this.packageInput.start_file_path || ''
+      this.packageInput.stop_file_path = this.packageInput.stop_file_path || ''
+      this.packageInput.deploy_file_path = this.packageInput.deploy_file_path || ''
+
       this.packageId = this.currentPackage.guid
       this.diffTabData = row.diff_conf_file || ''
       this.isShowFilesModal = true
