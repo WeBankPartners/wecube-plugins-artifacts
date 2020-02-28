@@ -34,28 +34,28 @@
               <span>{{ $t('artifacts_config_files') }}</span>
               <Button @click="() => showTreeModal(0, packageInput.diff_conf_file || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
-            <Input :placeholder="$t('artifacts_unselected')" type="textarea"  v-model="packageInput.diff_conf_file" />
+            <Input :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file" />
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
               <span>{{ $t('artifacts_start_script') }}</span>
               <Button @click="() => showTreeModal(1, packageInput.start_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
-            <Input :placeholder="$t('artifacts_unselected')" type="textarea"  v-model="packageInput.start_file_path" />
+            <Input :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path" />
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
               <span>{{ $t('artifacts_stop_script') }}</span>
               <Button @click="() => showTreeModal(2, packageInput.stop_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
-            <Input :placeholder="$t('artifacts_unselected')" type="textarea"  v-model="packageInput.stop_file_path" />
+            <Input :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path" />
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
               <span>{{ $t('artifacts_deploy_script') }}</span>
               <Button @click="() => showTreeModal(3, packageInput.deploy_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
-            <Input :placeholder="$t('artifacts_unselected')" type="textarea"  v-model="packageInput.deploy_file_path" />
+            <Input :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path" />
           </Card>
         </Modal>
         <Modal v-model="isShowTreeModal" :title="currentTreeModal.title" @on-ok="onOk" @on-cancel="closeTreeModal">
@@ -78,6 +78,7 @@
 
 <script>
 import { getPackageCiTypeId, getAllCITypesWithAttr, getSystemDesignVersions, getSystemDesignVersion, queryPackages, deleteCiDatas, operateCiState, getFiles, getKeys, saveConfigFiles, createEntity, updateEntity, retrieveEntity, getAllSystemEnumCodes, getSpecialConnector } from '@/api/server.js'
+import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
 import axios from 'axios'
@@ -716,7 +717,9 @@ export default {
       if (this.currentTreeModal.key === 'diff_conf_file') {
         this.diffTabData = ''
         let files = []
-        this.selectNode.forEach(_ => { files.push(_.path) })
+        this.selectNode.forEach(_ => {
+          files.push(_.path)
+        })
         this.diffTabData = files.join('|')
         this.packageInput.diff_conf_file = files.join('|')
         this.selectNode = []
@@ -817,20 +820,18 @@ export default {
     getHeaders () {
       let refreshRequest = null
       const currentTime = new Date().getTime()
-      let session = window.sessionStorage
-      const token = JSON.parse(session.getItem('token'))
-      if (token) {
-        const accessToken = token.find(t => t.tokenType === 'accessToken')
-        const expiration = accessToken.expiration * 1 - currentTime
+      const accessToken = getCookie('accessToken')
+      if (accessToken) {
+        const expiration = getCookie('accessTokenExpirationTime') * 1 - currentTime
         if (expiration < 1 * 60 * 1000 && !refreshRequest) {
           refreshRequest = axios.get('/auth/v1/api/token', {
             headers: {
-              Authorization: 'Bearer ' + token.find(t => t.tokenType === 'refreshToken').token
+              Authorization: 'Bearer ' + getCookie('refreshToken')
             }
           })
           refreshRequest.then(
             res => {
-              session.setItem('token', JSON.stringify(res.data.data))
+              setCookie(res.data.data)
               this.setUploadActionHeader()
               this.$refs.uploadButton.handleClick()
             },
@@ -849,10 +850,8 @@ export default {
       }
     },
     setUploadActionHeader () {
-      let session = window.sessionStorage
-      const token = JSON.parse(session.getItem('token'))
       this.headers = {
-        Authorization: 'Bearer ' + token.find(t => t.tokenType === 'accessToken').token
+        Authorization: 'Bearer ' + getCookie('accessToken')
       }
     }
   },
