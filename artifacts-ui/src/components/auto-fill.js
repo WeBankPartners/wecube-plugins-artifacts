@@ -73,7 +73,7 @@ export default {
     renderEditor () {
       return [
         !this.isReadOnly && this.renderOptions(),
-        this.autoFillArray.map((_, i) => {
+        ...this.autoFillArray.map((_, i) => {
           switch (_.type) {
             case 'rule':
               return this.renderExpression(_.value, i)
@@ -85,7 +85,7 @@ export default {
               break
           }
         }),
-        this.renderAddRule(),
+        ...this.renderAddRule(),
         this.renderModal()
       ]
     },
@@ -563,11 +563,11 @@ export default {
               const operator = operatorFound ? operatorFound.value : filter.operator
               const attrFound = attrs.find(attr => attr.propertyName === filter.name)
               const filterName = attrFound ? attrFound.name : filter.name
-              if (filter.type === 'value') {
+              if (filter.type && filter.type === 'autoFill') {
+                filterValue = this.formaFillRule(JSON.parse(filter.value), defaultProps)
+              } else {
                 const _filterValue = Array.isArray(filter.value) ? `[${filter.value.join(',')}]` : filter.value
                 filterValue = [this.renderSpan(_filterValue, _props)]
-              } else {
-                filterValue = this.formaFillRule(JSON.parse(filter.value), defaultProps)
               }
               return [
                 filterIndex > 0 && <span {..._propsWithkeyWord}> | </span>,
@@ -681,12 +681,16 @@ export default {
       this.autoFillArray[i].value = v
     },
     renderAddRule () {
-      return [
-        <Icon class="auto-fill-add" type="md-add-circle" />,
-        !this.autoFillArray.length && (
-          <span class="auto-fill-add auto-fill-placeholder">{this.$t('artifacts_auto_fill_filter_placeholder')}</span>
-        )
-      ]
+      if (this.isReadOnly) {
+        return [<span></span>]
+      } else {
+        return [
+          <Icon class="auto-fill-add" type="md-add-circle" />,
+          !this.autoFillArray.length && (
+            <span class="auto-fill-add auto-fill-placeholder">{this.$t('artifacts_auto_fill_filter_placeholder')}</span>
+          )
+        ]
+      }
     },
     initAutoFillArray () {
       if (!this.allCiTypes.length || !this.value) {
@@ -756,7 +760,7 @@ export default {
                 class="auto-fill-filter-li-select type"
               >
                 <Option key="value" value="value">
-                  {this.$t('value')}
+                  {this.$t('artifacts_value')}
                 </Option>
                 <Option key="autoFill" value="autoFill">
                   {this.$t('artifacts_auto_fill_rule')}
