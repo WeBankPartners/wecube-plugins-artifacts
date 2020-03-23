@@ -28,9 +28,9 @@ public class ApplicationProperties {
     @ConfigurationProperties(prefix = "plugins")
     public class CmdbDataProperties {
         private Integer enumCategoryTypeSystem = 1;
-        private Integer ciTypeIdOfSystemDesign = 1;
-        private Integer ciTypeIdOfUnitDesign = 3;
-        private Integer ciTypeIdOfPackage = 12;
+        private Integer ciTypeIdOfSystemDesign = 37;
+        private Integer ciTypeIdOfUnitDesign = 39;
+        private Integer ciTypeIdOfPackage = 45;
         private String enumCategoryNameOfDiffConf = "diff_conf";
         private String propertyNameOfFixedDate = "fixed_date";
         private String enumCodeChangeOfCiStateOfCreate = "update";
