@@ -84,7 +84,7 @@ import iconFolder from '../assets/folder.png'
 import axios from 'axios'
 
 // 业务运行实例ciTypeId
-const rootCiTypeId = 14
+const rootCiTypeId = 50
 // cmdb插件包名
 const cmdbPackageName = 'wecmdb'
 // 差异配置key_name
