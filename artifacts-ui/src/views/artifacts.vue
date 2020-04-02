@@ -760,6 +760,9 @@ export default {
       this.$set(this.tabData[this.nowTab].tableData[row], 'variableValue', val)
     },
     saveAttr (row, value) {
+      if (!this.checkFillRule(value)) {
+        return
+      }
       const obj = [
         {
           id: this.tabData[this.nowTab].tableData[row].id,
@@ -768,6 +771,17 @@ export default {
       ]
       if (obj[0].variable_value) {
         this.updateDiffConfig(obj)
+      }
+    },
+    checkFillRule (v) {
+      if (v === null || v === undefined) {
+        this.$Notice.error({
+          title: 'Error',
+          desc: this.$t('artifacts_auto_fill_rule_incomplete')
+        })
+        return false
+      } else {
+        return true
       }
     },
     updateDiffConfig (data) {
