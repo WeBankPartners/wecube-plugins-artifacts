@@ -45,5 +45,6 @@
   "artifacts_auto_fill_filter_modal_button": "添加过滤条件",
   "artifacts_auto_fill_filter_placeholder": " <-- 点此开始编辑填充规则",
   "artifacts_auto_fill_rule": "填充规则",
-  "artifacts_value": "值"
+  "artifacts_value": "值",
+  "artifacts_auto_fill_rule_incomplete": "填充规则不完整！"
 }

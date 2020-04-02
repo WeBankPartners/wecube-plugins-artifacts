@@ -45,5 +45,6 @@
   "artifacts_auto_fill_filter_modal_button": "Add filter",
   "artifacts_auto_fill_filter_placeholder": " <-- Click to edit autoFill rule",
   "artifacts_auto_fill_rule": "Autofill Rule",
-  "artifacts_value": "Value"
+  "artifacts_value": "Value",
+  "artifacts_auto_fill_rule_incomplete": "Autofill Rule is incomplete!"
 }
