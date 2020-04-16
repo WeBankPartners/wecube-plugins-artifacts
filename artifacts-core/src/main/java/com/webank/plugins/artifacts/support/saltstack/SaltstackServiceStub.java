@@ -57,6 +57,6 @@ public class SaltstackServiceStub {
         if (pathVariables != null && pathVariables.length > 0) {
             solvedPath = String.format(originPath, pathVariables);
         }
-        return serverUrl + "/" + pluginContextPath + solvedPath;
+        return serverUrl + pluginContextPath + solvedPath;
     }
 }
