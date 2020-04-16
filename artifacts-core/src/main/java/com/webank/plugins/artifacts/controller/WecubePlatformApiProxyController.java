@@ -68,7 +68,7 @@ public class WecubePlatformApiProxyController {
     }
 
     private String deriveTargetUrl(String scheme, String path) {
-        return applicationProperties.getWecubePlatformServerUrl() + path;
+        return applicationProperties.getWecubeGatewayServerUrl() + path;
     }
 
 }

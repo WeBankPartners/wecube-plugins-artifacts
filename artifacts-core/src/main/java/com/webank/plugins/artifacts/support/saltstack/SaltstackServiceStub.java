@@ -17,12 +17,13 @@ public class SaltstackServiceStub {
     @Autowired
     RestTemplate restTemplate;
 
-    private static final String INF_RELEASED_PACKAGE_LIST_DIR = "/saltstack/v1/released-package/listCurrentDir";
-    private static final String INF_RELEASED_PACKAGE_PROPERTY_KEY = "/saltstack/v1/released-package/getConfigFileKey";
+	private static final String pluginContextPath = "/saltstack";
+    private static final String INF_RELEASED_PACKAGE_LIST_DIR = "/v1/released-package/listCurrentDir";
+    private static final String INF_RELEASED_PACKAGE_PROPERTY_KEY = "/v1/released-package/getConfigFileKey";
 
-    public ResultData<Object> getReleasedPackageFilesByCurrentDir(String saltstackServerUrl,
+    public ResultData<Object> getReleasedPackageFilesByCurrentDir(String wecubeGatewayUrl,
             SaltstackRequest<Map<String, Object>> request) {
-        return post(asServerUrl(saltstackServerUrl, INF_RELEASED_PACKAGE_LIST_DIR), request);
+        return post(asServerUrl(wecubeGatewayUrl, INF_RELEASED_PACKAGE_LIST_DIR), request);
     }
 
     public ResultData<Object> getReleasedPackagePropertyKeysByFilePath(String saltstackServerUrl,
@@ -56,6 +57,6 @@ public class SaltstackServiceStub {
         if (pathVariables != null && pathVariables.length > 0) {
             solvedPath = String.format(originPath, pathVariables);
         }
-        return serverUrl + solvedPath;
+		return serverUrl + "/" + pluginContextPath + solvedPath;
     }
 }
