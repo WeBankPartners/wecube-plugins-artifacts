@@ -38,7 +38,7 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
 @Service
 public class CmdbServiceV2Stub {
 	
-	private static final String pluginContextPath = "/wecmdb";
+    private static final String pluginContextPath = "/wecmdb";
 
     private static final String CONSTANT_CI_TYPE_ID = "ciTypeId";
 

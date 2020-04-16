@@ -17,7 +17,7 @@ public class SaltstackServiceStub {
     @Autowired
     RestTemplate restTemplate;
 
-	private static final String pluginContextPath = "/saltstack";
+    private static final String pluginContextPath = "/saltstack";
     private static final String INF_RELEASED_PACKAGE_LIST_DIR = "/v1/released-package/listCurrentDir";
     private static final String INF_RELEASED_PACKAGE_PROPERTY_KEY = "/v1/released-package/getConfigFileKey";
 
@@ -57,6 +57,6 @@ public class SaltstackServiceStub {
         if (pathVariables != null && pathVariables.length > 0) {
             solvedPath = String.format(originPath, pathVariables);
         }
-		return serverUrl + "/" + pluginContextPath + solvedPath;
+        return serverUrl + "/" + pluginContextPath + solvedPath;
     }
 }
