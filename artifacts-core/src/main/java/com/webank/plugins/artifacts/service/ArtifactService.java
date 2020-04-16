@@ -38,7 +38,6 @@ import com.webank.plugins.artifacts.support.saltstack.SaltstackServiceStub;
 @Service
 public class ArtifactService {
     private static final String CONSTANT_FIX_DATE = "fixed_date";
-    private static final String S3_BUCKET_NAME_FOR_ARTIFACT = "wecube-artifacts";
     private static final String S3_KEY_DELIMITER = "_";
     private static final String CONSTANT_CAT_CAT_TYPE = "cat.catType";
     private static final String CONSTANT_INPUT_TYPE = "inputType";
@@ -63,7 +62,7 @@ public class ArtifactService {
 
         String s3Key = genMd5Value(file) + S3_KEY_DELIMITER + file.getName();
         String url = new S3Client(applicationProperties.getArtifactsS3ServerUrl(), applicationProperties.getArtifactsS3AccessKey(), applicationProperties.getArtifactsS3SecretKey())
-                .uploadFile(S3_BUCKET_NAME_FOR_ARTIFACT, s3Key, file);
+                .uploadFile(applicationProperties.getArtifactsS3BucketName(), s3Key, file);
         return url.substring(0, url.indexOf("?"));
     }
 
@@ -115,7 +114,7 @@ public class ArtifactService {
                 .put("currentDir", currentDir)
                 .build());
         request.setInputs(inputs);
-        return saltstackServiceStub.getReleasedPackageFilesByCurrentDir(applicationProperties.getSaltstackServerUrl(), request);
+        return saltstackServiceStub.getReleasedPackageFilesByCurrentDir(applicationProperties.getWecubeGatewayServerUrl(), request);
     }
 
     public Object getPropertyKeys(String packageId, String filePath) {
@@ -128,7 +127,7 @@ public class ArtifactService {
                 .put("filePath", filePath)
                 .build());
         request.setInputs(inputs);
-        return saltstackServiceStub.getReleasedPackagePropertyKeysByFilePath(applicationProperties.getSaltstackServerUrl(), request);
+        return saltstackServiceStub.getReleasedPackagePropertyKeysByFilePath(applicationProperties.getWecubeGatewayServerUrl(), request);
     }
 
     private String retrieveS3EndpointWithKeyByPackageId(String packageId) {
@@ -142,7 +141,7 @@ public class ArtifactService {
         Map pkgData = (Map) result.getContents().get(0);
         Map pkg = (Map) pkgData.get("data");
         String s3Key = pkg.get("md5_value") + S3_KEY_DELIMITER + pkg.get("name");
-        String endpointWithKey = applicationProperties.getArtifactsS3ServerUrl() + "/" + S3_BUCKET_NAME_FOR_ARTIFACT + "/" + s3Key;
+        String endpointWithKey = applicationProperties.getArtifactsS3ServerUrl() + "/" + applicationProperties.getArtifactsS3BucketName() + "/" + s3Key;
         return endpointWithKey;
     }
 

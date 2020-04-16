@@ -14,13 +14,11 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "plugins")
 public class ApplicationProperties {
 
-    private String wecubePlatformServerUrl = "";
-    private String wecubePlatformToken = "";
-    private String wecmdbServerUrl = "";
-    private String saltstackServerUrl = "";
+    private String wecubeGatewayServerUrl = "";
     private String artifactsS3ServerUrl = "";
     private String artifactsS3AccessKey = "";
     private String artifactsS3SecretKey = "";
+    private String artifactsS3BucketName = "";
     private Map<String, String> customHeaders = new LinkedHashMap<>();
     private Set<String> sensitiveHeaders = null;
 
