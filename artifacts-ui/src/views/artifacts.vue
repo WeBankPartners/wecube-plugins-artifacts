@@ -96,6 +96,7 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      clipboard: '',
       headers: {},
       packageCiType: 0,
       statusOperations: [],
@@ -215,20 +216,33 @@ export default {
         },
         {
           title: this.$t('artifacts_line_number'),
+          width: 100,
           key: 'line'
         },
         {
           title: this.$t('artifacts_property_name'),
+          width: 300,
           key: 'key'
         },
         {
           title: this.$t('artifacts_property_value_fill_rule'),
           render: (h, params) => {
             return params.row.autoFillValue ? (
-              <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} isReadOnly={true} v-model={params.row.autoFillValue} />
+              <div style="align-items:center;display:flex;justify-content:space-between;">
+                <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} isReadOnly={true} v-model={params.row.autoFillValue} />
+                <Button size="small" type="dashed" icon="md-copy" style="margin-left:10px;" onClick={() => this.copy(params.row.autoFillValue)}>
+                  {this.$t('artifacts_copy')}
+                </Button>
+              </div>
             ) : (
               <div style="align-items:center;display:flex;">
                 <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} v-model={params.row.variableValue} onUpdateValue={val => this.updateAutoFillValue(val, params.index)} />
+                <Button disabled={!params.row.variableValue} size="small" type="dashed" icon="md-copy" style="margin-left:10px;" onClick={() => this.copy(params.row.variableValue)}>
+                  {this.$t('artifacts_copy')}
+                </Button>
+                <Button disabled={!this.clipboard} size="small" type="dashed" icon="md-copy" style="margin-left:10px;" onClick={() => this.paste(params)}>
+                  {this.$t('artifacts_paste')}
+                </Button>
                 <Button disabled={!params.row.variableValue} size="small" type="primary" style="margin-left:10px" onClick={() => this.saveAttr(params.index, params.row.variableValue)}>
                   {this.$t('artifacts_save')}
                 </Button>
@@ -695,6 +709,7 @@ export default {
       }
     },
     showTreeModal (type, files) {
+      this.filesTreeData = []
       this.currentFiles = files.split('|')
       this.currentTreeModal = this.treeModalOpt[type]
       if (!this.filesTreeData.length) {
@@ -867,6 +882,16 @@ export default {
       this.headers = {
         Authorization: 'Bearer ' + getCookie('accessToken')
       }
+    },
+    copy (value) {
+      this.clipboard = value
+      this.$Notice.success({
+        title: 'Success',
+        desc: this.$t('artifacts_copy_success')
+      })
+    },
+    paste (params) {
+      this.$set(params.row, 'variableValue', this.clipboard)
     }
   },
   created () {
