@@ -46,5 +46,8 @@
   "artifacts_auto_fill_filter_placeholder": " <-- 点此开始编辑填充规则",
   "artifacts_auto_fill_rule": "填充规则",
   "artifacts_value": "值",
-  "artifacts_auto_fill_rule_incomplete": "填充规则不完整！"
+  "artifacts_auto_fill_rule_incomplete": "填充规则不完整！",
+  "artifacts_copy": "复制",
+  "artifacts_paste": "粘贴",
+  "artifacts_copy_success": "复制成功"
 }

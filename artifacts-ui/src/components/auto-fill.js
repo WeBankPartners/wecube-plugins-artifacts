@@ -58,6 +58,9 @@ export default {
     }
   },
   watch: {
+    value () {
+      this.initAutoFillArray()
+    },
     allCiTypes () {
       this.initAutoFillArray()
     },

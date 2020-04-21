@@ -46,5 +46,8 @@
   "artifacts_auto_fill_filter_placeholder": " <-- Click to edit autoFill rule",
   "artifacts_auto_fill_rule": "Autofill Rule",
   "artifacts_value": "Value",
-  "artifacts_auto_fill_rule_incomplete": "Autofill Rule is incomplete!"
+  "artifacts_auto_fill_rule_incomplete": "Autofill Rule is incomplete!",
+  "artifacts_copy": "Copy",
+  "artifacts_paste": "Paste",
+  "artifacts_copy_success": "Copy Successful"
 }
