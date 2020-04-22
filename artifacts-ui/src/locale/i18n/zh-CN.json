@@ -49,5 +49,7 @@
   "artifacts_auto_fill_rule_incomplete": "填充规则不完整！",
   "artifacts_copy": "复制",
   "artifacts_paste": "粘贴",
-  "artifacts_copy_success": "复制成功"
+  "artifacts_copy_success": "复制成功",
+  "artifacts_paste_success": "粘贴成功",
+  "artifacts_illegal_string": "非法字符串"
 }

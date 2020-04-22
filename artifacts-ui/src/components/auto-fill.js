@@ -771,7 +771,7 @@ export default {
       )
     },
     renderInput (item, index) {
-      const { rootCiTypeId, allCiTypes, specialDelimiters } = this
+      const { rootCiTypeId, allCiTypes, specialDelimiters, cmdbPackageName } = this
       if (item.type === 'value') {
         if (['ref', 'select', 'multiRef', 'multiSelect'].indexOf(item.inputType) >= 0) {
           return (
@@ -794,7 +794,7 @@ export default {
           return <Input class="auto-fill-filter-li-input" onInput={v => (this.filters[index].value = v)} value={item.value} type="textarea" autosize={true} />
         }
       } else {
-        return <AutoFill class="auto-fill-filter-li-input" allCiTypes={allCiTypes} isReadOnly={false} onInput={v => (this.filters[index].value = v)} rootCiTypeId={rootCiTypeId} specialDelimiters={specialDelimiters} value={index.value} />
+        return <AutoFill class="auto-fill-filter-li-input" allCiTypes={allCiTypes} isReadOnly={false} onInput={v => (this.filters[index].value = v)} rootCiTypeId={rootCiTypeId} specialDelimiters={specialDelimiters} value={item.value} cmdbPackageName={cmdbPackageName} />
       }
     },
     async changeAttr (val, i) {
