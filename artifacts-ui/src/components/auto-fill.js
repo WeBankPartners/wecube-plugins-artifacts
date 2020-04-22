@@ -1,5 +1,5 @@
 import './auto-fill.scss'
-import { getRefCiTypeFrom, getCiTypeAttr } from '@/api/server.js'
+import { getRefCiTypeFrom, getCiTypeAttr, retrieveEntity, getAllSystemEnumCodes } from '@/api/server.js'
 
 export default {
   name: 'AutoFill',
@@ -8,7 +8,8 @@ export default {
     isReadOnly: { default: () => false, required: false },
     value: { default: () => '', required: true },
     rootCiTypeId: { type: Number, required: true },
-    specialDelimiters: { default: () => [], required: true }
+    specialDelimiters: { default: () => [], required: true },
+    cmdbPackageName: { default: '', required: true }
   },
   data () {
     return {
@@ -437,16 +438,65 @@ export default {
       const { data, status } = await getCiTypeAttr(this.filterCiTypeId)
       if (status === 'OK') {
         this.filterCiAttrs = data
-        this.filters = filters.map(_ => {
+        let promiseArray = []
+        this.filters = filters.map((_, i) => {
           const found = data.find(attr => attr.propertyName === _.name)
           if (found) {
             _.inputType = found.inputType
           }
+          _.options = []
+          if (['ref', 'multiRef'].indexOf(_.inputType) >= 0) {
+            const entityName = this.ciTypesObj[found.referenceId].tableName
+            promiseArray.push(retrieveEntity(this.cmdbPackageName, entityName))
+          } else if (['select', 'multiSelect'].indexOf(_.inputType) >= 0) {
+            promiseArray.push(
+              getAllSystemEnumCodes({
+                filters: [
+                  {
+                    name: 'catId',
+                    operator: 'eq',
+                    value: found.referenceId
+                  }
+                ],
+                paging: false
+              })
+            )
+          } else {
+            promiseArray.push({ data: [] })
+          }
           if (_.operator === 'in' && _.type === 'value') {
-            _.value = _.value.join(',')
+            if (['ref', 'select', 'multiRef', 'multiSelect'].indexOf(_.inputType) === -1) {
+              _.value = _.value.join(',')
+            }
           }
           return _
         })
+        const res = await Promise.all(promiseArray)
+        res.forEach((_, i) => {
+          if (['ref', 'multiRef'].indexOf(this.filters[i].inputType) >= 0) {
+            this.filters[i].options = _.data.map(item => {
+              return {
+                label: item.code,
+                id: item.guid
+              }
+            })
+          } else if (['select', 'multiSelect'].indexOf(this.filters[i].inputType) >= 0) {
+            this.filters[i].options = _.data.contents.map(item => {
+              return {
+                label: item.value,
+                id: item.code
+              }
+            })
+          }
+        })
+      }
+    },
+    async getOptions (propertyName) {
+      const { status, data } = await retrieveEntity(this.cmdbPackageName, propertyName)
+      if (status === 'OK') {
+        return data
+      } else {
+        return []
       }
     },
     addNode (ruleIndex, attrIndex, nodeObj) {
@@ -677,20 +727,19 @@ export default {
         type: 'value',
         value: ''
       }
-      const { rootCiTypeId, allCiTypes, specialDelimiters } = this
       return (
         <Modal value={this.modalDisplay} onInput={v => (this.modalDisplay = v)} title={this.$t('artifacts_auto_fill_filter_modal_title')} width="800" on-on-ok={this.confirmFilter} on-on-cancel={this.cancelFilter}>
           {this.filters.map((_, i) => (
             <div class="auto-fill-filter-li">
               <Icon type="md-remove-circle" color="red" onClick={() => this.filters.splice(i, 1)} class="auto-fill-filter-li-icon" />
-              <Select value={_.name} onInput={v => this.changeFilter(v, i)} class="auto-fill-filter-li-select title">
+              <Select value={_.name} onInput={v => this.changeAttr(v, i)} class="auto-fill-filter-li-select title">
                 {this.filterCiAttrs.map(attr => (
                   <Option key={attr.ciTypeAttrId} value={attr.propertyName}>
                     {attr.name}
                   </Option>
                 ))}
               </Select>
-              <Select value={_.operator} onInput={v => (this.filters[i].operator = v)} class="auto-fill-filter-li-select operator">
+              <Select value={_.operator} onInput={v => this.changeOperator(v, i)} class="auto-fill-filter-li-select operator">
                 {this.operatorList.map(o => (
                   <Option key={o.code} value={o.code}>
                     {o.value}
@@ -712,7 +761,7 @@ export default {
                   {this.$t('artifacts_auto_fill_rule')}
                 </Option>
               </Select>
-              {_.type === 'value' ? <Input class="auto-fill-filter-li-input" onInput={v => (this.filters[i].value = v)} value={_.value} type="textarea" autosize={true} /> : <AutoFill class="auto-fill-filter-li-input" allCiTypes={allCiTypes} isReadOnly={false} onInput={v => (this.filters[i].value = v)} rootCiTypeId={rootCiTypeId} specialDelimiters={specialDelimiters} value={_.value} />}
+              {this.renderInput(_, i)}
             </div>
           ))}
           <Button type="primary" long onClick={() => this.filters.push(emptyFilter)}>
@@ -721,33 +770,103 @@ export default {
         </Modal>
       )
     },
-    changeFilter (val, i) {
+    renderInput (item, index) {
+      const { rootCiTypeId, allCiTypes, specialDelimiters } = this
+      if (item.type === 'value') {
+        if (['ref', 'select', 'multiRef', 'multiSelect'].indexOf(item.inputType) >= 0) {
+          return (
+            <Select
+              class="auto-fill-filter-li-input"
+              multiple={item.operator === 'in'}
+              value={item.value}
+              onInput={v => {
+                this.filters[index].value = v
+              }}
+            >
+              {item.options.map(_ => (
+                <Option key={_.id} value={_.id}>
+                  {_.label}
+                </Option>
+              ))}
+            </Select>
+          )
+        } else {
+          return <Input class="auto-fill-filter-li-input" onInput={v => (this.filters[index].value = v)} value={item.value} type="textarea" autosize={true} />
+        }
+      } else {
+        return <AutoFill class="auto-fill-filter-li-input" allCiTypes={allCiTypes} isReadOnly={false} onInput={v => (this.filters[index].value = v)} rootCiTypeId={rootCiTypeId} specialDelimiters={specialDelimiters} value={index.value} />
+      }
+    },
+    async changeAttr (val, i) {
       this.filters[i].name = val
       const found = this.filterCiAttrs.find(_ => _.propertyName === val)
       const inputType = found.inputType
       switch (inputType) {
-        case 'number':
-          this.filters[i].value = 0
+        case 'ref':
+        case 'multiRef':
+          const entityName = this.ciTypesObj[found.referenceId].tableName
+          const { status, data } = await retrieveEntity(this.cmdbPackageName, entityName)
+          if (status === 'OK') {
+            this.filters[i].options = data.map(_ => {
+              return {
+                label: _.code,
+                id: _.guid
+              }
+            })
+          }
+          break
+        case 'select':
+        case 'multiSelect':
+          const params = {
+            filters: [
+              {
+                name: 'catId',
+                operator: 'eq',
+                value: found.referenceId
+              }
+            ],
+            paging: false
+          }
+          const res = await getAllSystemEnumCodes(params)
+          if (res.status === 'OK') {
+            this.filters[i].options = res.data.contents.map(_ => {
+              return {
+                label: _.value,
+                id: _.code
+              }
+            })
+          }
           break
         default:
-          this.filters[i].value = ''
           break
       }
       this.filters[i].inputType = inputType
+      this.resetFilterValue(found.operator, i)
+    },
+    changeOperator (v, i) {
+      this.filters[i].operator = v
+      this.resetFilterValue(v, i)
+    },
+    resetFilterValue (operator, i) {
+      if (operator === 'in') {
+        this.filters[i].value = []
+      } else {
+        this.filters[i].value = ''
+      }
     },
     confirmFilter () {
       const filters = this.filters
         .filter(_ => _.name && _.operator)
         .map(_ => {
           if (_.type === 'value') {
-            if (_.operator === 'in') {
+            if (_.operator === 'in' && !Array.isArray(_.value)) {
               _.value = _.value.split(',')
             }
             if (_.inputType === 'number') {
               if (Array.isArray(_.value)) {
-                _.value = _.value.map(v => Number(v))
+                _.value = _.value.map(v => Number(v) || 0)
               } else {
-                _.value = Number(_.value)
+                _.value = Number(_.value) || 0
               }
             }
           }

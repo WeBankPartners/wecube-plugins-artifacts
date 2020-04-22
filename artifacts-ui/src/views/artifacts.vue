@@ -229,14 +229,14 @@ export default {
           render: (h, params) => {
             return params.row.autoFillValue ? (
               <div style="align-items:center;display:flex;justify-content:space-between;">
-                <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} isReadOnly={true} v-model={params.row.autoFillValue} />
+                <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} isReadOnly={true} v-model={params.row.autoFillValue} cmdbPackageName={cmdbPackageName} />
                 <Button size="small" type="dashed" icon="md-copy" style="margin-left:10px;" onClick={() => this.copy(params.row.autoFillValue)}>
                   {this.$t('artifacts_copy')}
                 </Button>
               </div>
             ) : (
               <div style="align-items:center;display:flex;">
-                <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} v-model={params.row.variableValue} onUpdateValue={val => this.updateAutoFillValue(val, params.index)} />
+                <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} v-model={params.row.variableValue} onUpdateValue={val => this.updateAutoFillValue(val, params.index)} cmdbPackageName={cmdbPackageName} />
                 <Button disabled={!params.row.variableValue} size="small" type="dashed" icon="md-copy" style="margin-left:10px;" onClick={() => this.copy(params.row.variableValue)}>
                   {this.$t('artifacts_copy')}
                 </Button>
