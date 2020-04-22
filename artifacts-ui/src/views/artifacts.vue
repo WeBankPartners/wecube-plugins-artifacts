@@ -918,11 +918,6 @@ export default {
             title: 'Success',
             desc: this.$t('artifacts_paste_success')
           })
-        } else {
-          this.$Notice.error({
-            title: 'Error',
-            desc: this.$t('artifacts_illegal_string')
-          })
         }
       })
     },
@@ -943,12 +938,26 @@ export default {
               }
             })
           }
-          if ((_.parentRs && !this.ciTypeAttrsObj[_.parentRs.attrId]) || (_.ciTypeId && !this.ciTypesObj[_.ciTypeId])) {
+          if (_.parentRs && !this.ciTypeAttrsObj[_.parentRs.attrId]) {
+            this.$Notice.error({
+              title: 'Error',
+              desc: this.$t('artifacts_attr_id_is_not_exist') + _.parentRs.attrId
+            })
+            result = false
+          } else if (_.ciTypeId && !this.ciTypesObj[_.ciTypeId]) {
+            this.$Notice.error({
+              title: 'Error',
+              desc: this.$t('artifacts_citype_id_is_not_exist') + _.ciTypeId
+            })
             result = false
           }
         })
         return result
       } catch {
+        this.$Notice.error({
+          title: 'Error',
+          desc: this.$t('artifacts_parse_error') + str
+        })
         return false
       }
     }
