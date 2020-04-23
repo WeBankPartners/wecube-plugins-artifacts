@@ -49,5 +49,9 @@
   "artifacts_auto_fill_rule_incomplete": "填充规则不完整！",
   "artifacts_copy": "复制",
   "artifacts_paste": "粘贴",
-  "artifacts_copy_success": "复制成功"
+  "artifacts_copy_success": "复制成功",
+  "artifacts_paste_success": "粘贴成功",
+  "artifacts_attr_id_is_not_exist": "[attrId不存在]: ",
+  "artifacts_citype_id_is_not_exist": "[ciTypeId不存在]: ",
+  "artifacts_parse_error": "[转义失败]: "
 }

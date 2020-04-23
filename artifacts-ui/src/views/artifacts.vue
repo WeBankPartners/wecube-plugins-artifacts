@@ -96,7 +96,6 @@ export default {
   name: 'artifacts',
   data () {
     return {
-      clipboard: '',
       headers: {},
       packageCiType: 0,
       statusOperations: [],
@@ -229,18 +228,18 @@ export default {
           render: (h, params) => {
             return params.row.autoFillValue ? (
               <div style="align-items:center;display:flex;justify-content:space-between;">
-                <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} isReadOnly={true} v-model={params.row.autoFillValue} />
+                <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} isReadOnly={true} v-model={params.row.autoFillValue} cmdbPackageName={cmdbPackageName} />
                 <Button size="small" type="dashed" icon="md-copy" style="margin-left:10px;" onClick={() => this.copy(params.row.autoFillValue)}>
                   {this.$t('artifacts_copy')}
                 </Button>
               </div>
             ) : (
               <div style="align-items:center;display:flex;">
-                <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} v-model={params.row.variableValue} onUpdateValue={val => this.updateAutoFillValue(val, params.index)} />
+                <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} v-model={params.row.variableValue} onUpdateValue={val => this.updateAutoFillValue(val, params.index)} cmdbPackageName={cmdbPackageName} />
                 <Button disabled={!params.row.variableValue} size="small" type="dashed" icon="md-copy" style="margin-left:10px;" onClick={() => this.copy(params.row.variableValue)}>
                   {this.$t('artifacts_copy')}
                 </Button>
-                <Button disabled={!this.clipboard} size="small" type="dashed" icon="md-copy" style="margin-left:10px;" onClick={() => this.paste(params)}>
+                <Button size="small" type="dashed" icon="md-copy" style="margin-left:10px;" onClick={() => this.paste(params)}>
                   {this.$t('artifacts_paste')}
                 </Button>
                 <Button disabled={!params.row.variableValue} size="small" type="primary" style="margin-left:10px" onClick={() => this.saveAttr(params.index, params.row.variableValue)}>
@@ -263,6 +262,22 @@ export default {
         }
       })
       return result
+    },
+    ciTypesObj () {
+      let obj = {}
+      this.ciTypes.forEach(_ => {
+        obj[_.ciTypeId] = _
+      })
+      return obj
+    },
+    ciTypeAttrsObj () {
+      let obj = {}
+      this.ciTypes.forEach(ciType => {
+        ciType.attributes.forEach(attr => {
+          obj[attr.ciTypeAttrId] = attr
+        })
+      })
+      return obj
     }
   },
   methods: {
@@ -884,14 +899,67 @@ export default {
       }
     },
     copy (value) {
-      this.clipboard = value
+      let inputElement = document.createElement('input')
+      inputElement.value = value
+      document.body.appendChild(inputElement)
+      inputElement.select()
+      document.execCommand('copy')
+      inputElement.remove()
       this.$Notice.success({
         title: 'Success',
         desc: this.$t('artifacts_copy_success')
       })
     },
     paste (params) {
-      this.$set(params.row, 'variableValue', this.clipboard)
+      navigator.clipboard.readText().then(clipText => {
+        if (this.legalityCheck(clipText)) {
+          this.$set(params.row, 'variableValue', clipText)
+          this.$Notice.success({
+            title: 'Success',
+            desc: this.$t('artifacts_paste_success')
+          })
+        }
+      })
+    },
+    legalityCheck (str) {
+      try {
+        let result = true
+        const arr = JSON.parse(str)
+        arr.forEach((_, i) => {
+          if (_.type === 'rule' || _.type === 'autoFill') {
+            if (!Array.isArray(_.value) && !this.legalityCheck(_.value)) {
+              result = false
+            }
+          }
+          if (i === 0 && _.filters) {
+            _.filters.forEach(item => {
+              if (!Array.isArray(item.value) && !this.legalityCheck(item.value)) {
+                result = false
+              }
+            })
+          }
+          if (_.parentRs && !this.ciTypeAttrsObj[_.parentRs.attrId]) {
+            this.$Notice.error({
+              title: 'Error',
+              desc: this.$t('artifacts_attr_id_is_not_exist') + _.parentRs.attrId
+            })
+            result = false
+          } else if (_.ciTypeId && !this.ciTypesObj[_.ciTypeId]) {
+            this.$Notice.error({
+              title: 'Error',
+              desc: this.$t('artifacts_citype_id_is_not_exist') + _.ciTypeId
+            })
+            result = false
+          }
+        })
+        return result
+      } catch {
+        this.$Notice.error({
+          title: 'Error',
+          desc: this.$t('artifacts_parse_error') + str
+        })
+        return false
+      }
     }
   },
   created () {
