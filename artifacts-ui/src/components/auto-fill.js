@@ -37,7 +37,8 @@ export default {
         { code: 'null', value: 'Null' }
       ],
       enumCodes: ['id', 'code', 'value', 'groupCodeId'],
-      spinShow: false
+      spinShow: false,
+      pasteValue: '222'
     }
   },
   computed: {
@@ -90,6 +91,7 @@ export default {
           }
         }),
         ...this.renderAddRule(),
+        this.renderCopyButton(),
         this.renderModal()
       ]
     },
@@ -122,15 +124,20 @@ export default {
       return (
         <div slot="content" class="auto-fill-options">
           {[
-            this.options.map(_ =>
-              _.type === 'option' ? (
-                <div class={_.class} onClick={_.fn}>
-                  {_.nodeName}
-                </div>
-              ) : (
-                <hr />
-              )
-            ),
+            this.options.map(_ => {
+              switch (_.type) {
+                case 'option':
+                  return (
+                    <div class={_.class} onClick={_.fn}>
+                      {_.nodeName}
+                    </div>
+                  )
+                case 'line':
+                  return <hr />
+                default:
+                  return <_.type class={_.class} ref={_.ref} attrs={_.attrs} on={_.on} />
+              }
+            }),
             this.spinShow ? <Spin fix /> : null
           ]}
         </div>
@@ -171,6 +178,26 @@ export default {
     showAddOptions () {
       this.options = []
       this.optionsDisplay = true
+      if (!this.autoFillArray.length) {
+        this.options.push(
+          {
+            type: 'input',
+            class: 'auto-fill-li auto-fill-paste-input',
+            ref: 'pasteInput',
+            attrs: {
+              placeholder: this.$t('artifacts_please_paste_here')
+              // value: this.pasteValue
+            },
+            on: {
+              input: v => this.handlePasteInput(v),
+              paste: v => this.pastePathExp(v)
+            }
+          },
+          {
+            type: 'line'
+          }
+        )
+      }
       this.options.push(
         {
           type: 'option',
@@ -275,6 +302,7 @@ export default {
       } else if ((node.parentRs && this.ciTypeAttrsObj[node.parentRs.attrId].inputType === 'select') || this.ciTypeAttrsObj[node.parentRs.attrId].inputType === 'multiSelect') {
         this.showEnumOptions(ruleIndex, attrIndex)
       }
+      this.handleInput()
     },
     showSpecialOptions (ruleIndex) {
       this.options = [
@@ -699,7 +727,7 @@ export default {
     },
     renderAddRule () {
       if (this.isReadOnly) {
-        return [<span></span>]
+        return []
       } else {
         return [<Icon class="auto-fill-add" type="md-add-circle" />, !this.autoFillArray.length && <span class="auto-fill-add auto-fill-placeholder">{this.$t('artifacts_auto_fill_filter_placeholder')}</span>]
       }
@@ -710,11 +738,22 @@ export default {
       }
       this.autoFillArray = JSON.parse(this.value)
     },
+    renderCopyButton () {
+      return (
+        <Button disabled={!this.value} size="small" type="dashed" icon="md-copy" style={`margin-left:10px;display:${this.autoFillArray.length ? 'inline-block' : 'none'}`} onClick={this.copy}>
+          {this.$t('artifacts_copy')}
+        </Button>
+      )
+    },
     focusInput () {
       // 点击编辑连接符后，需要聚焦 Input
       if (this.activeDelimiterIndex && this.$refs.delimiterInput) {
         this.$nextTick(() => {
           this.$refs.delimiterInput.focus()
+        })
+      } else if (this.$refs.pasteInput) {
+        this.$nextTick(() => {
+          this.$refs.pasteInput.focus()
         })
       }
     },
@@ -920,6 +959,76 @@ export default {
         this.$emit('input', value)
       } else {
         this.$emit('input', null)
+      }
+    },
+    copy () {
+      let inputElement = document.createElement('input')
+      inputElement.value = this.value
+      document.body.appendChild(inputElement)
+      inputElement.select()
+      document.execCommand('copy')
+      inputElement.remove()
+      this.$Notice.success({
+        title: 'Success',
+        desc: this.$t('artifacts_copy_success')
+      })
+    },
+    handlePasteInput () {
+      this.$refs.pasteInput.value = ''
+    },
+    pastePathExp (e) {
+      let clipboardData = e.clipboardData
+      if (!clipboardData) {
+        clipboardData = e.originalEvent.clipboardData
+      }
+      let val = clipboardData.getData('Text')
+      if (this.legalityCheck(val)) {
+        this.$emit('input', val)
+        this.$Notice.success({
+          title: 'Success',
+          desc: this.$t('artifacts_paste_success')
+        })
+        this.optionsDisplay = false
+      }
+    },
+    legalityCheck (str) {
+      try {
+        let result = true
+        const arr = JSON.parse(str)
+        arr.forEach((_, i) => {
+          if (_.type === 'rule' || _.type === 'autoFill') {
+            if (!Array.isArray(_.value) && !this.legalityCheck(_.value)) {
+              result = false
+            }
+          }
+          if (i === 0 && _.filters) {
+            _.filters.forEach(item => {
+              if (!Array.isArray(item.value) && !this.legalityCheck(item.value)) {
+                result = false
+              }
+            })
+          }
+          if (_.parentRs && !this.ciTypeAttrsObj[_.parentRs.attrId]) {
+            this.$Notice.error({
+              title: 'Error',
+              desc: this.$t('artifacts_attr_id_is_not_exist') + _.parentRs.attrId
+            })
+            result = false
+          } else if (_.ciTypeId && !this.ciTypesObj[_.ciTypeId]) {
+            this.$Notice.error({
+              title: 'Error',
+              desc: this.$t('artifacts_citype_id_is_not_exist') + _.ciTypeId
+            })
+            result = false
+          }
+        })
+        return result
+      } catch {
+        this.$Notice.error({
+          title: 'Error',
+          desc: this.$t('artifacts_parse_error') + str
+        })
+        return false
       }
     }
   },
