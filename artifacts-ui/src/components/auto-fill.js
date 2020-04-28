@@ -37,8 +37,7 @@ export default {
         { code: 'null', value: 'Null' }
       ],
       enumCodes: ['id', 'code', 'value', 'groupCodeId'],
-      spinShow: false,
-      pasteValue: '222'
+      spinShow: false
     }
   },
   computed: {
@@ -186,7 +185,6 @@ export default {
             ref: 'pasteInput',
             attrs: {
               placeholder: this.$t('artifacts_please_paste_here')
-              // value: this.pasteValue
             },
             on: {
               input: v => this.handlePasteInput(v),
