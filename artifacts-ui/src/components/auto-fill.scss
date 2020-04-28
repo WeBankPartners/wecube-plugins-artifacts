@@ -99,4 +99,10 @@
       flex: 1;
     }
   }
+
+  &-paste-input {
+    border: none;
+    height: 25px;
+    outline: none;
+  }
 }

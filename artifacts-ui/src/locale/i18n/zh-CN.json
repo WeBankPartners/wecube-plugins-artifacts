@@ -53,5 +53,6 @@
   "artifacts_paste_success": "粘贴成功",
   "artifacts_attr_id_is_not_exist": "[attrId不存在]: ",
   "artifacts_citype_id_is_not_exist": "[ciTypeId不存在]: ",
-  "artifacts_parse_error": "[转义失败]: "
+  "artifacts_parse_error": "[转义失败]: ",
+  "artifacts_please_paste_here": "请在这粘贴"
 }
