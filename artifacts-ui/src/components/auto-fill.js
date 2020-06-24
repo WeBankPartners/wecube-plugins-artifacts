@@ -502,7 +502,7 @@ export default {
           if (['ref', 'multiRef'].indexOf(this.filters[i].inputType) >= 0) {
             this.filters[i].options = _.data.map(item => {
               return {
-                label: item.code,
+                label: item.displayName,
                 id: item.guid
               }
             })
@@ -846,7 +846,7 @@ export default {
           if (status === 'OK') {
             this.filters[i].options = data.map(_ => {
               return {
-                label: _.code,
+                label: _.displayName,
                 id: _.guid
               }
             })
