@@ -33,6 +33,7 @@
     <resourceDependencies>
         <docker imageName="{{REPOSITORY}}:{{VERSION}}" containerName="{{REPOSITORY}}-{{VERSION}}" portBindings="{{ALLOCATE_PORT}}:8081" volumeBindings="{{BASE_MOUNT_PATH}}/artifacts/log:/log"
         envVariables="WECUBE_GATEWAY_SERVER_URL={{GATEWAY_URL}},ARTIFACTS_S3_SERVER_URL={{S3_SERVER_URL}},ARTIFACTS_S3_ACCESS_KEY={{S3_ACCESS_KEY}},ARTIFACTS_S3_SECRET_KEY={{S3_SECRET_KEY}}"/>
+        <s3 bucketName="wecube-artifacts"/>
     </resourceDependencies>
 
     <!-- 7.插件列表 - 描述插件包中单个插件的输入和输出 -->
