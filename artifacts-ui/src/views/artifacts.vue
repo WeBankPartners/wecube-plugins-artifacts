@@ -432,7 +432,7 @@ export default {
         Object.keys(allKeys).forEach(key => {
           const found = diffConfigs.data.find(diffConfig => {
             // 如果一个差异化变量已创建，则将其 id 及 variable_value 赋值给 allKeys 中对应的变量
-            if (diffConfig.variable_name === key) {
+            if (diffConfig.variable_name.toUpperCase() === key.toUpperCase()) {
               allKeys[key].id = diffConfig.id
               allKeys[key].variable_value = diffConfig.variable_value
               return true
