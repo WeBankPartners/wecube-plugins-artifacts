@@ -54,5 +54,8 @@
   "artifacts_attr_id_is_not_exist": "[attrId is not exist]: ",
   "artifacts_citype_id_is_not_exist": "[ciTypeId is not exist]: ",
   "artifacts_parse_error": "[Parse Error]: ",
-  "artifacts_please_paste_here": "Please Paste Here"
+  "artifacts_please_paste_here": "Please Paste Here",
+  "is_decompression": "Decompression",
+  "configuration": "Configuration",
+  "is_files_exist": "The File Does Not Exist"
 }
