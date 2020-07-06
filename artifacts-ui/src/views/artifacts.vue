@@ -743,11 +743,11 @@ export default {
     showFilesModal (row) {
       this.tabData = []
       // 以下4个变量类型为字符串
-      // this.packageInput.diff_conf_file = row.diff_conf_file || ''
-      // this.packageInput.start_file_path = row.start_file_path || ''
-      // this.packageInput.stop_file_path = row.stop_file_path || ''
-      // this.packageInput.deploy_file_path = row.deploy_file_path || ''
-      // this.packageInput.is_decompression = row.is_decompression || ''
+      this.packageInput.diff_conf_file = row.diff_conf_file || ''
+      this.packageInput.start_file_path = row.start_file_path || ''
+      this.packageInput.stop_file_path = row.stop_file_path || ''
+      this.packageInput.deploy_file_path = row.deploy_file_path || ''
+      this.packageInput.is_decompression = row.is_decompression || ''
       this.packageId = row.guid
       this.diffTabData = row.diff_conf_file || ''
       this.configuration = ''
