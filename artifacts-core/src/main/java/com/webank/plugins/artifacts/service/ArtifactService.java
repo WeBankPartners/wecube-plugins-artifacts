@@ -100,6 +100,7 @@ public class ArtifactService {
                 .put("start_file_path", packageDomain.getStartFile())
                 .put("stop_file_path", packageDomain.getStopFile())
                 .put("diff_conf_file", files)
+                .put("is_decompression", packageDomain.getIsDecompression())
                 .build();
         cmdbServiceV2Stub.updateCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
     }

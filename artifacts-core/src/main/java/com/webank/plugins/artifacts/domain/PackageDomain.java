@@ -10,5 +10,6 @@ public class PackageDomain {
     private String deployFile;
     private String startFile;
     private String stopFile;
+    private String isDecompression;
 
 }

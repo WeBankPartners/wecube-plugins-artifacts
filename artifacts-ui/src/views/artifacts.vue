@@ -29,12 +29,16 @@
         </Upload>
         <ArtifactsSimpleTable class="artifact-management-package-table" :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
         <Modal v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')" :loading="loadingForSave" @on-ok="saveConfigFiles" @on-cancel="closeModal">
+          <Select :placeholder="$t('configuration')" @on-change="configurationChanged" v-model="configuration">
+            <Option v-for="conf in tableData.filter(conf => conf.guid !== packageId)" :value="conf.name" :key="conf.name">{{ conf.name }}</Option>
+          </Select>
           <Card class="artifact-management-files-card">
             <div slot="title">
               <span>{{ $t('artifacts_config_files') }}</span>
               <Button @click="() => showTreeModal(0, packageInput.diff_conf_file || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
             <Input :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file" />
+            <div v-if="is_diff_conf_file" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }}{{ is_diff_conf_file }}</div>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
@@ -42,6 +46,7 @@
               <Button @click="() => showTreeModal(1, packageInput.start_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
             <Input :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path" />
+            <div v-if="is_start_file_path" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }}{{ is_start_file_path }}</div>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
@@ -49,6 +54,7 @@
               <Button @click="() => showTreeModal(2, packageInput.stop_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
             <Input :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path" />
+            <div v-if="is_stop_file_path" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }}{{ is_stop_file_path }}</div>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
@@ -56,6 +62,16 @@
               <Button @click="() => showTreeModal(3, packageInput.deploy_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
             <Input :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path" />
+            <div v-if="is_deploy_file_path" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }}{{ is_deploy_file_path }}</div>
+          </Card>
+          <Card class="artifact-management-files-card">
+            <div slot="title">
+              <span>{{ $t('is_decompression') }}</span>
+            </div>
+            <RadioGroup v-model="packageInput.is_decompression">
+              <Radio label="true"></Radio>
+              <Radio label="false"></Radio>
+            </RadioGroup>
           </Card>
         </Modal>
         <Modal v-model="isShowTreeModal" :title="currentTreeModal.title" @on-ok="onOk" @on-cancel="closeTreeModal">
@@ -97,6 +113,7 @@ export default {
   data () {
     return {
       headers: {},
+      configuration: '',
       packageCiType: 0,
       statusOperations: [],
       systemDesignVersions: [],
@@ -114,8 +131,13 @@ export default {
         diff_conf_file: '',
         start_file_path: '',
         stop_file_path: '',
-        deploy_file_path: ''
+        deploy_file_path: '',
+        is_decompression: ''
       },
+      is_diff_conf_file: '',
+      is_start_file_path: '',
+      is_stop_file_path: '',
+      is_deploy_file_path: '',
       packageId: '',
       isShowFilesModal: false,
       isShowTreeModal: false,
@@ -188,6 +210,11 @@ export default {
           title: this.$t('artifacts_deploy_script'),
           key: 'deploy_file_path',
           render: (h, params) => this.renderCell(params.row.deploy_file_path)
+        },
+        {
+          title: this.$t('is_decompression'),
+          key: 'is_decompression',
+          render: (h, params) => this.renderCell(params.row.is_decompression)
         },
         {
           title: this.$t('artifacts_action'),
@@ -280,7 +307,7 @@ export default {
       return (
         <Tooltip style="width: 100%;">
           <span slot="content" style="white-space:normal;">
-            {content}{' '}
+            {content && content.toString()}{' '}
           </span>
           <div style="width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{content}</div>
         </Tooltip>
@@ -508,7 +535,8 @@ export default {
         configFilesWithPath: this.packageInput.diff_conf_file.split('|'),
         startFile: this.packageInput.start_file_path || '',
         stopFile: this.packageInput.stop_file_path || '',
-        deployFile: this.packageInput.deploy_file_path || ''
+        deployFile: this.packageInput.deploy_file_path || '',
+        isDecompression: this.packageInput.is_decompression || ''
       }
       let { status } = await saveConfigFiles(this.guid, this.packageId, obj)
       if (status === 'OK') {
@@ -684,6 +712,34 @@ export default {
         this.queryPackages()
       }
     },
+    configurationChanged (v) {
+      const found = this.tableData.find(row => row.name === v)
+      this.packageInput.diff_conf_file = found.diff_conf_file || ''
+      this.packageInput.start_file_path = found.start_file_path || ''
+      this.packageInput.stop_file_path = found.stop_file_path || ''
+      this.packageInput.deploy_file_path = found.deploy_file_path || ''
+      this.packageInput.is_decompression = found.is_decompression || ''
+      this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
+      this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
+      this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
+      this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
+    },
+    checkFileExist (filePath, isExist) {
+      if (filePath.length === 0) {
+        return
+      }
+      const filePathList = filePath.split('|')
+      filePathList.forEach(async path => {
+        let dirs = path.split('/')
+        const fileName = dirs[dirs.length - 1]
+        dirs.pop()
+        const currentDir = dirs.join('/')
+        const { status, data } = await getFiles(this.guid, this.packageId, { currentDir })
+        if (status !== 'OK' || !data.outputs[0].files.find(_ => _.name === fileName)) {
+          this[isExist] = this[isExist] + path + ' |'
+        }
+      })
+    },
     showFilesModal (row) {
       this.tabData = []
       // 以下4个变量类型为字符串
@@ -691,9 +747,14 @@ export default {
       this.packageInput.start_file_path = row.start_file_path || ''
       this.packageInput.stop_file_path = row.stop_file_path || ''
       this.packageInput.deploy_file_path = row.deploy_file_path || ''
-
+      this.packageInput.is_decompression = row.is_decompression || ''
       this.packageId = row.guid
       this.diffTabData = row.diff_conf_file || ''
+      this.configuration = ''
+      this.is_diff_conf_file = ''
+      this.is_start_file_path = ''
+      this.is_stop_file_path = ''
+      this.is_deploy_file_path = ''
       this.isShowFilesModal = true
     },
     getTabDatas (diffFile, isNewPage = false) {
@@ -729,7 +790,8 @@ export default {
         diff_conf_file: '',
         start_file_path: '',
         stop_file_path: '',
-        deploy_file_path: ''
+        deploy_file_path: '',
+        is_decompression: ''
       }
     },
     onOk () {
@@ -746,6 +808,8 @@ export default {
       } else {
         this.packageInput[this.currentTreeModal.key] = this.selectFile
       }
+      const key = 'is_' + this.currentTreeModal.key
+      this[key] = ''
       this.selectFile = ''
     },
     closeTreeModal () {
