@@ -724,21 +724,37 @@ export default {
       this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
       this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
     },
-    checkFileExist (filePath, isExist) {
+    async checkFileExist (filePath, isExist) {
       if (filePath.length === 0) {
         return
       }
       const filePathList = filePath.split('|')
       filePathList.forEach(async path => {
         let dirs = path.split('/')
-        const fileName = dirs[dirs.length - 1]
-        dirs.pop()
-        const currentDir = dirs.join('/')
-        const { status, data } = await getFiles(this.guid, this.packageId, { currentDir })
-        if (status !== 'OK' || !data.outputs[0].files.find(_ => _.name === fileName)) {
+        const notExist = await this.checkFiles(0, dirs)
+        if (notExist) {
           this[isExist] = this[isExist] + path + ' |'
         }
       })
+    },
+    async checkFiles (index, fileList) {
+      let currentDir = ''
+      let notExist = false
+      if (index > 0) {
+        for (let i = 0; i < index; i++) {
+          currentDir = currentDir + fileList[i] + '/'
+        }
+      }
+      const { data } = await getFiles(this.guid, this.packageId, { currentDir: currentDir })
+      if (data.outputs[0].files.find(_ => _.name === fileList[index])) {
+        if (index === fileList.length - 1) {
+          return notExist
+        }
+        this.checkFiles(index + 1, fileList)
+      } else {
+        notExist = true
+      }
+      return notExist
     },
     showFilesModal (row) {
       this.tabData = []
