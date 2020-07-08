@@ -38,7 +38,7 @@
               <Button @click="() => showTreeModal(0, packageInput.diff_conf_file || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
             <Input :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file" />
-            <div v-if="is_diff_conf_file" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }}{{ is_diff_conf_file }}</div>
+            <div v-if="is_diff_conf_file.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_diff_conf_file.join(' | ') }}</div>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
@@ -46,7 +46,7 @@
               <Button @click="() => showTreeModal(1, packageInput.start_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
             <Input :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path" />
-            <div v-if="is_start_file_path" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }}{{ is_start_file_path }}</div>
+            <div v-if="is_start_file_path.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_start_file_path.join(' | ') }}</div>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
@@ -54,7 +54,7 @@
               <Button @click="() => showTreeModal(2, packageInput.stop_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
             <Input :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path" />
-            <div v-if="is_stop_file_path" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }}{{ is_stop_file_path }}</div>
+            <div v-if="is_stop_file_path.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_stop_file_path.join(' | ') }}</div>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
@@ -62,7 +62,7 @@
               <Button @click="() => showTreeModal(3, packageInput.deploy_file_path || '')" size="small">{{ $t('artifacts_select_file') }}</Button>
             </div>
             <Input :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path" />
-            <div v-if="is_deploy_file_path" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }}{{ is_deploy_file_path }}</div>
+            <div v-if="is_deploy_file_path.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_deploy_file_path.join(' | ') }}</div>
           </Card>
           <Card class="artifact-management-files-card">
             <div slot="title">
@@ -134,10 +134,10 @@ export default {
         deploy_file_path: '',
         is_decompression: ''
       },
-      is_diff_conf_file: '',
-      is_start_file_path: '',
-      is_stop_file_path: '',
-      is_deploy_file_path: '',
+      is_diff_conf_file: [],
+      is_start_file_path: [],
+      is_stop_file_path: [],
+      is_deploy_file_path: [],
       packageId: '',
       isShowFilesModal: false,
       isShowTreeModal: false,
@@ -733,7 +733,7 @@ export default {
         let dirs = path.split('/')
         const notExist = await this.checkFiles(0, dirs)
         if (notExist) {
-          this[isExist] = this[isExist] + path + ' |'
+          this[isExist].push(path)
         }
       })
     },
@@ -767,10 +767,10 @@ export default {
       this.packageId = row.guid
       this.diffTabData = row.diff_conf_file || ''
       this.configuration = ''
-      this.is_diff_conf_file = ''
-      this.is_start_file_path = ''
-      this.is_stop_file_path = ''
-      this.is_deploy_file_path = ''
+      this.is_diff_conf_file = []
+      this.is_start_file_path = []
+      this.is_stop_file_path = []
+      this.is_deploy_file_path = []
       this.isShowFilesModal = true
     },
     getTabDatas (diffFile, isNewPage = false) {
