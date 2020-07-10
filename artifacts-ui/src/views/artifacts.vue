@@ -765,7 +765,7 @@ export default {
       if (filePath.length === 0) {
         return
       }
-      const filePathList = filePath.split('|')
+      const filePathList = filePath
       filePathList.forEach(async path => {
         let dirs = path.split('/')
         const notExist = await this.checkFiles(0, dirs)
