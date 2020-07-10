@@ -10,7 +10,7 @@
   "artifacts_upload_new_package": "上传新包",
   "artifacts_script_configuration": "脚本配置",
   "artifacts_save": "保存",
-  "artifacts_config_files": "配置文件",
+  "artifacts_config_files": "差异化配置文件",
   "artifacts_select_file": "选择文件",
   "artifacts_unselected": "未选择",
   "artifacts_start_script": "启动脚本/升级脚本",
