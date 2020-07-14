@@ -757,16 +757,18 @@ export default {
       }
     },
     configurationChanged (v) {
-      const found = this.tableData.find(row => row.name === v)
-      this.packageInput.diff_conf_file = found.diff_conf_file ? found.diff_conf_file.split('|') : []
-      this.packageInput.start_file_path = found.start_file_path ? found.start_file_path.split('|') : []
-      this.packageInput.stop_file_path = found.stop_file_path ? found.stop_file_path.split('|') : []
-      this.packageInput.deploy_file_path = found.deploy_file_path ? found.deploy_file_path.split('|') : []
-      this.packageInput.is_decompression = found.is_decompression || ''
-      this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
-      this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
-      this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
-      this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
+      if (v) {
+        const found = this.tableData.find(row => row.name === v)
+        this.packageInput.diff_conf_file = found.diff_conf_file ? found.diff_conf_file.split('|') : []
+        this.packageInput.start_file_path = found.start_file_path ? found.start_file_path.split('|') : []
+        this.packageInput.stop_file_path = found.stop_file_path ? found.stop_file_path.split('|') : []
+        this.packageInput.deploy_file_path = found.deploy_file_path ? found.deploy_file_path.split('|') : []
+        this.packageInput.is_decompression = found.is_decompression || ''
+        this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
+        this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
+        this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
+        this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
+      }
     },
     async checkFileExist (filePath, isExist) {
       if (filePath.length === 0) {
@@ -775,13 +777,10 @@ export default {
       const filePathList = filePath
       filePathList.forEach(async path => {
         let dirs = path.split('/')
-        const notExist = await this.checkFiles(0, dirs)
-        if (notExist) {
-          this[isExist].push(path)
-        }
+        await this.checkFiles(0, dirs, isExist)
       })
     },
-    async checkFiles (index, fileList) {
+    async checkFiles (index, fileList, isExist) {
       let currentDir = ''
       let notExist = false
       if (index > 0) {
@@ -794,9 +793,10 @@ export default {
         if (index === fileList.length - 1) {
           return notExist
         }
-        this.checkFiles(index + 1, fileList)
+        this.checkFiles(index + 1, fileList, isExist)
       } else {
         notExist = true
+        this[isExist].push(fileList.join('/'))
       }
       return notExist
     },
