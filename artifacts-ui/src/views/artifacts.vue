@@ -41,7 +41,8 @@
               <Col span="18" offset="1">
                 <div id="diff_conf_file">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.diff_conf_file" :key="index">
-                    <Input :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index]" />
+                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index]" />
+                    <Button type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'diff_conf_file')"></Button>
                   </div>
                 </div>
                 <div v-if="is_diff_conf_file.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_diff_conf_file.join(' | ') }}</div>
@@ -57,7 +58,8 @@
               <Col span="18" offset="1">
                 <div id="start_file_path">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.start_file_path" :key="index">
-                    <Input :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path[index]" />
+                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path[index]" />
+                    <Button type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
                   </div>
                 </div>
                 <div v-if="is_start_file_path.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_start_file_path.join(' | ') }}</div>
@@ -73,7 +75,8 @@
               <Col span="18" offset="1">
                 <div id="stop_file_path">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.stop_file_path" :key="index">
-                    <Input :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path[index]" />
+                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path[index]" />
+                    <Button type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
                   </div>
                 </div>
                 <div v-if="is_stop_file_path.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_stop_file_path.join(' | ') }}</div>
@@ -89,7 +92,8 @@
               <Col span="18" offset="1">
                 <div id="deploy_file_path">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.deploy_file_path" :key="index">
-                    <Input :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path[index]" />
+                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path[index]" />
+                    <Button type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
                   </div>
                 </div>
                 <div v-if="is_deploy_file_path.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_deploy_file_path.join(' | ') }}</div>
@@ -334,6 +338,9 @@ export default {
     }
   },
   methods: {
+    deleteFilePath (index, key) {
+      this.packageInput[key].splice(index, 1)
+    },
     async getSpecialConnector () {
       const res = await getSpecialConnector()
       if (res.status === 'OK') {
@@ -342,7 +349,7 @@ export default {
     },
     renderCell (content) {
       return (
-        <Tooltip style="width: 100%;">
+        <Tooltip min-width="200px" max-width="500px" style="width: 100%;">
           <span slot="content" style="white-space:normal;">
             {content && content.toString()}{' '}
           </span>
@@ -1043,6 +1050,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.textarea-input {
+  display: inline-block;
+  width: 90%;
+  margin-right: 20px;
+}
 .artifact-management-files-card {
   border-color: darkgrey;
 }
