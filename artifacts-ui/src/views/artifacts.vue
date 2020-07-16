@@ -816,6 +816,10 @@ export default {
       this.is_stop_file_path = []
       this.is_deploy_file_path = []
       this.isShowFilesModal = true
+      this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
+      this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
+      this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
+      this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
       this.$nextTick(() => {
         this.genSortable('diff_conf_file')
         this.genSortable('start_file_path')
