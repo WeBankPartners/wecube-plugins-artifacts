@@ -19,7 +19,7 @@ plugins:
   wecube-gateway-server-url: http://localhost:9080
   artifacts-nexus-server-url: http://localhost:8081
 
-  artifacts-s3-server-url: http://129.204.99.160:9000
+  artifacts-s3-server-url: http://localhost:9000
   artifacts-s3-access-key: access_key
   artifacts-s3-secret-key: secret_key
   artifacts-s3-bucket-name: wecube-artifacts
