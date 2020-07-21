@@ -2,15 +2,16 @@ package com.webank.plugins.artifacts.service;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import com.webank.plugins.artifacts.support.nexus.NexusClient;
+import com.webank.plugins.artifacts.support.nexus.NexusDirectiryDto;
+import com.webank.plugins.artifacts.support.nexus.NexusResponse;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONException;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.ImmutableMap;
@@ -54,6 +55,9 @@ public class ArtifactService {
 
     @Autowired
     private ApplicationProperties applicationProperties;
+
+    @Autowired
+    private NexusClient nexusClient;
 
     public String uploadPackageToS3(File file) {
         if (file == null) {
@@ -287,5 +291,44 @@ public class ArtifactService {
     
     public List<SpecialConnectorDtoResponse> getSpecialConnector() {
         return cmdbServiceV2Stub.getSpecialConnector();
+    }
+
+    public List<NexusDirectiryDto> queryNexusDirectiry( String artifactPath ) {
+        if (artifactPath == null || artifactPath.isEmpty()) {
+            throw new PluginException("Upload artifact path is required.");
+        }
+
+        //configuration parameters
+        String repository = "maven-releases";
+        String filter = "jar";
+
+        String nexusBaseUrl = applicationProperties.getArtifactsNexusServerUrl();
+
+        String nexusRequestUrl = nexusBaseUrl + "/service/rest/v1/assets?repository=" + repository;
+        String nexusPath = nexusBaseUrl + "/repository/"+ repository + "/" + artifactPath;
+        List<NexusResponse> nexusResponses = nexusClient.get(nexusRequestUrl, NexusResponse.class);
+
+        return buildNexusDirectiryResponseDto(nexusResponses,nexusPath,filter);
+
+    }
+
+    private List<NexusDirectiryDto> buildNexusDirectiryResponseDto(List<NexusResponse> nexusResponses,String nexusPath,String filter){
+        List<NexusDirectiryDto>  directiryDtos= new ArrayList<>();
+        for (int i = 0; i < nexusResponses.size(); i++) {
+            try {
+                JSONObject responseJson = (JSONObject) JSONObject.wrap(nexusResponses.get(i));
+
+                String downloadUrl = responseJson.getString("downloadUrl");
+                if(downloadUrl.startsWith(nexusPath) && downloadUrl.endsWith(filter)){
+                    NexusDirectiryDto directiryDto = new NexusDirectiryDto();
+                    directiryDto.setDownloadUrl(downloadUrl);
+                    directiryDto.setName(downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
+                    directiryDtos.add(directiryDto);
+                }
+            } catch (JSONException e) {
+                throw new PluginException("Can not parse Nexus Response json", e);
+            }
+        }
+        return directiryDtos;
     }
 }

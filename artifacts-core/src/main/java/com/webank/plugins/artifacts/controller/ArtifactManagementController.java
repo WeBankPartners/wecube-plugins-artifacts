@@ -7,14 +7,19 @@ import static com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.d
 import static com.webank.plugins.artifacts.utils.BooleanUtils.isTrue;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.webank.plugins.artifacts.support.cmdb.dto.v2.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONException;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,9 +36,6 @@ import com.webank.plugins.artifacts.domain.JsonResponse;
 import com.webank.plugins.artifacts.domain.PackageDomain;
 import com.webank.plugins.artifacts.service.ArtifactService;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
-import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
-import com.webank.plugins.artifacts.support.cmdb.dto.v2.OperateCiDto;
-import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 
 @RestController
 public class ArtifactManagementController {
@@ -76,6 +78,25 @@ public class ArtifactManagementController {
             @RequestBody PaginationQuery queryObject) {
         queryObject.addEqualsFilter("unit_design", unitDesignId);
         return okayWithData(cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(), queryObject));
+    }
+
+    @PostMapping("/unit-designs/{unit-design-id}/packages/queryNexusDirectiry")
+    @ResponseBody
+    public JsonResponse queryNexusPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
+                                           @RequestBody PaginationQuery queryObject) {
+        String artifactPath = getArtifactPath(unitDesignId, queryObject);
+        //String artifactPath = "com/webank/wecube-plugins-artifacts";
+        return okayWithData(artifactService.queryNexusDirectiry(artifactPath));
+    }
+
+    @PostMapping("/unit-designs/{unit-design-id}/packages/uploadNexusPackage")
+    @ResponseBody
+    public JsonResponse uploadNexusPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
+                                      @RequestParam(value = "downloadUrl", required = false) String downloadUrl, HttpServletRequest request) {
+        File file = convertNexusPackageToFile(downloadUrl,downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
+        String url = artifactService.uploadPackageToS3(file);
+        return okayWithData(new CiDataDto(artifactService.savePackageToCmdb(file, unitDesignId, (String) request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url)));
+
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/deactive")
@@ -144,6 +165,21 @@ public class ArtifactManagementController {
         return okayWithData(cmdbDataProperties.getCiTypeIdOfPackage());
     }
 
+    private String getArtifactPath(String unitDesignId,PaginationQuery queryObject){
+        queryObject.addEqualsFilter("unit_design", unitDesignId);
+        PaginationQueryResult<Object> objectPaginationQueryResult = cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(), queryObject);
+        String artifactPath = null;
+        try {
+            Map<String, String> ResultLinkedHashMap = (LinkedHashMap)objectPaginationQueryResult.getContents().get(0);
+            JSONObject responseJson  = (JSONObject) JSONObject.wrap(ResultLinkedHashMap.get("data"));
+            JSONObject unit_design = responseJson.getJSONObject("unit_design");
+            artifactPath = unit_design.getString("artifact_path");
+        } catch (JSONException e) {
+            throw new PluginException("Can not parse CMDB Response json", e);
+        }
+        return artifactPath;
+    }
+
     private File convertMultiPartToFile(MultipartFile multipartFile) {
         if (multipartFile == null) {
             return null;
@@ -157,6 +193,28 @@ public class ArtifactManagementController {
         }
         return file;
     }
+
+    private File convertNexusPackageToFile(String downloadUrl,String fileName) {
+        File file = new File(fileName);
+        try {
+            URL url = new URL(downloadUrl);
+            URLConnection connection = url.openConnection();
+            connection.setConnectTimeout(5 * 1000);
+            InputStream inputStream = connection.getInputStream();
+            byte[] byteArr = new byte[1024];
+            int len;
+            FileOutputStream fos = new FileOutputStream(file);
+            while ((len = inputStream.read(byteArr)) != -1) {
+                fos.write(byteArr, 0, len);
+            }
+            fos.close();
+            inputStream.close();
+        } catch (IOException e) {
+            throw new PluginException("Fail to convert Nexus package to file", e);
+        }
+       return file;
+    }
+
 
     @PostMapping("/ci/state/operate")
     public JsonResponse operateCiForState(@RequestBody List<OperateCiDto> ciIds, @RequestParam("operation") String operation) {
