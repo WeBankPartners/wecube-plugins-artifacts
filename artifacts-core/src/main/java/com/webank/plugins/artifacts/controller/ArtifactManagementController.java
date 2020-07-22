@@ -84,8 +84,8 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse queryNexusPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
                                            @RequestBody PaginationQuery queryObject) {
-        String artifactPath = getArtifactPath(unitDesignId, queryObject);
-        //String artifactPath = "com/webank/wecube-plugins-artifacts";
+        //String artifactPath = getArtifactPath(unitDesignId, queryObject);
+        String artifactPath = "com/webank/wecube-plugins-artifacts";
         return okayWithData(artifactService.queryNexusDirectiry(artifactPath));
     }
 

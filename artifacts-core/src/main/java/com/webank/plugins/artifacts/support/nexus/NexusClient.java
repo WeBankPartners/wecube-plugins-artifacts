@@ -20,8 +20,8 @@ public class NexusClient {
     @SuppressWarnings("unchecked")
     public <D, R extends NexusResponse> D  get(String targetUrl, Class<R> responseType) {
         log.info("About to call {} ", targetUrl);
-        R NexusResponse = restTemplate.getForObject(targetUrl, responseType);
-        log.info("Nexus response: {} ", NexusResponse);
+        R nexusResponse = restTemplate.getForObject(targetUrl, responseType);
+        log.info("Nexus response: {} ", nexusResponse);
         return  (D)NexusResponse.getItems();
     }
 }
