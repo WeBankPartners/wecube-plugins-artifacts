@@ -22,6 +22,6 @@ public class NexusClient {
         log.info("About to call {} ", targetUrl);
         R nexusResponse = restTemplate.getForObject(targetUrl, responseType);
         log.info("Nexus response: {} ", nexusResponse);
-        return  (D)NexusResponse.getItems();
+        return  (D)nexusResponse.getItems();
     }
 }
