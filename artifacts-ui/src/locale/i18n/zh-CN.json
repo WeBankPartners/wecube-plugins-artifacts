@@ -57,5 +57,8 @@
   "artifacts_please_paste_here": "请在这粘贴",
   "is_decompression": "是否解压",
   "configuration": "选择已有配置",
-  "is_files_exist": "该文件不存在"
+  "is_files_exist": "该文件不存在",
+  "bind_key": "绑定",
+  "untie_key": "解绑",
+  "select_key": "选择"
 }

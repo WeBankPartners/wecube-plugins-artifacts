@@ -57,5 +57,8 @@
   "artifacts_please_paste_here": "Please Paste Here",
   "is_decompression": "Decompression",
   "configuration": "Configuration",
-  "is_files_exist": "The File Does Not Exist"
+  "is_files_exist": "The File Does Not Exist",
+  "bind_key": "Bind",
+  "untie_key": "Unbind",
+  "select_key": "Select"
 }

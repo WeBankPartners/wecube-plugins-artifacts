@@ -119,6 +119,11 @@
             <Tree :data="filesTreeData" @on-toggle-expand="expandNode"></Tree>
           </RadioGroup>
         </Modal>
+        <Modal v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="onSetRowValue" @on-cancel="closeconfigModal">
+          <Select filterable clearable v-model="currentConfigValue">
+            <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value)" :value="conf.variable_value" :key="conf.key_name">{{ conf.key_name }}</Option>
+          </Select>
+        </Modal>
       </Card>
       <Card v-if="tabData.length ? true : false" class="artifact-management-bottom-card artifact-management-top-card">
         <Tabs v-model="activeTab" @on-click="tabChange">
@@ -153,6 +158,11 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      temAciveTab: '',
+      currentRow: {},
+      allDiffConfigs: [],
+      isShowConfigKeyModal: false,
+      currentConfigValue: '',
       headers: {},
       configuration: '',
       packageCiType: 0,
@@ -299,11 +309,16 @@ export default {
             ) : (
               <div style="align-items:center;display:flex;">
                 <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} v-model={params.row.variableValue} onUpdateValue={val => this.updateAutoFillValue(val, params.index)} cmdbPackageName={cmdbPackageName} />
-                <Button disabled={!params.row.variableValue} size="small" type="primary" style="margin-left:10px" onClick={() => this.saveAttr(params.index, params.row.variableValue)}>
-                  {this.$t('artifacts_save')}
-                </Button>
               </div>
             )
+          }
+        },
+        {
+          title: this.$t('artifacts_action'),
+          key: 'state',
+          width: 150,
+          render: (h, params) => {
+            return <div style="padding-top:5px">{this.renderConfigButton(params)}</div>
           }
         }
       ]
@@ -390,6 +405,73 @@ export default {
           )
         })
     },
+    renderConfigButton (params) {
+      const row = params.row
+      return [
+        <Button disabled={row.autoFillValue.length > 0} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.showConfigKeyModal(row)}>
+          {this.$t('select_key')}
+        </Button>,
+        <Button disabled={!row.variableValue} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveAttr(params.index, row.variableValue)}>
+          {this.$t('artifacts_save')}
+        </Button>,
+        <Button disabled={row.isBinding.length > 0 || row.autoFillValue.length === 0} size="small" type="warning" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.bindConfig(row)}>
+          {this.$t('bind_key')}
+        </Button>,
+        <Button disabled={row.isBinding.length === 0 || row.autoFillValue.length === 0} size="small" type="error" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.unBindConfig(row)}>
+          {this.$t('untie_key')}
+        </Button>
+      ]
+    },
+    onSetRowValue () {
+      if (this.currentConfigValue) {
+        this.$set(this.tabData[this.nowTab].tableData[this.currentRow._index], 'variableValue', this.currentConfigValue)
+      }
+      this.closeconfigModal()
+    },
+    async unBindConfig (row) {
+      const id = row.isBinding
+      const found = this.tableData.find(_ => _.guid === this.packageId)
+      const bindConfigIds = found.diff_conf_variable.map(i => i.guid)
+      const index = bindConfigIds.indexOf(id)
+      bindConfigIds.splice(index, 1)
+      await this.updateEntity({
+        packageName: cmdbPackageName,
+        entityName: DEPLOY_PACKAGE,
+        data: [
+          {
+            id: this.packageId,
+            diff_conf_variable: bindConfigIds
+          }
+        ]
+      })
+      await this.queryPackages()
+      this.getTabDatas(found.diff_conf_file, true)
+      this.activeTab = this.temAciveTab
+    },
+    async bindConfig (row) {
+      const found = this.tableData.find(_ => _.guid === this.packageId)
+      const bindConfigIds = found.diff_conf_variable.map(i => i.guid)
+      const foundKey = this.allDiffConfigs.find(_ => _.code === row.key)
+      bindConfigIds.push(foundKey.guid)
+      await this.updateEntity({
+        packageName: cmdbPackageName,
+        entityName: DEPLOY_PACKAGE,
+        data: [
+          {
+            id: this.packageId,
+            diff_conf_variable: bindConfigIds
+          }
+        ]
+      })
+      await this.queryPackages()
+      this.getTabDatas(found.diff_conf_file, true)
+      this.activeTab = this.temAciveTab
+    },
+    closeconfigModal () {
+      this.currentConfigValue = ''
+      this.isShowConfigKeyModal = false
+      this.currentRow = {}
+    },
     async fetchData () {
       const [sysData, packageCiType] = await Promise.all([getSystemDesignVersions(), getPackageCiTypeId()])
       if (sysData.status === 'OK' && sysData.data.contents instanceof Array) {
@@ -450,6 +532,16 @@ export default {
         this.genFilesTreedata({ files: data.outputs[0].files, currentDir })
       }
     },
+    async getAllEntityData () {
+      const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION)
+      if (diffConfigs.status === 'OK') {
+        this.allDiffConfigs = diffConfigs.data
+      }
+    },
+    showConfigKeyModal (row) {
+      this.isShowConfigKeyModal = true
+      this.currentRow = row
+    },
     async getKeys (options) {
       if (!options) return
       let { status, data } = await getKeys(this.guid, this.packageId, {
@@ -465,6 +557,7 @@ export default {
               _.autoFillValue = found.variable_value
               _.id = found.id
             }
+            _.isBinding = ''
             return _
           })
           this.$set(options, 'tableData', result)
@@ -478,6 +571,7 @@ export default {
       const res = await Promise.all(promiseArray)
       let allKeys = {}
       let newDiffConfigs = []
+      const bindConfig = this.tableData.find(_ => _.guid === this.packageId).diff_conf_variable
       let tabData = res.map((tab, tabIndex) => {
         if (tab.status === 'OK') {
           const tableData = tab.data.outputs[0].configKeyInfos.map((_, i) => {
@@ -485,11 +579,14 @@ export default {
               variable_name: _.key,
               variable_value: ''
             }
+            const found = bindConfig.find(conf => conf.code === _.key)
             return {
               index: i + 1,
               key: _.key,
+              line: _.line,
               autoFillValue: '',
-              id: ''
+              id: '',
+              isBinding: found ? found.guid : ''
             }
           })
           return tableData
@@ -509,7 +606,8 @@ export default {
               return true
             }
           })
-          if (!found) {
+          const newFound = newDiffConfigs.find(_ => _.variable_name.toUpperCase() === key.toUpperCase())
+          if (!found && !newFound) {
             // 如果该差异化变量未创建，则需创建一个 variable_value 值为空的变量，此处将所有未创建的变量存入 newDiffConfigs 数组
             newDiffConfigs.push({
               variable_name: key,
@@ -608,6 +706,8 @@ export default {
     },
     selectSystemDesignVersion (guid) {
       this.getSystemDesignVersion(guid)
+      this.guid = ''
+      this.tabData = []
     },
     formatTreeData (array, level) {
       return array.map(_ => {
@@ -742,6 +842,9 @@ export default {
               desc: message
             })
             this.queryPackages()
+            if (this.packageId === row.guid) {
+              this.tabData = []
+            }
           }
         }
       })
@@ -930,6 +1033,7 @@ export default {
           return true
         }
       })
+      this.temAciveTab = this.activeTab
     },
     updateAutoFillValue (val, row) {
       this.$set(this.tabData[this.nowTab].tableData[row], 'variableValue', val)
@@ -1049,6 +1153,7 @@ export default {
     this.getSpecialConnector()
     this.getAllCITypesWithAttr()
     this.getAllSystemEnumCodes()
+    this.getAllEntityData()
   }
 }
 </script>
