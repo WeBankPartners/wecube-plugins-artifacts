@@ -121,7 +121,7 @@
         </Modal>
         <Modal v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="onSetRowValue" @on-cancel="closeconfigModal">
           <Select filterable clearable v-model="currentConfigValue">
-            <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value)" :value="conf.variable_value" :key="conf.key_name">{{ conf.key_name }}</Option>
+            <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value && conf.code !== currentRow.key)" :value="conf.variable_value" :key="conf.key_name">{{ conf.key_name }}</Option>
           </Select>
         </Modal>
       </Card>
@@ -444,9 +444,7 @@ export default {
           }
         ]
       })
-      await this.queryPackages()
-      this.getTabDatas(found.diff_conf_file, true)
-      this.activeTab = this.temAciveTab
+      this.updateTabData()
     },
     async bindConfig (row) {
       const found = this.tableData.find(_ => _.guid === this.packageId)
@@ -463,9 +461,42 @@ export default {
           }
         ]
       })
-      await this.queryPackages()
-      this.getTabDatas(found.diff_conf_file, true)
-      this.activeTab = this.temAciveTab
+      this.updateTabData()
+    },
+    async updateTabData () {
+      let tableData = await queryPackages(this.guid, {
+        sorting: {
+          asc: false,
+          field: 'upload_time'
+        },
+        paging: true,
+        pageable: {
+          pageSize: this.pageInfo.pageSize,
+          startIndex: (this.pageInfo.currentPage - 1) * this.pageInfo.pageSize
+        }
+      })
+      const currentTab = this.tabData.find(tab => tab.title === this.activeTab)
+      const bindConfig = tableData.data.contents.find(_ => _.data.guid === this.packageId).data.diff_conf_variable
+      const tab = await getKeys(this.guid, this.packageId, { filePath: currentTab.path })
+      if (tab.status === 'OK') {
+        const result = tab.data.outputs[0].configKeyInfos.map((_, i) => {
+          const found = bindConfig.find(conf => conf.code === _.key)
+          return {
+            index: i + 1,
+            key: _.key,
+            line: _.line,
+            autoFillValue: '',
+            id: '',
+            isBinding: found ? found.guid : ''
+          }
+        })
+        result.forEach(i => {
+          const key = this.allDiffConfigs.find(d => d.code === i.key)
+          i.autoFillValue = key.variable_value
+          i.id = key.id
+        })
+        this.$set(this.tabData[this.nowTab], 'tableData', result)
+      }
     },
     closeconfigModal () {
       this.currentConfigValue = ''
@@ -571,7 +602,8 @@ export default {
       const res = await Promise.all(promiseArray)
       let allKeys = {}
       let newDiffConfigs = []
-      const bindConfig = this.tableData.find(_ => _.guid === this.packageId).diff_conf_variable
+      let needBinding = []
+      const bindConfig = this.tableData.find(_ => _.guid === this.packageId).diff_conf_variable || []
       let tabData = res.map((tab, tabIndex) => {
         if (tab.status === 'OK') {
           const tableData = tab.data.outputs[0].configKeyInfos.map((_, i) => {
@@ -580,6 +612,9 @@ export default {
               variable_value: ''
             }
             const found = bindConfig.find(conf => conf.code === _.key)
+            if (found) {
+              needBinding.push(found.guid)
+            }
             return {
               index: i + 1,
               key: _.key,
@@ -615,6 +650,9 @@ export default {
             })
           }
         })
+        if (bindConfig.length === 0) {
+          needBinding = Object.keys(allKeys).map(_ => allKeys[_].id)
+        }
         if (newDiffConfigs.length) {
           // 将 newDiffConfigs 数组里所有未创建的差异化变量统一创建，并获取其 id
           const params = {
@@ -636,7 +674,7 @@ export default {
                 })
                 this.$set(this.tabData[tabIndex], 'tableData', result)
               })
-              this.updatePackages(allKeys)
+              this.updatePackages(needBinding)
             }
           }
           this.createEntity(params)
@@ -652,26 +690,25 @@ export default {
             this.$set(this.tabData[tabIndex], 'tableData', result)
           })
           if (isNewPage) {
-            this.updatePackages(allKeys)
+            this.updatePackages(needBinding)
           }
         }
       }
     },
-    updatePackages (allKeys) {
+    updatePackages (needBinding) {
       // 更新部署包关联的所有差异配置变量
-      const ids = Object.keys(allKeys).map(_ => allKeys[_].id)
       this.updateEntity({
         packageName: cmdbPackageName,
         entityName: DEPLOY_PACKAGE,
         data: [
           {
             id: this.packageId,
-            diff_conf_variable: ids
+            diff_conf_variable: needBinding
           }
         ]
       })
     },
-    async saveConfigFiles (updatePackages) {
+    async saveConfigFiles () {
       this.loadingForSave = true
       const obj = {
         configFilesWithPath: this.packageInput.diff_conf_file,
@@ -687,7 +724,7 @@ export default {
           title: this.$t('artifacts_successed')
         })
       }
-      this.queryPackages()
+      await this.queryPackages()
       this.getTabDatas(this.packageInput.diff_conf_file.join('|'), true)
     },
     async createEntity (params) {
@@ -1068,11 +1105,12 @@ export default {
         packageName: cmdbPackageName,
         entityName: DIFF_CONFIGURATION,
         data,
-        callback: () => {
+        callback: async () => {
           this.$Notice.success({
             title: this.$t('artifacts_successed')
           })
-          this.getKeys(this.tabData[this.nowTab])
+          await this.getAllEntityData()
+          this.updateTabData()
         }
       }
       this.updateEntity(params)
