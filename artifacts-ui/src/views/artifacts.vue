@@ -41,7 +41,8 @@
               <Col span="18" offset="1">
                 <div id="diff_conf_file">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.diff_conf_file" :key="index">
-                    <Input :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index]" />
+                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index]" />
+                    <Button type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'diff_conf_file')"></Button>
                   </div>
                 </div>
                 <div v-if="is_diff_conf_file.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_diff_conf_file.join(' | ') }}</div>
@@ -57,7 +58,8 @@
               <Col span="18" offset="1">
                 <div id="start_file_path">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.start_file_path" :key="index">
-                    <Input :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path[index]" />
+                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path[index]" />
+                    <Button type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
                   </div>
                 </div>
                 <div v-if="is_start_file_path.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_start_file_path.join(' | ') }}</div>
@@ -73,7 +75,8 @@
               <Col span="18" offset="1">
                 <div id="stop_file_path">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.stop_file_path" :key="index">
-                    <Input :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path[index]" />
+                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path[index]" />
+                    <Button type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
                   </div>
                 </div>
                 <div v-if="is_stop_file_path.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_stop_file_path.join(' | ') }}</div>
@@ -89,7 +92,8 @@
               <Col span="18" offset="1">
                 <div id="deploy_file_path">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.deploy_file_path" :key="index">
-                    <Input :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path[index]" />
+                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path[index]" />
+                    <Button type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
                   </div>
                 </div>
                 <div v-if="is_deploy_file_path.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_deploy_file_path.join(' | ') }}</div>
@@ -114,6 +118,11 @@
           <RadioGroup v-model="selectFile">
             <Tree :data="filesTreeData" @on-toggle-expand="expandNode"></Tree>
           </RadioGroup>
+        </Modal>
+        <Modal v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="onSetRowValue" @on-cancel="closeconfigModal">
+          <Select filterable clearable v-model="currentConfigValue">
+            <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value)" :value="conf.variable_value" :key="conf.key_name">{{ conf.key_name }}</Option>
+          </Select>
         </Modal>
       </Card>
       <Card v-if="tabData.length ? true : false" class="artifact-management-bottom-card artifact-management-top-card">
@@ -149,6 +158,11 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      temAciveTab: '',
+      currentRow: {},
+      allDiffConfigs: [],
+      isShowConfigKeyModal: false,
+      currentConfigValue: '',
       headers: {},
       configuration: '',
       packageCiType: 0,
@@ -295,11 +309,16 @@ export default {
             ) : (
               <div style="align-items:center;display:flex;">
                 <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} v-model={params.row.variableValue} onUpdateValue={val => this.updateAutoFillValue(val, params.index)} cmdbPackageName={cmdbPackageName} />
-                <Button disabled={!params.row.variableValue} size="small" type="primary" style="margin-left:10px" onClick={() => this.saveAttr(params.index, params.row.variableValue)}>
-                  {this.$t('artifacts_save')}
-                </Button>
               </div>
             )
+          }
+        },
+        {
+          title: this.$t('artifacts_action'),
+          key: 'state',
+          width: 150,
+          render: (h, params) => {
+            return <div style="padding-top:5px">{this.renderConfigButton(params)}</div>
           }
         }
       ]
@@ -334,6 +353,9 @@ export default {
     }
   },
   methods: {
+    deleteFilePath (index, key) {
+      this.packageInput[key].splice(index, 1)
+    },
     async getSpecialConnector () {
       const res = await getSpecialConnector()
       if (res.status === 'OK') {
@@ -342,7 +364,7 @@ export default {
     },
     renderCell (content) {
       return (
-        <Tooltip style="width: 100%;">
+        <Tooltip min-width="200px" max-width="500px" style="width: 100%;">
           <span slot="content" style="white-space:normal;">
             {content && content.toString()}{' '}
           </span>
@@ -382,6 +404,73 @@ export default {
             </Button>
           )
         })
+    },
+    renderConfigButton (params) {
+      const row = params.row
+      return [
+        <Button disabled={row.autoFillValue.length > 0} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.showConfigKeyModal(row)}>
+          {this.$t('select_key')}
+        </Button>,
+        <Button disabled={!row.variableValue} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveAttr(params.index, row.variableValue)}>
+          {this.$t('artifacts_save')}
+        </Button>,
+        <Button disabled={row.isBinding.length > 0 || row.autoFillValue.length === 0} size="small" type="warning" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.bindConfig(row)}>
+          {this.$t('bind_key')}
+        </Button>,
+        <Button disabled={row.isBinding.length === 0 || row.autoFillValue.length === 0} size="small" type="error" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.unBindConfig(row)}>
+          {this.$t('untie_key')}
+        </Button>
+      ]
+    },
+    onSetRowValue () {
+      if (this.currentConfigValue) {
+        this.$set(this.tabData[this.nowTab].tableData[this.currentRow._index], 'variableValue', this.currentConfigValue)
+      }
+      this.closeconfigModal()
+    },
+    async unBindConfig (row) {
+      const id = row.isBinding
+      const found = this.tableData.find(_ => _.guid === this.packageId)
+      const bindConfigIds = found.diff_conf_variable.map(i => i.guid)
+      const index = bindConfigIds.indexOf(id)
+      bindConfigIds.splice(index, 1)
+      await this.updateEntity({
+        packageName: cmdbPackageName,
+        entityName: DEPLOY_PACKAGE,
+        data: [
+          {
+            id: this.packageId,
+            diff_conf_variable: bindConfigIds
+          }
+        ]
+      })
+      await this.queryPackages()
+      this.getTabDatas(found.diff_conf_file, true)
+      this.activeTab = this.temAciveTab
+    },
+    async bindConfig (row) {
+      const found = this.tableData.find(_ => _.guid === this.packageId)
+      const bindConfigIds = found.diff_conf_variable.map(i => i.guid)
+      const foundKey = this.allDiffConfigs.find(_ => _.code === row.key)
+      bindConfigIds.push(foundKey.guid)
+      await this.updateEntity({
+        packageName: cmdbPackageName,
+        entityName: DEPLOY_PACKAGE,
+        data: [
+          {
+            id: this.packageId,
+            diff_conf_variable: bindConfigIds
+          }
+        ]
+      })
+      await this.queryPackages()
+      this.getTabDatas(found.diff_conf_file, true)
+      this.activeTab = this.temAciveTab
+    },
+    closeconfigModal () {
+      this.currentConfigValue = ''
+      this.isShowConfigKeyModal = false
+      this.currentRow = {}
     },
     async fetchData () {
       const [sysData, packageCiType] = await Promise.all([getSystemDesignVersions(), getPackageCiTypeId()])
@@ -443,6 +532,16 @@ export default {
         this.genFilesTreedata({ files: data.outputs[0].files, currentDir })
       }
     },
+    async getAllEntityData () {
+      const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION)
+      if (diffConfigs.status === 'OK') {
+        this.allDiffConfigs = diffConfigs.data
+      }
+    },
+    showConfigKeyModal (row) {
+      this.isShowConfigKeyModal = true
+      this.currentRow = row
+    },
     async getKeys (options) {
       if (!options) return
       let { status, data } = await getKeys(this.guid, this.packageId, {
@@ -458,6 +557,7 @@ export default {
               _.autoFillValue = found.variable_value
               _.id = found.id
             }
+            _.isBinding = ''
             return _
           })
           this.$set(options, 'tableData', result)
@@ -471,6 +571,7 @@ export default {
       const res = await Promise.all(promiseArray)
       let allKeys = {}
       let newDiffConfigs = []
+      const bindConfig = this.tableData.find(_ => _.guid === this.packageId).diff_conf_variable
       let tabData = res.map((tab, tabIndex) => {
         if (tab.status === 'OK') {
           const tableData = tab.data.outputs[0].configKeyInfos.map((_, i) => {
@@ -478,11 +579,14 @@ export default {
               variable_name: _.key,
               variable_value: ''
             }
+            const found = bindConfig.find(conf => conf.code === _.key)
             return {
               index: i + 1,
               key: _.key,
+              line: _.line,
               autoFillValue: '',
-              id: ''
+              id: '',
+              isBinding: found ? found.guid : ''
             }
           })
           return tableData
@@ -502,7 +606,8 @@ export default {
               return true
             }
           })
-          if (!found) {
+          const newFound = newDiffConfigs.find(_ => _.variable_name.toUpperCase() === key.toUpperCase())
+          if (!found && !newFound) {
             // 如果该差异化变量未创建，则需创建一个 variable_value 值为空的变量，此处将所有未创建的变量存入 newDiffConfigs 数组
             newDiffConfigs.push({
               variable_name: key,
@@ -601,6 +706,8 @@ export default {
     },
     selectSystemDesignVersion (guid) {
       this.getSystemDesignVersion(guid)
+      this.guid = ''
+      this.tabData = []
     },
     formatTreeData (array, level) {
       return array.map(_ => {
@@ -735,6 +842,9 @@ export default {
               desc: message
             })
             this.queryPackages()
+            if (this.packageId === row.guid) {
+              this.tabData = []
+            }
           }
         }
       })
@@ -750,16 +860,18 @@ export default {
       }
     },
     configurationChanged (v) {
-      const found = this.tableData.find(row => row.name === v)
-      this.packageInput.diff_conf_file = found.diff_conf_file ? found.diff_conf_file.split('|') : []
-      this.packageInput.start_file_path = found.start_file_path ? found.start_file_path.split('|') : []
-      this.packageInput.stop_file_path = found.stop_file_path ? found.stop_file_path.split('|') : []
-      this.packageInput.deploy_file_path = found.deploy_file_path ? found.deploy_file_path.split('|') : []
-      this.packageInput.is_decompression = found.is_decompression || ''
-      this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
-      this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
-      this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
-      this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
+      if (v) {
+        const found = this.tableData.find(row => row.name === v)
+        this.packageInput.diff_conf_file = found.diff_conf_file ? found.diff_conf_file.split('|') : []
+        this.packageInput.start_file_path = found.start_file_path ? found.start_file_path.split('|') : []
+        this.packageInput.stop_file_path = found.stop_file_path ? found.stop_file_path.split('|') : []
+        this.packageInput.deploy_file_path = found.deploy_file_path ? found.deploy_file_path.split('|') : []
+        this.packageInput.is_decompression = found.is_decompression || ''
+        this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
+        this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
+        this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
+        this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
+      }
     },
     async checkFileExist (filePath, isExist) {
       if (filePath.length === 0) {
@@ -768,13 +880,10 @@ export default {
       const filePathList = filePath
       filePathList.forEach(async path => {
         let dirs = path.split('/')
-        const notExist = await this.checkFiles(0, dirs)
-        if (notExist) {
-          this[isExist].push(path)
-        }
+        await this.checkFiles(0, dirs, isExist)
       })
     },
-    async checkFiles (index, fileList) {
+    async checkFiles (index, fileList, isExist) {
       let currentDir = ''
       let notExist = false
       if (index > 0) {
@@ -787,9 +896,10 @@ export default {
         if (index === fileList.length - 1) {
           return notExist
         }
-        this.checkFiles(index + 1, fileList)
+        this.checkFiles(index + 1, fileList, isExist)
       } else {
         notExist = true
+        this[isExist].push(fileList.join('/'))
       }
       return notExist
     },
@@ -809,6 +919,10 @@ export default {
       this.is_stop_file_path = []
       this.is_deploy_file_path = []
       this.isShowFilesModal = true
+      this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
+      this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
+      this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
+      this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
       this.$nextTick(() => {
         this.genSortable('diff_conf_file')
         this.genSortable('start_file_path')
@@ -919,6 +1033,7 @@ export default {
           return true
         }
       })
+      this.temAciveTab = this.activeTab
     },
     updateAutoFillValue (val, row) {
       this.$set(this.tabData[this.nowTab].tableData[row], 'variableValue', val)
@@ -1038,11 +1153,17 @@ export default {
     this.getSpecialConnector()
     this.getAllCITypesWithAttr()
     this.getAllSystemEnumCodes()
+    this.getAllEntityData()
   }
 }
 </script>
 
 <style lang="scss" scoped>
+.textarea-input {
+  display: inline-block;
+  width: 90%;
+  margin-right: 20px;
+}
 .artifact-management-files-card {
   border-color: darkgrey;
 }

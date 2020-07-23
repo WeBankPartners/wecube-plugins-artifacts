@@ -1,6 +1,6 @@
 #!/bin/sh
 mkdir -p /log
-java -jar /application/wecube-plugins-artifacts.jar  \
+java -Duser.timezone=Asia/Shanghai -jar /application/wecube-plugins-artifacts.jar  \
 --server.address=0.0.0.0 \
 --server.port=8081 \
 --plugins.wecube-gateway-server-url=$1 \
