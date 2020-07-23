@@ -13,10 +13,16 @@ import java.net.URLConnection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.*;
+import com.webank.plugins.artifacts.utils.Base64Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
@@ -39,6 +45,8 @@ import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 
 @RestController
 public class ArtifactManagementController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ArtifactManagementController.class);
     @Autowired
     CmdbDataProperties cmdbDataProperties;
 
@@ -47,6 +55,9 @@ public class ArtifactManagementController {
 
     @Autowired
     private ArtifactService artifactService;
+
+    @Autowired
+    private ApplicationProperties applicationProperties;
 
     @GetMapping("/system-design-versions")
     @ResponseBody
@@ -84,8 +95,7 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse queryNexusPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
                                            @RequestBody PaginationQuery queryObject) {
-        //String artifactPath = getArtifactPath(unitDesignId, queryObject);
-        String artifactPath = "com/webank/wecube-plugins-artifacts";
+        String artifactPath = getArtifactPath(unitDesignId, queryObject);
         return okayWithData(artifactService.queryNexusDirectiry(artifactPath));
     }
 
@@ -93,10 +103,25 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse uploadNexusPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
                                       @RequestParam(value = "downloadUrl", required = false) String downloadUrl, HttpServletRequest request) {
-        File file = convertNexusPackageToFile(downloadUrl,downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
-        String url = artifactService.uploadPackageToS3(file);
-        return okayWithData(new CiDataDto(artifactService.savePackageToCmdb(file, unitDesignId, (String) request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url)));
+        asyncUploadNexusPackageToS3(unitDesignId,downloadUrl,request);
+        return okay();
+    }
 
+    private void asyncUploadNexusPackageToS3(String unitDesignId, String downloadUrl, HttpServletRequest request) {
+
+        ExecutorService executor = Executors.newFixedThreadPool(1);
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    File file = convertNexusPackageToFile(downloadUrl,downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
+                    String url = artifactService.uploadPackageToS3(file);
+                    artifactService.savePackageToCmdb(file, unitDesignId, (String) request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url);
+                } catch (Exception e) {
+                    logger.info("sync upload NEXUS package to S3 failed ,", e);
+                }
+            }
+        });
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/deactive")
@@ -200,6 +225,7 @@ public class ArtifactManagementController {
             URL url = new URL(downloadUrl);
             URLConnection connection = url.openConnection();
             connection.setConnectTimeout(5 * 1000);
+            connection.setRequestProperty("Authorization","Basic " + Base64Utils.getBASE64(applicationProperties.getArtifactsNexusUsername() + ":" + applicationProperties.getArtifactsNexusPassword()));
             InputStream inputStream = connection.getInputStream();
             byte[] byteArr = new byte[1024];
             int len;

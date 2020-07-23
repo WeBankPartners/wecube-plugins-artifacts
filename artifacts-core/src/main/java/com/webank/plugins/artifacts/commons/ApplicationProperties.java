@@ -20,6 +20,8 @@ public class ApplicationProperties {
     private String artifactsS3SecretKey = "";
     private String artifactsS3BucketName = "";
     private String artifactsNexusServerUrl = "";
+    private String artifactsNexusUsername = "";
+    private String artifactsNexusPassword = "";
     private Map<String, String> customHeaders = new LinkedHashMap<>();
     private Set<String> sensitiveHeaders = null;
 

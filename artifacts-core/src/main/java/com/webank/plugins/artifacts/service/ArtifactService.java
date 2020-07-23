@@ -302,9 +302,7 @@ public class ArtifactService {
         String repository = "maven-releases";
         String filter = "jar";
 
-       // String nexusBaseUrl = applicationProperties.getArtifactsNexusServerUrl();
-        String nexusBaseUrl = "http://111.230.161.237:18888";
-
+        String nexusBaseUrl = applicationProperties.getArtifactsNexusServerUrl();
         String nexusRequestUrl = nexusBaseUrl + "/service/rest/beta/assets?repository=" + repository;
         String nexusPath = nexusBaseUrl + "/repository/"+ repository + "/" + artifactPath;
         List<NexusResponse> nexusResponses = nexusClient.get(nexusRequestUrl, NexusResponse.class);
