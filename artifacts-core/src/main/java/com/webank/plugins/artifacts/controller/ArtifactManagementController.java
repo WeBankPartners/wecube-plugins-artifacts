@@ -103,12 +103,11 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse uploadNexusPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
                                       @RequestParam(value = "downloadUrl", required = false) String downloadUrl, HttpServletRequest request) {
-        asyncUploadNexusPackageToS3(unitDesignId,downloadUrl,request);
+        asyncUploadNexusPackageToS3(unitDesignId,downloadUrl,(String) request.getAttribute(ArtifactsConstants.UPLOAD_NAME));
         return okay();
     }
 
-    private void asyncUploadNexusPackageToS3(String unitDesignId, String downloadUrl, HttpServletRequest request) {
-
+    private void asyncUploadNexusPackageToS3(String unitDesignId, String downloadUrl, String uploadName) {
         ExecutorService executor = Executors.newFixedThreadPool(1);
         executor.submit(new Runnable() {
             @Override
@@ -116,7 +115,7 @@ public class ArtifactManagementController {
                 try {
                     File file = convertNexusPackageToFile(downloadUrl,downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
                     String url = artifactService.uploadPackageToS3(file);
-                    artifactService.savePackageToCmdb(file, unitDesignId, (String) request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url);
+                    artifactService.savePackageToCmdb(file, unitDesignId, uploadName, url);
                 } catch (Exception e) {
                     logger.info("sync upload NEXUS package to S3 failed ,", e);
                 }
