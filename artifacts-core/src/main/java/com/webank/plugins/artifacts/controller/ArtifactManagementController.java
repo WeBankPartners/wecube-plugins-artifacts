@@ -103,8 +103,11 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse uploadNexusPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
                                       @RequestParam(value = "downloadUrl", required = false) String downloadUrl, HttpServletRequest request) {
-        asyncUploadNexusPackageToS3(unitDesignId,downloadUrl,(String) request.getAttribute(ArtifactsConstants.UPLOAD_NAME));
-        return okay();
+        File file = convertNexusPackageToFile(downloadUrl,downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
+        String url = artifactService.uploadPackageToS3(file);
+        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, (String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url));
+      //  asyncUploadNexusPackageToS3(unitDesignId,downloadUrl,(String) request.getAttribute(ArtifactsConstants.UPLOAD_NAME));
+      //  return okay();
     }
 
     private void asyncUploadNexusPackageToS3(String unitDesignId, String downloadUrl, String uploadName) {
