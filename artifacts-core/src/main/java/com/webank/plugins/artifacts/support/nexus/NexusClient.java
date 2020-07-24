@@ -1,14 +1,15 @@
 package com.webank.plugins.artifacts.support.nexus;
 
-import com.webank.plugins.artifacts.support.cmdb.dto.CmdbResponse;
-import com.webank.plugins.artifacts.support.nexus.NexusResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
+
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
+import static org.springframework.http.HttpMethod.GET;
 
 @Component
 @Slf4j
@@ -18,10 +19,12 @@ public class NexusClient {
     private RestTemplate restTemplate;
 
     @SuppressWarnings("unchecked")
-    public <D, R extends NexusResponse> D  get(String targetUrl, Class<R> responseType) {
+    public <D, R extends NexusResponse> D  get(String targetUrl, String nexusUsername, String nexusPassword, Class<R> responseType) {
         log.info("About to call {} ", targetUrl);
-        R nexusResponse = restTemplate.getForObject(targetUrl, responseType);
-        log.info("Nexus response: {} ", nexusResponse);
-        return  (D)nexusResponse.getItems();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth(nexusUsername,nexusPassword);
+        ResponseEntity<R> rResponseEntity = restTemplate.exchange(targetUrl, GET, new HttpEntity<>(headers), responseType);
+        log.info("Nexus response: {} ", rResponseEntity);
+        return  (D)rResponseEntity.getBody().getItems();
     }
 }

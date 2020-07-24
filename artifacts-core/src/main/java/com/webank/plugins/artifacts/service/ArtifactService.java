@@ -305,8 +305,9 @@ public class ArtifactService {
         String nexusBaseUrl = applicationProperties.getArtifactsNexusServerUrl();
         String nexusRequestUrl = nexusBaseUrl + "/service/rest/beta/assets?repository=" + repository;
         String nexusPath = nexusBaseUrl + "/repository/"+ repository + "/" + artifactPath;
-        List<NexusResponse> nexusResponses = nexusClient.get(nexusRequestUrl, NexusResponse.class);
 
+        List<NexusResponse> nexusResponses = nexusClient.get(nexusRequestUrl, applicationProperties.getArtifactsNexusUsername(),
+                applicationProperties.getArtifactsNexusPassword(), NexusResponse.class);
         return buildNexusDirectiryResponseDto(nexusResponses,nexusPath,filter);
 
     }
