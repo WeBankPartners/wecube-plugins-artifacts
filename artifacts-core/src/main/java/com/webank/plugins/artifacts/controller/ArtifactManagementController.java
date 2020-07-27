@@ -115,9 +115,11 @@ public class ArtifactManagementController {
             @Override
             public void run() {
                 try {
+                    logger.info("sync upload NEXUS package to S3 begin");
                     File file = convertNexusPackageToFile(downloadUrl,downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
                     String url = artifactService.uploadPackageToS3(file);
                     artifactService.savePackageToCmdb(file, unitDesignId, uploadName, url, authorization);
+                    logger.info("sync upload NEXUS package to S3 end");
                 } catch (Exception e) {
                     logger.info("sync upload NEXUS package to S3 failed ,", e);
                 }
@@ -194,6 +196,11 @@ public class ArtifactManagementController {
     private String getArtifactPath(String unitDesignId,PaginationQuery queryObject){
         queryObject.addEqualsFilter("unit_design", unitDesignId);
         PaginationQueryResult<Object> objectPaginationQueryResult = cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(), queryObject);
+
+        if(objectPaginationQueryResult == null || objectPaginationQueryResult.getContents() ==null || objectPaginationQueryResult.getContents().size() <=0) {
+            throw new PluginException("The unit_design_id can not match CI data.");
+        }
+
         String artifactPath = null;
         try {
             Map<String, String> ResultLinkedHashMap = (LinkedHashMap)objectPaginationQueryResult.getContents().get(0);
