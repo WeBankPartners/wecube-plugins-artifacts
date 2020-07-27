@@ -34,3 +34,5 @@ export const getAllSystemEnumCodes = data => req.post(`/enum/system/codes`, data
 export const getRefCiTypeFrom = id => req.get(`/ci-types/${id}/references/by`)
 export const getCiTypeAttr = id => req.get(`/ci-types/${id}/attributes`)
 export const getSpecialConnector = () => req.get('/static-data/special-connector')
+export const queryArtifactsList = (guid, data) => req.post(`/unit-designs/${guid}/packages/queryNexusDirectiry`, data)
+export const uploadArtifact = (guid, url) => req.post(`/unit-designs/${guid}/packages/uploadNexusPackage?downloadUrl=${url}`)
