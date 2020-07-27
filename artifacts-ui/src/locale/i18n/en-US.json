@@ -60,5 +60,6 @@
   "is_files_exist": "The File Does Not Exist",
   "bind_key": "Bind",
   "untie_key": "Unbind",
-  "select_key": "Select"
+  "select_key": "Select",
+  "select_online": "Select Online Package"
 }

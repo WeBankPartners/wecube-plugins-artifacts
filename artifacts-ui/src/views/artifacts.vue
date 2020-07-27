@@ -21,12 +21,16 @@
     </Col>
     <Col span="17" offset="1">
       <Card v-if="guid" class="artifact-management-top-card">
-        <Button type="info" ghost icon="ios-cloud-upload-outline" style="margin-bottom:10px;" @click="getHeaders">
+        <Button type="info" ghost icon="ios-cloud-upload-outline" @click="getHeaders">
           {{ $t('artifacts_upload_new_package') }}
         </Button>
-        <Upload ref="uploadButton" show-upload-list :action="`/artifacts/unit-designs/${guid}/packages/upload`" :headers="headers" :on-success="onSuccess" :on-error="onError" slot="title">
+        <Button style="margin-left: 10px" type="info" ghost icon="ios-cloud-outline" @click="showPkgModal">
+          {{ $t('select_online') }}
+        </Button>
+        <Upload ref="uploadButton" :action="`/artifacts/unit-designs/${guid}/packages/upload`" :headers="headers" :on-success="onSuccess" :on-error="onError">
           <Button style="display:none" icon="ios-cloud-upload-outline">{{ $t('artifacts_upload_new_package') }}</Button>
         </Upload>
+        <!-- <div v-if="uploaded" style="width: 100%;height:26px"></div> -->
         <ArtifactsSimpleTable class="artifact-management-package-table" :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
         <Modal width="70" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')" :loading="loadingForSave" @on-ok="saveConfigFiles" @on-cancel="closeModal">
           <Select :placeholder="$t('configuration')" @on-change="configurationChanged" v-model="configuration">
@@ -124,6 +128,11 @@
             <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value && conf.code !== currentRow.key)" :value="conf.variable_value" :key="conf.key_name">{{ conf.key_name }}</Option>
           </Select>
         </Modal>
+        <Modal v-model="isShowOnlineModal" :title="$t('select_online')" @on-ok="onUploadHandler" @on-cancel="closeOnlineModal">
+          <Select filterable clearable v-model="currentUrl">
+            <Option v-for="conf in currentPackageList" :value="conf.downloadUrl" :key="conf.downloadUrl">{{ conf.name }}</Option>
+          </Select>
+        </Modal>
       </Card>
       <Card v-if="tabData.length ? true : false" class="artifact-management-bottom-card artifact-management-top-card">
         <Tabs v-model="activeTab" @on-click="tabChange">
@@ -138,7 +147,7 @@
 </template>
 
 <script>
-import { getPackageCiTypeId, getAllCITypesWithAttr, getSystemDesignVersions, getSystemDesignVersion, queryPackages, deleteCiDatas, operateCiState, getFiles, getKeys, saveConfigFiles, createEntity, updateEntity, retrieveEntity, getAllSystemEnumCodes, getSpecialConnector } from '@/api/server.js'
+import { getPackageCiTypeId, queryArtifactsList, uploadArtifact, getAllCITypesWithAttr, getSystemDesignVersions, getSystemDesignVersion, queryPackages, deleteCiDatas, operateCiState, getFiles, getKeys, saveConfigFiles, createEntity, updateEntity, retrieveEntity, getAllSystemEnumCodes, getSpecialConnector } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
@@ -158,6 +167,10 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      currentUrl: '',
+      isShowOnlineModal: false,
+      currentPackageList: [],
+      uploaded: false,
       temAciveTab: '',
       currentRow: {},
       allDiffConfigs: [],
@@ -353,6 +366,23 @@ export default {
     }
   },
   methods: {
+    showPkgModal () {
+      this.isShowOnlineModal = true
+    },
+    async onUploadHandler () {
+      const { status } = await uploadArtifact(this.guid, this.currentUrl)
+      if (status === 'OK') {
+        this.$Notice.success({
+          title: 'Success',
+          desc: 'This may take a while, please check later'
+        })
+      }
+      this.closeOnlineModal()
+    },
+    closeOnlineModal () {
+      this.currentUrl = ''
+      this.isShowOnlineModal = false
+    },
     deleteFilePath (index, key) {
       this.packageInput[key].splice(index, 1)
     },
@@ -378,7 +408,9 @@ export default {
           title: 'Error',
           desc: response.message || ''
         })
+        this.$refs.uploadButton.clearFiles()
       } else {
+        this.$refs.uploadButton.clearFiles()
         this.$Notice.success({
           title: 'Success',
           desc: response.message || ''
@@ -391,6 +423,7 @@ export default {
         title: 'Error',
         desc: file.message || ''
       })
+      this.$refs.uploadButton.clearFiles()
     },
 
     renderActionButton (params) {
@@ -695,9 +728,9 @@ export default {
         }
       }
     },
-    updatePackages (needBinding) {
+    async updatePackages (needBinding) {
       // 更新部署包关联的所有差异配置变量
-      this.updateEntity({
+      await this.updateEntity({
         packageName: cmdbPackageName,
         entityName: DEPLOY_PACKAGE,
         data: [
@@ -707,6 +740,8 @@ export default {
           }
         ]
       })
+      const path = this.tableData.find(_ => _.guid === this.packageId).diff_conf_file
+      this.getTabDatas(path)
     },
     async saveConfigFiles () {
       this.loadingForSave = true
@@ -745,11 +780,28 @@ export default {
       this.getSystemDesignVersion(guid)
       this.guid = ''
       this.tabData = []
+      this.uploaded = false
     },
     formatTreeData (array, level) {
+      const color = {
+        new: 'green',
+        update: 'cyan',
+        delete: 'red',
+        created: 'geekblue',
+        changed: 'purple',
+        destroyed: 'volcano'
+      }
       return array.map(_ => {
         _.title = _.data.name
         _.level = level
+        _.render = (h, params) => {
+          return (
+            <div>
+              <span style="margin-right:10px">{_.data.name}</span>
+              <Tag color={color[_.data.state_code]}>{_.data.state_code}</Tag>
+            </div>
+          )
+        }
         if (_.children && _.children.length) {
           _.expand = true
           _.children = this.formatTreeData(_.children, level + 1)
@@ -762,6 +814,13 @@ export default {
         this.guid = node[0].data.r_guid
         this.queryPackages()
         this.tabData = []
+        this.queryCurrentPkg()
+      }
+    },
+    async queryCurrentPkg () {
+      const { status, data } = await queryArtifactsList(this.guid, { filters: [], paging: false })
+      if (status === 'OK') {
+        this.currentPackageList = data
       }
     },
     pageChange (currentPage) {
