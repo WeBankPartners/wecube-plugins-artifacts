@@ -19,6 +19,7 @@ import java.util.concurrent.Executors;
 import javax.servlet.http.HttpServletRequest;
 
 import com.webank.plugins.artifacts.commons.ApplicationProperties;
+import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.*;
 import com.webank.plugins.artifacts.utils.Base64Utils;
 import org.slf4j.Logger;
@@ -80,7 +81,7 @@ public class ArtifactManagementController {
 
         String url = artifactService.uploadPackageToS3(file);
 
-        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, (String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url));
+        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, (String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url, null));
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/query")
@@ -103,19 +104,20 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse uploadNexusPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
                                       @RequestParam(value = "downloadUrl", required = false) String downloadUrl, HttpServletRequest request) {
-        asyncUploadNexusPackageToS3(unitDesignId,downloadUrl,(String) request.getAttribute(ArtifactsConstants.UPLOAD_NAME));
+        asyncUploadNexusPackageToS3(unitDesignId,downloadUrl,(String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME));
         return okay();
     }
 
-    private void asyncUploadNexusPackageToS3(String unitDesignId, String downloadUrl, String uploadName) {
+    private void asyncUploadNexusPackageToS3(String unitDesignId, String downloadUrl,String uploadName) {
         ExecutorService executor = Executors.newFixedThreadPool(1);
+        String authorization = AuthorizationStorage.getIntance().get();
         executor.submit(new Runnable() {
             @Override
             public void run() {
                 try {
                     File file = convertNexusPackageToFile(downloadUrl,downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
                     String url = artifactService.uploadPackageToS3(file);
-                    artifactService.savePackageToCmdb(file, unitDesignId, uploadName, url);
+                    artifactService.savePackageToCmdb(file, unitDesignId, uploadName, url, authorization);
                 } catch (Exception e) {
                     logger.info("sync upload NEXUS package to S3 failed ,", e);
                 }

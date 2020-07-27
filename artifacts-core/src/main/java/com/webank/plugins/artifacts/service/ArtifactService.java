@@ -4,11 +4,13 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.nexus.NexusClient;
 import com.webank.plugins.artifacts.support.nexus.NexusDirectiryDto;
 import com.webank.plugins.artifacts.support.nexus.NexusResponse;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
@@ -70,7 +72,7 @@ public class ArtifactService {
         return url.substring(0, url.indexOf("?"));
     }
 
-    public List<CiDataDto> savePackageToCmdb(File file, String unitDesignId, String uploadUser, String deployPackageUrl) {
+    public List<CiDataDto> savePackageToCmdb(File file, String unitDesignId, String uploadUser, String deployPackageUrl, String authorization) {
         Map<String, Object> pkg = ImmutableMap.<String, Object>builder()
                 .put("name", file.getName())
                 .put("deploy_package_url", deployPackageUrl)
@@ -81,6 +83,9 @@ public class ArtifactService {
                 .put("unit_design", unitDesignId)
                 .build();
 
+        if(StringUtils.isNoneBlank()) {
+            AuthorizationStorage.getIntance().set(authorization);
+        }
         return cmdbServiceV2Stub.createCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
     }
 
