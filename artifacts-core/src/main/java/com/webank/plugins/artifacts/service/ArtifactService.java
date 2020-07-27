@@ -2,15 +2,18 @@ package com.webank.plugins.artifacts.service;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
+import com.webank.plugins.artifacts.support.nexus.NexusClient;
+import com.webank.plugins.artifacts.support.nexus.NexusDirectiryDto;
+import com.webank.plugins.artifacts.support.nexus.NexusResponse;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONException;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.ImmutableMap;
@@ -55,6 +58,9 @@ public class ArtifactService {
     @Autowired
     private ApplicationProperties applicationProperties;
 
+    @Autowired
+    private NexusClient nexusClient;
+
     public String uploadPackageToS3(File file) {
         if (file == null) {
             throw new PluginException("Upload package file is required.");
@@ -66,7 +72,7 @@ public class ArtifactService {
         return url.substring(0, url.indexOf("?"));
     }
 
-    public List<CiDataDto> savePackageToCmdb(File file, String unitDesignId, String uploadUser, String deployPackageUrl) {
+    public List<CiDataDto> savePackageToCmdb(File file, String unitDesignId, String uploadUser, String deployPackageUrl, String authorization) {
         Map<String, Object> pkg = ImmutableMap.<String, Object>builder()
                 .put("name", file.getName())
                 .put("deploy_package_url", deployPackageUrl)
@@ -77,6 +83,9 @@ public class ArtifactService {
                 .put("unit_design", unitDesignId)
                 .build();
 
+        if(StringUtils.isNoneBlank()) {
+            AuthorizationStorage.getIntance().set(authorization);
+        }
         return cmdbServiceV2Stub.createCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
     }
 
@@ -287,5 +296,44 @@ public class ArtifactService {
     
     public List<SpecialConnectorDtoResponse> getSpecialConnector() {
         return cmdbServiceV2Stub.getSpecialConnector();
+    }
+
+    public List<NexusDirectiryDto> queryNexusDirectiry( String artifactPath ) {
+        if (artifactPath == null || artifactPath.isEmpty()) {
+            throw new PluginException("Upload artifact path is required.");
+        }
+
+        //configuration parameters
+        String repository = "maven-releases";
+        String filter = "jar";
+
+        String nexusBaseUrl = applicationProperties.getArtifactsNexusServerUrl();
+        String nexusRequestUrl = nexusBaseUrl + "/service/rest/beta/assets?repository=" + repository;
+        String nexusPath = nexusBaseUrl + "/repository/"+ repository + "/" + artifactPath;
+
+        List<NexusResponse> nexusResponses = nexusClient.get(nexusRequestUrl, applicationProperties.getArtifactsNexusUsername(),
+                applicationProperties.getArtifactsNexusPassword(), NexusResponse.class);
+        return buildNexusDirectiryResponseDto(nexusResponses,nexusPath,filter);
+
+    }
+
+    private List<NexusDirectiryDto> buildNexusDirectiryResponseDto(List<NexusResponse> nexusResponses,String nexusPath,String filter){
+        List<NexusDirectiryDto>  directiryDtos= new ArrayList<>();
+        for (int i = 0; i < nexusResponses.size(); i++) {
+            try {
+                JSONObject responseJson = (JSONObject) JSONObject.wrap(nexusResponses.get(i));
+
+                String downloadUrl = responseJson.getString("downloadUrl");
+                if(downloadUrl.startsWith(nexusPath) && downloadUrl.endsWith(filter)){
+                    NexusDirectiryDto directiryDto = new NexusDirectiryDto();
+                    directiryDto.setDownloadUrl(downloadUrl);
+                    directiryDto.setName(downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
+                    directiryDtos.add(directiryDto);
+                }
+            } catch (JSONException e) {
+                throw new PluginException("Can not parse Nexus Response json", e);
+            }
+        }
+        return directiryDtos;
     }
 }
