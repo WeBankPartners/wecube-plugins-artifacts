@@ -784,12 +784,12 @@ export default {
     },
     formatTreeData (array, level) {
       const color = {
-        new: 'green',
-        update: 'cyan',
-        delete: 'red',
-        created: 'geekblue',
+        new: '#19be6b',
+        update: '#5cadff',
+        delete: '#ed4014',
+        created: '#2b85e4',
         changed: 'purple',
-        destroyed: 'volcano'
+        destroyed: '#ff9900'
       }
       return array.map(_ => {
         _.title = _.data.name
@@ -798,7 +798,7 @@ export default {
           return (
             <div>
               <span style="margin-right:10px">{_.data.name}</span>
-              <Tag color={color[_.data.state_code]}>{_.data.state_code}</Tag>
+              <span style={`font-size:12px;color:${color[_.data.state_code]}`}>{_.data.state_code}</span>
             </div>
           )
         }
