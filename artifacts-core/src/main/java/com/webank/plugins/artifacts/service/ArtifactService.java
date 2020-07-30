@@ -305,7 +305,7 @@ public class ArtifactService {
 
         //configuration parameters
         String repository = "maven-releases";
-        String filter = "jar";
+        String filter = "jar,zip";
 
         String nexusBaseUrl = applicationProperties.getArtifactsNexusServerUrl();
         String nexusRequestUrl = nexusBaseUrl + "/service/rest/beta/assets?repository=" + repository;
@@ -319,16 +319,24 @@ public class ArtifactService {
 
     private List<NexusDirectiryDto> buildNexusDirectiryResponseDto(List<NexusResponse> nexusResponses,String nexusPath,String filter){
         List<NexusDirectiryDto>  directiryDtos= new ArrayList<>();
+        if(nexusResponses == null || nexusResponses.isEmpty()){
+            return directiryDtos;
+        }
+
+        String[] split = filter.split(",");
         for (int i = 0; i < nexusResponses.size(); i++) {
             try {
                 JSONObject responseJson = (JSONObject) JSONObject.wrap(nexusResponses.get(i));
-
                 String downloadUrl = responseJson.getString("downloadUrl");
-                if(downloadUrl.startsWith(nexusPath) && downloadUrl.endsWith(filter)){
-                    NexusDirectiryDto directiryDto = new NexusDirectiryDto();
-                    directiryDto.setDownloadUrl(downloadUrl);
-                    directiryDto.setName(downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
-                    directiryDtos.add(directiryDto);
+                if(downloadUrl.startsWith(nexusPath)){
+                    for (String suffix : split) {
+                        if(downloadUrl.endsWith(suffix)){
+                            NexusDirectiryDto directiryDto = new NexusDirectiryDto();
+                            directiryDto.setDownloadUrl(downloadUrl);
+                            directiryDto.setName(downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
+                            directiryDtos.add(directiryDto);
+                        }
+                    }
                 }
             } catch (JSONException e) {
                 throw new PluginException("Can not parse Nexus Response json", e);

@@ -96,8 +96,7 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse queryNexusPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
                                            @RequestBody PaginationQuery queryObject) {
-        String artifactPath = getArtifactPath(unitDesignId, queryObject);
-        return okayWithData(artifactService.queryNexusDirectiry(artifactPath));
+        return okayWithData(artifactService.queryNexusDirectiry(getArtifactPath(unitDesignId, queryObject)));
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/uploadNexusPackage")
@@ -194,21 +193,20 @@ public class ArtifactManagementController {
     }
 
     private String getArtifactPath(String unitDesignId,PaginationQuery queryObject){
+        String artifactPath = null;
         queryObject.addEqualsFilter("unit_design", unitDesignId);
         PaginationQueryResult<Object> objectPaginationQueryResult = cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(), queryObject);
 
         if(objectPaginationQueryResult == null || objectPaginationQueryResult.getContents() ==null || objectPaginationQueryResult.getContents().size() <=0) {
-            throw new PluginException("The unit_design_id can not match CI data.");
+            return artifactPath;
         }
-
-        String artifactPath = null;
         try {
             Map<String, String> ResultLinkedHashMap = (LinkedHashMap)objectPaginationQueryResult.getContents().get(0);
             JSONObject responseJson  = (JSONObject) JSONObject.wrap(ResultLinkedHashMap.get("data"));
             JSONObject unit_design = responseJson.getJSONObject("unit_design");
             artifactPath = unit_design.getString("artifact_path");
         } catch (JSONException e) {
-            throw new PluginException("Can not parse CMDB Response json", e);
+            throw new PluginException("Can not parse CMDB Response json, please confirm param artifact_path configuration.");
         }
         return artifactPath;
     }
