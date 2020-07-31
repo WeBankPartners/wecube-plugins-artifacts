@@ -24,7 +24,7 @@
         <Button type="info" ghost icon="ios-cloud-upload-outline" @click="getHeaders">
           {{ $t('artifacts_upload_new_package') }}
         </Button>
-        <Button style="margin-left: 10px" type="info" ghost icon="ios-cloud-outline" @click="showPkgModal">
+        <Button style="margin-left: 10px" type="info" ghost icon="ios-cloud-outline" @click="queryCurrentPkg">
           {{ $t('select_online') }}
         </Button>
         <Upload ref="uploadButton" :action="`/artifacts/unit-designs/${guid}/packages/upload`" :headers="headers" :on-success="onSuccess" :on-error="onError">
@@ -366,9 +366,6 @@ export default {
     }
   },
   methods: {
-    showPkgModal () {
-      this.isShowOnlineModal = true
-    },
     async onUploadHandler () {
       const { status } = await uploadArtifact(this.guid, this.currentUrl)
       if (status === 'OK') {
@@ -814,13 +811,13 @@ export default {
         this.guid = node[0].data.r_guid
         this.queryPackages()
         this.tabData = []
-        this.queryCurrentPkg()
       }
     },
     async queryCurrentPkg () {
       const { status, data } = await queryArtifactsList(this.guid, { filters: [], paging: false })
       if (status === 'OK') {
         this.currentPackageList = data
+        this.isShowOnlineModal = true
       }
     },
     pageChange (currentPage) {
