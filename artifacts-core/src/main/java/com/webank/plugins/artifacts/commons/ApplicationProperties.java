@@ -22,6 +22,8 @@ public class ApplicationProperties {
     private String artifactsNexusServerUrl = "";
     private String artifactsNexusUsername = "";
     private String artifactsNexusPassword = "";
+    private String artifactsNexusRepository = "";
+    private String cmdbArtifactPath = "";
     private Map<String, String> customHeaders = new LinkedHashMap<>();
     private Set<String> sensitiveHeaders = null;
 

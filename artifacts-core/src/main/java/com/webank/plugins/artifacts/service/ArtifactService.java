@@ -298,18 +298,37 @@ public class ArtifactService {
         return cmdbServiceV2Stub.getSpecialConnector();
     }
 
+    public String getArtifactPath(String unitDesignId,PaginationQuery queryObject){
+        String artifactPath = null;
+        queryObject.addEqualsFilter("unit_design", unitDesignId);
+        PaginationQueryResult<Object> objectPaginationQueryResult = cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(), queryObject);
+
+        if(objectPaginationQueryResult == null || objectPaginationQueryResult.getContents() ==null || objectPaginationQueryResult.getContents().size() <=0) {
+            return artifactPath;
+        }
+        try {
+            Map<String, String> ResultMap = (Map)objectPaginationQueryResult.getContents().get(0);
+            JSONObject responseJson  = (JSONObject) JSONObject.wrap(ResultMap.get("data"));
+            JSONObject unit_design = responseJson.getJSONObject("unit_design");
+            artifactPath = unit_design.getString(applicationProperties.getCmdbArtifactPath());
+        } catch (JSONException e) {
+            throw new PluginException("Can not parse CMDB Response json", e);
+        }
+        return artifactPath;
+    }
+
     public List<NexusDirectiryDto> queryNexusDirectiry( String artifactPath ) {
         if (artifactPath == null || artifactPath.isEmpty()) {
             throw new PluginException("Upload artifact path is required.");
         }
 
         //configuration parameters
-        String repository = "maven-releases";
         String filter = "jar,zip";
 
         String nexusBaseUrl = applicationProperties.getArtifactsNexusServerUrl();
-        String nexusRequestUrl = nexusBaseUrl + "/service/rest/beta/assets?repository=" + repository;
-        String nexusPath = nexusBaseUrl + "/repository/"+ repository + "/" + artifactPath;
+        String nexusRepository = applicationProperties.getArtifactsNexusRepository();
+        String nexusRequestUrl = nexusBaseUrl + "/service/rest/beta/assets?repository=" + nexusRepository;
+        String nexusPath = nexusBaseUrl + "/repository/"+ nexusRepository + "/" + artifactPath;
 
         List<NexusResponse> nexusResponses = nexusClient.get(nexusRequestUrl, applicationProperties.getArtifactsNexusUsername(),
                 applicationProperties.getArtifactsNexusPassword(), NexusResponse.class);
