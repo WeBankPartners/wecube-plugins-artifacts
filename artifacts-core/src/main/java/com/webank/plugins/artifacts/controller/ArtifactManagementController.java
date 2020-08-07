@@ -1,8 +1,7 @@
 package com.webank.plugins.artifacts.controller;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static com.webank.plugins.artifacts.domain.JsonResponse.okay;
-import static com.webank.plugins.artifacts.domain.JsonResponse.okayWithData;
+import static com.webank.plugins.artifacts.domain.JsonResponse.*;
 import static com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.defaultQueryObject;
 import static com.webank.plugins.artifacts.utils.BooleanUtils.isTrue;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
@@ -63,48 +62,75 @@ public class ArtifactManagementController {
     @GetMapping("/system-design-versions")
     @ResponseBody
     public JsonResponse getSystemDesignVersions() {
-        return okayWithData(artifactService.getSystemDesignVersions());
+        try {
+            return okayWithData(artifactService.getSystemDesignVersions());
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     @GetMapping("/system-design-versions/{system-design-id}")
     @ResponseBody
     public JsonResponse getSystemDesignVersion(@PathVariable(value = "system-design-id") String systemDesignId) {
-        return okayWithData(artifactService.getArtifactSystemDesignTree(systemDesignId));
+        try {
+            return okayWithData(artifactService.getArtifactSystemDesignTree(systemDesignId));
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/upload")
     @ResponseBody
     public JsonResponse uploadPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
             @RequestParam(value = "file", required = false) MultipartFile multipartFile, HttpServletRequest request) {
-
-        File file = convertMultiPartToFile(multipartFile);
-
-        String url = artifactService.uploadPackageToS3(file);
-
-        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, (String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url, null));
+        try {
+            File file = convertMultiPartToFile(multipartFile);
+            String url = artifactService.uploadPackageToS3(file);
+            return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, (String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url, null));
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/query")
     @ResponseBody
     public JsonResponse queryPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
             @RequestBody PaginationQuery queryObject) {
-        queryObject.addEqualsFilter("unit_design", unitDesignId);
-        return okayWithData(cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(), queryObject));
+        try {
+            queryObject.addEqualsFilter("unit_design", unitDesignId);
+            return okayWithData(cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(), queryObject));
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/queryNexusDirectiry")
     @ResponseBody
     public JsonResponse queryNexusPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
                                            @RequestBody PaginationQuery queryObject) {
-        return okayWithData(artifactService.queryNexusDirectiry(artifactService.getArtifactPath(unitDesignId, queryObject)));
+        try {
+            return okayWithData(artifactService.queryNexusDirectiry(artifactService.getArtifactPath(unitDesignId, queryObject)));
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/uploadNexusPackage")
     @ResponseBody
     public JsonResponse uploadNexusPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
                                       @RequestParam(value = "downloadUrl", required = false) String downloadUrl, HttpServletRequest request) {
-        asyncUploadNexusPackageToS3(unitDesignId,downloadUrl,(String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME));
-        return okay();
+        try {
+             asyncUploadNexusPackageToS3(unitDesignId,downloadUrl,(String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME));
+             return okay();
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     private void asyncUploadNexusPackageToS3(String unitDesignId, String downloadUrl,String uploadName) {
@@ -129,67 +155,101 @@ public class ArtifactManagementController {
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/deactive")
     @ResponseBody
     public JsonResponse deactivePackage(@PathVariable(value = "package-id") String packageId) {
-        artifactService.deactive(packageId);
-        return okay();
+        try {
+            artifactService.deactive(packageId);
+            return okay();
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/active")
     @ResponseBody
     public JsonResponse activePackage(@PathVariable(value = "package-id") String packageId) {
-        artifactService.active(packageId);
-        return okay();
+        try {
+            artifactService.active(packageId);
+            return okay();
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/files/query")
     @ResponseBody
     public JsonResponse getFiles(@PathVariable(value = "package-id") String packageId,
             @RequestBody Map<String, String> additionalProperties) {
-
-        if (additionalProperties.get("currentDir") == null) {
-            throw new PluginException("Field 'currentDir' is required.");
+        try {
+            if (additionalProperties.get("currentDir") == null) {
+                throw new PluginException("Field 'currentDir' is required.");
+            }
+            return okayWithData(artifactService.getCurrentDirs(packageId, additionalProperties.get("currentDir")));
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
         }
-
-        return okayWithData(
-                artifactService.getCurrentDirs(packageId, additionalProperties.get("currentDir")));
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/property-keys/query")
     @ResponseBody
     public JsonResponse getKeys(@PathVariable(value = "package-id") String packageId,
             @RequestBody Map<String, String> additionalProperties) {
-
-        if (additionalProperties.get("filePath") == null) {
-            throw new PluginException("Field 'filePath' is required.");
+        try {
+            if (additionalProperties.get("filePath") == null) {
+                throw new PluginException("Field 'filePath' is required.");
+            }
+            return okayWithData(artifactService.getPropertyKeys(packageId, additionalProperties.get("filePath")));
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
         }
-
-        return okayWithData(
-                artifactService.getPropertyKeys(packageId, additionalProperties.get("filePath")));
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/save")
     @ResponseBody
     public JsonResponse saveConfigFiles(@PathVariable(value = "package-id") String packageId, @RequestBody PackageDomain packageDomain) {
-        artifactService.saveConfigFiles(packageId, packageDomain);
-        return okay();
+        try {
+            artifactService.saveConfigFiles(packageId, packageDomain);
+            return okay();
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     @PostMapping("/enum/codes/diff-config/save")
     @ResponseBody
     public JsonResponse saveDiffConfigEnumCodes(@RequestBody CatCodeDto code) {
-        artifactService.saveDiffConfigEnumCodes(code);
-        return okay();
+        try {
+            artifactService.saveDiffConfigEnumCodes(code);
+            return okay();
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     @GetMapping("/enum/codes/diff-config/query")
     @ResponseBody
     public JsonResponse getDiffConfigEnumCodes() {
-        return okayWithData(artifactService.getDiffConfigEnumCodes());
+        try {
+            return okayWithData(artifactService.getDiffConfigEnumCodes());
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     @GetMapping("/getPackageCiTypeId")
     @ResponseBody
     public JsonResponse getPackageCiTypeId() {
-        return okayWithData(cmdbDataProperties.getCiTypeIdOfPackage());
+        try {
+            return okayWithData(cmdbDataProperties.getCiTypeIdOfPackage());
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     private File convertMultiPartToFile(MultipartFile multipartFile) {
@@ -231,14 +291,24 @@ public class ArtifactManagementController {
 
     @PostMapping("/ci/state/operate")
     public JsonResponse operateCiForState(@RequestBody List<OperateCiDto> ciIds, @RequestParam("operation") String operation) {
-        return okayWithData(artifactService.operateState(ciIds, operation));
+        try {
+            return okayWithData(artifactService.operateState(ciIds, operation));
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     @GetMapping("/ci-types")
     @ResponseBody
     public JsonResponse getCiTypes(@RequestParam(name = "group-by", required = false) String groupBy, @RequestParam(name = "with-attributes", required = false) String withAttributes,
             @RequestParam(name = "status", required = false) String status) {
-        return okayWithData(artifactService.getCiTypes(isTrue(withAttributes), status));
+        try {
+            return okayWithData(artifactService.getCiTypes(isTrue(withAttributes), status));
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 
     @PostMapping("/ci-types/{ci-type-id}/ci-data/batch-delete")
@@ -246,37 +316,58 @@ public class ArtifactManagementController {
     public JsonResponse deleteCiData(@PathVariable(value = "ci-type-id") int ciTypeId, @RequestBody List<String> ciDataIds) {
         try {
             artifactService.deleteCiData(ciTypeId, ciDataIds);
+            return okay();
         } catch (Exception e) {
-            throw new PluginException("The parameter ciDataIds is wrong", e);
+            logger.error(e.getMessage(),e);
+            return error("The parameter ciDataIds is wrong," + e.getMessage());
         }
-        return okay();
     }
 
     @PostMapping("/enum/system/codes")
     @ResponseBody
     public JsonResponse querySystemEnumCodesWithRefResources(@RequestBody PaginationQuery queryObject) {
-        return okayWithData(artifactService.querySystemEnumCodesWithRefResources(queryObject));
+        try {
+            return okayWithData(artifactService.querySystemEnumCodesWithRefResources(queryObject));
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
     
     @GetMapping("/ci-types/{ci-type-id}/references/by")
     @ResponseBody
     public JsonResponse getCiTypeReferenceBy(@PathVariable(value = "ci-type-id") int ciTypeId) {
-        return okayWithData(artifactService.getCiTypeReferenceBy(ciTypeId));
+        try {
+            return okayWithData(artifactService.getCiTypeReferenceBy(ciTypeId));
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
     
     @GetMapping("/ci-types/{ci-type-id}/attributes")
     @ResponseBody
     public JsonResponse getCiTypeAttributes(@PathVariable(value = "ci-type-id") int ciTypeId, @RequestParam(name = "accept-input-types", required = false) String acceptInputTypes) {
-        if (isNotEmpty(acceptInputTypes)) {
-            return okayWithData(cmdbServiceV2Stub.queryCiTypeAttributes(defaultQueryObject("ciTypeId", ciTypeId).addInFilter("inputType", newArrayList(acceptInputTypes.split(",")))));
-        } else {
-            return okayWithData(cmdbServiceV2Stub.getCiTypeAttributesByCiTypeId(ciTypeId));
+        try {
+            if (isNotEmpty(acceptInputTypes)) {
+                return okayWithData(cmdbServiceV2Stub.queryCiTypeAttributes(defaultQueryObject("ciTypeId", ciTypeId).addInFilter("inputType", newArrayList(acceptInputTypes.split(",")))));
+            } else {
+                return okayWithData(cmdbServiceV2Stub.getCiTypeAttributesByCiTypeId(ciTypeId));
+            }
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
         }
     }
     
     @GetMapping("/static-data/special-connector")
     @ResponseBody
     public JsonResponse getSpecialConnector() {
-        return okayWithData(artifactService.getSpecialConnector());
+        try {
+            return okayWithData(artifactService.getSpecialConnector());
+        }catch (Exception e){
+            logger.error(e.getMessage(),e);
+            return error(e.getMessage());
+        }
     }
 }
