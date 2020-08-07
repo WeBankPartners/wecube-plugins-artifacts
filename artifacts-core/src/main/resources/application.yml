@@ -1,5 +1,5 @@
 server:
-  port: 8091
+  port: 18081
   address: localhost
   servlet:
     context-path: /artifacts
@@ -16,8 +16,12 @@ spring:
 plugins:
   pacakge-name: artifacts
 
-  wecube-gateway-server-url: http://localhost:9080
-  artifacts-nexus-server-url: http://localhost:8081
+  wecube-gateway-server-url: http://localhost:19090
+  artifacts-nexus-server-url: http://localhost:18888
+  artifacts-nexus-username: admin
+  artifacts-nexus-password: admin123
+  artifacts-nexus-Repository: maven-releases
+  cmdb-artifact-path: artifact_path
 
   artifacts-s3-server-url: http://localhost:9000
   artifacts-s3-access-key: access_key
