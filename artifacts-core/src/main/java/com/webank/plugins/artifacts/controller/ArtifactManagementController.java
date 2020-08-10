@@ -1,8 +1,7 @@
 package com.webank.plugins.artifacts.controller;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static com.webank.plugins.artifacts.domain.JsonResponse.okay;
-import static com.webank.plugins.artifacts.domain.JsonResponse.okayWithData;
+import static com.webank.plugins.artifacts.domain.JsonResponse.*;
 import static com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.defaultQueryObject;
 import static com.webank.plugins.artifacts.utils.BooleanUtils.isTrue;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
@@ -70,18 +69,17 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse getSystemDesignVersion(@PathVariable(value = "system-design-id") String systemDesignId) {
         return okayWithData(artifactService.getArtifactSystemDesignTree(systemDesignId));
+
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/upload")
     @ResponseBody
     public JsonResponse uploadPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
             @RequestParam(value = "file", required = false) MultipartFile multipartFile, HttpServletRequest request) {
-
         File file = convertMultiPartToFile(multipartFile);
-
         String url = artifactService.uploadPackageToS3(file);
-
         return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, (String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url, null));
+
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/query")
@@ -90,6 +88,7 @@ public class ArtifactManagementController {
             @RequestBody PaginationQuery queryObject) {
         queryObject.addEqualsFilter("unit_design", unitDesignId);
         return okayWithData(cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(), queryObject));
+
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/queryNexusDirectiry")
@@ -97,6 +96,7 @@ public class ArtifactManagementController {
     public JsonResponse queryNexusPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
                                            @RequestBody PaginationQuery queryObject) {
         return okayWithData(artifactService.queryNexusDirectiry(artifactService.getArtifactPath(unitDesignId, queryObject)));
+
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/uploadNexusPackage")
@@ -105,6 +105,7 @@ public class ArtifactManagementController {
                                       @RequestParam(value = "downloadUrl", required = false) String downloadUrl, HttpServletRequest request) {
         asyncUploadNexusPackageToS3(unitDesignId,downloadUrl,(String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME));
         return okay();
+
     }
 
     private void asyncUploadNexusPackageToS3(String unitDesignId, String downloadUrl,String uploadName) {
@@ -144,26 +145,20 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse getFiles(@PathVariable(value = "package-id") String packageId,
             @RequestBody Map<String, String> additionalProperties) {
-
         if (additionalProperties.get("currentDir") == null) {
             throw new PluginException("Field 'currentDir' is required.");
         }
-
-        return okayWithData(
-                artifactService.getCurrentDirs(packageId, additionalProperties.get("currentDir")));
+        return okayWithData(artifactService.getCurrentDirs(packageId, additionalProperties.get("currentDir")));
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/property-keys/query")
     @ResponseBody
     public JsonResponse getKeys(@PathVariable(value = "package-id") String packageId,
             @RequestBody Map<String, String> additionalProperties) {
-
         if (additionalProperties.get("filePath") == null) {
             throw new PluginException("Field 'filePath' is required.");
         }
-
-        return okayWithData(
-                artifactService.getPropertyKeys(packageId, additionalProperties.get("filePath")));
+        return okayWithData(artifactService.getPropertyKeys(packageId, additionalProperties.get("filePath")));
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/save")
@@ -244,11 +239,7 @@ public class ArtifactManagementController {
     @PostMapping("/ci-types/{ci-type-id}/ci-data/batch-delete")
     @ResponseBody
     public JsonResponse deleteCiData(@PathVariable(value = "ci-type-id") int ciTypeId, @RequestBody List<String> ciDataIds) {
-        try {
-            artifactService.deleteCiData(ciTypeId, ciDataIds);
-        } catch (Exception e) {
-            throw new PluginException("The parameter ciDataIds is wrong", e);
-        }
+        artifactService.deleteCiData(ciTypeId, ciDataIds);
         return okay();
     }
 
