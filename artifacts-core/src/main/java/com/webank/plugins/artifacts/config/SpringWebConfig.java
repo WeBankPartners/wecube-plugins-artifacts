@@ -7,10 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.*;
 
 import com.webank.plugins.artifacts.interceptor.ApiAccessInterceptor;
 import com.webank.plugins.artifacts.interceptor.RestTemplateInterceptor;
@@ -28,7 +25,8 @@ public class SpringWebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(apiAccessInterceptor).addPathPatterns("/**");
+        registry.addInterceptor(apiAccessInterceptor).addPathPatterns("/**")
+                .excludePathPatterns("/swagger-ui.html/**", "/swagger-resources/**","/webjars/**");
         WebMvcConfigurer.super.addInterceptors(registry);
     }
 
