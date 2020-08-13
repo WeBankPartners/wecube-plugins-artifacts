@@ -83,7 +83,7 @@ public class ArtifactService {
                 .put("unit_design", unitDesignId)
                 .build();
 
-        if(StringUtils.isNoneBlank()) {
+        if(StringUtils.isNoneBlank(authorization)) {
             AuthorizationStorage.getIntance().set(authorization);
         }
         return cmdbServiceV2Stub.createCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
