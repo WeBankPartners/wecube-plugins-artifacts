@@ -317,7 +317,8 @@ export default {
         {
           title: this.$t('artifacts_property_value_fill_rule'),
           render: (h, params) => {
-            return params.row.autoFillValue ? (
+            // show static view only if confirmed
+            return params.row.fixed_date ? (
               <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} isReadOnly={true} v-model={params.row.autoFillValue} cmdbPackageName={cmdbPackageName} />
             ) : (
               <div style="align-items:center;display:flex;">
@@ -438,10 +439,11 @@ export default {
     renderConfigButton (params) {
       const row = params.row
       return [
-        <Button disabled={row.autoFillValue.length > 0} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.showConfigKeyModal(row)}>
+        <Button disabled={!!row.fixed_date} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.showConfigKeyModal(row)}>
           {this.$t('select_key')}
         </Button>,
-        <Button disabled={!row.variableValue} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveAttr(params.index, row.variableValue)}>
+        // disable no dirty data or row is confirmed
+        <Button disabled={!!(row.variableValue === row.autoFillValue || row.fixed_date)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveAttr(params.index, row.variableValue)}>
           {this.$t('artifacts_save')}
         </Button>,
         <Button disabled={row.isBinding.length > 0 || row.autoFillValue.length === 0} size="small" type="warning" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.bindConfig(row)}>
@@ -516,6 +518,8 @@ export default {
             key: _.key,
             line: _.line,
             autoFillValue: '',
+            variableValue: '',
+            fixed_date: _.fixed_date,
             id: '',
             isBinding: found ? found.guid : ''
           }
@@ -523,6 +527,7 @@ export default {
         result.forEach(i => {
           const key = this.allDiffConfigs.find(d => d.code === i.key)
           i.autoFillValue = key.variable_value
+          i.variableValue = key.variable_value
           i.id = key.id
         })
         this.$set(this.tabData[this.nowTab], 'tableData', result)
@@ -649,7 +654,9 @@ export default {
               index: i + 1,
               key: _.key,
               line: _.line,
-              autoFillValue: '',
+              fixed_date: (found ? found.fixed_date : null) || '',
+              variableValue: found ? found.variable_value : '',
+              autoFillValue: found ? found.variable_value : '',
               id: '',
               isBinding: found ? found.guid : ''
             }
@@ -699,11 +706,14 @@ export default {
                   return {
                     ..._,
                     ...allKeys[_.key],
-                    autoFillValue: allKeys[_.key].variable_value
+                    autoFillValue: allKeys[_.key].variable_value,
+                    variableValue: allKeys[_.key].variable_value
                   }
                 })
                 this.$set(this.tabData[tabIndex], 'tableData', result)
               })
+              // update needBinding
+              needBinding = Object.keys(allKeys).map(_ => allKeys[_].id)
               this.updatePackages(needBinding)
             }
           }
@@ -714,7 +724,8 @@ export default {
               return {
                 ..._,
                 ...allKeys[_.key],
-                autoFillValue: allKeys[_.key].variable_value
+                autoFillValue: allKeys[_.key].variable_value,
+                variableValue: allKeys[_.key].variable_value
               }
             })
             this.$set(this.tabData[tabIndex], 'tableData', result)
