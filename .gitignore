@@ -4,6 +4,7 @@ target/
 # Ignore the generated index.html
 **/resources/templates/index.html
 **/resources/application-dev.yml
+.factorypath
 
 ### IntelliJ IDEA ###
 .idea
