@@ -61,5 +61,7 @@
   "bind_key": "绑定",
   "untie_key": "解绑",
   "select_key": "选择",
-  "select_online": "在线选择"
+  "select_online": "在线选择",
+  "tip_conf_bind": "绑定后将替换变量值",
+  "tip_conf_unbind": "解绑后不会替换变量值"
 }

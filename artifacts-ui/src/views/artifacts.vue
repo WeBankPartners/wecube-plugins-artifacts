@@ -446,10 +446,10 @@ export default {
         <Button disabled={!!(row.variableValue === row.autoFillValue || row.fixed_date)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveAttr(params.index, row.variableValue)}>
           {this.$t('artifacts_save')}
         </Button>,
-        <Button disabled={row.isBinding.length > 0 || row.autoFillValue.length === 0} size="small" type="warning" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.bindConfig(row)}>
+        <Button disabled={row.isBinding.length > 0 || row.autoFillValue.length === 0} title={this.$t('tip_conf_bind')} size="small" type="warning" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.bindConfig(row)}>
           {this.$t('bind_key')}
         </Button>,
-        <Button disabled={row.isBinding.length === 0 || row.autoFillValue.length === 0} size="small" type="error" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.unBindConfig(row)}>
+        <Button disabled={row.isBinding.length === 0 || row.autoFillValue.length === 0} title={this.$t('tip_conf_unbind')} size="small" type="error" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.unBindConfig(row)}>
           {this.$t('untie_key')}
         </Button>
       ]
@@ -508,6 +508,13 @@ export default {
         }
       })
       const currentTab = this.tabData.find(tab => tab.title === this.activeTab)
+      // 同步更新this.tableData
+      this.tableData = tableData.data.contents.map(_ => {
+        return {
+          ..._.data,
+          nextOperations: _.meta.nextOperations || []
+        }
+      })
       const bindConfig = tableData.data.contents.find(_ => _.data.guid === this.packageId).data.diff_conf_variable
       const tab = await getKeys(this.guid, this.packageId, { filePath: currentTab.path })
       if (tab.status === 'OK') {
@@ -519,15 +526,18 @@ export default {
             line: _.line,
             autoFillValue: '',
             variableValue: '',
-            fixed_date: _.fixed_date,
+            fixed_date: null,
             id: '',
             isBinding: found ? found.guid : ''
           }
         })
         result.forEach(i => {
           const key = this.allDiffConfigs.find(d => d.code === i.key)
+          // const varstore = this.tabData[this.nowTab].tableData.find(d => d.key === i.key)
           i.autoFillValue = key.variable_value
           i.variableValue = key.variable_value
+          // i.variableValue = varstore.autoFillValue !== varstore.variableValue ? varstore.variableValue : key.variable_value
+          i.fixed_date = key.fixed_date || ''
           i.id = key.id
         })
         this.$set(this.tabData[this.nowTab], 'tableData', result)
@@ -610,10 +620,12 @@ export default {
     },
     async getKeys (options) {
       if (!options) return
+      // 获取文件差异化变量列表：行号，名称
       let { status, data } = await getKeys(this.guid, this.packageId, {
         filePath: options.path
       })
       if (status === 'OK') {
+        // 获取CMDB全量差异化变量列表
         const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION)
         if (diffConfigs.status === 'OK') {
           const result = data.outputs[0].configKeyInfos.map((_, i) => {
@@ -639,6 +651,8 @@ export default {
       let newDiffConfigs = []
       let needBinding = []
       const bindConfig = this.tableData.find(_ => _.guid === this.packageId).diff_conf_variable || []
+      // 查出所有差异化变量的信息
+      const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION)
       let tabData = res.map((tab, tabIndex) => {
         if (tab.status === 'OK') {
           const tableData = tab.data.outputs[0].configKeyInfos.map((_, i) => {
@@ -647,6 +661,7 @@ export default {
               variable_value: ''
             }
             const found = bindConfig.find(conf => conf.code === _.key)
+            const foundci = diffConfigs.data.find(conf => conf.code === _.key)
             if (found) {
               needBinding.push(found.guid)
             }
@@ -654,7 +669,7 @@ export default {
               index: i + 1,
               key: _.key,
               line: _.line,
-              fixed_date: (found ? found.fixed_date : null) || '',
+              fixed_date: (foundci ? foundci.fixed_date : null) || '',
               variableValue: found ? found.variable_value : '',
               autoFillValue: found ? found.variable_value : '',
               id: '',
@@ -666,8 +681,6 @@ export default {
           return []
         }
       })
-      // 查出所有差异化变量的信息
-      const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION)
       if (diffConfigs.status === 'OK') {
         Object.keys(allKeys).forEach(key => {
           const found = diffConfigs.data.find(diffConfig => {
@@ -699,6 +712,7 @@ export default {
             callback: v => {
               v.forEach(_ => {
                 allKeys[_.variable_name].id = _.id
+                diffConfigs.data.push(_)
               })
               // 更新 tabData 的信息
               tabData.forEach((tableData, tabIndex) => {
@@ -708,13 +722,14 @@ export default {
                     ...allKeys[_.key],
                     autoFillValue: allKeys[_.key].variable_value,
                     variableValue: allKeys[_.key].variable_value
+                    // isBinding: _.id
                   }
                 })
                 this.$set(this.tabData[tabIndex], 'tableData', result)
               })
               // update needBinding
               needBinding = Object.keys(allKeys).map(_ => allKeys[_].id)
-              this.updatePackages(needBinding)
+              this.updatePackages(needBinding, diffConfigs)
             }
           }
           this.createEntity(params)
@@ -731,12 +746,12 @@ export default {
             this.$set(this.tabData[tabIndex], 'tableData', result)
           })
           if (isNewPage) {
-            this.updatePackages(needBinding)
+            this.updatePackages(needBinding, diffConfigs)
           }
         }
       }
     },
-    async updatePackages (needBinding) {
+    async updatePackages (needBinding, diffConfigs) {
       // 更新部署包关联的所有差异配置变量
       await this.updateEntity({
         packageName: cmdbPackageName,
@@ -748,6 +763,10 @@ export default {
           }
         ]
       })
+      this.tableData.find(_ => _.guid === this.packageId).diff_conf_variable =
+        needBinding.map(confguid => {
+          return diffConfigs.data.find(item => item.guid === confguid)
+        }) || []
       const path = this.tableData.find(_ => _.guid === this.packageId).diff_conf_file
       this.getTabDatas(path)
     },
@@ -1152,9 +1171,22 @@ export default {
           variable_value: value
         }
       ]
-      if (obj[0].variable_value) {
-        this.updateDiffConfig(obj)
+      const params = {
+        packageName: cmdbPackageName,
+        entityName: DIFF_CONFIGURATION,
+        data: obj,
+        callback: async () => {
+          this.tabData[this.nowTab].tableData[row].autoFillValue = value
+          this.tabData[this.nowTab].tableData[row].variableValue = value
+          this.$Notice.success({
+            title: this.$t('artifacts_successed')
+          })
+        }
       }
+      this.updateEntity(params)
+      // if (obj[0].variable_value) {
+      //   this.updateDiffConfig(obj)
+      // }
     },
     checkFillRule (v) {
       if (v === null || v === undefined) {

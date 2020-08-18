@@ -61,5 +61,7 @@
   "bind_key": "Bind",
   "untie_key": "Unbind",
   "select_key": "Select",
-  "select_online": "Select Online"
+  "select_online": "Select Online",
+  "tip_conf_bind": "Bind the item to replace it",
+  "tip_conf_unbind": "Unbind the item to leave it as is"
 }
