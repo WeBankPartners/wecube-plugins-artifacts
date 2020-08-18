@@ -312,7 +312,15 @@ export default {
         {
           title: this.$t('artifacts_property_name'),
           width: 300,
-          key: 'key'
+          render: (h, params) => {
+            // show static view only if confirmed
+            return (
+              <span>
+                {params.row.replaceType || ''}
+                {params.row.key}
+              </span>
+            )
+          }
         },
         {
           title: this.$t('artifacts_property_value_fill_rule'),
@@ -524,6 +532,7 @@ export default {
             index: i + 1,
             key: _.key,
             line: _.line,
+            replaceType: _.type,
             autoFillValue: '',
             variableValue: '',
             fixed_date: null,
@@ -669,6 +678,7 @@ export default {
               index: i + 1,
               key: _.key,
               line: _.line,
+              replaceType: _.type,
               fixed_date: (foundci ? foundci.fixed_date : null) || '',
               variableValue: found ? found.variable_value : '',
               autoFillValue: found ? found.variable_value : '',
