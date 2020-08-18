@@ -3,7 +3,7 @@
     <Col span="6">
       <Card>
         <p slot="title">{{ $t('artifacts_system_design_version') }}</p>
-        <Select @on-change="selectSystemDesignVersion" label-in-name v-model="systemDesignVersion">
+        <Select @on-change="selectSystemDesignVersion" label-in-name v-model="systemDesignVersion" filterable>
           <Option v-for="version in systemDesignVersions" :value="version.guid || ''" :key="version.guid">{{ version.fixed_date ? `${version.name}[${version.fixed_date}]` : version.name }}</Option>
         </Select>
       </Card>
