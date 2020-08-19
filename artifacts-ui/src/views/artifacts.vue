@@ -1201,14 +1201,28 @@ export default {
         this.tabData = []
       }
     },
-    showTreeModal (type, files) {
+    async showTreeModal (type, files) {
       this.filesTreeData = []
       this.currentFiles = files
       this.currentTreeModal = this.treeModalOpt[type]
       // console.log(this.currentTreeModal)
-      // if (!this.treeDataCollection[this.currentTreeModal.key].treeData.length) {
-      //   this.getFiles(this.packageId, '', this.currentTreeModal.key)
-      // }
+      if (!this.treeDataCollection[this.currentTreeModal.key].treeData.length) {
+        // this.getFiles(this.packageId, '', this.currentTreeModal.key)
+        let { status, data } = await getFiles(this.guid, this.packageId, {
+          currentDir: ''
+        })
+        if (status === 'OK') {
+          this.isShowFilesModal = true
+          // this.genFilesTreedata({ files: data.outputs[0].files, currentDir, treeTag })
+          //  const { files, currentDir, treeTag } = data
+          this.treeDataCollection[this.currentTreeModal.key].treeData = this.formatChildrenData({
+            files: data.outputs[0].files,
+            currentDir: '',
+            level: 1,
+            treeTag: this.currentTreeModal.key
+          })
+        }
+      }
       // if (type > 0 && files) {
       //   this.selectFile = files
       // }
