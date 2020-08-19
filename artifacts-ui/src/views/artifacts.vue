@@ -123,7 +123,7 @@
             <Tree :data="filesTreeData" @on-toggle-expand="expandNode"></Tree>
           </RadioGroup> -->
           <RadioGroup v-model="selectFile">
-            <Tree :data="xxxTreeData" @on-toggle-expand="expandNode"></Tree>
+            <Tree v-if="treeDataCollection[currentTreeModal.key]" :data="treeDataCollection[currentTreeModal.key].treeData" @on-toggle-expand="expandNode"></Tree>
           </RadioGroup>
         </Modal>
         <Modal v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="onSetRowValue" @on-cancel="closeconfigModal">
@@ -193,23 +193,26 @@ export default {
       loadingForSave: false,
       selectFile: '',
       filesTreeData: [],
-      xxxTreeData: [],
-      xxxLevel: 1,
+      // xxxTreeData: [],
       treeDataCollection: {
         // 在进入配置页面时即缓存文件树信息
         diff_conf_file: {
+          level: 1,
           selectNode: [],
           treeData: []
         },
         start_file_path: {
+          level: 1,
           selectNode: [],
           treeData: []
         },
         stop_file_path: {
+          level: 1,
           selectNode: [],
           treeData: []
         },
         deploy_file_path: {
+          level: 1,
           selectNode: [],
           treeData: []
         }
@@ -896,7 +899,7 @@ export default {
       const { files, currentDir } = data
       if (currentDir) {
         const filesArray = currentDir.split('/')
-        let targetNode = this.xxxTreeData
+        let targetNode = this.treeDataCollection[this.currentTreeModal.key].treeData
         filesArray.forEach((dir, index) => {
           if (index) {
             targetNode = targetNode.children
@@ -914,7 +917,7 @@ export default {
           level: targetNode.level + 1
         })
       } else {
-        this.filesTreeData = this.formatChildrenData({
+        this.treeDataCollection[this.currentTreeModal.key].treeData = this.formatChildrenData({
           files,
           currentDir,
           level: 1
@@ -1041,10 +1044,10 @@ export default {
       const filePathList = filePath
       filePathList.forEach(async path => {
         let dirs = path.split('/')
-        await this.checkFiles(0, dirs, isExist)
+        await this.checkFilesAndInitTree(0, dirs, isExist)
       })
     },
-    async checkFiles (index, fileList, isExist) {
+    async checkFilesAndInitTree (index, fileList, isExist) {
       let currentDir = ''
       let notExist = false
       if (index > 0) {
@@ -1053,15 +1056,15 @@ export default {
         }
       }
       const { data } = await getFiles(this.guid, this.packageId, { currentDir: currentDir })
-
-      if (this.xxxLevel !== 1) {
+      const treeTag = isExist.slice(3)
+      if (this.treeDataCollection[treeTag].level !== 1) {
         const xx = {
           files: data.outputs[0].files,
           currentDir: currentDir.substring(0, currentDir.length - 1),
-          level: this.xxxLevel++
+          level: this.treeDataCollection[treeTag].level++
         }
         const filesArray = currentDir.substring(0, currentDir.length - 1).split('/')
-        let targetNode = this.xxxTreeData
+        let targetNode = this.treeDataCollection[treeTag].treeData
         filesArray.forEach((dir, index) => {
           if (index) {
             targetNode = targetNode.children
@@ -1090,11 +1093,32 @@ export default {
         const xx = {
           files: data.outputs[0].files,
           currentDir: currentDir.substring(0, currentDir.length - 1),
-          level: this.xxxLevel++
+          level: this.treeDataCollection[isExist.slice(3)].level++
         }
-        this.xxxTreeData = this.formatChildrenData(xx)
-        this.xxxTreeData[0].expand = true
+        this.treeDataCollection[treeTag].treeData = this.formatChildrenData(xx)
+        this.treeDataCollection[treeTag].treeData[0].expand = true
       }
+
+      if (data.outputs[0].files.find(_ => _.name === fileList[index])) {
+        if (index === fileList.length - 1) {
+          return notExist
+        }
+        this.checkFilesAndInitTree(index + 1, fileList, isExist)
+      } else {
+        notExist = true
+        this[isExist].push(fileList.join('/'))
+      }
+      return notExist
+    },
+    async checkFiles (index, fileList, isExist) {
+      let currentDir = ''
+      let notExist = false
+      if (index > 0) {
+        for (let i = 0; i < index; i++) {
+          currentDir = currentDir + fileList[i] + '/'
+        }
+      }
+      const { data } = await getFiles(this.guid, this.packageId, { currentDir: currentDir })
 
       if (data.outputs[0].files.find(_ => _.name === fileList[index])) {
         if (index === fileList.length - 1) {
@@ -1176,9 +1200,10 @@ export default {
       this.filesTreeData = []
       this.currentFiles = files
       this.currentTreeModal = this.treeModalOpt[type]
-      if (!this.filesTreeData.length) {
-        this.getFiles(this.packageId, '')
-      }
+      // console.log(this.currentTreeModal)
+      // if (!this.filesTreeData.length) {
+      //   this.getFiles(this.packageId, '')
+      // }
       // if (type > 0 && files) {
       //   this.selectFile = files
       // }
