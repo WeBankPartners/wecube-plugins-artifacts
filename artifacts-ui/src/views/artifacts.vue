@@ -634,14 +634,14 @@ export default {
         this.pageInfo = { currentPage, pageSize, total }
       }
     },
-    async getFiles (packageId, currentDir) {
+    async getFiles (packageId, currentDir, treeTag) {
       this.packageId = packageId
       let { status, data } = await getFiles(this.guid, packageId, {
         currentDir
       })
       if (status === 'OK') {
         this.isShowFilesModal = true
-        this.genFilesTreedata({ files: data.outputs[0].files, currentDir })
+        this.genFilesTreedata({ files: data.outputs[0].files, currentDir, treeTag })
       }
     },
     async getAllEntityData () {
@@ -896,7 +896,7 @@ export default {
       this.queryPackages()
     },
     genFilesTreedata (data) {
-      const { files, currentDir } = data
+      const { files, currentDir, treeTag } = data
       if (currentDir) {
         const filesArray = currentDir.split('/')
         let targetNode = this.treeDataCollection[this.currentTreeModal.key].treeData
@@ -914,18 +914,20 @@ export default {
         targetNode.children = this.formatChildrenData({
           files,
           currentDir,
-          level: targetNode.level + 1
+          level: targetNode.level + 1,
+          treeTag
         })
       } else {
         this.treeDataCollection[this.currentTreeModal.key].treeData = this.formatChildrenData({
           files,
           currentDir,
-          level: 1
+          level: 1,
+          treeTag
         })
       }
     },
     formatChildrenData (val) {
-      const { files, currentDir, level } = val
+      const { files, currentDir, level, treeTag } = val
       if (!(files instanceof Array)) {
         return
       }
@@ -945,11 +947,11 @@ export default {
           )
         } else {
           // const selectedFile = !!this.currentFiles.find(file => file === obj.path)
-          this.currentFiles = this.packageInput.diff_conf_file || ''
+          this.currentFiles = this.packageInput[treeTag] || ''
           const selectedFile = !!this.currentFiles.find(file => file === obj.path)
           // if (selectedFile && this.currentTreeModal.inputType === 'checkbox') {
           if (selectedFile) {
-            this.selectNode.push(obj)
+            this.treeDataCollection[treeTag].selectNode.push(obj)
           }
           obj.render = (h, params) => {
             return this.currentTreeModal.inputType === 'checkbox' ? (
@@ -969,10 +971,11 @@ export default {
       })
     },
     expandNode (node) {
+      console.log(this.currentTreeModal.key)
       // if (node.expand && !node.children[0].title) {
       //   this.getFiles(this.packageId, node.path)
       // }
-      this.getFiles(this.packageId, node.path)
+      this.getFiles(this.packageId, node.path, this.currentTreeModal.key)
     },
     rowClick (row) {
       this.packageId = row.guid
@@ -1061,7 +1064,8 @@ export default {
         const xx = {
           files: data.outputs[0].files,
           currentDir: currentDir.substring(0, currentDir.length - 1),
-          level: this.treeDataCollection[treeTag].level++
+          level: this.treeDataCollection[treeTag].level++,
+          treeTag
         }
         const filesArray = currentDir.substring(0, currentDir.length - 1).split('/')
         let targetNode = this.treeDataCollection[treeTag].treeData
@@ -1093,7 +1097,8 @@ export default {
         const xx = {
           files: data.outputs[0].files,
           currentDir: currentDir.substring(0, currentDir.length - 1),
-          level: this.treeDataCollection[isExist.slice(3)].level++
+          level: this.treeDataCollection[isExist.slice(3)].level++,
+          treeTag
         }
         this.treeDataCollection[treeTag].treeData = this.formatChildrenData(xx)
         this.treeDataCollection[treeTag].treeData[0].expand = true
@@ -1201,8 +1206,8 @@ export default {
       this.currentFiles = files
       this.currentTreeModal = this.treeModalOpt[type]
       // console.log(this.currentTreeModal)
-      // if (!this.filesTreeData.length) {
-      //   this.getFiles(this.packageId, '')
+      // if (!this.treeDataCollection[this.currentTreeModal.key].treeData.length) {
+      //   this.getFiles(this.packageId, '', this.currentTreeModal.key)
       // }
       // if (type > 0 && files) {
       //   this.selectFile = files
@@ -1221,22 +1226,23 @@ export default {
     onOk () {
       let tmpSelectNode = []
       let tmpNodeKey = []
-      this.selectNode.forEach(tmp => {
-        if (!tmpNodeKey.includes(tmp.nodeKey)) {
+      this.treeDataCollection[this.currentTreeModal.key].selectNode.forEach(tmp => {
+        if (tmp.nodeKey && !tmpNodeKey.includes(tmp.nodeKey)) {
           tmpSelectNode.push(tmp)
           tmpNodeKey.push(tmp.nodeKey)
         }
       })
-      this.selectNode = tmpSelectNode
+      this.treeDataCollection[this.currentTreeModal.key].selectNode = tmpSelectNode
+      console.log(tmpSelectNode)
       // if (this.currentTreeModal.key === 'diff_conf_file') {
       this.diffTabData = ''
       let files = []
-      this.selectNode.forEach(_ => {
+      this.treeDataCollection[this.currentTreeModal.key].selectNode.forEach(_ => {
         files.push(_.path)
       })
       this.diffTabData = files.join('|')
       this.packageInput[this.currentTreeModal.key] = files
-      // this.selectNode = []
+      // this.treeDataCollection[this.currentTreeModal.key].selectNode = []
       this.filesTreeData = []
       // } else {
       //   this.packageInput[this.currentTreeModal.key] = this.selectFile
@@ -1247,25 +1253,26 @@ export default {
     },
     closeTreeModal () {
       this.selectFile = ''
-      // this.selectNode = []
+      // this.treeDataCollection[this.currentTreeModal.key].selectNode = []
       this.filesTreeData = []
     },
     checkboxChange (value, data) {
       console.log(value, data)
-      console.log(this.selectNode)
+      console.log(this.currentTreeModal.key)
+      console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
       if (value) {
-        this.selectNode.push(data)
+        this.treeDataCollection[this.currentTreeModal.key].selectNode.push(data)
       } else {
         let i = 0
-        this.selectNode.find((_, index) => {
+        this.treeDataCollection[this.currentTreeModal.key].selectNode.find((_, index) => {
           if (_.path === data.path) {
             i = index
             return true
           }
         })
-        this.selectNode.splice(i, 1)
+        this.treeDataCollection[this.currentTreeModal.key].selectNode.splice(i, 1)
       }
-      console.log(this.selectNode)
+      console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
     },
     tabChange (tabName) {
       this.tabData.find(_ => {
