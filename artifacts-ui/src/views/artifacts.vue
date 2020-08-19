@@ -119,8 +119,11 @@
           </Card>
         </Modal>
         <Modal v-model="isShowTreeModal" :title="currentTreeModal.title" @on-ok="onOk" @on-cancel="closeTreeModal">
-          <RadioGroup v-model="selectFile">
+          <!-- <RadioGroup v-model="selectFile">
             <Tree :data="filesTreeData" @on-toggle-expand="expandNode"></Tree>
+          </RadioGroup> -->
+          <RadioGroup v-model="selectFile">
+            <Tree :data="xxxTreeData" @on-toggle-expand="expandNode"></Tree>
           </RadioGroup>
         </Modal>
         <Modal v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="onSetRowValue" @on-cancel="closeconfigModal">
@@ -190,6 +193,27 @@ export default {
       loadingForSave: false,
       selectFile: '',
       filesTreeData: [],
+      xxxTreeData: [],
+      xxxLevel: 1,
+      treeDataCollection: {
+        // 在进入配置页面时即缓存文件树信息
+        diff_conf_file: {
+          selectNode: [],
+          treeData: []
+        },
+        start_file_path: {
+          selectNode: [],
+          treeData: []
+        },
+        stop_file_path: {
+          selectNode: [],
+          treeData: []
+        },
+        deploy_file_path: {
+          selectNode: [],
+          treeData: []
+        }
+      },
       guid: '',
       packageInput: {
         diff_conf_file: [],
@@ -872,7 +896,7 @@ export default {
       const { files, currentDir } = data
       if (currentDir) {
         const filesArray = currentDir.split('/')
-        let targetNode = this.filesTreeData
+        let targetNode = this.xxxTreeData
         filesArray.forEach((dir, index) => {
           if (index) {
             targetNode = targetNode.children
@@ -917,8 +941,11 @@ export default {
             </span>
           )
         } else {
+          // const selectedFile = !!this.currentFiles.find(file => file === obj.path)
+          this.currentFiles = this.packageInput.diff_conf_file || ''
           const selectedFile = !!this.currentFiles.find(file => file === obj.path)
-          if (selectedFile && this.currentTreeModal.inputType === 'checkbox') {
+          // if (selectedFile && this.currentTreeModal.inputType === 'checkbox') {
+          if (selectedFile) {
             this.selectNode.push(obj)
           }
           obj.render = (h, params) => {
@@ -939,9 +966,10 @@ export default {
       })
     },
     expandNode (node) {
-      if (node.expand && !node.children[0].title) {
-        this.getFiles(this.packageId, node.path)
-      }
+      // if (node.expand && !node.children[0].title) {
+      //   this.getFiles(this.packageId, node.path)
+      // }
+      this.getFiles(this.packageId, node.path)
     },
     rowClick (row) {
       this.packageId = row.guid
@@ -1025,6 +1053,49 @@ export default {
         }
       }
       const { data } = await getFiles(this.guid, this.packageId, { currentDir: currentDir })
+
+      if (this.xxxLevel !== 1) {
+        const xx = {
+          files: data.outputs[0].files,
+          currentDir: currentDir.substring(0, currentDir.length - 1),
+          level: this.xxxLevel++
+        }
+        const filesArray = currentDir.substring(0, currentDir.length - 1).split('/')
+        let targetNode = this.xxxTreeData
+        filesArray.forEach((dir, index) => {
+          if (index) {
+            targetNode = targetNode.children
+          }
+          targetNode.find(_ => {
+            if (dir === _.title) {
+              targetNode = _
+              return true
+            }
+          })
+        })
+        targetNode.children = this.formatChildrenData(xx)
+        const fileList = this.packageInput.diff_conf_file || []
+        if (targetNode.children.length === 1) {
+          if (targetNode.children[0].title) {
+            targetNode.expand = true
+          }
+        } else {
+          targetNode.children.forEach(child => {
+            if (fileList.includes(child.path)) {
+              targetNode.expand = true
+            }
+          })
+        }
+      } else {
+        const xx = {
+          files: data.outputs[0].files,
+          currentDir: currentDir.substring(0, currentDir.length - 1),
+          level: this.xxxLevel++
+        }
+        this.xxxTreeData = this.formatChildrenData(xx)
+        this.xxxTreeData[0].expand = true
+      }
+
       if (data.outputs[0].files.find(_ => _.name === fileList[index])) {
         if (index === fileList.length - 1) {
           return notExist
@@ -1123,6 +1194,15 @@ export default {
       }
     },
     onOk () {
+      let tmpSelectNode = []
+      let tmpNodeKey = []
+      this.selectNode.forEach(tmp => {
+        if (!tmpNodeKey.includes(tmp.nodeKey)) {
+          tmpSelectNode.push(tmp)
+          tmpNodeKey.push(tmp.nodeKey)
+        }
+      })
+      this.selectNode = tmpSelectNode
       // if (this.currentTreeModal.key === 'diff_conf_file') {
       this.diffTabData = ''
       let files = []
@@ -1131,7 +1211,7 @@ export default {
       })
       this.diffTabData = files.join('|')
       this.packageInput[this.currentTreeModal.key] = files
-      this.selectNode = []
+      // this.selectNode = []
       this.filesTreeData = []
       // } else {
       //   this.packageInput[this.currentTreeModal.key] = this.selectFile
@@ -1142,10 +1222,12 @@ export default {
     },
     closeTreeModal () {
       this.selectFile = ''
-      this.selectNode = []
+      // this.selectNode = []
       this.filesTreeData = []
     },
     checkboxChange (value, data) {
+      console.log(value, data)
+      console.log(this.selectNode)
       if (value) {
         this.selectNode.push(data)
       } else {
@@ -1158,6 +1240,7 @@ export default {
         })
         this.selectNode.splice(i, 1)
       }
+      console.log(this.selectNode)
     },
     tabChange (tabName) {
       this.tabData.find(_ => {
