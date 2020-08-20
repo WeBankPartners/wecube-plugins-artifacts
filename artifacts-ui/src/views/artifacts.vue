@@ -119,9 +119,6 @@
           </Card>
         </Modal>
         <Modal v-model="isShowTreeModal" :title="currentTreeModal.title" @on-ok="onOk" @on-cancel="closeTreeModal">
-          <!-- <RadioGroup v-model="selectFile">
-            <Tree :data="filesTreeData" @on-toggle-expand="expandNode"></Tree>
-          </RadioGroup> -->
           <RadioGroup v-model="selectFile">
             <Tree v-if="treeDataCollection[currentTreeModal.key]" :data="treeDataCollection[currentTreeModal.key].treeData" @on-toggle-expand="expandNode"></Tree>
           </RadioGroup>
@@ -192,8 +189,6 @@ export default {
       treeLoading: false,
       loadingForSave: false,
       selectFile: '',
-      filesTreeData: [],
-      // xxxTreeData: [],
       treeDataCollection: {
         // 在进入配置页面时即缓存文件树信息
         diff_conf_file: {
@@ -822,6 +817,7 @@ export default {
         this.$Notice.success({
           title: this.$t('artifacts_successed')
         })
+        this.initTreeConfig()
       }
       await this.queryPackages()
       this.getTabDatas(this.packageInput.diff_conf_file.join('|'), true)
@@ -971,7 +967,6 @@ export default {
       })
     },
     expandNode (node) {
-      console.log(this.currentTreeModal.key)
       // if (node.expand && !node.children[0].title) {
       //   this.getFiles(this.packageId, node.path)
       // }
@@ -1202,10 +1197,8 @@ export default {
       }
     },
     async showTreeModal (type, files) {
-      this.filesTreeData = []
       this.currentFiles = files
       this.currentTreeModal = this.treeModalOpt[type]
-      // console.log(this.currentTreeModal)
       if (!this.treeDataCollection[this.currentTreeModal.key].treeData.length) {
         // this.getFiles(this.packageId, '', this.currentTreeModal.key)
         let { status, data } = await getFiles(this.guid, this.packageId, {
@@ -1214,7 +1207,6 @@ export default {
         if (status === 'OK') {
           this.isShowFilesModal = true
           // this.genFilesTreedata({ files: data.outputs[0].files, currentDir, treeTag })
-          //  const { files, currentDir, treeTag } = data
           this.treeDataCollection[this.currentTreeModal.key].treeData = this.formatChildrenData({
             files: data.outputs[0].files,
             currentDir: '',
@@ -1236,6 +1228,32 @@ export default {
         deploy_file_path: [],
         is_decompression: ''
       }
+      this.initTreeConfig()
+    },
+    initTreeConfig () {
+      this.treeDataCollection = {
+        // 在进入配置页面时即缓存文件树信息
+        diff_conf_file: {
+          level: 1,
+          selectNode: [],
+          treeData: []
+        },
+        start_file_path: {
+          level: 1,
+          selectNode: [],
+          treeData: []
+        },
+        stop_file_path: {
+          level: 1,
+          selectNode: [],
+          treeData: []
+        },
+        deploy_file_path: {
+          level: 1,
+          selectNode: [],
+          treeData: []
+        }
+      }
     },
     onOk () {
       let tmpSelectNode = []
@@ -1247,7 +1265,6 @@ export default {
         }
       })
       this.treeDataCollection[this.currentTreeModal.key].selectNode = tmpSelectNode
-      console.log(tmpSelectNode)
       // if (this.currentTreeModal.key === 'diff_conf_file') {
       this.diffTabData = ''
       let files = []
@@ -1257,7 +1274,6 @@ export default {
       this.diffTabData = files.join('|')
       this.packageInput[this.currentTreeModal.key] = files
       // this.treeDataCollection[this.currentTreeModal.key].selectNode = []
-      this.filesTreeData = []
       // } else {
       //   this.packageInput[this.currentTreeModal.key] = this.selectFile
       // }
@@ -1268,12 +1284,8 @@ export default {
     closeTreeModal () {
       this.selectFile = ''
       // this.treeDataCollection[this.currentTreeModal.key].selectNode = []
-      this.filesTreeData = []
     },
     checkboxChange (value, data) {
-      console.log(value, data)
-      console.log(this.currentTreeModal.key)
-      console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
       if (value) {
         this.treeDataCollection[this.currentTreeModal.key].selectNode.push(data)
       } else {
@@ -1286,7 +1298,6 @@ export default {
         })
         this.treeDataCollection[this.currentTreeModal.key].selectNode.splice(i, 1)
       }
-      console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
     },
     tabChange (tabName) {
       this.tabData.find(_ => {
