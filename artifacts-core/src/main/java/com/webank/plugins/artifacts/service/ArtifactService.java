@@ -240,9 +240,9 @@ public class ArtifactService {
     private boolean isExist(List<Object> results, Object systemName) {
         for (Object result : results) {
             Map m = (Map) result;
-            Object existName = ((Map) m.get("data")).get("name");
-            Object newName = ((Map) systemName).get("name");
-            if (existName != null && existName.equals(newName)) {
+            Object existRguid = ((Map) m.get("data")).get("r_guid");
+            Object newRguid = ((Map) systemName).get("r_guid");
+            if (existRguid != null && existRguid.equals(newRguid)) {
                 return true;
             }
         }
