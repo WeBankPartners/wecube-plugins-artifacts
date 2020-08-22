@@ -32,7 +32,7 @@
         </Upload>
         <!-- <div v-if="uploaded" style="width: 100%;height:26px"></div> -->
         <ArtifactsSimpleTable class="artifact-management-package-table" :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
-        <Modal width="70" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')" :loading="loadingForSave" @on-ok="saveConfigFiles" @on-cancel="closeModal">
+        <Modal width="70" :mask-closable="false" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')" :loading="loadingForSave" @on-ok="saveConfigFiles" @on-cancel="closeModal">
           <Select :placeholder="$t('configuration')" @on-change="configurationChanged" v-model="configuration">
             <Option v-for="conf in tableData.filter(conf => conf.guid !== packageId)" :value="conf.name" :key="conf.name">{{ conf.name }}</Option>
           </Select>
@@ -118,17 +118,17 @@
             </Row>
           </Card>
         </Modal>
-        <Modal v-model="isShowTreeModal" :title="currentTreeModal.title" @on-ok="onOk" @on-cancel="closeTreeModal">
+        <Modal :mask-closable="false" v-model="isShowTreeModal" :title="currentTreeModal.title" @on-ok="onOk" @on-cancel="closeTreeModal">
           <RadioGroup v-model="selectFile">
             <Tree :data="filesTreeData" @on-toggle-expand="expandNode"></Tree>
           </RadioGroup>
         </Modal>
-        <Modal v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="onSetRowValue" @on-cancel="closeconfigModal">
+        <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="onSetRowValue" @on-cancel="closeconfigModal">
           <Select filterable clearable v-model="currentConfigValue">
             <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value && conf.code !== currentRow.key)" :value="conf.variable_value" :key="conf.key_name">{{ conf.key_name }}</Option>
           </Select>
         </Modal>
-        <Modal v-model="isShowOnlineModal" :title="$t('select_online')" @on-ok="onUploadHandler" @on-cancel="closeOnlineModal">
+        <Modal :mask-closable="false" v-model="isShowOnlineModal" :title="$t('select_online')" @on-ok="onUploadHandler" @on-cancel="closeOnlineModal">
           <Select filterable clearable v-model="currentUrl">
             <Option v-for="conf in currentPackageList" :value="conf.downloadUrl" :key="conf.downloadUrl">{{ conf.name }}</Option>
           </Select>
