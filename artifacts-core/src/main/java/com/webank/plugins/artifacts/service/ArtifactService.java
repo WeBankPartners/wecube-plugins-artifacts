@@ -2,12 +2,12 @@ package com.webank.plugins.artifacts.service;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
-import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
-import com.webank.plugins.artifacts.support.nexus.NexusClient;
-import com.webank.plugins.artifacts.support.nexus.NexusDirectiryDto;
-import com.webank.plugins.artifacts.support.nexus.NexusResponse;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -15,12 +15,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.google.common.collect.ImmutableMap;
 import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.domain.PackageDomain;
+import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CategoryDto;
@@ -34,6 +36,11 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.Dialect;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.Sorting;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
+import com.webank.plugins.artifacts.support.nexus.NexusAssetItemInfo;
+import com.webank.plugins.artifacts.support.nexus.NexusClient;
+import com.webank.plugins.artifacts.support.nexus.NexusDirectiryDto;
+import com.webank.plugins.artifacts.support.nexus.NexusResponse;
+import com.webank.plugins.artifacts.support.nexus.NexusSearchAssetResponse;
 import com.webank.plugins.artifacts.support.s3.S3Client;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackRequest.DefaultSaltstackRequest;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackServiceStub;
@@ -45,6 +52,8 @@ public class ArtifactService {
     private static final String CONSTANT_CAT_CAT_TYPE = "cat.catType";
     private static final String CONSTANT_INPUT_TYPE = "inputType";
     private static final String CONSTANT_CI_TYPE = "ciType";
+
+    private static final String NEXUS_SEARCH_ASSET_API_PATH = "/service/rest/beta/search/assets";
 
     @Autowired
     private CmdbServiceV2Stub cmdbServiceV2Stub;
@@ -67,23 +76,21 @@ public class ArtifactService {
         }
 
         String s3Key = genMd5Value(file) + S3_KEY_DELIMITER + file.getName();
-        String url = new S3Client(applicationProperties.getArtifactsS3ServerUrl(), applicationProperties.getArtifactsS3AccessKey(), applicationProperties.getArtifactsS3SecretKey())
-                .uploadFile(applicationProperties.getArtifactsS3BucketName(), s3Key, file);
+        String url = new S3Client(applicationProperties.getArtifactsS3ServerUrl(),
+                applicationProperties.getArtifactsS3AccessKey(), applicationProperties.getArtifactsS3SecretKey())
+                        .uploadFile(applicationProperties.getArtifactsS3BucketName(), s3Key, file);
         return url.substring(0, url.indexOf("?"));
     }
 
-    public List<CiDataDto> savePackageToCmdb(File file, String unitDesignId, String uploadUser, String deployPackageUrl, String authorization) {
-        Map<String, Object> pkg = ImmutableMap.<String, Object>builder()
-                .put("name", file.getName())
-                .put("deploy_package_url", deployPackageUrl)
-                .put("md5_value", genMd5Value(file))
-                .put("description", file.getName())
-                .put("upload_user", uploadUser)
+    public List<CiDataDto> savePackageToCmdb(File file, String unitDesignId, String uploadUser, String deployPackageUrl,
+            String authorization) {
+        Map<String, Object> pkg = ImmutableMap.<String, Object>builder().put("name", file.getName())
+                .put("deploy_package_url", deployPackageUrl).put("md5_value", genMd5Value(file))
+                .put("description", file.getName()).put("upload_user", uploadUser)
                 .put("upload_time", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()))
-                .put("unit_design", unitDesignId)
-                .build();
+                .put("unit_design", unitDesignId).build();
 
-        if(StringUtils.isNoneBlank(authorization)) {
+        if (StringUtils.isNoneBlank(authorization)) {
             AuthorizationStorage.getIntance().set(authorization);
         }
         return cmdbServiceV2Stub.createCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
@@ -103,28 +110,24 @@ public class ArtifactService {
 
     public void saveConfigFiles(String packageId, PackageDomain packageDomain) {
         String files = String.join("|", packageDomain.getConfigFilesWithPath());
-        Map<String, Object> pkg = ImmutableMap.<String, Object>builder()
-                .put("guid", packageId)
+        Map<String, Object> pkg = ImmutableMap.<String, Object>builder().put("guid", packageId)
                 .put("deploy_file_path", packageDomain.getDeployFile())
-                .put("start_file_path", packageDomain.getStartFile())
-                .put("stop_file_path", packageDomain.getStopFile())
-                .put("diff_conf_file", files)
-                .put("is_decompression", packageDomain.getIsDecompression())
-                .build();
+                .put("start_file_path", packageDomain.getStartFile()).put("stop_file_path", packageDomain.getStopFile())
+                .put("diff_conf_file", files).put("is_decompression", packageDomain.getIsDecompression()).build();
         cmdbServiceV2Stub.updateCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
     }
 
     public Object getCurrentDirs(String packageId, String currentDir) {
         DefaultSaltstackRequest request = new DefaultSaltstackRequest();
         List<Map<String, Object>> inputs = new ArrayList<>();
-        inputs.add(ImmutableMap.<String, Object>builder()
-                .put("endpoint", retrieveS3EndpointWithKeyByPackageId(packageId))
-                .put("accessKey", applicationProperties.getArtifactsS3AccessKey())
-                .put("secretKey", applicationProperties.getArtifactsS3SecretKey())
-                .put("currentDir", currentDir)
-                .build());
+        inputs.add(
+                ImmutableMap.<String, Object>builder().put("endpoint", retrieveS3EndpointWithKeyByPackageId(packageId))
+                        .put("accessKey", applicationProperties.getArtifactsS3AccessKey())
+                        .put("secretKey", applicationProperties.getArtifactsS3SecretKey()).put("currentDir", currentDir)
+                        .build());
         request.setInputs(inputs);
-        return saltstackServiceStub.getReleasedPackageFilesByCurrentDir(applicationProperties.getWecubeGatewayServerUrl(), request);
+        return saltstackServiceStub
+                .getReleasedPackageFilesByCurrentDir(applicationProperties.getWecubeGatewayServerUrl(), request);
     }
 
     public Object getPropertyKeys(String packageId, String filePath) {
@@ -133,11 +136,10 @@ public class ArtifactService {
         inputs.add(ImmutableMap.<String, Object>builder()
                 .put("endpoint", retrieveS3EndpointWithKeyByPackageId(packageId))
                 .put("accessKey", applicationProperties.getArtifactsS3AccessKey())
-                .put("secretKey", applicationProperties.getArtifactsS3SecretKey())
-                .put("filePath", filePath)
-                .build());
+                .put("secretKey", applicationProperties.getArtifactsS3SecretKey()).put("filePath", filePath).build());
         request.setInputs(inputs);
-        return saltstackServiceStub.getReleasedPackagePropertyKeysByFilePath(applicationProperties.getWecubeGatewayServerUrl(), request);
+        return saltstackServiceStub
+                .getReleasedPackagePropertyKeysByFilePath(applicationProperties.getWecubeGatewayServerUrl(), request);
     }
 
     private String retrieveS3EndpointWithKeyByPackageId(String packageId) {
@@ -151,7 +153,8 @@ public class ArtifactService {
         Map pkgData = (Map) result.getContents().get(0);
         Map pkg = (Map) pkgData.get("data");
         String s3Key = pkg.get("md5_value") + S3_KEY_DELIMITER + pkg.get("name");
-        String endpointWithKey = applicationProperties.getArtifactsS3ServerUrl() + "/" + applicationProperties.getArtifactsS3BucketName() + "/" + s3Key;
+        String endpointWithKey = applicationProperties.getArtifactsS3ServerUrl() + "/"
+                + applicationProperties.getArtifactsS3BucketName() + "/" + s3Key;
         return endpointWithKey;
     }
 
@@ -240,9 +243,9 @@ public class ArtifactService {
     private boolean isExist(List<Object> results, Object systemName) {
         for (Object result : results) {
             Map m = (Map) result;
-            Object existName = ((Map) m.get("data")).get("name");
-            Object newName = ((Map) systemName).get("name");
-            if (existName != null && existName.equals(newName)) {
+            Object existRguid = ((Map) m.get("data")).get("r_guid");
+            Object newRguid = ((Map) systemName).get("r_guid");
+            if (existRguid != null && existRguid.equals(newRguid)) {
                 return true;
             }
         }
@@ -287,58 +290,113 @@ public class ArtifactService {
         cmdbServiceV2Stub.deleteCiData(ciTypeId, ids);
 
     }
-    
+
     public List<CiTypeAttrDto> getCiTypeReferenceBy(Integer ciTypeId) {
-        PaginationQuery queryObject = new PaginationQuery().addEqualsFilter("referenceId", ciTypeId).addInFilter(CONSTANT_INPUT_TYPE, Arrays.asList("ref", "multiRef")).addReferenceResource(CONSTANT_CI_TYPE);
+        PaginationQuery queryObject = new PaginationQuery().addEqualsFilter("referenceId", ciTypeId)
+                .addInFilter(CONSTANT_INPUT_TYPE, Arrays.asList("ref", "multiRef"))
+                .addReferenceResource(CONSTANT_CI_TYPE);
         queryObject.addReferenceResource(CONSTANT_CI_TYPE);
         return cmdbServiceV2Stub.queryCiTypeAttributes(queryObject);
     }
-    
+
     public List<SpecialConnectorDtoResponse> getSpecialConnector() {
         return cmdbServiceV2Stub.getSpecialConnector();
     }
 
-    public String getArtifactPath(String unitDesignId,PaginationQuery queryObject){
+    public String getArtifactPath(String unitDesignId, PaginationQuery queryObject) {
+        if (StringUtils.isBlank(unitDesignId)) {
+            throw new PluginException("Unit design ID cannot be blank.");
+        }
         String artifactPath = null;
-        queryObject.addEqualsFilter("unit_design", unitDesignId);
-        PaginationQueryResult<Object> objectPaginationQueryResult = cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(), queryObject);
+        queryObject.addEqualsFilter("guid", unitDesignId);
+        PaginationQueryResult<Object> objectPaginationQueryResult = cmdbServiceV2Stub
+                .queryCiData(cmdbDataProperties.getCiTypeIdOfUnitDesign(), queryObject);
 
-        if(objectPaginationQueryResult == null || objectPaginationQueryResult.getContents() ==null || objectPaginationQueryResult.getContents().size() <=0) {
+        if (objectPaginationQueryResult == null || objectPaginationQueryResult.getContents() == null
+                || objectPaginationQueryResult.getContents().size() <= 0) {
             return artifactPath;
         }
         try {
-            Map<String, String> ResultMap = (Map)objectPaginationQueryResult.getContents().get(0);
-            JSONObject responseJson  = (JSONObject) JSONObject.wrap(ResultMap.get("data"));
-            JSONObject unit_design = responseJson.getJSONObject("unit_design");
-            artifactPath = unit_design.getString(applicationProperties.getCmdbArtifactPath());
+            Map<String, String> ResultMap = (Map) objectPaginationQueryResult.getContents().get(0);
+            JSONObject responseJson = (JSONObject) JSONObject.wrap(ResultMap.get("data"));
+            // JSONObject unit_design =
+            // responseJson.getJSONObject(applicationProperties.getCmdbArtifactPath());
+            artifactPath = responseJson.getString(applicationProperties.getCmdbArtifactPath());
         } catch (JSONException e) {
             throw new PluginException("Can not parse CMDB Response json", e);
         }
         return artifactPath;
     }
 
-    public List<NexusDirectiryDto> queryNexusDirectiry( String artifactPath ) {
+    public List<NexusDirectiryDto> queryNexusDirectiry(String artifactPath) {
         if (artifactPath == null || artifactPath.isEmpty()) {
             throw new PluginException("Upload artifact path is required.");
         }
 
-        //configuration parameters
-        String filter = "jar,zip";
+        // configuration parameters
+        // String filter = "jar,zip";
 
         String nexusBaseUrl = applicationProperties.getArtifactsNexusServerUrl();
         String nexusRepository = applicationProperties.getArtifactsNexusRepository();
-        String nexusRequestUrl = nexusBaseUrl + "/service/rest/beta/assets?repository=" + nexusRepository;
-        String nexusPath = nexusBaseUrl + "/repository/"+ nexusRepository + "/" + artifactPath;
+        String nexusSearchAssetApiUrl = nexusBaseUrl + NEXUS_SEARCH_ASSET_API_PATH;
+        UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(nexusSearchAssetApiUrl);
+        b = b.queryParam("repository", nexusRepository);
+        if (StringUtils.isNoneBlank(artifactPath)) {
+            String group = artifactPath;
+            if (!artifactPath.startsWith("/")) {
+                group = "/" + group;
+            }
 
-        List<NexusResponse> nexusResponses = nexusClient.get(nexusRequestUrl, applicationProperties.getArtifactsNexusUsername(),
-                applicationProperties.getArtifactsNexusPassword(), NexusResponse.class);
-        return buildNexusDirectiryResponseDto(nexusResponses,nexusPath,filter);
+            b = b.queryParam("group", group);
+        }
+
+        List<NexusDirectiryDto> results = new ArrayList<>();
+        NexusSearchAssetResponse nexusSearchAssetResponse = nexusClient.searchAsset(b.build().toUri(),
+                applicationProperties.getArtifactsNexusUsername(), applicationProperties.getArtifactsNexusPassword());
+
+        String continuationToken = nexusSearchAssetResponse.getContinuationToken();
+        List<NexusAssetItemInfo> assetItems = nexusSearchAssetResponse.getItems();
+        for (NexusAssetItemInfo assetItem : assetItems) {
+            if (assetItem.getPath().endsWith("jar") || assetItem.getPath().endsWith("zip")
+                    || assetItem.getPath().endsWith("tar") || assetItem.getPath().endsWith("gz")
+                    || assetItem.getPath().endsWith("tgz")) {
+                NexusDirectiryDto directiryDto = new NexusDirectiryDto();
+                directiryDto.setDownloadUrl(assetItem.getDownloadUrl());
+                directiryDto
+                        .setName(assetItem.getDownloadUrl().substring(assetItem.getDownloadUrl().lastIndexOf("/") + 1));
+                results.add(directiryDto);
+            }
+        }
+
+        while (StringUtils.isNoneBlank(continuationToken)) {
+            b = UriComponentsBuilder.fromHttpUrl(nexusSearchAssetApiUrl);
+            b = b.queryParam("repository", nexusRepository).queryParam("continuationToken", continuationToken);
+
+            nexusSearchAssetResponse = nexusClient.searchAsset(b.build().toUri(),
+                    applicationProperties.getArtifactsNexusUsername(),
+                    applicationProperties.getArtifactsNexusPassword());
+
+            List<NexusAssetItemInfo> queryAssetItems = nexusSearchAssetResponse.getItems();
+            for (NexusAssetItemInfo assetItem : queryAssetItems) {
+                if (assetItem.getPath().endsWith("jar") || assetItem.getPath().endsWith("zip")) {
+                    NexusDirectiryDto directiryDto = new NexusDirectiryDto();
+                    directiryDto.setDownloadUrl(assetItem.getDownloadUrl());
+                    directiryDto.setName(
+                            assetItem.getDownloadUrl().substring(assetItem.getDownloadUrl().lastIndexOf("/") + 1));
+                    results.add(directiryDto);
+                }
+            }
+
+            continuationToken = nexusSearchAssetResponse.getContinuationToken();
+        }
+        return results;
 
     }
 
-    private List<NexusDirectiryDto> buildNexusDirectiryResponseDto(List<NexusResponse> nexusResponses,String nexusPath,String filter){
-        List<NexusDirectiryDto>  directiryDtos= new ArrayList<>();
-        if(nexusResponses == null || nexusResponses.isEmpty()){
+    private List<NexusDirectiryDto> buildNexusDirectiryResponseDto(List<NexusResponse> nexusResponses, String nexusPath,
+            String filter) {
+        List<NexusDirectiryDto> directiryDtos = new ArrayList<>();
+        if (nexusResponses == null || nexusResponses.isEmpty()) {
             return directiryDtos;
         }
 
@@ -347,9 +405,9 @@ public class ArtifactService {
             try {
                 JSONObject responseJson = (JSONObject) JSONObject.wrap(nexusResponses.get(i));
                 String downloadUrl = responseJson.getString("downloadUrl");
-                if(downloadUrl.startsWith(nexusPath)){
+                if (downloadUrl.startsWith(nexusPath)) {
                     for (String suffix : split) {
-                        if(downloadUrl.endsWith(suffix)){
+                        if (downloadUrl.endsWith(suffix)) {
                             NexusDirectiryDto directiryDto = new NexusDirectiryDto();
                             directiryDto.setDownloadUrl(downloadUrl);
                             directiryDto.setName(downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
