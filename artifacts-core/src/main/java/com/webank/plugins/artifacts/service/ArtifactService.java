@@ -341,8 +341,9 @@ public class ArtifactService {
         String nexusSearchAssetApiUrl = nexusBaseUrl + NEXUS_SEARCH_ASSET_API_PATH;
         UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(nexusSearchAssetApiUrl);
         b = b.queryParam("repository", nexusRepository);
+        String group = null;
         if (StringUtils.isNoneBlank(artifactPath)) {
-            String group = artifactPath;
+            group = artifactPath;
             if (!artifactPath.startsWith("/")) {
                 group = "/" + group;
             }
@@ -370,7 +371,11 @@ public class ArtifactService {
 
         while (StringUtils.isNoneBlank(continuationToken)) {
             b = UriComponentsBuilder.fromHttpUrl(nexusSearchAssetApiUrl);
-            b = b.queryParam("repository", nexusRepository).queryParam("continuationToken", continuationToken);
+            b = b.queryParam("repository", nexusRepository);
+            if(StringUtils.isNoneBlank(group)){
+                b = b.queryParam("group", group);
+            }
+            b = b.queryParam("continuationToken", continuationToken);
 
             nexusSearchAssetResponse = nexusClient.searchAsset(b.build().toUri(),
                     applicationProperties.getArtifactsNexusUsername(),
