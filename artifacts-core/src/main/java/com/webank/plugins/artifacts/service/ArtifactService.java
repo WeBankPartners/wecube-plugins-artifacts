@@ -337,6 +337,14 @@ public class ArtifactService {
         String nexusSearchAssetApiUrl = nexusBaseUrl + NEXUS_SEARCH_ASSET_API_PATH;
         UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(nexusSearchAssetApiUrl);
         b = b.queryParam("repository", nexusRepository);
+        if(StringUtils.isNoneBlank(artifactPath)){
+            String group = artifactPath;
+            if(!artifactPath.startsWith("/")){
+                group = "/"+group;
+            }
+            
+            b = b.queryParam("group", group);
+        }
 
         List<NexusDirectiryDto> results = new ArrayList<>();
         NexusSearchAssetResponse nexusSearchAssetResponse = nexusClient.searchAsset(b.build().toUri(),
