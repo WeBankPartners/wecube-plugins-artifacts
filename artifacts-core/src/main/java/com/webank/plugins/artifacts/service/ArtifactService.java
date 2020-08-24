@@ -304,7 +304,7 @@ public class ArtifactService {
     }
 
     public String getArtifactPath(String unitDesignId, PaginationQuery queryObject) {
-        if(StringUtils.isBlank(unitDesignId)){
+        if (StringUtils.isBlank(unitDesignId)) {
             throw new PluginException("Unit design ID cannot be blank.");
         }
         String artifactPath = null;
@@ -319,7 +319,8 @@ public class ArtifactService {
         try {
             Map<String, String> ResultMap = (Map) objectPaginationQueryResult.getContents().get(0);
             JSONObject responseJson = (JSONObject) JSONObject.wrap(ResultMap.get("data"));
-//            JSONObject unit_design = responseJson.getJSONObject(applicationProperties.getCmdbArtifactPath());
+            // JSONObject unit_design =
+            // responseJson.getJSONObject(applicationProperties.getCmdbArtifactPath());
             artifactPath = responseJson.getString(applicationProperties.getCmdbArtifactPath());
         } catch (JSONException e) {
             throw new PluginException("Can not parse CMDB Response json", e);
@@ -333,19 +334,19 @@ public class ArtifactService {
         }
 
         // configuration parameters
-//        String filter = "jar,zip";
+        // String filter = "jar,zip";
 
         String nexusBaseUrl = applicationProperties.getArtifactsNexusServerUrl();
         String nexusRepository = applicationProperties.getArtifactsNexusRepository();
         String nexusSearchAssetApiUrl = nexusBaseUrl + NEXUS_SEARCH_ASSET_API_PATH;
         UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(nexusSearchAssetApiUrl);
         b = b.queryParam("repository", nexusRepository);
-        if(StringUtils.isNoneBlank(artifactPath)){
+        if (StringUtils.isNoneBlank(artifactPath)) {
             String group = artifactPath;
-            if(!artifactPath.startsWith("/")){
-                group = "/"+group;
+            if (!artifactPath.startsWith("/")) {
+                group = "/" + group;
             }
-            
+
             b = b.queryParam("group", group);
         }
 
@@ -356,7 +357,9 @@ public class ArtifactService {
         String continuationToken = nexusSearchAssetResponse.getContinuationToken();
         List<NexusAssetItemInfo> assetItems = nexusSearchAssetResponse.getItems();
         for (NexusAssetItemInfo assetItem : assetItems) {
-            if (assetItem.getPath().endsWith("jar") || assetItem.getPath().endsWith("zip")) {
+            if (assetItem.getPath().endsWith("jar") || assetItem.getPath().endsWith("zip")
+                    || assetItem.getPath().endsWith("tar") || assetItem.getPath().endsWith("gz")
+                    || assetItem.getPath().endsWith("tgz")) {
                 NexusDirectiryDto directiryDto = new NexusDirectiryDto();
                 directiryDto.setDownloadUrl(assetItem.getDownloadUrl());
                 directiryDto
@@ -368,21 +371,22 @@ public class ArtifactService {
         while (StringUtils.isNoneBlank(continuationToken)) {
             b = UriComponentsBuilder.fromHttpUrl(nexusSearchAssetApiUrl);
             b = b.queryParam("repository", nexusRepository).queryParam("continuationToken", continuationToken);
-            
+
             nexusSearchAssetResponse = nexusClient.searchAsset(b.build().toUri(),
-                    applicationProperties.getArtifactsNexusUsername(), applicationProperties.getArtifactsNexusPassword());
+                    applicationProperties.getArtifactsNexusUsername(),
+                    applicationProperties.getArtifactsNexusPassword());
 
             List<NexusAssetItemInfo> queryAssetItems = nexusSearchAssetResponse.getItems();
             for (NexusAssetItemInfo assetItem : queryAssetItems) {
                 if (assetItem.getPath().endsWith("jar") || assetItem.getPath().endsWith("zip")) {
                     NexusDirectiryDto directiryDto = new NexusDirectiryDto();
                     directiryDto.setDownloadUrl(assetItem.getDownloadUrl());
-                    directiryDto
-                            .setName(assetItem.getDownloadUrl().substring(assetItem.getDownloadUrl().lastIndexOf("/") + 1));
+                    directiryDto.setName(
+                            assetItem.getDownloadUrl().substring(assetItem.getDownloadUrl().lastIndexOf("/") + 1));
                     results.add(directiryDto);
                 }
             }
-            
+
             continuationToken = nexusSearchAssetResponse.getContinuationToken();
         }
         return results;
