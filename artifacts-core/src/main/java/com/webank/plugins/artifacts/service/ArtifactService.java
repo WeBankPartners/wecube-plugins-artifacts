@@ -53,7 +53,7 @@ public class ArtifactService {
     private static final String CONSTANT_INPUT_TYPE = "inputType";
     private static final String CONSTANT_CI_TYPE = "ciType";
 
-    private static final String NEXUS_SEARCH_ASSET_API_PATH = "/service/rest/v1/search/assets";
+    private static final String NEXUS_SEARCH_ASSET_API_PATH = "/service/rest/beta/search/assets";
 
     @Autowired
     private CmdbServiceV2Stub cmdbServiceV2Stub;
