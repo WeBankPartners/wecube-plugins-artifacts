@@ -304,10 +304,13 @@ public class ArtifactService {
     }
 
     public String getArtifactPath(String unitDesignId, PaginationQuery queryObject) {
+        if(StringUtils.isBlank(unitDesignId)){
+            throw new PluginException("Unit design ID cannot be blank.");
+        }
         String artifactPath = null;
-        queryObject.addEqualsFilter("unit_design", unitDesignId);
+        queryObject.addEqualsFilter("guid", unitDesignId);
         PaginationQueryResult<Object> objectPaginationQueryResult = cmdbServiceV2Stub
-                .queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(), queryObject);
+                .queryCiData(cmdbDataProperties.getCiTypeIdOfUnitDesign(), queryObject);
 
         if (objectPaginationQueryResult == null || objectPaginationQueryResult.getContents() == null
                 || objectPaginationQueryResult.getContents().size() <= 0) {
@@ -316,8 +319,8 @@ public class ArtifactService {
         try {
             Map<String, String> ResultMap = (Map) objectPaginationQueryResult.getContents().get(0);
             JSONObject responseJson = (JSONObject) JSONObject.wrap(ResultMap.get("data"));
-            JSONObject unit_design = responseJson.getJSONObject("unit_design");
-            artifactPath = unit_design.getString(applicationProperties.getCmdbArtifactPath());
+//            JSONObject unit_design = responseJson.getJSONObject(applicationProperties.getCmdbArtifactPath());
+            artifactPath = responseJson.getString(applicationProperties.getCmdbArtifactPath());
         } catch (JSONException e) {
             throw new PluginException("Can not parse CMDB Response json", e);
         }
