@@ -511,7 +511,7 @@ export default {
     async bindConfig (row) {
       const found = this.tableData.find(_ => _.guid === this.packageId)
       const bindConfigIds = found.diff_conf_variable.map(i => i.guid)
-      const foundKey = this.allDiffConfigs.find(_ => _.code === row.key)
+      const foundKey = this.allDiffConfigs.find(_ => _.code.toLowerCase() === row.key.toLowerCase())
       bindConfigIds.push(foundKey.guid)
       await this.updateEntity({
         packageName: cmdbPackageName,
@@ -549,7 +549,7 @@ export default {
       const tab = await getKeys(this.guid, this.packageId, { filePath: currentTab.path })
       if (tab.status === 'OK') {
         const result = tab.data.outputs[0].configKeyInfos.map((_, i) => {
-          const found = bindConfig.find(conf => conf.code === _.key)
+          const found = bindConfig.find(conf => conf.code.toLowerCase() === _.key.toLowerCase())
           return {
             index: i + 1,
             key: _.key,
@@ -563,7 +563,7 @@ export default {
           }
         })
         result.forEach(i => {
-          const key = this.allDiffConfigs.find(d => d.code === i.key)
+          const key = this.allDiffConfigs.find(d => d.code.toLowerCase() === i.key.toLowerCase())
           // const varstore = this.tabData[this.nowTab].tableData.find(d => d.key === i.key)
           i.autoFillValue = key.variable_value
           i.variableValue = key.variable_value
@@ -691,8 +691,8 @@ export default {
               variable_name: _.key,
               variable_value: ''
             }
-            const found = bindConfig.find(conf => conf.code === _.key)
-            const foundci = diffConfigs.data.find(conf => conf.code === _.key)
+            const found = bindConfig.find(conf => conf.code.toLowerCase() === _.key.toLowerCase())
+            const foundci = diffConfigs.data.find(conf => conf.code.toLowerCase() === _.key.toLowerCase())
             if (found) {
               needBinding.push(found.guid)
             }
@@ -1321,22 +1321,22 @@ export default {
           variable_value: value
         }
       ]
-      const params = {
-        packageName: cmdbPackageName,
-        entityName: DIFF_CONFIGURATION,
-        data: obj,
-        callback: async () => {
-          this.tabData[this.nowTab].tableData[row].autoFillValue = value
-          this.tabData[this.nowTab].tableData[row].variableValue = value
-          this.$Notice.success({
-            title: this.$t('artifacts_successed')
-          })
-        }
-      }
-      this.updateEntity(params)
-      // if (obj[0].variable_value) {
-      //   this.updateDiffConfig(obj)
+      // const params = {
+      //   packageName: cmdbPackageName,
+      //   entityName: DIFF_CONFIGURATION,
+      //   data: obj,
+      //   callback: async () => {
+      //     this.tabData[this.nowTab].tableData[row].autoFillValue = value
+      //     this.tabData[this.nowTab].tableData[row].variableValue = value
+      //     this.$Notice.success({
+      //       title: this.$t('artifacts_successed')
+      //     })
+      //   }
       // }
+      // this.updateEntity(params)
+      if (obj[0].variable_value) {
+        this.updateDiffConfig(obj)
+      }
     },
     checkFillRule (v) {
       if (v === null || v === undefined) {
