@@ -32,7 +32,7 @@
         </Upload>
         <!-- <div v-if="uploaded" style="width: 100%;height:26px"></div> -->
         <ArtifactsSimpleTable class="artifact-management-package-table" :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
-        <Modal width="70" :mask-closable="false" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')" :loading="loadingForSave" @on-ok="saveConfigFiles" @on-cancel="closeModal">
+        <Modal width="70" :mask-closable="false" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')">
           <Select :placeholder="$t('configuration')" @on-change="configurationChanged" v-model="configuration">
             <Option v-for="conf in tableData.filter(conf => conf.guid !== packageId)" :value="conf.name" :key="conf.name">{{ conf.name }}</Option>
           </Select>
@@ -117,6 +117,10 @@
               </Col>
             </Row>
           </Card>
+          <div slot="footer">
+            <Button @click="closeModal">{{ $t('artifacts_cancle') }}</Button>
+            <Button type="primary" @click="saveConfigFiles" :loading="loading">{{ $t('artifacts_save') }}</Button>
+          </div>
         </Modal>
         <Modal :mask-closable="false" v-model="isShowTreeModal" :title="currentTreeModal.title" @on-ok="onOk" @on-cancel="closeTreeModal">
           <RadioGroup v-model="selectFile">
@@ -167,6 +171,7 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      loading: false,
       currentUrl: '',
       isShowOnlineModal: false,
       currentPackageList: [],
@@ -187,7 +192,6 @@ export default {
       currentFiles: [],
       treeData: [],
       treeLoading: false,
-      loadingForSave: false,
       selectFile: '',
       treeDataCollection: {
         // 在进入配置页面时即缓存文件树信息
@@ -810,7 +814,6 @@ export default {
       this.getTabDatas(path)
     },
     async saveConfigFiles () {
-      this.loadingForSave = true
       const obj = {
         configFilesWithPath: this.packageInput.diff_conf_file,
         startFile: this.packageInput.start_file_path.length > 0 ? this.packageInput.start_file_path.join('|') : '',
@@ -818,9 +821,11 @@ export default {
         deployFile: this.packageInput.deploy_file_path.length > 0 ? this.packageInput.deploy_file_path.join('|') : '',
         isDecompression: this.packageInput.is_decompression || ''
       }
+      this.loading = true
       let { status } = await saveConfigFiles(this.guid, this.packageId, obj)
       if (status === 'OK') {
-        this.loadingForSave = false
+        this.loading = false
+        this.isShowFilesModal = false
         this.$Notice.success({
           title: this.$t('artifacts_successed')
         })
@@ -1236,6 +1241,7 @@ export default {
         deploy_file_path: [],
         is_decompression: ''
       }
+      this.isShowFilesModal = false
       this.initTreeConfig()
     },
     initTreeConfig () {
