@@ -857,7 +857,8 @@ export default {
         _.render = (h, params) => {
           return (
             <div>
-              <span style="margin-right:10px">{_.data.name}</span>
+              <span style="margin-right:4px;">{_.data.code}</span>
+              <span style="margin-right:10px;font-size:12px">[{_.data.name}]</span>
               <span style={`font-size:12px;color:${color[_.data.state_code]}`}>{_.data.state_code}</span>
             </div>
           )
