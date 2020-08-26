@@ -3,7 +3,7 @@
     <Col span="6">
       <Card>
         <p slot="title">{{ $t('artifacts_system_design_version') }}</p>
-        <Select @on-change="selectSystemDesignVersion" label-in-name v-model="systemDesignVersion" filterable>
+        <Select @on-change="selectSystemDesignVersion" @on-clear="clearSelectSystemDesign" label-in-name v-model="systemDesignVersion" filterable clearable>
           <Option v-for="version in systemDesignVersions" :value="version.guid || ''" :key="version.guid">{{ version.fixed_date ? `${version.name}[${version.fixed_date}]` : version.name }}</Option>
         </Select>
       </Card>
@@ -397,6 +397,10 @@ export default {
     }
   },
   methods: {
+    clearSelectSystemDesign () {
+      this.systemDesignVersion = ''
+      this.treeData = []
+    },
     async onUploadHandler () {
       const { status } = await uploadArtifact(this.guid, this.currentUrl)
       if (status === 'OK') {
@@ -596,6 +600,9 @@ export default {
     },
 
     async getSystemDesignVersion (guid) {
+      if (!guid) {
+        return
+      }
       this.treeLoading = true
       let { status, data } = await getSystemDesignVersion(guid)
       if (status === 'OK') {
