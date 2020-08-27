@@ -1,9 +1,10 @@
 #!/bin/sh
+/bin/sh /scripts/tomcat_exporter/start.sh
 mkdir -p /log
 java -Duser.timezone=Asia/Shanghai \
 -Dcom.sun.management.jmxremote \
--Dcom.sun.management.jmxremote.port=18081 \
--Dcom.sun.management.jmxremote.rmi.port=18081 \
+-Dcom.sun.management.jmxremote.port=18082 \
+-Dcom.sun.management.jmxremote.rmi.port=18082 \
 -Dcom.sun.management.jmxremote.authenticate=false \
 -Dcom.sun.management.jmxremote.ssl=false \
 -jar /application/wecube-plugins-artifacts.jar  \
