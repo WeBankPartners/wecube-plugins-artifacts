@@ -172,6 +172,7 @@ export default {
   data () {
     return {
       loading: false,
+      btnLoading: false,
       currentUrl: '',
       isShowOnlineModal: false,
       currentPackageList: [],
@@ -484,10 +485,10 @@ export default {
         <Button disabled={!!(row.variableValue === row.autoFillValue || row.fixed_date)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveAttr(params.index, row.variableValue)}>
           {this.$t('artifacts_save')}
         </Button>,
-        <Button disabled={row.isBinding.length > 0 || row.autoFillValue.length === 0} title={this.$t('tip_conf_bind')} size="small" type="warning" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.bindConfig(row)}>
+        <Button disabled={row.isBinding.length > 0 || row.autoFillValue.length === 0} title={this.$t('tip_conf_bind')} size="small" type="warning" style="margin-right:5px;margin-bottom:5px;" loading={this.btnLoading} onClick={() => this.bindConfig(row)}>
           {this.$t('bind_key')}
         </Button>,
-        <Button disabled={row.isBinding.length === 0 || row.autoFillValue.length === 0} title={this.$t('tip_conf_unbind')} size="small" type="error" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.unBindConfig(row)}>
+        <Button disabled={row.isBinding.length === 0 || row.autoFillValue.length === 0} title={this.$t('tip_conf_unbind')} size="small" type="error" style="margin-right:5px;margin-bottom:5px;" loading={this.btnLoading} onClick={() => this.unBindConfig(row)}>
           {this.$t('untie_key')}
         </Button>
       ]
@@ -499,6 +500,7 @@ export default {
       this.closeconfigModal()
     },
     async unBindConfig (row) {
+      this.btnLoading = true
       const id = row.isBinding
       const found = this.tableData.find(_ => _.guid === this.packageId)
       const bindConfigIds = found.diff_conf_variable.map(i => i.guid)
@@ -515,8 +517,11 @@ export default {
         ]
       })
       this.updateTabData()
+      this.btnLoading = false
     },
     async bindConfig (row) {
+      console.log(1)
+      this.btnLoading = true
       const found = this.tableData.find(_ => _.guid === this.packageId)
       const bindConfigIds = found.diff_conf_variable.map(i => i.guid)
       const foundKey = this.allDiffConfigs.find(_ => _.code.toLowerCase() === row.key.toLowerCase())
@@ -532,6 +537,7 @@ export default {
         ]
       })
       this.updateTabData()
+      this.btnLoading = false
     },
     async updateTabData () {
       let tableData = await queryPackages(this.guid, {
