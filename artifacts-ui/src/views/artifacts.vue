@@ -329,7 +329,7 @@ export default {
         {
           title: this.$t('artifacts_property_seq'),
           key: 'index',
-          width: 60
+          width: 80
         },
         {
           title: this.$t('artifacts_line_number'),
