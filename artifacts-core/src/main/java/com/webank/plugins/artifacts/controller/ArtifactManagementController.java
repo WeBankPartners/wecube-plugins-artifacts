@@ -197,7 +197,15 @@ public class ArtifactManagementController {
 
         File file = new File(multipartFile.getOriginalFilename());
         try (FileOutputStream fos = new FileOutputStream(file)) {
-            fos.write(multipartFile.getBytes());
+            byte[] buf = new byte[1024];
+            int len = 0;
+            
+            InputStream is = multipartFile.getInputStream();
+            while((len = is.read(buf)) != -1){
+                fos.write(buf, 0, len);
+            }
+            
+//            fos.write(multipartFile.getBytes());
         } catch (Exception e) {
             logger.error("errors while convert multipart file.", e);
             throw new PluginException("3002", "Failed to convert multipart file to file.");

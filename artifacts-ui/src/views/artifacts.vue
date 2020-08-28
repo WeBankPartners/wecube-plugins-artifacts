@@ -3,7 +3,7 @@
     <Col span="6">
       <Card>
         <p slot="title">{{ $t('artifacts_system_design_version') }}</p>
-        <Select @on-change="selectSystemDesignVersion" label-in-name v-model="systemDesignVersion">
+        <Select @on-change="selectSystemDesignVersion" @on-clear="clearSelectSystemDesign" label-in-name v-model="systemDesignVersion" filterable clearable>
           <Option v-for="version in systemDesignVersions" :value="version.guid || ''" :key="version.guid">{{ version.fixed_date ? `${version.name}[${version.fixed_date}]` : version.name }}</Option>
         </Select>
       </Card>
@@ -32,7 +32,7 @@
         </Upload>
         <!-- <div v-if="uploaded" style="width: 100%;height:26px"></div> -->
         <ArtifactsSimpleTable class="artifact-management-package-table" :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
-        <Modal width="70" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')" :loading="loadingForSave" @on-ok="saveConfigFiles" @on-cancel="closeModal">
+        <Modal width="70" :mask-closable="false" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')">
           <Select :placeholder="$t('configuration')" @on-change="configurationChanged" v-model="configuration">
             <Option v-for="conf in tableData.filter(conf => conf.guid !== packageId)" :value="conf.name" :key="conf.name">{{ conf.name }}</Option>
           </Select>
@@ -117,18 +117,22 @@
               </Col>
             </Row>
           </Card>
+          <div slot="footer">
+            <Button @click="closeModal">{{ $t('artifacts_cancle') }}</Button>
+            <Button type="primary" @click="saveConfigFiles" :loading="loading">{{ $t('artifacts_save') }}</Button>
+          </div>
         </Modal>
-        <Modal v-model="isShowTreeModal" :title="currentTreeModal.title" @on-ok="onOk" @on-cancel="closeTreeModal">
+        <Modal :mask-closable="false" v-model="isShowTreeModal" :title="currentTreeModal.title" @on-ok="onOk" @on-cancel="closeTreeModal">
           <RadioGroup v-model="selectFile">
-            <Tree :data="filesTreeData" @on-toggle-expand="expandNode"></Tree>
+            <Tree v-if="treeDataCollection[currentTreeModal.key]" :data="treeDataCollection[currentTreeModal.key].treeData" @on-toggle-expand="expandNode"></Tree>
           </RadioGroup>
         </Modal>
-        <Modal v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="onSetRowValue" @on-cancel="closeconfigModal">
+        <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="onSetRowValue" @on-cancel="closeconfigModal">
           <Select filterable clearable v-model="currentConfigValue">
             <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value && conf.code !== currentRow.key)" :value="conf.variable_value" :key="conf.key_name">{{ conf.key_name }}</Option>
           </Select>
         </Modal>
-        <Modal v-model="isShowOnlineModal" :title="$t('select_online')" @on-ok="onUploadHandler" @on-cancel="closeOnlineModal">
+        <Modal :mask-closable="false" v-model="isShowOnlineModal" :title="$t('select_online')" @on-ok="onUploadHandler" @on-cancel="closeOnlineModal">
           <Select filterable clearable v-model="currentUrl">
             <Option v-for="conf in currentPackageList" :value="conf.downloadUrl" :key="conf.downloadUrl">{{ conf.name }}</Option>
           </Select>
@@ -167,6 +171,8 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      loading: false,
+      btnLoading: false,
       currentUrl: '',
       isShowOnlineModal: false,
       currentPackageList: [],
@@ -187,9 +193,30 @@ export default {
       currentFiles: [],
       treeData: [],
       treeLoading: false,
-      loadingForSave: false,
       selectFile: '',
-      filesTreeData: [],
+      treeDataCollection: {
+        // 在进入配置页面时即缓存文件树信息
+        diff_conf_file: {
+          level: 1,
+          selectNode: [],
+          treeData: []
+        },
+        start_file_path: {
+          level: 1,
+          selectNode: [],
+          treeData: []
+        },
+        stop_file_path: {
+          level: 1,
+          selectNode: [],
+          treeData: []
+        },
+        deploy_file_path: {
+          level: 1,
+          selectNode: [],
+          treeData: []
+        }
+      },
       guid: '',
       packageInput: {
         diff_conf_file: [],
@@ -312,12 +339,21 @@ export default {
         {
           title: this.$t('artifacts_property_name'),
           width: 300,
-          key: 'key'
+          render: (h, params) => {
+            // show static view only if confirmed
+            return (
+              <span>
+                {params.row.replaceType || ''}
+                {params.row.key}
+              </span>
+            )
+          }
         },
         {
           title: this.$t('artifacts_property_value_fill_rule'),
           render: (h, params) => {
-            return params.row.autoFillValue ? (
+            // show static view only if confirmed
+            return params.row.fixed_date ? (
               <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} isReadOnly={true} v-model={params.row.autoFillValue} cmdbPackageName={cmdbPackageName} />
             ) : (
               <div style="align-items:center;display:flex;">
@@ -366,6 +402,10 @@ export default {
     }
   },
   methods: {
+    clearSelectSystemDesign () {
+      this.systemDesignVersion = ''
+      this.treeData = []
+    },
     async onUploadHandler () {
       const { status } = await uploadArtifact(this.guid, this.currentUrl)
       if (status === 'OK') {
@@ -438,16 +478,17 @@ export default {
     renderConfigButton (params) {
       const row = params.row
       return [
-        <Button disabled={row.autoFillValue.length > 0} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.showConfigKeyModal(row)}>
+        <Button disabled={!!row.fixed_date} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.showConfigKeyModal(row)}>
           {this.$t('select_key')}
         </Button>,
-        <Button disabled={!row.variableValue} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveAttr(params.index, row.variableValue)}>
+        // disable no dirty data or row is confirmed
+        <Button disabled={!!(row.variableValue === row.autoFillValue || row.fixed_date)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveAttr(params.index, row.variableValue)}>
           {this.$t('artifacts_save')}
         </Button>,
-        <Button disabled={row.isBinding.length > 0 || row.autoFillValue.length === 0} size="small" type="warning" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.bindConfig(row)}>
+        <Button disabled={row.isBinding.length > 0 || row.autoFillValue.length === 0} title={this.$t('tip_conf_bind')} size="small" type="warning" style="margin-right:5px;margin-bottom:5px;" loading={this.btnLoading} onClick={() => this.bindConfig(row)}>
           {this.$t('bind_key')}
         </Button>,
-        <Button disabled={row.isBinding.length === 0 || row.autoFillValue.length === 0} size="small" type="error" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.unBindConfig(row)}>
+        <Button disabled={row.isBinding.length === 0 || row.autoFillValue.length === 0} title={this.$t('tip_conf_unbind')} size="small" type="error" style="margin-right:5px;margin-bottom:5px;" loading={this.btnLoading} onClick={() => this.unBindConfig(row)}>
           {this.$t('untie_key')}
         </Button>
       ]
@@ -459,6 +500,7 @@ export default {
       this.closeconfigModal()
     },
     async unBindConfig (row) {
+      this.btnLoading = true
       const id = row.isBinding
       const found = this.tableData.find(_ => _.guid === this.packageId)
       const bindConfigIds = found.diff_conf_variable.map(i => i.guid)
@@ -475,11 +517,14 @@ export default {
         ]
       })
       this.updateTabData()
+      this.btnLoading = false
     },
     async bindConfig (row) {
+      console.log(1)
+      this.btnLoading = true
       const found = this.tableData.find(_ => _.guid === this.packageId)
       const bindConfigIds = found.diff_conf_variable.map(i => i.guid)
-      const foundKey = this.allDiffConfigs.find(_ => _.code === row.key)
+      const foundKey = this.allDiffConfigs.find(_ => _.code.toLowerCase() === row.key.toLowerCase())
       bindConfigIds.push(foundKey.guid)
       await this.updateEntity({
         packageName: cmdbPackageName,
@@ -492,6 +537,7 @@ export default {
         ]
       })
       this.updateTabData()
+      this.btnLoading = false
     },
     async updateTabData () {
       let tableData = await queryPackages(this.guid, {
@@ -506,23 +552,37 @@ export default {
         }
       })
       const currentTab = this.tabData.find(tab => tab.title === this.activeTab)
+      // 同步更新this.tableData
+      this.tableData = tableData.data.contents.map(_ => {
+        return {
+          ..._.data,
+          nextOperations: _.meta.nextOperations || []
+        }
+      })
       const bindConfig = tableData.data.contents.find(_ => _.data.guid === this.packageId).data.diff_conf_variable
       const tab = await getKeys(this.guid, this.packageId, { filePath: currentTab.path })
       if (tab.status === 'OK') {
         const result = tab.data.outputs[0].configKeyInfos.map((_, i) => {
-          const found = bindConfig.find(conf => conf.code === _.key)
+          const found = bindConfig.find(conf => conf.code.toLowerCase() === _.key.toLowerCase())
           return {
             index: i + 1,
             key: _.key,
             line: _.line,
+            replaceType: _.type,
             autoFillValue: '',
+            variableValue: '',
+            fixed_date: null,
             id: '',
             isBinding: found ? found.guid : ''
           }
         })
         result.forEach(i => {
-          const key = this.allDiffConfigs.find(d => d.code === i.key)
+          const key = this.allDiffConfigs.find(d => d.code.toLowerCase() === i.key.toLowerCase())
+          // const varstore = this.tabData[this.nowTab].tableData.find(d => d.key === i.key)
           i.autoFillValue = key.variable_value
+          i.variableValue = key.variable_value
+          // i.variableValue = varstore.autoFillValue !== varstore.variableValue ? varstore.variableValue : key.variable_value
+          i.fixed_date = key.fixed_date || ''
           i.id = key.id
         })
         this.$set(this.tabData[this.nowTab], 'tableData', result)
@@ -550,6 +610,9 @@ export default {
     },
 
     async getSystemDesignVersion (guid) {
+      if (!guid) {
+        return
+      }
       this.treeLoading = true
       let { status, data } = await getSystemDesignVersion(guid)
       if (status === 'OK') {
@@ -583,14 +646,14 @@ export default {
         this.pageInfo = { currentPage, pageSize, total }
       }
     },
-    async getFiles (packageId, currentDir) {
+    async getFiles (packageId, currentDir, treeTag) {
       this.packageId = packageId
       let { status, data } = await getFiles(this.guid, packageId, {
         currentDir
       })
       if (status === 'OK') {
         this.isShowFilesModal = true
-        this.genFilesTreedata({ files: data.outputs[0].files, currentDir })
+        this.genFilesTreedata({ files: data.outputs[0].files, currentDir, treeTag })
       }
     },
     async getAllEntityData () {
@@ -605,10 +668,12 @@ export default {
     },
     async getKeys (options) {
       if (!options) return
+      // 获取文件差异化变量列表：行号，名称
       let { status, data } = await getKeys(this.guid, this.packageId, {
         filePath: options.path
       })
       if (status === 'OK') {
+        // 获取CMDB全量差异化变量列表
         const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION)
         if (diffConfigs.status === 'OK') {
           const result = data.outputs[0].configKeyInfos.map((_, i) => {
@@ -634,6 +699,8 @@ export default {
       let newDiffConfigs = []
       let needBinding = []
       const bindConfig = this.tableData.find(_ => _.guid === this.packageId).diff_conf_variable || []
+      // 查出所有差异化变量的信息
+      const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION)
       let tabData = res.map((tab, tabIndex) => {
         if (tab.status === 'OK') {
           const tableData = tab.data.outputs[0].configKeyInfos.map((_, i) => {
@@ -641,7 +708,8 @@ export default {
               variable_name: _.key,
               variable_value: ''
             }
-            const found = bindConfig.find(conf => conf.code === _.key)
+            const found = bindConfig.find(conf => conf.code.toLowerCase() === _.key.toLowerCase())
+            const foundci = diffConfigs.data.find(conf => conf.code.toLowerCase() === _.key.toLowerCase())
             if (found) {
               needBinding.push(found.guid)
             }
@@ -649,7 +717,10 @@ export default {
               index: i + 1,
               key: _.key,
               line: _.line,
-              autoFillValue: '',
+              replaceType: _.type,
+              fixed_date: (foundci ? foundci.fixed_date : null) || '',
+              variableValue: found ? found.variable_value : '',
+              autoFillValue: found ? found.variable_value : '',
               id: '',
               isBinding: found ? found.guid : ''
             }
@@ -659,8 +730,6 @@ export default {
           return []
         }
       })
-      // 查出所有差异化变量的信息
-      const diffConfigs = await retrieveEntity(cmdbPackageName, DIFF_CONFIGURATION)
       if (diffConfigs.status === 'OK') {
         Object.keys(allKeys).forEach(key => {
           const found = diffConfigs.data.find(diffConfig => {
@@ -692,6 +761,7 @@ export default {
             callback: v => {
               v.forEach(_ => {
                 allKeys[_.variable_name].id = _.id
+                diffConfigs.data.push(_)
               })
               // 更新 tabData 的信息
               tabData.forEach((tableData, tabIndex) => {
@@ -699,12 +769,16 @@ export default {
                   return {
                     ..._,
                     ...allKeys[_.key],
-                    autoFillValue: allKeys[_.key].variable_value
+                    autoFillValue: allKeys[_.key].variable_value,
+                    variableValue: allKeys[_.key].variable_value
+                    // isBinding: _.id
                   }
                 })
                 this.$set(this.tabData[tabIndex], 'tableData', result)
               })
-              this.updatePackages(needBinding)
+              // update needBinding
+              needBinding = Object.keys(allKeys).map(_ => allKeys[_].id)
+              this.updatePackages(needBinding, diffConfigs)
             }
           }
           this.createEntity(params)
@@ -714,18 +788,19 @@ export default {
               return {
                 ..._,
                 ...allKeys[_.key],
-                autoFillValue: allKeys[_.key].variable_value
+                autoFillValue: allKeys[_.key].variable_value,
+                variableValue: allKeys[_.key].variable_value
               }
             })
             this.$set(this.tabData[tabIndex], 'tableData', result)
           })
           if (isNewPage) {
-            this.updatePackages(needBinding)
+            this.updatePackages(needBinding, diffConfigs)
           }
         }
       }
     },
-    async updatePackages (needBinding) {
+    async updatePackages (needBinding, diffConfigs) {
       // 更新部署包关联的所有差异配置变量
       await this.updateEntity({
         packageName: cmdbPackageName,
@@ -737,11 +812,14 @@ export default {
           }
         ]
       })
+      this.tableData.find(_ => _.guid === this.packageId).diff_conf_variable =
+        needBinding.map(confguid => {
+          return diffConfigs.data.find(item => item.guid === confguid)
+        }) || []
       const path = this.tableData.find(_ => _.guid === this.packageId).diff_conf_file
       this.getTabDatas(path)
     },
     async saveConfigFiles () {
-      this.loadingForSave = true
       const obj = {
         configFilesWithPath: this.packageInput.diff_conf_file,
         startFile: this.packageInput.start_file_path.length > 0 ? this.packageInput.start_file_path.join('|') : '',
@@ -749,12 +827,15 @@ export default {
         deployFile: this.packageInput.deploy_file_path.length > 0 ? this.packageInput.deploy_file_path.join('|') : '',
         isDecompression: this.packageInput.is_decompression || ''
       }
+      this.loading = true
       let { status } = await saveConfigFiles(this.guid, this.packageId, obj)
+      this.loading = false
       if (status === 'OK') {
-        this.loadingForSave = false
+        this.isShowFilesModal = false
         this.$Notice.success({
           title: this.$t('artifacts_successed')
         })
+        this.initTreeConfig()
       }
       await this.queryPackages()
       this.getTabDatas(this.packageInput.diff_conf_file.join('|'), true)
@@ -794,7 +875,8 @@ export default {
         _.render = (h, params) => {
           return (
             <div>
-              <span style="margin-right:10px">{_.data.name}</span>
+              <span style="margin-right:4px;">{_.data.code}</span>
+              <span style="margin-right:10px;font-size:12px">[{_.data.name}]</span>
               <span style={`font-size:12px;color:${color[_.data.state_code]}`}>{_.data.state_code}</span>
             </div>
           )
@@ -829,10 +911,10 @@ export default {
       this.queryPackages()
     },
     genFilesTreedata (data) {
-      const { files, currentDir } = data
+      const { files, currentDir, treeTag } = data
       if (currentDir) {
         const filesArray = currentDir.split('/')
-        let targetNode = this.filesTreeData
+        let targetNode = this.treeDataCollection[this.currentTreeModal.key].treeData
         filesArray.forEach((dir, index) => {
           if (index) {
             targetNode = targetNode.children
@@ -847,18 +929,20 @@ export default {
         targetNode.children = this.formatChildrenData({
           files,
           currentDir,
-          level: targetNode.level + 1
+          level: targetNode.level + 1,
+          treeTag
         })
       } else {
-        this.filesTreeData = this.formatChildrenData({
+        this.treeDataCollection[this.currentTreeModal.key].treeData = this.formatChildrenData({
           files,
           currentDir,
-          level: 1
+          level: 1,
+          treeTag
         })
       }
     },
     formatChildrenData (val) {
-      const { files, currentDir, level } = val
+      const { files, currentDir, level, treeTag } = val
       if (!(files instanceof Array)) {
         return
       }
@@ -877,9 +961,12 @@ export default {
             </span>
           )
         } else {
+          // const selectedFile = !!this.currentFiles.find(file => file === obj.path)
+          this.currentFiles = this.packageInput[treeTag] || ''
           const selectedFile = !!this.currentFiles.find(file => file === obj.path)
-          if (selectedFile && this.currentTreeModal.inputType === 'checkbox') {
-            this.selectNode.push(obj)
+          // if (selectedFile && this.currentTreeModal.inputType === 'checkbox') {
+          if (selectedFile) {
+            this.treeDataCollection[treeTag].selectNode.push(obj)
           }
           obj.render = (h, params) => {
             return this.currentTreeModal.inputType === 'checkbox' ? (
@@ -899,9 +986,10 @@ export default {
       })
     },
     expandNode (node) {
-      if (node.expand && !node.children[0].title) {
-        this.getFiles(this.packageId, node.path)
-      }
+      // if (node.expand && !node.children[0].title) {
+      //   this.getFiles(this.packageId, node.path)
+      // }
+      this.getFiles(this.packageId, node.path, this.currentTreeModal.key)
     },
     rowClick (row) {
       this.packageId = row.guid
@@ -973,8 +1061,73 @@ export default {
       const filePathList = filePath
       filePathList.forEach(async path => {
         let dirs = path.split('/')
-        await this.checkFiles(0, dirs, isExist)
+        await this.checkFilesAndInitTree(0, dirs, isExist)
       })
+    },
+    async checkFilesAndInitTree (index, fileList, isExist) {
+      let currentDir = ''
+      let notExist = false
+      if (index > 0) {
+        for (let i = 0; i < index; i++) {
+          currentDir = currentDir + fileList[i] + '/'
+        }
+      }
+      const { data } = await getFiles(this.guid, this.packageId, { currentDir: currentDir })
+      const treeTag = isExist.slice(3)
+      if (this.treeDataCollection[treeTag].level !== 1) {
+        const xx = {
+          files: data.outputs[0].files,
+          currentDir: currentDir.substring(0, currentDir.length - 1),
+          level: this.treeDataCollection[treeTag].level++,
+          treeTag
+        }
+        const filesArray = currentDir.substring(0, currentDir.length - 1).split('/')
+        let targetNode = this.treeDataCollection[treeTag].treeData
+        filesArray.forEach((dir, index) => {
+          if (index) {
+            targetNode = targetNode.children
+          }
+          targetNode.find(_ => {
+            if (dir === _.title) {
+              targetNode = _
+              return true
+            }
+          })
+        })
+        targetNode.children = this.formatChildrenData(xx)
+        const fileList = this.packageInput.diff_conf_file || []
+        if (targetNode.children.length === 1) {
+          if (targetNode.children[0].title) {
+            targetNode.expand = true
+          }
+        } else {
+          targetNode.children.forEach(child => {
+            if (fileList.includes(child.path)) {
+              targetNode.expand = true
+            }
+          })
+        }
+      } else {
+        const xx = {
+          files: data.outputs[0].files,
+          currentDir: currentDir.substring(0, currentDir.length - 1),
+          level: this.treeDataCollection[isExist.slice(3)].level++,
+          treeTag
+        }
+        this.treeDataCollection[treeTag].treeData = this.formatChildrenData(xx)
+        this.treeDataCollection[treeTag].treeData[0].expand = true
+      }
+
+      if (data.outputs[0].files.find(_ => _.name === fileList[index])) {
+        if (index === fileList.length - 1) {
+          return notExist
+        }
+        this.checkFilesAndInitTree(index + 1, fileList, isExist)
+      } else {
+        notExist = true
+        this[isExist].push(fileList.join('/'))
+      }
+      return notExist
     },
     async checkFiles (index, fileList, isExist) {
       let currentDir = ''
@@ -985,6 +1138,7 @@ export default {
         }
       }
       const { data } = await getFiles(this.guid, this.packageId, { currentDir: currentDir })
+
       if (data.outputs[0].files.find(_ => _.name === fileList[index])) {
         if (index === fileList.length - 1) {
           return notExist
@@ -1011,6 +1165,7 @@ export default {
       this.is_start_file_path = []
       this.is_stop_file_path = []
       this.is_deploy_file_path = []
+      this.initTreeConfig()
       this.isShowFilesModal = true
       this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
       this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
@@ -1061,12 +1216,24 @@ export default {
         this.tabData = []
       }
     },
-    showTreeModal (type, files) {
-      this.filesTreeData = []
+    async showTreeModal (type, files) {
       this.currentFiles = files
       this.currentTreeModal = this.treeModalOpt[type]
-      if (!this.filesTreeData.length) {
-        this.getFiles(this.packageId, '')
+      if (!this.treeDataCollection[this.currentTreeModal.key].treeData.length) {
+        // this.getFiles(this.packageId, '', this.currentTreeModal.key)
+        let { status, data } = await getFiles(this.guid, this.packageId, {
+          currentDir: ''
+        })
+        if (status === 'OK') {
+          this.isShowFilesModal = true
+          // this.genFilesTreedata({ files: data.outputs[0].files, currentDir, treeTag })
+          this.treeDataCollection[this.currentTreeModal.key].treeData = this.formatChildrenData({
+            files: data.outputs[0].files,
+            currentDir: '',
+            level: 1,
+            treeTag: this.currentTreeModal.key
+          })
+        }
       }
       // if (type > 0 && files) {
       //   this.selectFile = files
@@ -1081,18 +1248,54 @@ export default {
         deploy_file_path: [],
         is_decompression: ''
       }
+      this.isShowFilesModal = false
+      this.initTreeConfig()
+    },
+    initTreeConfig () {
+      this.treeDataCollection = {
+        // 在进入配置页面时即缓存文件树信息
+        diff_conf_file: {
+          level: 1,
+          selectNode: [],
+          treeData: []
+        },
+        start_file_path: {
+          level: 1,
+          selectNode: [],
+          treeData: []
+        },
+        stop_file_path: {
+          level: 1,
+          selectNode: [],
+          treeData: []
+        },
+        deploy_file_path: {
+          level: 1,
+          selectNode: [],
+          treeData: []
+        }
+      }
     },
     onOk () {
+      let tmpSelectNode = []
+      let tmpNodeKey = []
+      this.treeDataCollection[this.currentTreeModal.key].selectNode.forEach(tmp => {
+        // if (tmp.nodeKey && !tmpNodeKey.includes(tmp.nodeKey)) {
+        if (!tmpNodeKey.includes(tmp.nodeKey)) {
+          tmpSelectNode.push(tmp)
+          tmpNodeKey.push(tmp.nodeKey)
+        }
+      })
+      this.treeDataCollection[this.currentTreeModal.key].selectNode = tmpSelectNode
       // if (this.currentTreeModal.key === 'diff_conf_file') {
       this.diffTabData = ''
       let files = []
-      this.selectNode.forEach(_ => {
+      this.treeDataCollection[this.currentTreeModal.key].selectNode.forEach(_ => {
         files.push(_.path)
       })
       this.diffTabData = files.join('|')
       this.packageInput[this.currentTreeModal.key] = files
-      this.selectNode = []
-      this.filesTreeData = []
+      // this.treeDataCollection[this.currentTreeModal.key].selectNode = []
       // } else {
       //   this.packageInput[this.currentTreeModal.key] = this.selectFile
       // }
@@ -1102,21 +1305,23 @@ export default {
     },
     closeTreeModal () {
       this.selectFile = ''
-      this.selectNode = []
-      this.filesTreeData = []
+      // this.treeDataCollection[this.currentTreeModal.key].selectNode = []
     },
     checkboxChange (value, data) {
+      this.treeDataCollection[this.currentTreeModal.key].selectNode = this.treeDataCollection[this.currentTreeModal.key].selectNode.filter(_ => {
+        return _.nodeKey >= 0
+      })
       if (value) {
-        this.selectNode.push(data)
+        this.treeDataCollection[this.currentTreeModal.key].selectNode.push(data)
       } else {
         let i = 0
-        this.selectNode.find((_, index) => {
+        this.treeDataCollection[this.currentTreeModal.key].selectNode.find((_, index) => {
           if (_.path === data.path) {
             i = index
             return true
           }
         })
-        this.selectNode.splice(i, 1)
+        this.treeDataCollection[this.currentTreeModal.key].selectNode.splice(i, 1)
       }
     },
     tabChange (tabName) {
@@ -1141,6 +1346,19 @@ export default {
           variable_value: value
         }
       ]
+      // const params = {
+      //   packageName: cmdbPackageName,
+      //   entityName: DIFF_CONFIGURATION,
+      //   data: obj,
+      //   callback: async () => {
+      //     this.tabData[this.nowTab].tableData[row].autoFillValue = value
+      //     this.tabData[this.nowTab].tableData[row].variableValue = value
+      //     this.$Notice.success({
+      //       title: this.$t('artifacts_successed')
+      //     })
+      //   }
+      // }
+      // this.updateEntity(params)
       if (obj[0].variable_value) {
         this.updateDiffConfig(obj)
       }

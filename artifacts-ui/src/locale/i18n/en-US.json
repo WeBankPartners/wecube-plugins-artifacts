@@ -10,6 +10,7 @@
   "artifacts_upload_new_package": "Upload New Package",
   "artifacts_script_configuration": "Script Configuration",
   "artifacts_save": "Save",
+  "artifacts_cancle": "Cancle",
   "artifacts_config_files": "Config Files",
   "artifacts_select_file": "Select File",
   "artifacts_unselected": "Unselected",
@@ -61,5 +62,7 @@
   "bind_key": "Bind",
   "untie_key": "Unbind",
   "select_key": "Select",
-  "select_online": "Select Online"
+  "select_online": "Select Online",
+  "tip_conf_bind": "Bind the item to replace it",
+  "tip_conf_unbind": "Unbind the item to leave it as is"
 }

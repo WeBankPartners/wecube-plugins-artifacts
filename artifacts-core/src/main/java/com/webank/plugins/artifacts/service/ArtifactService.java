@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.google.common.collect.ImmutableMap;
 import com.webank.plugins.artifacts.commons.ApplicationProperties;
@@ -37,9 +38,10 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.Dialect;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.Sorting;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
+import com.webank.plugins.artifacts.support.nexus.NexusAssetItemInfo;
 import com.webank.plugins.artifacts.support.nexus.NexusClient;
 import com.webank.plugins.artifacts.support.nexus.NexusDirectiryDto;
-import com.webank.plugins.artifacts.support.nexus.NexusResponse;
+import com.webank.plugins.artifacts.support.nexus.NexusSearchAssetResponse;
 import com.webank.plugins.artifacts.support.s3.S3Client;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackRequest.DefaultSaltstackRequest;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackServiceStub;
@@ -52,6 +54,8 @@ public class ArtifactService {
     private static final String CONSTANT_CAT_CAT_TYPE = "cat.catType";
     private static final String CONSTANT_INPUT_TYPE = "inputType";
     private static final String CONSTANT_CI_TYPE = "ciType";
+
+    private static final String NEXUS_SEARCH_ASSET_API_PATH = "/service/rest/beta/search/assets";
 
     @Autowired
     private CmdbServiceV2Stub cmdbServiceV2Stub;
@@ -243,9 +247,9 @@ public class ArtifactService {
     private boolean isExist(List<Object> results, Object systemName) {
         for (Object result : results) {
             Map m = (Map) result;
-            Object existName = ((Map) m.get("data")).get("name");
-            Object newName = ((Map) systemName).get("name");
-            if (existName != null && existName.equals(newName)) {
+            Object existRguid = ((Map) m.get("data")).get("r_guid");
+            Object newRguid = ((Map) systemName).get("r_guid");
+            if (existRguid != null && existRguid.equals(newRguid)) {
                 return true;
             }
         }
@@ -306,10 +310,13 @@ public class ArtifactService {
     }
 
     public String getArtifactPath(String unitDesignId, PaginationQuery queryObject) {
+        if (StringUtils.isBlank(unitDesignId)) {
+            throw new PluginException("Unit design ID cannot be blank.");
+        }
         String artifactPath = null;
-        queryObject.addEqualsFilter("unit_design", unitDesignId);
+        queryObject.addEqualsFilter("guid", unitDesignId);
         PaginationQueryResult<Object> objectPaginationQueryResult = cmdbServiceV2Stub
-                .queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(), queryObject);
+                .queryCiData(cmdbDataProperties.getCiTypeIdOfUnitDesign(), queryObject);
 
         if (objectPaginationQueryResult == null || objectPaginationQueryResult.getContents() == null
                 || objectPaginationQueryResult.getContents().size() <= 0) {
@@ -318,8 +325,9 @@ public class ArtifactService {
         try {
             Map<String, String> ResultMap = (Map) objectPaginationQueryResult.getContents().get(0);
             JSONObject responseJson = (JSONObject) JSONObject.wrap(ResultMap.get("data"));
-            JSONObject unit_design = responseJson.getJSONObject("unit_design");
-            artifactPath = unit_design.getString(applicationProperties.getCmdbArtifactPath());
+            // JSONObject unit_design =
+            // responseJson.getJSONObject(applicationProperties.getCmdbArtifactPath());
+            artifactPath = responseJson.getString(applicationProperties.getCmdbArtifactPath());
         } catch (JSONException e) {
             log.error("Can not parse CMDB Response json", e);
             throw new PluginException("3006","Can not parse CMDB Response json");
@@ -333,47 +341,68 @@ public class ArtifactService {
         }
 
         // configuration parameters
-        String filter = "jar,zip";
+        // String filter = "jar,zip";
 
         String nexusBaseUrl = applicationProperties.getArtifactsNexusServerUrl();
         String nexusRepository = applicationProperties.getArtifactsNexusRepository();
-        String nexusRequestUrl = nexusBaseUrl + "/service/rest/beta/assets?repository=" + nexusRepository;
-        String nexusPath = nexusBaseUrl + "/repository/" + nexusRepository + "/" + artifactPath;
+        String nexusSearchAssetApiUrl = nexusBaseUrl + NEXUS_SEARCH_ASSET_API_PATH;
+        UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(nexusSearchAssetApiUrl);
+        b = b.queryParam("repository", nexusRepository);
+        String group = null;
+        if (StringUtils.isNoneBlank(artifactPath)) {
+            group = artifactPath;
+            if (!artifactPath.startsWith("/")) {
+                group = "/" + group;
+            }
 
-        List<NexusResponse> nexusResponses = nexusClient.get(nexusRequestUrl,
-                applicationProperties.getArtifactsNexusUsername(), applicationProperties.getArtifactsNexusPassword(),
-                NexusResponse.class);
-        return buildNexusDirectiryResponseDto(nexusResponses, nexusPath, filter);
-
-    }
-
-    private List<NexusDirectiryDto> buildNexusDirectiryResponseDto(List<NexusResponse> nexusResponses, String nexusPath,
-            String filter) {
-        List<NexusDirectiryDto> directiryDtos = new ArrayList<>();
-        if (nexusResponses == null || nexusResponses.isEmpty()) {
-            return directiryDtos;
+            b = b.queryParam("group", group);
         }
 
-        String[] split = filter.split(",");
-        for (int i = 0; i < nexusResponses.size(); i++) {
-            try {
-                JSONObject responseJson = (JSONObject) JSONObject.wrap(nexusResponses.get(i));
-                String downloadUrl = responseJson.getString("downloadUrl");
-                if (downloadUrl.startsWith(nexusPath)) {
-                    for (String suffix : split) {
-                        if (downloadUrl.endsWith(suffix)) {
-                            NexusDirectiryDto directiryDto = new NexusDirectiryDto();
-                            directiryDto.setDownloadUrl(downloadUrl);
-                            directiryDto.setName(downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
-                            directiryDtos.add(directiryDto);
-                        }
-                    }
-                }
-            } catch (JSONException e) {
-                log.error("Can not parse Nexus Response json.", e);
-                throw new PluginException("3007", "Can not parse Nexus Response json.");
+        List<NexusDirectiryDto> results = new ArrayList<>();
+        NexusSearchAssetResponse nexusSearchAssetResponse = nexusClient.searchAsset(b.build().toUri(),
+                applicationProperties.getArtifactsNexusUsername(), applicationProperties.getArtifactsNexusPassword());
+
+        String continuationToken = nexusSearchAssetResponse.getContinuationToken();
+        List<NexusAssetItemInfo> assetItems = nexusSearchAssetResponse.getItems();
+        for (NexusAssetItemInfo assetItem : assetItems) {
+            if (assetItem.getPath().endsWith("jar") || assetItem.getPath().endsWith("zip")
+                    || assetItem.getPath().endsWith("tar") || assetItem.getPath().endsWith("gz")
+                    || assetItem.getPath().endsWith("tgz")) {
+                NexusDirectiryDto directiryDto = new NexusDirectiryDto();
+                directiryDto.setDownloadUrl(assetItem.getDownloadUrl());
+                directiryDto
+                        .setName(assetItem.getDownloadUrl().substring(assetItem.getDownloadUrl().lastIndexOf("/") + 1));
+                results.add(directiryDto);
             }
         }
-        return directiryDtos;
+
+        while (StringUtils.isNoneBlank(continuationToken)) {
+            b = UriComponentsBuilder.fromHttpUrl(nexusSearchAssetApiUrl);
+            b = b.queryParam("repository", nexusRepository);
+            if(StringUtils.isNoneBlank(group)){
+                b = b.queryParam("group", group);
+            }
+            b = b.queryParam("continuationToken", continuationToken);
+
+            nexusSearchAssetResponse = nexusClient.searchAsset(b.build().toUri(),
+                    applicationProperties.getArtifactsNexusUsername(),
+                    applicationProperties.getArtifactsNexusPassword());
+
+            List<NexusAssetItemInfo> queryAssetItems = nexusSearchAssetResponse.getItems();
+            for (NexusAssetItemInfo assetItem : queryAssetItems) {
+                if (assetItem.getPath().endsWith("jar") || assetItem.getPath().endsWith("zip")) {
+                    NexusDirectiryDto directiryDto = new NexusDirectiryDto();
+                    directiryDto.setDownloadUrl(assetItem.getDownloadUrl());
+                    directiryDto.setName(
+                            assetItem.getDownloadUrl().substring(assetItem.getDownloadUrl().lastIndexOf("/") + 1));
+                    results.add(directiryDto);
+                }
+            }
+
+            continuationToken = nexusSearchAssetResponse.getContinuationToken();
+        }
+        return results;
+
     }
+
 }
