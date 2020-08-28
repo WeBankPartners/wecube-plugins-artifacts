@@ -11,6 +11,8 @@ import java.util.Map;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
@@ -39,7 +41,6 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
 import com.webank.plugins.artifacts.support.nexus.NexusAssetItemInfo;
 import com.webank.plugins.artifacts.support.nexus.NexusClient;
 import com.webank.plugins.artifacts.support.nexus.NexusDirectiryDto;
-import com.webank.plugins.artifacts.support.nexus.NexusResponse;
 import com.webank.plugins.artifacts.support.nexus.NexusSearchAssetResponse;
 import com.webank.plugins.artifacts.support.s3.S3Client;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackRequest.DefaultSaltstackRequest;
@@ -47,6 +48,7 @@ import com.webank.plugins.artifacts.support.saltstack.SaltstackServiceStub;
 
 @Service
 public class ArtifactService {
+    private static final Logger log = LoggerFactory.getLogger(ArtifactService.class);
     private static final String CONSTANT_FIX_DATE = "fixed_date";
     private static final String S3_KEY_DELIMITER = "_";
     private static final String CONSTANT_CAT_CAT_TYPE = "cat.catType";
@@ -174,7 +176,9 @@ public class ArtifactService {
         try {
             md5Value = DigestUtils.md5Hex(FileUtils.readFileToByteArray(file));
         } catch (Exception e) {
-            throw new PluginException(String.format("Fail to generateMd5 value for file [%s]", file.getName()), e);
+            String msg = String.format("Failed to generateMd5 value for file [%s].", file.getName());
+            log.error(msg, e);
+            throw new PluginException("3004", msg, file.getName());
         }
         return md5Value;
     }
@@ -255,8 +259,9 @@ public class ArtifactService {
     public void saveDiffConfigEnumCodes(CatCodeDto requestCode) {
         CategoryDto cat = cmdbServiceV2Stub.getEnumCategoryByName(cmdbDataProperties.getEnumCategoryNameOfDiffConf());
         if (cat == null) {
-            throw new PluginException(String.format("Can not find cat with name [%s].",
-                    cmdbDataProperties.getEnumCategoryNameOfDiffConf()));
+            String msg = String.format("Can not find category with name [%s].",
+                    cmdbDataProperties.getEnumCategoryNameOfDiffConf());
+            throw new PluginException("3005", msg, cmdbDataProperties.getEnumCategoryNameOfDiffConf());
         }
 
         CatCodeDto code = new CatCodeDto();
@@ -269,8 +274,9 @@ public class ArtifactService {
     public List<CatCodeDto> getDiffConfigEnumCodes() {
         CategoryDto cat = cmdbServiceV2Stub.getEnumCategoryByName(cmdbDataProperties.getEnumCategoryNameOfDiffConf());
         if (cat == null) {
-            throw new PluginException(String.format("Can not find cat with name [%s].",
-                    cmdbDataProperties.getEnumCategoryNameOfDiffConf()));
+            String msg = String.format("Can not find category with name [%s].",
+                    cmdbDataProperties.getEnumCategoryNameOfDiffConf());
+            throw new PluginException("3005", msg, cmdbDataProperties.getEnumCategoryNameOfDiffConf());
         }
         return cmdbServiceV2Stub.getEnumCodesByCategoryId(cat.getCatId());
     }
@@ -323,7 +329,8 @@ public class ArtifactService {
             // responseJson.getJSONObject(applicationProperties.getCmdbArtifactPath());
             artifactPath = responseJson.getString(applicationProperties.getCmdbArtifactPath());
         } catch (JSONException e) {
-            throw new PluginException("Can not parse CMDB Response json", e);
+            log.error("Can not parse CMDB Response json", e);
+            throw new PluginException("3006","Cannot find Nexus path from CMDB.Please configure Nexus path in CMDB.");
         }
         return artifactPath;
     }
@@ -398,32 +405,4 @@ public class ArtifactService {
 
     }
 
-    private List<NexusDirectiryDto> buildNexusDirectiryResponseDto(List<NexusResponse> nexusResponses, String nexusPath,
-            String filter) {
-        List<NexusDirectiryDto> directiryDtos = new ArrayList<>();
-        if (nexusResponses == null || nexusResponses.isEmpty()) {
-            return directiryDtos;
-        }
-
-        String[] split = filter.split(",");
-        for (int i = 0; i < nexusResponses.size(); i++) {
-            try {
-                JSONObject responseJson = (JSONObject) JSONObject.wrap(nexusResponses.get(i));
-                String downloadUrl = responseJson.getString("downloadUrl");
-                if (downloadUrl.startsWith(nexusPath)) {
-                    for (String suffix : split) {
-                        if (downloadUrl.endsWith(suffix)) {
-                            NexusDirectiryDto directiryDto = new NexusDirectiryDto();
-                            directiryDto.setDownloadUrl(downloadUrl);
-                            directiryDto.setName(downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
-                            directiryDtos.add(directiryDto);
-                        }
-                    }
-                }
-            } catch (JSONException e) {
-                throw new PluginException("Can not parse Nexus Response json", e);
-            }
-        }
-        return directiryDtos;
-    }
 }

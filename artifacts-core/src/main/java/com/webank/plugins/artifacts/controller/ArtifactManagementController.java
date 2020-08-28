@@ -1,15 +1,18 @@
 package com.webank.plugins.artifacts.controller;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static com.webank.plugins.artifacts.domain.JsonResponse.*;
+import static com.webank.plugins.artifacts.domain.JsonResponse.okay;
+import static com.webank.plugins.artifacts.domain.JsonResponse.okayWithData;
 import static com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.defaultQueryObject;
 import static com.webank.plugins.artifacts.utils.BooleanUtils.isTrue;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -17,15 +20,9 @@ import java.util.concurrent.Executors;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.webank.plugins.artifacts.commons.ApplicationProperties;
-import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
-import com.webank.plugins.artifacts.support.cmdb.dto.v2.*;
-import com.webank.plugins.artifacts.utils.Base64Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.configurationprocessor.json.JSONException;
-import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,13 +32,19 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.constant.ArtifactsConstants;
 import com.webank.plugins.artifacts.domain.JsonResponse;
 import com.webank.plugins.artifacts.domain.PackageDomain;
+import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.service.ArtifactService;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
+import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
+import com.webank.plugins.artifacts.support.cmdb.dto.v2.OperateCiDto;
+import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
+import com.webank.plugins.artifacts.utils.Base64Utils;
 
 @RestController
 public class ArtifactManagementController {
@@ -146,7 +149,7 @@ public class ArtifactManagementController {
     public JsonResponse getFiles(@PathVariable(value = "package-id") String packageId,
             @RequestBody Map<String, String> additionalProperties) {
         if (additionalProperties.get("currentDir") == null) {
-            throw new PluginException("Field 'currentDir' is required.");
+            throw new PluginException("3000", "Field 'currentDir' is required.");
         }
         return okayWithData(artifactService.getCurrentDirs(packageId, additionalProperties.get("currentDir")));
     }
@@ -156,7 +159,7 @@ public class ArtifactManagementController {
     public JsonResponse getKeys(@PathVariable(value = "package-id") String packageId,
             @RequestBody Map<String, String> additionalProperties) {
         if (additionalProperties.get("filePath") == null) {
-            throw new PluginException("Field 'filePath' is required.");
+            throw new PluginException("3001", "Field 'filePath' is required.");
         }
         return okayWithData(artifactService.getPropertyKeys(packageId, additionalProperties.get("filePath")));
     }
@@ -204,7 +207,8 @@ public class ArtifactManagementController {
             
 //            fos.write(multipartFile.getBytes());
         } catch (Exception e) {
-            throw new PluginException("Fail to convert multipart file to file", e);
+            logger.error("errors while convert multipart file.", e);
+            throw new PluginException("3002", "Failed to convert multipart file to file.");
         }
         return file;
     }
@@ -226,7 +230,8 @@ public class ArtifactManagementController {
             fos.close();
             inputStream.close();
         } catch (IOException e) {
-            throw new PluginException("Fail to convert Nexus package to file", e);
+            logger.error("errors while convert nexus package file.", e);
+            throw new PluginException("3003", "Failed to convert Nexus package to file.");
         }
        return file;
     }

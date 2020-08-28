@@ -7,6 +7,9 @@ server:
 spring:
   profiles:
     active: dev
+  messages:
+    basename: message/artifacts_core_err_message
+    encoding: UTF-8
 
   servlet:
     multipart:
