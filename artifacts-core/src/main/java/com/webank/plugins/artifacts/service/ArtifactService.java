@@ -330,7 +330,7 @@ public class ArtifactService {
             artifactPath = responseJson.getString(applicationProperties.getCmdbArtifactPath());
         } catch (JSONException e) {
             log.error("Can not parse CMDB Response json", e);
-            throw new PluginException("3006","Can not parse CMDB Response json");
+            throw new PluginException("3006","Cannot find Nexus path from CMDB.Please configure Nexus path in CMDB.");
         }
         return artifactPath;
     }
