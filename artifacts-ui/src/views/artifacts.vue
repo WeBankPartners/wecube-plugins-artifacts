@@ -829,8 +829,8 @@ export default {
       }
       this.loading = true
       let { status } = await saveConfigFiles(this.guid, this.packageId, obj)
+      this.loading = false
       if (status === 'OK') {
-        this.loading = false
         this.isShowFilesModal = false
         this.$Notice.success({
           title: this.$t('artifacts_successed')
@@ -1165,6 +1165,7 @@ export default {
       this.is_start_file_path = []
       this.is_stop_file_path = []
       this.is_deploy_file_path = []
+      this.initTreeConfig()
       this.isShowFilesModal = true
       this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
       this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
@@ -1279,7 +1280,8 @@ export default {
       let tmpSelectNode = []
       let tmpNodeKey = []
       this.treeDataCollection[this.currentTreeModal.key].selectNode.forEach(tmp => {
-        if (tmp.nodeKey && !tmpNodeKey.includes(tmp.nodeKey)) {
+        // if (tmp.nodeKey && !tmpNodeKey.includes(tmp.nodeKey)) {
+        if (!tmpNodeKey.includes(tmp.nodeKey)) {
           tmpSelectNode.push(tmp)
           tmpNodeKey.push(tmp.nodeKey)
         }
@@ -1306,6 +1308,9 @@ export default {
       // this.treeDataCollection[this.currentTreeModal.key].selectNode = []
     },
     checkboxChange (value, data) {
+      this.treeDataCollection[this.currentTreeModal.key].selectNode = this.treeDataCollection[this.currentTreeModal.key].selectNode.filter(_ => {
+        return _.nodeKey >= 0
+      })
       if (value) {
         this.treeDataCollection[this.currentTreeModal.key].selectNode.push(data)
       } else {
