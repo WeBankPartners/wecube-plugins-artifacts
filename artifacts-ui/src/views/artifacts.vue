@@ -1402,7 +1402,7 @@ export default {
       })
       if (status === 'OK' && data.contents instanceof Array) {
         const buttonTypes = {
-          confirm: 'info',
+          confirm: 'success',
           delete: 'error',
           discard: 'warning',
           update: 'primary'
@@ -1414,7 +1414,7 @@ export default {
               type: _.code,
               label: _.code !== 'update' ? _.value : this.$t('artifacts_configuration'),
               props: {
-                type: buttonTypes[_.code] || 'info',
+                type: buttonTypes[_.code] || 'error',
                 size: 'small'
               },
               actionType: _.code
