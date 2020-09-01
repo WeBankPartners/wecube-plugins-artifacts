@@ -223,7 +223,7 @@ export default {
         start_file_path: [],
         stop_file_path: [],
         deploy_file_path: [],
-        is_decompression: ''
+        is_decompression: 0
       },
       is_diff_conf_file: [],
       is_start_file_path: [],
@@ -1047,7 +1047,7 @@ export default {
         this.packageInput.start_file_path = found.start_file_path ? found.start_file_path.split('|') : []
         this.packageInput.stop_file_path = found.stop_file_path ? found.stop_file_path.split('|') : []
         this.packageInput.deploy_file_path = found.deploy_file_path ? found.deploy_file_path.split('|') : []
-        this.packageInput.is_decompression = found.is_decompression || ''
+        this.packageInput.is_decompression = found.is_decompression || 0
         this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
         this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
         this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
@@ -1157,7 +1157,7 @@ export default {
       this.packageInput.start_file_path = row.start_file_path ? row.start_file_path.split('|') : []
       this.packageInput.stop_file_path = row.stop_file_path ? row.stop_file_path.split('|') : []
       this.packageInput.deploy_file_path = row.deploy_file_path ? row.deploy_file_path.split('|') : []
-      this.packageInput.is_decompression = row.is_decompression || ''
+      this.packageInput.is_decompression = row.is_decompression || 0
       this.packageId = row.guid
       this.diffTabData = row.diff_conf_file || ''
       this.configuration = ''
@@ -1246,7 +1246,7 @@ export default {
         start_file_path: [],
         stop_file_path: [],
         deploy_file_path: [],
-        is_decompression: ''
+        is_decompression: 0
       }
       this.isShowFilesModal = false
       this.initTreeConfig()
@@ -1402,7 +1402,7 @@ export default {
       })
       if (status === 'OK' && data.contents instanceof Array) {
         const buttonTypes = {
-          confirm: 'info',
+          confirm: 'success',
           delete: 'error',
           discard: 'warning',
           update: 'primary'
@@ -1414,7 +1414,7 @@ export default {
               type: _.code,
               label: _.code !== 'update' ? _.value : this.$t('artifacts_configuration'),
               props: {
-                type: buttonTypes[_.code] || 'info',
+                type: buttonTypes[_.code] || 'error',
                 size: 'small'
               },
               actionType: _.code
