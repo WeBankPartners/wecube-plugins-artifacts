@@ -26,7 +26,7 @@ public class Http401AuthenticationEntryPoint implements AuthenticationEntryPoint
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException) throws IOException, ServletException {
         
-        log.warn("=== authentication failed === ");
+        log.info("=== authentication failed === ");
         response.setHeader(HEADER_WWW_AUTHENTICATE, translateAuthenticateHeader(authException));
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         
