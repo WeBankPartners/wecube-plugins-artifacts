@@ -26,6 +26,7 @@ public class ApplicationProperties {
     private String cmdbArtifactPath = "";
     private Map<String, String> customHeaders = new LinkedHashMap<>();
     private Set<String> sensitiveHeaders = null;
+    private String jwtSigningKey = "Platform+Auth+Server+Secret";
 
     @Data
     @ConfigurationProperties(prefix = "plugins")

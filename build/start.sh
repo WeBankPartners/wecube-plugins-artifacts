@@ -18,4 +18,5 @@ java -Duser.timezone=Asia/Shanghai \
 --plugins.artifacts-nexus-username=$6 \
 --plugins.artifacts-nexus-password=$7 \
 --plugins.artifacts_nexus_repository=$8 \
---plugins.cmdb_artifact_path=$9 >>/log/wecube-plugins-artifacts.log
+--plugins.cmdb_artifact_path=$9 \
+--plugins.jwt-signing-key=${10} >>/log/wecube-plugins-artifacts.log
