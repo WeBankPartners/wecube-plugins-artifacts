@@ -1,6 +1,7 @@
 package com.webank.plugins.artifacts.interceptor;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -20,10 +21,12 @@ public class RestTemplateInterceptor implements ClientHttpRequestInterceptor {
     public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
             throws IOException {
         HttpHeaders headers = request.getHeaders();
+        
         String authorization = AuthorizationStorage.getIntance().get();
-        if(StringUtils.isBlank(authorization)) {
-            log.info("add authorization for {}", request.getURI().toString());
+        if(!StringUtils.isBlank(authorization)) {
             headers.add("Authorization", authorization);
+        }else {
+            log.info("NONE authorization presents.");
         }
         return execution.execute(request, body);
     }
