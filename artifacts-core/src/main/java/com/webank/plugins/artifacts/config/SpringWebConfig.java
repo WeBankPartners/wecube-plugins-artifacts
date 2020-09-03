@@ -20,11 +20,8 @@ import com.webank.plugins.artifacts.auth.filter.JwtSsoBasedAuthenticationFilter;
 import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.interceptor.ApiAccessInterceptor;
 
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
-
 @Configuration
 @EnableWebMvc
-@EnableSwagger2
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(jsr250Enabled = true, prePostEnabled = true, securedEnabled = true)
 @ComponentScan({ "com.webank.plugins.artifacts.controller" })
@@ -38,8 +35,7 @@ public class SpringWebConfig extends WebSecurityConfigurerAdapter implements Web
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(apiAccessInterceptor).addPathPatterns("/**")
-                .excludePathPatterns("/swagger-ui.html/**", "/swagger-resources/**","/webjars/**");
+        registry.addInterceptor(apiAccessInterceptor).addPathPatterns("/**");
         WebMvcConfigurer.super.addInterceptors(registry);
     }
 
