@@ -30,3 +30,4 @@ plugins:
   artifacts-s3-access-key: access_key
   artifacts-s3-secret-key: secret_key
   artifacts-s3-bucket-name: wecube-artifacts
+  jwt-signing-key: ${JWT_SIGNING_KEY:}

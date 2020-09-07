@@ -51,7 +51,7 @@ public class ArtifactManagementController {
 
     private static final Logger logger = LoggerFactory.getLogger(ArtifactManagementController.class);
     @Autowired
-    CmdbDataProperties cmdbDataProperties;
+    private CmdbDataProperties cmdbDataProperties;
 
     @Autowired
     private CmdbServiceV2Stub cmdbServiceV2Stub;
