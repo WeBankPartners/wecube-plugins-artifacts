@@ -1340,12 +1340,14 @@ export default {
       if (!this.checkFillRule(value)) {
         return
       }
+
       const obj = [
         {
           id: this.tabData[this.nowTab].tableData[row].id,
-          variable_value: value
+          variable_value: value.trim()
         }
       ]
+
       // const params = {
       //   packageName: cmdbPackageName,
       //   entityName: DIFF_CONFIGURATION,
@@ -1359,6 +1361,7 @@ export default {
       //   }
       // }
       // this.updateEntity(params)
+
       if (obj[0].variable_value) {
         this.updateDiffConfig(obj)
       }
