@@ -141,6 +141,10 @@
       <Card v-if="tabData.length ? true : false" class="artifact-management-bottom-card artifact-management-top-card">
         <Tabs v-model="activeTab" @on-click="tabChange">
           <TabPane v-for="(item, index) in tabData" :label="item.title" :name="item.title" :key="index">
+            <Spin size="large" fix v-if="tabTableLoading">
+              <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
+              <div>{{ $t('artifacts_loading') }}</div>
+            </Spin>
             <Table :data="item.tableData || []" :columns="attrsTableColomnOptions"></Table>
           </TabPane>
         </Tabs>
@@ -173,6 +177,7 @@ export default {
     return {
       loading: false,
       btnLoading: false,
+      tabTableLoading: false,
       currentUrl: '',
       isShowOnlineModal: false,
       currentPackageList: [],
@@ -501,6 +506,7 @@ export default {
     },
     async unBindConfig (row) {
       this.btnLoading = true
+      this.tabTableLoading = true
       const id = row.isBinding
       const found = this.tableData.find(_ => _.guid === this.packageId)
       const bindConfigIds = found.diff_conf_variable.map(i => i.guid)
@@ -518,10 +524,11 @@ export default {
       })
       this.updateTabData()
       this.btnLoading = false
+      this.tabTableLoading = false
     },
     async bindConfig (row) {
-      console.log(1)
       this.btnLoading = true
+      this.tabTableLoading = true
       const found = this.tableData.find(_ => _.guid === this.packageId)
       const bindConfigIds = found.diff_conf_variable.map(i => i.guid)
       const foundKey = this.allDiffConfigs.find(_ => _.code.toLowerCase() === row.key.toLowerCase())
@@ -538,6 +545,7 @@ export default {
       })
       this.updateTabData()
       this.btnLoading = false
+      this.tabTableLoading = false
     },
     async updateTabData () {
       let tableData = await queryPackages(this.guid, {
