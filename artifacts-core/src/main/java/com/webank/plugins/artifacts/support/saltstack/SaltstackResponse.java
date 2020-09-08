@@ -43,7 +43,6 @@ public class SaltstackResponse<DATATYPE> {
         this.resultMessage = resultMessage;
     }
 
-    @Data
     public static class ResultData<DATATYPE> {
         private List<DATATYPE> outputs;
 

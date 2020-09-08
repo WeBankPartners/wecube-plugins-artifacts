@@ -1,6 +1,6 @@
 package com.webank.plugins.artifacts.interceptor;
 
-import static com.webank.plugins.artifacts.domain.JsonResponse.error;
+import static com.webank.plugins.artifacts.dto.JsonResponse.error;
 
 import java.util.Locale;
 
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.webank.plugins.artifacts.commons.PluginException;
-import com.webank.plugins.artifacts.domain.JsonResponse;
+import com.webank.plugins.artifacts.dto.JsonResponse;
 
 
 @ControllerAdvice

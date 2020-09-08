@@ -1,8 +1,8 @@
 package com.webank.plugins.artifacts.controller;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static com.webank.plugins.artifacts.domain.JsonResponse.okay;
-import static com.webank.plugins.artifacts.domain.JsonResponse.okayWithData;
+import static com.webank.plugins.artifacts.dto.JsonResponse.okay;
+import static com.webank.plugins.artifacts.dto.JsonResponse.okayWithData;
 import static com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery.defaultQueryObject;
 import static com.webank.plugins.artifacts.utils.BooleanUtils.isTrue;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
@@ -36,8 +36,9 @@ import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.constant.ArtifactsConstants;
-import com.webank.plugins.artifacts.domain.JsonResponse;
-import com.webank.plugins.artifacts.domain.PackageDomain;
+import com.webank.plugins.artifacts.dto.DeployPackageConfigDto;
+import com.webank.plugins.artifacts.dto.JsonResponse;
+import com.webank.plugins.artifacts.dto.PackageDto;
 import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.service.ArtifactService;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
@@ -98,7 +99,7 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse queryNexusPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
                                            @RequestBody PaginationQuery queryObject) {
-        return okayWithData(artifactService.queryNexusDirectiry(artifactService.getArtifactPath(unitDesignId, queryObject)));
+        return okayWithData(artifactService.queryNexusDirectory(artifactService.getArtifactPath(unitDesignId, queryObject)));
 
     }
 
@@ -166,9 +167,9 @@ public class ArtifactManagementController {
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/save")
     @ResponseBody
-    public JsonResponse saveConfigFiles(@PathVariable(value = "package-id") String packageId, @RequestBody PackageDomain packageDomain) {
-        artifactService.saveConfigFiles(packageId, packageDomain);
-        return okay();
+    public JsonResponse saveConfigFiles(@PathVariable(value = "unit-design-id")String unitDesignId, @PathVariable(value = "package-id") String packageId, @RequestBody PackageDto packageDomain) {
+        DeployPackageConfigDto result = artifactService.saveConfigFiles(unitDesignId, packageId, packageDomain);
+        return okayWithData(result);
     }
 
     @PostMapping("/enum/codes/diff-config/save")

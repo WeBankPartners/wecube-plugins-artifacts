@@ -2,6 +2,8 @@ package com.webank.plugins.artifacts.support.saltstack;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -9,13 +11,12 @@ import org.springframework.web.client.RestTemplate;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.DefaultSaltstackResponse;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultData;
 
-import lombok.extern.slf4j.Slf4j;
-
 @Service
-@Slf4j
 public class SaltstackServiceStub {
+    private static final Logger log = LoggerFactory.getLogger(SaltstackServiceStub.class);
+    
     @Autowired
-    RestTemplate restTemplate;
+    private RestTemplate restTemplate;
 
     private static final String pluginContextPath = "/saltstack";
     private static final String INF_RELEASED_PACKAGE_LIST_DIR = "/v1/released-package/listCurrentDir";
@@ -26,9 +27,16 @@ public class SaltstackServiceStub {
         return post(asServerUrl(wecubeGatewayUrl, INF_RELEASED_PACKAGE_LIST_DIR), request);
     }
 
-    public ResultData<Object> getReleasedPackagePropertyKeysByFilePath(String saltstackServerUrl,
+    public ResultData<SaltConfigFileDto> getReleasedPackagePropertyKeysByFilePath(String saltstackServerUrl,
             SaltstackRequest<Map<String, Object>> request) {
-        return post(asServerUrl(saltstackServerUrl, INF_RELEASED_PACKAGE_PROPERTY_KEY), request);
+        String targetUrl = asServerUrl(saltstackServerUrl, INF_RELEASED_PACKAGE_PROPERTY_KEY);
+        
+        log.info("About to call {} with parameters: {} ", targetUrl, request);
+        PropertyKeysResponse response = restTemplate.postForObject(targetUrl, request, PropertyKeysResponse.class);
+        log.info("Saltstack plugin response: {} ", response);
+        validateResponse(response, false);
+
+        return response.getResultData();
     }
 
     private ResultData<Object> post(String targetUrl, SaltstackRequest parameters) {
@@ -58,5 +66,8 @@ public class SaltstackServiceStub {
             solvedPath = String.format(originPath, pathVariables);
         }
         return serverUrl + pluginContextPath + solvedPath;
+    }
+    
+    public static class PropertyKeysResponse extends SaltstackResponse<SaltConfigFileDto>{
     }
 }

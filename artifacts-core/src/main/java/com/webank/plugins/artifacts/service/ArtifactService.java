@@ -23,7 +23,10 @@ import com.google.common.collect.ImmutableMap;
 import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
 import com.webank.plugins.artifacts.commons.PluginException;
-import com.webank.plugins.artifacts.domain.PackageDomain;
+import com.webank.plugins.artifacts.dto.ConfigKeyInfoDto;
+import com.webank.plugins.artifacts.dto.DeployConfigFileDto;
+import com.webank.plugins.artifacts.dto.DeployPackageConfigDto;
+import com.webank.plugins.artifacts.dto.PackageDto;
 import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
@@ -43,7 +46,10 @@ import com.webank.plugins.artifacts.support.nexus.NexusClient;
 import com.webank.plugins.artifacts.support.nexus.NexusDirectiryDto;
 import com.webank.plugins.artifacts.support.nexus.NexusSearchAssetResponse;
 import com.webank.plugins.artifacts.support.s3.S3Client;
+import com.webank.plugins.artifacts.support.saltstack.SaltConfigFileDto;
+import com.webank.plugins.artifacts.support.saltstack.SaltConfigKeyInfoDto;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackRequest.DefaultSaltstackRequest;
+import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultData;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackServiceStub;
 
 @Service
@@ -110,13 +116,71 @@ public class ArtifactService {
         return cmdbServiceV2Stub.operateCiForState(operateCiDtos, operation);
     }
 
-    public void saveConfigFiles(String packageId, PackageDomain packageDomain) {
-        String files = String.join("|", packageDomain.getConfigFilesWithPath());
+    public DeployPackageConfigDto saveConfigFiles(String unitDesignId, String packageId, PackageDto packageDto) {
+        String files = String.join("|", packageDto.getConfigFilesWithPath());
         Map<String, Object> pkg = ImmutableMap.<String, Object>builder().put("guid", packageId)
-                .put("deploy_file_path", packageDomain.getDeployFile())
-                .put("start_file_path", packageDomain.getStartFile()).put("stop_file_path", packageDomain.getStopFile())
-                .put("diff_conf_file", files).put("is_decompression", packageDomain.getIsDecompression()).build();
+                .put("deploy_file_path", packageDto.getDeployFile())
+                .put("start_file_path", packageDto.getStartFile()).put("stop_file_path", packageDto.getStopFile())
+                .put("diff_conf_file", files).put("is_decompression", packageDto.getIsDecompression()).build();
         cmdbServiceV2Stub.updateCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
+        
+        
+        //TODO
+        DeployPackageConfigDto result = new DeployPackageConfigDto();
+        result.setPackageId(packageId);
+        result.setUnitDesignId(unitDesignId);
+        
+        //query keys by file
+        for(String filePath : packageDto.getConfigFilesWithPath()){
+            log.info("cal filepath:{}", filePath);
+            calculatePropertyKeys(packageId, filePath);
+        }
+        
+        //get diff guid from cmdb
+        
+        //create new diff if not exists
+        
+        
+        return result;
+    }
+    
+    public DeployConfigFileDto calculatePropertyKeys(String packageId, String filePath) {
+        DefaultSaltstackRequest request = new DefaultSaltstackRequest();
+        List<Map<String, Object>> inputs = new ArrayList<>();
+        inputs.add(ImmutableMap.<String, Object>builder()
+                .put("endpoint", retrieveS3EndpointWithKeyByPackageId(packageId))
+                .put("accessKey", applicationProperties.getArtifactsS3AccessKey())
+                .put("secretKey", applicationProperties.getArtifactsS3SecretKey()).put("filePath", filePath).build());
+        request.setInputs(inputs);
+        ResultData<SaltConfigFileDto> resultData = saltstackServiceStub
+                .getReleasedPackagePropertyKeysByFilePath(applicationProperties.getWecubeGatewayServerUrl(), request);
+        
+        DeployConfigFileDto configFileDto = new DeployConfigFileDto();
+        configFileDto.setFilePath(filePath);
+        List<SaltConfigFileDto> saltConfigFileDtos = resultData.getOutputs();
+        if(saltConfigFileDtos == null || saltConfigFileDtos.isEmpty()){
+            return configFileDto;
+        }
+        
+        log.info("SaltConfigFileDto size:{}", saltConfigFileDtos.size());
+        SaltConfigFileDto saltConfigFileDto = saltConfigFileDtos.get(0);
+        
+        List<SaltConfigKeyInfoDto> saltConfigKeyInfos = saltConfigFileDto.getConfigKeyInfos();
+        if(saltConfigKeyInfos == null || saltConfigKeyInfos.isEmpty()){
+            return configFileDto;
+        }
+        
+        for(SaltConfigKeyInfoDto saltConfigKeyInfo : saltConfigKeyInfos){
+            log.info("saltConfigKeyInfo");
+            ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
+            configKeyInfo.setLine(saltConfigKeyInfo.getLine());
+            configKeyInfo.setKey(saltConfigKeyInfo.getKey());
+            configKeyInfo.setType(saltConfigKeyInfo.getType());
+            
+            configFileDto.addConfigKeyInfo(configKeyInfo);
+        }
+        
+        return configFileDto;
     }
 
     public Object getCurrentDirs(String packageId, String currentDir) {
@@ -335,7 +399,7 @@ public class ArtifactService {
         return artifactPath;
     }
 
-    public List<NexusDirectiryDto> queryNexusDirectiry(String artifactPath) {
+    public List<NexusDirectiryDto> queryNexusDirectory(String artifactPath) {
         if (artifactPath == null || artifactPath.isEmpty()) {
             throw new PluginException("Upload artifact path is required.");
         }
