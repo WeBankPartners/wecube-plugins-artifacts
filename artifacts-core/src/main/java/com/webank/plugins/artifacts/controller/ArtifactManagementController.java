@@ -9,14 +9,9 @@ import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -32,20 +27,19 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.constant.ArtifactsConstants;
 import com.webank.plugins.artifacts.dto.DeployPackageConfigDto;
 import com.webank.plugins.artifacts.dto.JsonResponse;
 import com.webank.plugins.artifacts.dto.PackageDto;
-import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.service.ArtifactService;
+import com.webank.plugins.artifacts.service.ConfigFileManagementService;
+import com.webank.plugins.artifacts.service.NexusArtifactManagementService;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.OperateCiDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
-import com.webank.plugins.artifacts.utils.Base64Utils;
 
 @RestController
 public class ArtifactManagementController {
@@ -59,9 +53,12 @@ public class ArtifactManagementController {
 
     @Autowired
     private ArtifactService artifactService;
-
+    
     @Autowired
-    private ApplicationProperties applicationProperties;
+    private NexusArtifactManagementService nexusArtifactManagementService;
+    
+    @Autowired
+    private ConfigFileManagementService configFileManagementService;
 
     @GetMapping("/system-design-versions")
     @ResponseBody
@@ -99,37 +96,18 @@ public class ArtifactManagementController {
     @ResponseBody
     public JsonResponse queryNexusPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
                                            @RequestBody PaginationQuery queryObject) {
-        return okayWithData(artifactService.queryNexusDirectory(artifactService.getArtifactPath(unitDesignId, queryObject)));
-
+        return okayWithData(nexusArtifactManagementService.queryNexusDirectory(unitDesignId, queryObject));
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/uploadNexusPackage")
     @ResponseBody
     public JsonResponse uploadNexusPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
                                       @RequestParam(value = "downloadUrl", required = false) String downloadUrl, HttpServletRequest request) {
-        asyncUploadNexusPackageToS3(unitDesignId,downloadUrl,(String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME));
+        nexusArtifactManagementService.asyncUploadNexusPackageToS3(unitDesignId,downloadUrl,(String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME));
         return okay();
-
     }
 
-    private void asyncUploadNexusPackageToS3(String unitDesignId, String downloadUrl,String uploadName) {
-        ExecutorService executor = Executors.newFixedThreadPool(1);
-        String authorization = AuthorizationStorage.getIntance().get();
-        executor.submit(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    logger.info("sync upload NEXUS package to S3 begin");
-                    File file = convertNexusPackageToFile(downloadUrl,downloadUrl.substring(downloadUrl.lastIndexOf("/") + 1));
-                    String url = artifactService.uploadPackageToS3(file);
-                    artifactService.savePackageToCmdb(file, unitDesignId, uploadName, url, authorization);
-                    logger.info("sync upload NEXUS package to S3 end");
-                } catch (Exception e) {
-                    logger.info("sync upload NEXUS package to S3 failed ,", e);
-                }
-            }
-        });
-    }
+    
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/deactive")
     @ResponseBody
@@ -168,7 +146,7 @@ public class ArtifactManagementController {
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/save")
     @ResponseBody
     public JsonResponse saveConfigFiles(@PathVariable(value = "unit-design-id")String unitDesignId, @PathVariable(value = "package-id") String packageId, @RequestBody PackageDto packageDomain) {
-        DeployPackageConfigDto result = artifactService.saveConfigFiles(unitDesignId, packageId, packageDomain);
+        DeployPackageConfigDto result = configFileManagementService.saveConfigFiles(unitDesignId, packageId, packageDomain);
         return okayWithData(result);
     }
 
@@ -213,30 +191,6 @@ public class ArtifactManagementController {
         }
         return file;
     }
-
-    private File convertNexusPackageToFile(String downloadUrl,String fileName) {
-        File file = new File(fileName);
-        try {
-            URL url = new URL(downloadUrl);
-            URLConnection connection = url.openConnection();
-            connection.setConnectTimeout(5 * 1000);
-            connection.setRequestProperty("Authorization","Basic " + Base64Utils.getBASE64(applicationProperties.getArtifactsNexusUsername() + ":" + applicationProperties.getArtifactsNexusPassword()));
-            InputStream inputStream = connection.getInputStream();
-            byte[] byteArr = new byte[1024];
-            int len;
-            FileOutputStream fos = new FileOutputStream(file);
-            while ((len = inputStream.read(byteArr)) != -1) {
-                fos.write(byteArr, 0, len);
-            }
-            fos.close();
-            inputStream.close();
-        } catch (IOException e) {
-            logger.error("errors while convert nexus package file.", e);
-            throw new PluginException("3003", "Failed to convert Nexus package to file.");
-        }
-       return file;
-    }
-
 
     @PostMapping("/ci/state/operate")
     public JsonResponse operateCiForState(@RequestBody List<OperateCiDto> ciIds, @RequestParam("operation") String operation) {
