@@ -122,9 +122,9 @@
             <Button type="primary" @click="saveConfigFiles" :loading="loading">{{ $t('artifacts_save') }}</Button>
           </div>
         </Modal>
-        <Modal :mask-closable="false" v-model="isShowTreeModal" :title="currentTreeModal.title" @on-ok="onOk" @on-cancel="closeTreeModal">
+        <Modal :mask-closable="false" v-model="isShowTreeModal" :title="currentTreeModal.title" @on-ok="onOk" @on-cancel="closeTreeModal" draggable>
           <RadioGroup v-model="selectFile">
-            <Tree v-if="treeDataCollection[currentTreeModal.key]" :data="treeDataCollection[currentTreeModal.key].treeData" @on-toggle-expand="expandNode"></Tree>
+            <Tree v-if="treeDataCollection[currentTreeModal.key]" :data="treeDataCollection[currentTreeModal.key].treeData" @on-toggle-expand="expandNode" @on-check-change="changeChildChecked" show-checkbox> </Tree>
           </RadioGroup>
         </Modal>
         <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="onSetRowValue" @on-cancel="closeconfigModal">
@@ -920,7 +920,9 @@ export default {
     },
     genFilesTreedata (data) {
       const { files, currentDir, treeTag } = data
+      console.log(currentDir)
       if (currentDir) {
+        console.log(1)
         const filesArray = currentDir.split('/')
         let targetNode = this.treeDataCollection[this.currentTreeModal.key].treeData
         filesArray.forEach((dir, index) => {
@@ -934,12 +936,27 @@ export default {
             }
           })
         })
+        console.log(targetNode)
+        if (targetNode.expand === undefined) {
+          targetNode.expand = true
+        }
         targetNode.children = this.formatChildrenData({
           files,
           currentDir,
           level: targetNode.level + 1,
           treeTag
         })
+        let selectedChild = []
+        targetNode.children.forEach(child => {
+          if (child.children === undefined) {
+            child.checked = false
+          } else {
+            selectedChild.push(child)
+          }
+        })
+        console.log(targetNode.children)
+        // 选中文件夹选中文件处理
+        this.treeDataCollection[this.currentTreeModal.key].selectNode = this.treeDataCollection[this.currentTreeModal.key].selectNode.concat(selectedChild)
       } else {
         this.treeDataCollection[this.currentTreeModal.key].treeData = this.formatChildrenData({
           files,
@@ -950,6 +967,7 @@ export default {
       }
     },
     formatChildrenData (val) {
+      console.log('formatChildrenData')
       const { files, currentDir, level, treeTag } = val
       if (!(files instanceof Array)) {
         return
@@ -976,28 +994,52 @@ export default {
           if (selectedFile) {
             this.treeDataCollection[treeTag].selectNode.push(obj)
           }
+
           obj.render = (h, params) => {
-            return this.currentTreeModal.inputType === 'checkbox' ? (
-              <Checkbox value={selectedFile} style="position:relative;right:24px;" on-on-change={value => this.checkboxChange(value, params.data)}>
+            return (
+              <div>
                 <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                 <span>{params.data.title}</span>
-              </Checkbox>
-            ) : (
-              <Radio value={selectedFile} style="position:relative;right:20px;" label={params.data.path}>
-                <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                <span>{params.data.title}</span>
-              </Radio>
+              </div>
             )
           }
+          if (selectedFile) {
+            obj.checked = true
+          }
+          // obj.render = (h, params) => {
+          //   return this.currentTreeModal.inputType === 'checkbox' ? (
+          //     <Checkbox value={selectedFile} style="position:relative;right:24px;" on-on-change={value => this.checkboxChange(value, params.data)}>
+          //       <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
+          //       <span>{params.data.title}</span>
+          //     </Checkbox>
+          //   ) : (
+          //     <Radio value={selectedFile} style="position:relative;right:20px;" label={params.data.path}>
+          //       1111111
+          //       <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
+          //       <span>{params.data.title}</span>
+          //     </Radio>
+          //   )
+          // }
         }
         return obj
       })
     },
-    expandNode (node) {
+    async changeChildChecked (checked, currentChecked) {
+      // console.log(currentChecked)
+      console.log(checked)
+      if (currentChecked.expand === undefined) {
+        await this.expandNode(currentChecked)
+      }
+      console.log(this.treeDataCollection[this.currentTreeModal.key].treeData)
+      // 排除文件夹(未全选、全选)
+      this.treeDataCollection[this.currentTreeModal.key].selectNode = checked.filter(item => item.children === undefined && item.path !== undefined)
+    },
+    async expandNode (node) {
+      console.log(node)
       // if (node.expand && !node.children[0].title) {
       //   this.getFiles(this.packageId, node.path)
       // }
-      this.getFiles(this.packageId, node.path, this.currentTreeModal.key)
+      await this.getFiles(this.packageId, node.path, this.currentTreeModal.key)
     },
     rowClick (row) {
       this.packageId = row.guid
@@ -1018,7 +1060,7 @@ export default {
     },
     async handleDelete (row) {
       this.$Modal.confirm({
-        title: this.$t('delete_confirm'),
+        title: this.$t('artifacts_delete_confirm'),
         'z-index': 1000000,
         onOk: async () => {
           const { status, message } = await deleteCiDatas({
@@ -1161,10 +1203,10 @@ export default {
     showFilesModal (row) {
       this.tabData = []
       // 以下4个变量类型为字符串
-      this.packageInput.diff_conf_file = row.diff_conf_file ? row.diff_conf_file.split('|') : []
-      this.packageInput.start_file_path = row.start_file_path ? row.start_file_path.split('|') : []
-      this.packageInput.stop_file_path = row.stop_file_path ? row.stop_file_path.split('|') : []
-      this.packageInput.deploy_file_path = row.deploy_file_path ? row.deploy_file_path.split('|') : []
+      this.packageInput.diff_conf_file = row.diff_conf_file
+      this.packageInput.start_file_path = row.start_file_path
+      this.packageInput.stop_file_path = row.stop_file_path
+      this.packageInput.deploy_file_path = row.deploy_file_path
       this.packageInput.is_decompression = row.is_decompression || 0
       this.packageId = row.guid
       this.diffTabData = row.diff_conf_file || ''
@@ -1209,8 +1251,9 @@ export default {
       })
     },
     getTabDatas (diffFile, isNewPage = false) {
+      console.log(diffFile)
       if (diffFile) {
-        const files = diffFile.split('|')
+        const files = diffFile
         this.tabData = files.map(_ => {
           const f = _.split('/')
           return {
@@ -1234,7 +1277,6 @@ export default {
         })
         if (status === 'OK') {
           this.isShowFilesModal = true
-          // this.genFilesTreedata({ files: data.outputs[0].files, currentDir, treeTag })
           this.treeDataCollection[this.currentTreeModal.key].treeData = this.formatChildrenData({
             files: data.outputs[0].files,
             currentDir: '',
