@@ -25,7 +25,7 @@ public class SaltConfigKeyInfoDto {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("SaltConfigKeyInfoDto [line=");
+        builder.append("[line=");
         builder.append(line);
         builder.append(", key=");
         builder.append(key);

@@ -68,8 +68,7 @@ public class CmdbServiceV2Stub {
     private static final String CIDATA_STATE_OPERATE = "/ci/state/operate";
     private static final String CIDATA_RETRIEVE_VERSION_DETAIL = "/ci/from/%d/to/%d/versions/%s/retrieve";
     private static final String QUERY_SPECIAL_CONNECTOR = "/static-data/special-connector";
-
-
+    
     @Autowired
     private CmdbRestTemplate template;
 

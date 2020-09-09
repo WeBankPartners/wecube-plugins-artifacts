@@ -48,12 +48,23 @@ public class ConfigFileManagementService extends AbstractArtifactService{
             result.addDeployConfigFile(deployConfigFile);
         }
         
-        //get diff guid from cmdb
+        processDiffConfigurations(unitDesignId, packageId, result);
+       
+        
+      
+        return result;
+    }
+    
+    private void processDiffConfigurations(String unitDesignId, String packageCiGuid, DeployPackageConfigDto packageConfig){
+        log.info("start to process diff configurations.");
+      //TODO
+ //get diff guid from cmdb
         
         //create new diff if not exists
         
-      //TODO
-        return result;
+        Map packageCiDataMap = retrievePackageCiByGuid(packageCiGuid);
+        
+        
     }
     
     private DeployConfigFileDto calculatePropertyKeys(String packageId, String filePath, String s3EndpointOfPackageId) {

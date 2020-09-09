@@ -53,10 +53,10 @@ public class ArtifactManagementController {
 
     @Autowired
     private ArtifactService artifactService;
-    
+
     @Autowired
     private NexusArtifactManagementService nexusArtifactManagementService;
-    
+
     @Autowired
     private ConfigFileManagementService configFileManagementService;
 
@@ -67,24 +67,22 @@ public class ArtifactManagementController {
     }
 
     @GetMapping("/system-design-versions/{system-design-id}")
-    @ResponseBody
     public JsonResponse getSystemDesignVersion(@PathVariable(value = "system-design-id") String systemDesignId) {
         return okayWithData(artifactService.getArtifactSystemDesignTree(systemDesignId));
 
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/upload")
-    @ResponseBody
     public JsonResponse uploadPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
             @RequestParam(value = "file", required = false) MultipartFile multipartFile, HttpServletRequest request) {
         File file = convertMultiPartToFile(multipartFile);
         String url = artifactService.uploadPackageToS3(file);
-        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId, (String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url, null));
+        return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId,
+                (String) request.getAttribute(ArtifactsConstants.UPLOAD_NAME), url, null));
 
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/query")
-    @ResponseBody
     public JsonResponse queryPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
             @RequestBody PaginationQuery queryObject) {
         queryObject.addEqualsFilter("unit_design", unitDesignId);
@@ -93,38 +91,32 @@ public class ArtifactManagementController {
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/queryNexusDirectiry")
-    @ResponseBody
     public JsonResponse queryNexusPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
-                                           @RequestBody PaginationQuery queryObject) {
+            @RequestBody PaginationQuery queryObject) {
         return okayWithData(nexusArtifactManagementService.queryNexusDirectory(unitDesignId, queryObject));
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/uploadNexusPackage")
-    @ResponseBody
     public JsonResponse uploadNexusPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
-                                      @RequestParam(value = "downloadUrl", required = false) String downloadUrl, HttpServletRequest request) {
-        nexusArtifactManagementService.asyncUploadNexusPackageToS3(unitDesignId,downloadUrl,(String)request.getAttribute(ArtifactsConstants.UPLOAD_NAME));
+            @RequestParam(value = "downloadUrl", required = false) String downloadUrl, HttpServletRequest request) {
+        nexusArtifactManagementService.asyncUploadNexusPackageToS3(unitDesignId, downloadUrl,
+                (String) request.getAttribute(ArtifactsConstants.UPLOAD_NAME));
         return okay();
     }
 
-    
-
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/deactive")
-    @ResponseBody
     public JsonResponse deactivePackage(@PathVariable(value = "package-id") String packageId) {
         artifactService.deactive(packageId);
         return okay();
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/active")
-    @ResponseBody
     public JsonResponse activePackage(@PathVariable(value = "package-id") String packageId) {
         artifactService.active(packageId);
         return okay();
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/files/query")
-    @ResponseBody
     public JsonResponse getFiles(@PathVariable(value = "package-id") String packageId,
             @RequestBody Map<String, String> additionalProperties) {
         if (additionalProperties.get("currentDir") == null) {
@@ -134,7 +126,6 @@ public class ArtifactManagementController {
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/property-keys/query")
-    @ResponseBody
     public JsonResponse getKeys(@PathVariable(value = "package-id") String packageId,
             @RequestBody Map<String, String> additionalProperties) {
         if (additionalProperties.get("filePath") == null) {
@@ -144,29 +135,73 @@ public class ArtifactManagementController {
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/save")
-    @ResponseBody
-    public JsonResponse saveConfigFiles(@PathVariable(value = "unit-design-id")String unitDesignId, @PathVariable(value = "package-id") String packageId, @RequestBody PackageDto packageDomain) {
-        DeployPackageConfigDto result = configFileManagementService.saveConfigFiles(unitDesignId, packageId, packageDomain);
+    public JsonResponse saveConfigFiles(@PathVariable(value = "unit-design-id") String unitDesignId,
+            @PathVariable(value = "package-id") String packageId, @RequestBody PackageDto packageDomain) {
+        DeployPackageConfigDto result = configFileManagementService.saveConfigFiles(unitDesignId, packageId,
+                packageDomain);
         return okayWithData(result);
     }
 
     @PostMapping("/enum/codes/diff-config/save")
-    @ResponseBody
     public JsonResponse saveDiffConfigEnumCodes(@RequestBody CatCodeDto code) {
         artifactService.saveDiffConfigEnumCodes(code);
         return okay();
     }
 
     @GetMapping("/enum/codes/diff-config/query")
-    @ResponseBody
     public JsonResponse getDiffConfigEnumCodes() {
         return okayWithData(artifactService.getDiffConfigEnumCodes());
     }
 
     @GetMapping("/getPackageCiTypeId")
-    @ResponseBody
     public JsonResponse getPackageCiTypeId() {
         return okayWithData(cmdbDataProperties.getCiTypeIdOfPackage());
+    }
+
+    @PostMapping("/ci/state/operate")
+    public JsonResponse operateCiForState(@RequestBody List<OperateCiDto> ciIds,
+            @RequestParam("operation") String operation) {
+        return okayWithData(artifactService.operateState(ciIds, operation));
+    }
+
+    @GetMapping("/ci-types")
+    public JsonResponse getCiTypes(@RequestParam(name = "group-by", required = false) String groupBy,
+            @RequestParam(name = "with-attributes", required = false) String withAttributes,
+            @RequestParam(name = "status", required = false) String status) {
+        return okayWithData(artifactService.getCiTypes(isTrue(withAttributes), status));
+    }
+
+    @PostMapping("/ci-types/{ci-type-id}/ci-data/batch-delete")
+    public JsonResponse deleteCiData(@PathVariable(value = "ci-type-id") int ciTypeId,
+            @RequestBody List<String> ciDataIds) {
+        artifactService.deleteCiData(ciTypeId, ciDataIds);
+        return okay();
+    }
+
+    @PostMapping("/enum/system/codes")
+    public JsonResponse querySystemEnumCodesWithRefResources(@RequestBody PaginationQuery queryObject) {
+        return okayWithData(artifactService.querySystemEnumCodesWithRefResources(queryObject));
+    }
+
+    @GetMapping("/ci-types/{ci-type-id}/references/by")
+    public JsonResponse getCiTypeReferenceBy(@PathVariable(value = "ci-type-id") int ciTypeId) {
+        return okayWithData(artifactService.getCiTypeReferenceBy(ciTypeId));
+    }
+
+    @GetMapping("/ci-types/{ci-type-id}/attributes")
+    public JsonResponse getCiTypeAttributes(@PathVariable(value = "ci-type-id") int ciTypeId,
+            @RequestParam(name = "accept-input-types", required = false) String acceptInputTypes) {
+        if (isNotEmpty(acceptInputTypes)) {
+            return okayWithData(cmdbServiceV2Stub.queryCiTypeAttributes(defaultQueryObject("ciTypeId", ciTypeId)
+                    .addInFilter("inputType", newArrayList(acceptInputTypes.split(",")))));
+        } else {
+            return okayWithData(cmdbServiceV2Stub.getCiTypeAttributesByCiTypeId(ciTypeId));
+        }
+    }
+
+    @GetMapping("/static-data/special-connector")
+    public JsonResponse getSpecialConnector() {
+        return okayWithData(artifactService.getSpecialConnector());
     }
 
     private File convertMultiPartToFile(MultipartFile multipartFile) {
@@ -178,64 +213,17 @@ public class ArtifactManagementController {
         try (FileOutputStream fos = new FileOutputStream(file)) {
             byte[] buf = new byte[1024];
             int len = 0;
-            
+
             InputStream is = multipartFile.getInputStream();
-            while((len = is.read(buf)) != -1){
+            while ((len = is.read(buf)) != -1) {
                 fos.write(buf, 0, len);
             }
-            
-//            fos.write(multipartFile.getBytes());
+
+            // fos.write(multipartFile.getBytes());
         } catch (Exception e) {
             logger.error("errors while convert multipart file.", e);
             throw new PluginException("3002", "Failed to convert multipart file to file.");
         }
         return file;
-    }
-
-    @PostMapping("/ci/state/operate")
-    public JsonResponse operateCiForState(@RequestBody List<OperateCiDto> ciIds, @RequestParam("operation") String operation) {
-        return okayWithData(artifactService.operateState(ciIds, operation));
-    }
-
-    @GetMapping("/ci-types")
-    @ResponseBody
-    public JsonResponse getCiTypes(@RequestParam(name = "group-by", required = false) String groupBy, @RequestParam(name = "with-attributes", required = false) String withAttributes,
-            @RequestParam(name = "status", required = false) String status) {
-        return okayWithData(artifactService.getCiTypes(isTrue(withAttributes), status));
-    }
-
-    @PostMapping("/ci-types/{ci-type-id}/ci-data/batch-delete")
-    @ResponseBody
-    public JsonResponse deleteCiData(@PathVariable(value = "ci-type-id") int ciTypeId, @RequestBody List<String> ciDataIds) {
-        artifactService.deleteCiData(ciTypeId, ciDataIds);
-        return okay();
-    }
-
-    @PostMapping("/enum/system/codes")
-    @ResponseBody
-    public JsonResponse querySystemEnumCodesWithRefResources(@RequestBody PaginationQuery queryObject) {
-        return okayWithData(artifactService.querySystemEnumCodesWithRefResources(queryObject));
-    }
-    
-    @GetMapping("/ci-types/{ci-type-id}/references/by")
-    @ResponseBody
-    public JsonResponse getCiTypeReferenceBy(@PathVariable(value = "ci-type-id") int ciTypeId) {
-        return okayWithData(artifactService.getCiTypeReferenceBy(ciTypeId));
-    }
-    
-    @GetMapping("/ci-types/{ci-type-id}/attributes")
-    @ResponseBody
-    public JsonResponse getCiTypeAttributes(@PathVariable(value = "ci-type-id") int ciTypeId, @RequestParam(name = "accept-input-types", required = false) String acceptInputTypes) {
-        if (isNotEmpty(acceptInputTypes)) {
-            return okayWithData(cmdbServiceV2Stub.queryCiTypeAttributes(defaultQueryObject("ciTypeId", ciTypeId).addInFilter("inputType", newArrayList(acceptInputTypes.split(",")))));
-        } else {
-            return okayWithData(cmdbServiceV2Stub.getCiTypeAttributesByCiTypeId(ciTypeId));
-        }
-    }
-    
-    @GetMapping("/static-data/special-connector")
-    @ResponseBody
-    public JsonResponse getSpecialConnector() {
-        return okayWithData(artifactService.getSpecialConnector());
     }
 }

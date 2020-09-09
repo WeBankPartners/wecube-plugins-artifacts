@@ -90,19 +90,25 @@ public abstract class AbstractArtifactService {
     }
     
     @SuppressWarnings("rawtypes")
-    protected String retrieveS3EndpointWithKeyByPackageId(String packageId) {
-        PaginationQuery queryObject = PaginationQuery.defaultQueryObject().addEqualsFilter("guid", packageId);
-        PaginationQueryResult<Object> result = cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(),
-                queryObject);
-        if (result == null || result.getContents().isEmpty()) {
-            throw new PluginException(String.format("Package with ID [%s] not found.", packageId));
-        }
-
-        Map pkgData = (Map) result.getContents().get(0);
-        Map pkg = (Map) pkgData.get("data");
+    protected String retrieveS3EndpointWithKeyByPackageId(String packageCiGuid) {
+        Map pkg = retrievePackageCiByGuid(packageCiGuid);
         String s3Key = pkg.get("md5_value") + S3_KEY_DELIMITER + pkg.get("name");
         String endpointWithKey = applicationProperties.getArtifactsS3ServerUrl() + "/"
                 + applicationProperties.getArtifactsS3BucketName() + "/" + s3Key;
         return endpointWithKey;
+    }
+    
+    protected Map retrievePackageCiByGuid(String packageCiGuid){
+        PaginationQuery queryObject = PaginationQuery.defaultQueryObject().addEqualsFilter("guid", packageCiGuid);
+        PaginationQueryResult<Object> result = cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(),
+                queryObject);
+        if (result == null || result.getContents().isEmpty()) {
+            throw new PluginException(String.format("Package with ID [%s] not found.", packageCiGuid)).withErrorCode("3008", packageCiGuid);
+        }
+
+        Map pkgData = (Map) result.getContents().get(0);
+        Map pkg = (Map) pkgData.get("data");
+        log.info("Got package data with guid {} {}", packageCiGuid, pkg);
+        return pkg;
     }
 }
