@@ -45,11 +45,11 @@
               <Col span="18" offset="1">
                 <div id="diff_conf_file">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.diff_conf_file" :key="index">
-                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index]" />
+                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index].filename" />
+                    <div style="width:60px;margin: 0 8px;display: inline-block;">{{ packageInput.diff_conf_file[index].comparisonResult }}</div>
                     <Button type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'diff_conf_file')"></Button>
                   </div>
                 </div>
-                <div v-if="is_diff_conf_file.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_diff_conf_file.join(' | ') }}</div>
               </Col>
             </Row>
           </Card>
@@ -62,11 +62,11 @@
               <Col span="18" offset="1">
                 <div id="start_file_path">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.start_file_path" :key="index">
-                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path[index]" />
+                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path[index].filename" />
+                    <div style="width:60px;margin: 0 8px;display: inline-block;">{{ packageInput.diff_conf_file[index].comparisonResult }}</div>
                     <Button type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
                   </div>
                 </div>
-                <div v-if="is_start_file_path.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_start_file_path.join(' | ') }}</div>
               </Col>
             </Row>
           </Card>
@@ -79,11 +79,11 @@
               <Col span="18" offset="1">
                 <div id="stop_file_path">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.stop_file_path" :key="index">
-                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path[index]" />
+                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path[index].filename" />
+                    <div style="width:60px;margin: 0 8px;display: inline-block;">{{ packageInput.diff_conf_file[index].comparisonResult }}</div>
                     <Button type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
                   </div>
                 </div>
-                <div v-if="is_stop_file_path.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_stop_file_path.join(' | ') }}</div>
               </Col>
             </Row>
           </Card>
@@ -96,11 +96,11 @@
               <Col span="18" offset="1">
                 <div id="deploy_file_path">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.deploy_file_path" :key="index">
-                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path[index]" />
+                    <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path[index].filename" />
+                    <div style="width:60px;margin: 0 8px;display: inline-block;">{{ packageInput.diff_conf_file[index].comparisonResult }}</div>
                     <Button type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
                   </div>
                 </div>
-                <div v-if="is_deploy_file_path.length > 0" style="font-size: 12px;color: red;">{{ $t('is_files_exist') }} {{ is_deploy_file_path.join(' | ') }}</div>
               </Col>
             </Row>
           </Card>
@@ -435,12 +435,20 @@ export default {
       }
     },
     renderCell (content) {
+      let res = ''
+      if (Array.isArray(content)) {
+        content.forEach(c => {
+          res += c.filename + '|'
+        })
+      } else {
+        res = content
+      }
       return (
         <Tooltip min-width="200px" max-width="500px" style="width: 100%;">
           <span slot="content" style="white-space:normal;">
-            {content && content.toString()}{' '}
+            {res}
           </span>
-          <div style="width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{content}</div>
+          <div style="width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{res}</div>
         </Tooltip>
       )
     },
@@ -474,7 +482,7 @@ export default {
         .filter(_ => row.nextOperations.indexOf(_.type) >= 0)
         .map(_ => {
           return (
-            <Button {...{ props: { ..._.props } }} style="margin-right:5px;margin-bottom:5px;" onClick={() => this.changeStatus(row, _.type)}>
+            <Button {...{ props: { ..._.props } }} style="margin-right:5px;margin-bottom:5px;" onClick={() => this.changeStatus(row, _.type, event)}>
               {_.label}
             </Button>
           )
@@ -937,7 +945,7 @@ export default {
           })
         })
         console.log(targetNode)
-        if (targetNode.expand === undefined) {
+        if ('expand' in targetNode) {
           targetNode.expand = true
         }
         targetNode.children = this.formatChildrenData({
@@ -948,7 +956,7 @@ export default {
         })
         let selectedChild = []
         targetNode.children.forEach(child => {
-          if (child.children === undefined) {
+          if ('children' in child) {
             child.checked = false
           } else {
             selectedChild.push(child)
@@ -957,6 +965,8 @@ export default {
         console.log(targetNode.children)
         // 选中文件夹选中文件处理
         this.treeDataCollection[this.currentTreeModal.key].selectNode = this.treeDataCollection[this.currentTreeModal.key].selectNode.concat(selectedChild)
+        console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
+        debugger
       } else {
         this.treeDataCollection[this.currentTreeModal.key].treeData = this.formatChildrenData({
           files,
@@ -967,7 +977,6 @@ export default {
       }
     },
     formatChildrenData (val) {
-      console.log('formatChildrenData')
       const { files, currentDir, level, treeTag } = val
       if (!(files instanceof Array)) {
         return
@@ -1025,14 +1034,14 @@ export default {
       })
     },
     async changeChildChecked (checked, currentChecked) {
-      // console.log(currentChecked)
+      console.log(currentChecked)
       console.log(checked)
-      if (currentChecked.expand === undefined) {
+      if (currentChecked.children) {
         await this.expandNode(currentChecked)
       }
-      console.log(this.treeDataCollection[this.currentTreeModal.key].treeData)
       // 排除文件夹(未全选、全选)
       this.treeDataCollection[this.currentTreeModal.key].selectNode = checked.filter(item => item.children === undefined && item.path !== undefined)
+      console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
     },
     async expandNode (node) {
       console.log(node)
@@ -1045,10 +1054,10 @@ export default {
       this.packageId = row.guid
       this.getTabDatas(row.diff_conf_file)
     },
-    changeStatus (row, status) {
+    changeStatus (row, status, event) {
       switch (status) {
         case 'update':
-          this.showFilesModal(row)
+          this.showFilesModal(row, event)
           break
         case 'delete':
           this.handleDelete(row, status)
@@ -1093,15 +1102,15 @@ export default {
     configurationChanged (v) {
       if (v) {
         const found = this.tableData.find(row => row.name === v)
-        this.packageInput.diff_conf_file = found.diff_conf_file ? found.diff_conf_file.split('|') : []
-        this.packageInput.start_file_path = found.start_file_path ? found.start_file_path.split('|') : []
-        this.packageInput.stop_file_path = found.stop_file_path ? found.stop_file_path.split('|') : []
-        this.packageInput.deploy_file_path = found.deploy_file_path ? found.deploy_file_path.split('|') : []
+        this.packageInput.diff_conf_file = found.diff_conf_file ? found.diff_conf_file : []
+        this.packageInput.start_file_path = found.start_file_path ? found.start_file_path : []
+        this.packageInput.stop_file_path = found.stop_file_path ? found.stop_file_path : []
+        this.packageInput.deploy_file_path = found.deploy_file_path ? found.deploy_file_path : []
         this.packageInput.is_decompression = found.is_decompression || 0
-        this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
-        this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
-        this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
-        this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
+        // this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
+        // this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
+        // this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
+        // this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
       }
     },
     async checkFileExist (filePath, isExist) {
@@ -1200,7 +1209,9 @@ export default {
       }
       return notExist
     },
-    showFilesModal (row) {
+    showFilesModal (row, event) {
+      event.stopPropagation()
+      console.log(row)
       this.tabData = []
       // 以下4个变量类型为字符串
       this.packageInput.diff_conf_file = row.diff_conf_file
@@ -1217,10 +1228,10 @@ export default {
       this.is_deploy_file_path = []
       this.initTreeConfig()
       this.isShowFilesModal = true
-      this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
-      this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
-      this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
-      this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
+      // this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
+      // this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
+      // this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
+      // this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
       this.$nextTick(() => {
         this.genSortable('diff_conf_file')
         this.genSortable('start_file_path')
@@ -1251,13 +1262,12 @@ export default {
       })
     },
     getTabDatas (diffFile, isNewPage = false) {
-      console.log(diffFile)
       if (diffFile) {
         const files = diffFile
         this.tabData = files.map(_ => {
-          const f = _.split('/')
+          const f = _.filename.split('/')
           return {
-            path: _,
+            path: _.filename,
             title: f[f.length - 1]
           }
         })
@@ -1341,7 +1351,10 @@ export default {
       this.diffTabData = ''
       let files = []
       this.treeDataCollection[this.currentTreeModal.key].selectNode.forEach(_ => {
-        files.push(_.path)
+        files.push({
+          filename: _.path,
+          comparisonResult: null
+        })
       })
       this.diffTabData = files.join('|')
       this.packageInput[this.currentTreeModal.key] = files
@@ -1526,8 +1539,7 @@ export default {
 <style lang="scss" scoped>
 .textarea-input {
   display: inline-block;
-  width: 90%;
-  margin-right: 20px;
+  width: 80%;
 }
 .artifact-management-files-card {
   border-color: darkgrey;
