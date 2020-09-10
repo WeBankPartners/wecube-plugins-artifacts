@@ -2,7 +2,10 @@ package com.webank.plugins.artifacts.service;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,13 +19,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.google.common.collect.ImmutableMap;
 import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
-import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.commons.PluginException;
+import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
 import com.webank.plugins.artifacts.support.s3.S3Client;
+import com.webank.plugins.artifacts.support.saltstack.SaltFileNodeDto;
+import com.webank.plugins.artifacts.support.saltstack.SaltFileNodeResultItemDto;
+import com.webank.plugins.artifacts.support.saltstack.SaltstackRequest.DefaultSaltstackRequest;
+import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultData;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackServiceStub;
 
 public abstract class AbstractArtifactService {
@@ -98,6 +105,13 @@ public abstract class AbstractArtifactService {
         return endpointWithKey;
     }
     
+    protected String retrieveS3EndpointWithKeyByPackageCiMap(Map<String,Object> pkgCiMap) {
+        String s3Key = pkgCiMap.get("md5_value") + S3_KEY_DELIMITER + pkgCiMap.get("name");
+        String endpointWithKey = applicationProperties.getArtifactsS3ServerUrl() + "/"
+                + applicationProperties.getArtifactsS3BucketName() + "/" + s3Key;
+        return endpointWithKey;
+    }
+    
     @SuppressWarnings("unchecked")
     protected Map<String,Object> retrievePackageCiByGuid(String packageCiGuid){
         PaginationQuery queryObject = PaginationQuery.defaultQueryObject().addEqualsFilter("guid", packageCiGuid);
@@ -111,5 +125,32 @@ public abstract class AbstractArtifactService {
         Map<String,Object> pkg = (Map<String,Object>) pkgData.get("data");
         log.info("Got package data with guid {} {}", packageCiGuid, pkg);
         return pkg;
+    }
+    
+    protected List<SaltFileNodeDto> listFilesOfCurrentDirs(String currentDir, String endpoint) {
+        DefaultSaltstackRequest request = new DefaultSaltstackRequest();
+        List<Map<String, Object>> inputParamMaps = new ArrayList<Map<String, Object>>();
+        Map<String, Object> inputParamMap = new HashMap<String, Object>();
+        inputParamMap.put("endpoint", endpoint);
+        inputParamMap.put("accessKey", applicationProperties.getArtifactsS3AccessKey());
+        inputParamMap.put("secretKey", applicationProperties.getArtifactsS3SecretKey());
+        inputParamMap.put("currentDir", currentDir);
+        
+        inputParamMaps.add(inputParamMap);
+        request.setInputs(inputParamMaps);
+        ResultData<SaltFileNodeResultItemDto> fileNodesResultItemData = saltstackServiceStub
+                .getReleasedPackageFilesByCurrentDir(applicationProperties.getWecubeGatewayServerUrl(), request);
+        
+        List<SaltFileNodeResultItemDto> resultItemDtos = fileNodesResultItemData.getOutputs();
+        if(resultItemDtos == null || resultItemDtos.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        List<SaltFileNodeDto> fileNodes = resultItemDtos.get(0).getFiles();
+        if(fileNodes == null) {
+            return Collections.emptyList();
+        }
+        
+        return fileNodes;
     }
 }

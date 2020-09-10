@@ -22,9 +22,17 @@ public class SaltstackServiceStub {
     private static final String INF_RELEASED_PACKAGE_LIST_DIR = "/v1/released-package/listCurrentDir";
     private static final String INF_RELEASED_PACKAGE_PROPERTY_KEY = "/v1/released-package/getConfigFileKey";
 
-    public ResultData<Object> getReleasedPackageFilesByCurrentDir(String wecubeGatewayUrl,
+    public ResultData<SaltFileNodeResultItemDto> getReleasedPackageFilesByCurrentDir(String wecubeGatewayUrl,
             SaltstackRequest<Map<String, Object>> request) {
-        return post(asServerUrl(wecubeGatewayUrl, INF_RELEASED_PACKAGE_LIST_DIR), request);
+        String targetUrl = asServerUrl(wecubeGatewayUrl, INF_RELEASED_PACKAGE_LIST_DIR);
+        
+        log.info("About to call {} with parameters: {} ", targetUrl, request);
+        PackageFilesListResponse response = restTemplate.postForObject(targetUrl, request, PackageFilesListResponse.class);
+        log.info("Saltstack plugin response: {} ", response);
+        validateResponse(response, false);
+
+        return response.getResultData();
+        
     }
 
     public ResultData<SaltConfigFileDto> getReleasedPackagePropertyKeysByFilePath(String saltstackServerUrl,
@@ -39,6 +47,7 @@ public class SaltstackServiceStub {
         return response.getResultData();
     }
 
+    @SuppressWarnings("unused")
     private ResultData<Object> post(String targetUrl, SaltstackRequest parameters) {
         log.info("About to call {} with parameters: {} ", targetUrl, parameters);
         SaltstackResponse<Object> response = restTemplate.postForObject(targetUrl, parameters, DefaultSaltstackResponse.class);
@@ -69,5 +78,8 @@ public class SaltstackServiceStub {
     }
     
     public static class PropertyKeysResponse extends SaltstackResponse<SaltConfigFileDto>{
+    }
+    
+    public static class PackageFilesListResponse extends SaltstackResponse<SaltFileNodeResultItemDto>{
     }
 }

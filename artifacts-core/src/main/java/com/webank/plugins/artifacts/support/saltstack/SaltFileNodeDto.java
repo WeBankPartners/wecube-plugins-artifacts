@@ -1,13 +1,10 @@
 package com.webank.plugins.artifacts.support.saltstack;
 
-import java.util.List;
-
 public class SaltFileNodeDto {
     private String name;
     private String path;
     private boolean isDir;
     private String md5;
-    private List<SaltFileNodeDto> fileNodes;
     
     public String getName() {
         return name;
@@ -32,11 +29,5 @@ public class SaltFileNodeDto {
     }
     public void setMd5(String md5) {
         this.md5 = md5;
-    }
-    public List<SaltFileNodeDto> getFileNodes() {
-        return fileNodes;
-    }
-    public void setFileNodes(List<SaltFileNodeDto> fileNodes) {
-        this.fileNodes = fileNodes;
     }
 }

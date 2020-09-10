@@ -16,6 +16,8 @@ import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.dto.ConfigFileDto;
 import com.webank.plugins.artifacts.dto.ConfigKeyInfoDto;
 import com.webank.plugins.artifacts.dto.ConfigPackageDto;
+import com.webank.plugins.artifacts.dto.FileQueryRequestDto;
+import com.webank.plugins.artifacts.dto.FileQueryResultItemDto;
 import com.webank.plugins.artifacts.dto.PackageComparisionRequestDto;
 import com.webank.plugins.artifacts.dto.PackageComparisionResultDto;
 import com.webank.plugins.artifacts.dto.PackageDto;
@@ -30,6 +32,29 @@ import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultDa
 @Service
 public class ConfigFileManagementService extends AbstractArtifactService{
     private static final Logger log = LoggerFactory.getLogger(ConfigFileManagementService.class);
+    
+    public List<FileQueryResultItemDto> queryDeployConfigFiles(String packageId, FileQueryRequestDto fileQueryRequestDto) {
+        List<String> fileList = fileQueryRequestDto.getFileList();
+        if(fileList == null) {
+            throw new PluginException("File list cannot be null to query files.");
+        }
+        
+        //
+        if(fileList.isEmpty()) {
+            //means root directory
+            log.info("file list is empty and adding root as default");
+            fileList.add("");
+        }
+        
+        String baselinePackageGuid = fileQueryRequestDto.getBaselinePackage();
+        return doQueryDeployConfigFiles(packageId, baselinePackageGuid, fileList);
+    }
+    
+    private List<FileQueryResultItemDto> doQueryDeployConfigFiles(String packageId, String baselinePackageGuid, List<String> fileList){
+        List<FileQueryResultItemDto> result = new ArrayList<FileQueryResultItemDto>();
+        //TODO
+        return result;
+    }
     
     public PackageComparisionResultDto packageComparision(String unitDesignId, String packageId, PackageComparisionRequestDto comparisonReqDto){
         //TODO

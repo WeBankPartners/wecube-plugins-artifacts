@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
+import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.constant.ArtifactsConstants;
 import com.webank.plugins.artifacts.dto.ConfigPackageDto;
@@ -63,7 +64,7 @@ public class ArtifactManagementController {
 
     @Autowired
     private ConfigFileManagementService configFileManagementService;
-
+    
     @GetMapping("/system-design-versions")
     public JsonResponse getSystemDesignVersions() {
         return okayWithData(artifactService.getSystemDesignVersions());
@@ -133,16 +134,29 @@ public class ArtifactManagementController {
         return okay();
     }
 
+//    @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/files/query")
+//    public JsonResponse getFiles(@PathVariable(value = "package-id") String packageId,
+//            @RequestBody FileQueryRequestDto fileQueryRequestDto) {
+////        if (additionalProperties.get("currentDir") == null) {
+////            throw new PluginException("3000", "Field 'currentDir' is required.");
+////        }
+//        return okayWithData(artifactService.getCurrentDirs(packageId, additionalProperties.get("currentDir")));
+//        
+////        //TODO
+////        return null;
+//    }
+    
+    
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/files/query")
     public JsonResponse getFiles(@PathVariable(value = "package-id") String packageId,
-            @RequestBody FileQueryRequestDto fileQueryRequestDto) {
+            @RequestBody Map<String, String> additionalProperties) {
 //        if (additionalProperties.get("currentDir") == null) {
 //            throw new PluginException("3000", "Field 'currentDir' is required.");
 //        }
-//        return okayWithData(artifactService.getCurrentDirs(packageId, additionalProperties.get("currentDir")));
+        return okayWithData(artifactService.getCurrentDirs(packageId, additionalProperties.get("currentDir")));
         
-        //TODO
-        return null;
+//        //TODO
+//        return null;
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/property-keys/query")
