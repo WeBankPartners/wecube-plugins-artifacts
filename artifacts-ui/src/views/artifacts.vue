@@ -945,7 +945,7 @@ export default {
           })
         })
         console.log(targetNode)
-        if ('expand' in targetNode) {
+        if (!('expand' in targetNode)) {
           targetNode.expand = true
         }
         targetNode.children = this.formatChildrenData({
@@ -955,19 +955,22 @@ export default {
           treeTag
         })
         let selectedChild = []
+        // 选中文件节点，初始为未选中态，包含非文件夹更新为选中态
+        targetNode.checked = false
         targetNode.children.forEach(child => {
           if ('children' in child) {
             child.checked = false
           } else {
+            targetNode.checked = true
             selectedChild.push(child)
           }
         })
-        console.log(targetNode.children)
+        console.log(selectedChild)
         // 选中文件夹选中文件处理
         this.treeDataCollection[this.currentTreeModal.key].selectNode = this.treeDataCollection[this.currentTreeModal.key].selectNode.concat(selectedChild)
         console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
-        debugger
       } else {
+        console.log(2)
         this.treeDataCollection[this.currentTreeModal.key].treeData = this.formatChildrenData({
           files,
           currentDir,
@@ -1039,7 +1042,11 @@ export default {
       if (currentChecked.children) {
         await this.expandNode(currentChecked)
       }
+      console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
+      debugger
       // 排除文件夹(未全选、全选)
+      // TODO 选中文件夹并包含文件判断
+      // this.treeDataCollection[this.currentTreeModal.key].selectNode = checked.filter(item => item.children === undefined && item.path !== undefined)
       this.treeDataCollection[this.currentTreeModal.key].selectNode = checked.filter(item => item.children === undefined && item.path !== undefined)
       console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
     },
@@ -1107,21 +1114,7 @@ export default {
         this.packageInput.stop_file_path = found.stop_file_path ? found.stop_file_path : []
         this.packageInput.deploy_file_path = found.deploy_file_path ? found.deploy_file_path : []
         this.packageInput.is_decompression = found.is_decompression || 0
-        // this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
-        // this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
-        // this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
-        // this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
       }
-    },
-    async checkFileExist (filePath, isExist) {
-      if (filePath.length === 0) {
-        return
-      }
-      const filePathList = filePath
-      filePathList.forEach(async path => {
-        let dirs = path.split('/')
-        await this.checkFilesAndInitTree(0, dirs, isExist)
-      })
     },
     async checkFilesAndInitTree (index, fileList, isExist) {
       let currentDir = ''
@@ -1228,10 +1221,6 @@ export default {
       this.is_deploy_file_path = []
       this.initTreeConfig()
       this.isShowFilesModal = true
-      // this.checkFileExist(this.packageInput.diff_conf_file, 'is_diff_conf_file')
-      // this.checkFileExist(this.packageInput.start_file_path, 'is_start_file_path')
-      // this.checkFileExist(this.packageInput.stop_file_path, 'is_stop_file_path')
-      // this.checkFileExist(this.packageInput.deploy_file_path, 'is_deploy_file_path')
       this.$nextTick(() => {
         this.genSortable('diff_conf_file')
         this.genSortable('start_file_path')
@@ -1337,17 +1326,7 @@ export default {
       }
     },
     onOk () {
-      let tmpSelectNode = []
-      let tmpNodeKey = []
-      this.treeDataCollection[this.currentTreeModal.key].selectNode.forEach(tmp => {
-        // if (tmp.nodeKey && !tmpNodeKey.includes(tmp.nodeKey)) {
-        if (!tmpNodeKey.includes(tmp.nodeKey)) {
-          tmpSelectNode.push(tmp)
-          tmpNodeKey.push(tmp.nodeKey)
-        }
-      })
-      this.treeDataCollection[this.currentTreeModal.key].selectNode = tmpSelectNode
-      // if (this.currentTreeModal.key === 'diff_conf_file') {
+      console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
       this.diffTabData = ''
       let files = []
       this.treeDataCollection[this.currentTreeModal.key].selectNode.forEach(_ => {
@@ -1356,8 +1335,10 @@ export default {
           comparisonResult: null
         })
       })
+      console.log(files)
       this.diffTabData = files.join('|')
       this.packageInput[this.currentTreeModal.key] = files
+      console.log(this.packageInput)
       // this.treeDataCollection[this.currentTreeModal.key].selectNode = []
       // } else {
       //   this.packageInput[this.currentTreeModal.key] = this.selectFile
