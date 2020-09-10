@@ -118,13 +118,13 @@
             </Row>
           </Card>
           <div slot="footer">
-            <Button @click="closeModal">{{ $t('artifacts_cancle') }}</Button>
+            <Button @click="closeModal">{{ $t('artifacts_cancel') }}</Button>
             <Button type="primary" @click="saveConfigFiles" :loading="loading">{{ $t('artifacts_save') }}</Button>
           </div>
         </Modal>
         <Modal :mask-closable="false" v-model="isShowTreeModal" :title="currentTreeModal.title" @on-ok="onOk" @on-cancel="closeTreeModal" draggable>
           <RadioGroup v-model="selectFile">
-            <Tree v-if="treeDataCollection[currentTreeModal.key]" :data="treeDataCollection[currentTreeModal.key].treeData" @on-toggle-expand="expandNode" @on-check-change="changeChildChecked" show-checkbox> </Tree>
+            <Tree ref="xx" v-if="treeDataCollection[currentTreeModal.key]" :data="treeDataCollection[currentTreeModal.key].treeData" @on-toggle-expand="expandNode" @on-check-change="changeChildChecked" show-checkbox> </Tree>
           </RadioGroup>
         </Modal>
         <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="onSetRowValue" @on-cancel="closeconfigModal">
@@ -139,6 +139,10 @@
         </Modal>
       </Card>
       <Card v-if="tabData.length ? true : false" class="artifact-management-bottom-card artifact-management-top-card">
+        <div class="batchOperation">
+          <Button type="primary" @click="showBatchTreeModal">绑定/解绑</Button>
+        </div>
+
         <Tabs v-model="activeTab" @on-click="tabChange">
           <TabPane v-for="(item, index) in tabData" :label="item.title" :name="item.title" :key="index">
             <Spin size="large" fix v-if="tabTableLoading">
@@ -148,6 +152,9 @@
             <Table :data="item.tableData || []" :columns="attrsTableColomnOptions"></Table>
           </TabPane>
         </Tabs>
+        <Modal :mask-closable="false" v-model="isShowBatchTreeModal" :title="currentTreeModal.title">
+          <Tree :data="batchTreeData" show-checkbox> </Tree>
+        </Modal>
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
     </Col>
@@ -375,7 +382,10 @@ export default {
             return <div style="padding-top:5px">{this.renderConfigButton(params)}</div>
           }
         }
-      ]
+      ],
+
+      isShowBatchTreeModal: false,
+      batchTreeData: []
     }
   },
   computed: {
@@ -407,6 +417,37 @@ export default {
     }
   },
   methods: {
+    showBatchTreeModal () {
+      console.log(this.tabData)
+      let xx = []
+      this.tabData.forEach(fileTable => {
+        const file = fileTable.path.split('/').slice(-1)[0]
+        fileTable.tableData.forEach(row => {
+          const title = row.replaceType + row.key
+          xx.push({
+            title: title,
+            id: [row.id],
+            filename: [file],
+            checked: !!row.isBinding
+          })
+        })
+      })
+      console.log(xx)
+      xx.forEach(x => {
+        let hasKey = this.batchTreeData.filter(td => td.title === x.title)
+        if (hasKey.length > 0) {
+          hasKey[0].id.push(x.id)
+          hasKey[0].filename.push(x.filename[0])
+        } else {
+          this.batchTreeData.push(x)
+        }
+      })
+      this.batchTreeData.forEach(td => {
+        td.title = td.title + '   ' + JSON.stringify(td.filename)
+      })
+      console.log(this.batchTreeData)
+      this.isShowBatchTreeModal = true
+    },
     clearSelectSystemDesign () {
       this.systemDesignVersion = ''
       this.treeData = []
@@ -1018,23 +1059,12 @@ export default {
           if (selectedFile) {
             obj.checked = true
           }
-          // obj.render = (h, params) => {
-          //   return this.currentTreeModal.inputType === 'checkbox' ? (
-          //     <Checkbox value={selectedFile} style="position:relative;right:24px;" on-on-change={value => this.checkboxChange(value, params.data)}>
-          //       <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-          //       <span>{params.data.title}</span>
-          //     </Checkbox>
-          //   ) : (
-          //     <Radio value={selectedFile} style="position:relative;right:20px;" label={params.data.path}>
-          //       1111111
-          //       <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-          //       <span>{params.data.title}</span>
-          //     </Radio>
-          //   )
-          // }
         }
         return obj
       })
+    },
+    onSelectChange (checked, currentChecked) {
+      console.log(checked, currentChecked)
     },
     async changeChildChecked (checked, currentChecked) {
       console.log(currentChecked)
@@ -1047,10 +1077,15 @@ export default {
       // 排除文件夹(未全选、全选)
       // TODO 选中文件夹并包含文件判断
       // this.treeDataCollection[this.currentTreeModal.key].selectNode = checked.filter(item => item.children === undefined && item.path !== undefined)
-      this.treeDataCollection[this.currentTreeModal.key].selectNode = checked.filter(item => item.children === undefined && item.path !== undefined)
+      // this.treeDataCollection[this.currentTreeModal.key].selectNode = checked.filter(item => {
+      //   return (!('children' in item)) && ('path' in item)
+      // })
       console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
     },
     async expandNode (node) {
+      console.log(this.$refs.xx.getCheckedNodes())
+      console.log(this.$refs.xx.getSelectedNodes())
+      console.log(this.$refs.xx.getCheckedAndIndeterminateNodes())
       console.log(node)
       // if (node.expand && !node.children[0].title) {
       //   this.getFiles(this.packageId, node.path)
@@ -1558,4 +1593,9 @@ export default {
     position: relative;
   }
 }
+
+// .batchOperation {
+//   position: absolute;
+//   right: 60px;
+// }
 </style>
