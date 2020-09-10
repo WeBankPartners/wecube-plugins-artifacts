@@ -98,7 +98,8 @@ public abstract class AbstractArtifactService {
         return endpointWithKey;
     }
     
-    protected Map retrievePackageCiByGuid(String packageCiGuid){
+    @SuppressWarnings("unchecked")
+    protected Map<String,Object> retrievePackageCiByGuid(String packageCiGuid){
         PaginationQuery queryObject = PaginationQuery.defaultQueryObject().addEqualsFilter("guid", packageCiGuid);
         PaginationQueryResult<Object> result = cmdbServiceV2Stub.queryCiData(cmdbDataProperties.getCiTypeIdOfPackage(),
                 queryObject);
@@ -106,8 +107,8 @@ public abstract class AbstractArtifactService {
             throw new PluginException(String.format("Package with ID [%s] not found.", packageCiGuid)).withErrorCode("3008", packageCiGuid);
         }
 
-        Map pkgData = (Map) result.getContents().get(0);
-        Map pkg = (Map) pkgData.get("data");
+        Map<String,Object> pkgData = (Map<String,Object>) result.getContents().get(0);
+        Map<String,Object> pkg = (Map<String,Object>) pkgData.get("data");
         log.info("Got package data with guid {} {}", packageCiGuid, pkg);
         return pkg;
     }

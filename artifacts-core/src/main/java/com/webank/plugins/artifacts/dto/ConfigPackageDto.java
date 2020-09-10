@@ -3,11 +3,11 @@ package com.webank.plugins.artifacts.dto;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DeployPackageConfigDto {
+public class ConfigPackageDto {
     private String packageId;
     private String unitDesignId;
     
-    private List<DeployConfigFileDto> deployConfigFiles = new ArrayList<DeployConfigFileDto>();
+    private List<ConfigFileDto> deployConfigFiles = new ArrayList<ConfigFileDto>();
 
     public String getPackageId() {
         return packageId;
@@ -25,21 +25,21 @@ public class DeployPackageConfigDto {
         this.unitDesignId = unitDesignId;
     }
 
-    public List<DeployConfigFileDto> getDeployConfigFiles() {
+    public List<ConfigFileDto> getDeployConfigFiles() {
         return deployConfigFiles;
     }
 
-    public void setDeployConfigFiles(List<DeployConfigFileDto> deployConfigFiles) {
+    public void setDeployConfigFiles(List<ConfigFileDto> deployConfigFiles) {
         this.deployConfigFiles = deployConfigFiles;
     }
 
-    public void addDeployConfigFile(DeployConfigFileDto dto){
+    public void addDeployConfigFile(ConfigFileDto dto){
         if(dto == null){
             return;
         }
         
         if(this.deployConfigFiles == null){
-            this.deployConfigFiles = new ArrayList<DeployConfigFileDto>();
+            this.deployConfigFiles = new ArrayList<ConfigFileDto>();
         }
         
         this.deployConfigFiles.add(dto);

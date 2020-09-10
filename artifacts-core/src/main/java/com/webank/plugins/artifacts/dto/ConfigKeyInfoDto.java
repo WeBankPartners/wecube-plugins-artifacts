@@ -9,11 +9,6 @@ public class ConfigKeyInfoDto {
     private String key;
     private String type;
     
-    private String diffConfigGuid;
-    private String bound;//"Y","N"
-    private String diffExpr; //JSON
-    
-
     public String getLine() {
         return line;
     }
@@ -37,31 +32,4 @@ public class ConfigKeyInfoDto {
     public void setType(String type) {
         this.type = type;
     }
-
-    public String getDiffConfigGuid() {
-        return diffConfigGuid;
-    }
-
-    public void setDiffConfigGuid(String diffConfigGuid) {
-        this.diffConfigGuid = diffConfigGuid;
-    }
-
-    public String getBound() {
-        return bound;
-    }
-
-    public void setBound(String bound) {
-        this.bound = bound;
-    }
-
-    public String getDiffExpr() {
-        return diffExpr;
-    }
-
-    public void setDiffExpr(String diffExpr) {
-        this.diffExpr = diffExpr;
-    }
-    
-    
-
 }

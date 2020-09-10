@@ -3,26 +3,26 @@ package com.webank.plugins.artifacts.dto;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DeployConfigFileDto {
-    private String guid;
-    private String filePath;
+public class ConfigFileDto {
+    private String filename;
+    private String comparisonResult;
     
-    private List<ConfigKeyInfoDto> configKeyInfos = new ArrayList<ConfigKeyInfoDto>();
-
-    public String getGuid() {
-        return guid;
+    private List<ConfigKeyInfoDto> configKeyInfos;
+    
+    public String getFilename() {
+        return filename;
     }
 
-    public void setGuid(String guid) {
-        this.guid = guid;
+    public void setFilename(String filename) {
+        this.filename = filename;
     }
 
-    public String getFilePath() {
-        return filePath;
+    public String getComparisonResult() {
+        return comparisonResult;
     }
 
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
+    public void setComparisonResult(String comparisonResult) {
+        this.comparisonResult = comparisonResult;
     }
 
     public List<ConfigKeyInfoDto> getConfigKeyInfos() {

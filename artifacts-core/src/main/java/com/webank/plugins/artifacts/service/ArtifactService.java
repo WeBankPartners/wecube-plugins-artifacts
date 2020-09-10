@@ -2,6 +2,7 @@ package com.webank.plugins.artifacts.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -9,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.google.common.collect.ImmutableMap;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CategoryDto;
@@ -42,25 +42,30 @@ public class ArtifactService extends AbstractArtifactService {
 
     public Object getCurrentDirs(String packageId, String currentDir) {
         DefaultSaltstackRequest request = new DefaultSaltstackRequest();
-        List<Map<String, Object>> inputs = new ArrayList<>();
-        inputs.add(
-                ImmutableMap.<String, Object>builder().put("endpoint", retrieveS3EndpointWithKeyByPackageId(packageId))
-                        .put("accessKey", applicationProperties.getArtifactsS3AccessKey())
-                        .put("secretKey", applicationProperties.getArtifactsS3SecretKey()).put("currentDir", currentDir)
-                        .build());
-        request.setInputs(inputs);
+        List<Map<String, Object>> inputParamMaps = new ArrayList<Map<String, Object>>();
+        Map<String, Object> inputParamMap = new HashMap<String, Object>();
+        inputParamMap.put("endpoint", retrieveS3EndpointWithKeyByPackageId(packageId));
+        inputParamMap.put("accessKey", applicationProperties.getArtifactsS3AccessKey());
+        inputParamMap.put("secretKey", applicationProperties.getArtifactsS3SecretKey());
+        inputParamMap.put("currentDir", currentDir);
+        
+        inputParamMaps.add(inputParamMap);
+        request.setInputs(inputParamMaps);
         return saltstackServiceStub
                 .getReleasedPackageFilesByCurrentDir(applicationProperties.getWecubeGatewayServerUrl(), request);
     }
 
     public Object getPropertyKeys(String packageId, String filePath) {
         DefaultSaltstackRequest request = new DefaultSaltstackRequest();
-        List<Map<String, Object>> inputs = new ArrayList<>();
-        inputs.add(ImmutableMap.<String, Object>builder()
-                .put("endpoint", retrieveS3EndpointWithKeyByPackageId(packageId))
-                .put("accessKey", applicationProperties.getArtifactsS3AccessKey())
-                .put("secretKey", applicationProperties.getArtifactsS3SecretKey()).put("filePath", filePath).build());
-        request.setInputs(inputs);
+        List<Map<String, Object>> inputParamMaps = new ArrayList<>();
+        Map<String, Object> inputParamMap = new HashMap<String, Object>();
+        inputParamMap.put("endpoint", retrieveS3EndpointWithKeyByPackageId(packageId));
+        inputParamMap.put("accessKey", applicationProperties.getArtifactsS3AccessKey());
+        inputParamMap.put("secretKey", applicationProperties.getArtifactsS3SecretKey());
+        inputParamMap.put("filePath", filePath);
+        
+        inputParamMaps.add(inputParamMap);
+        request.setInputs(inputParamMaps);
         return saltstackServiceStub
                 .getReleasedPackagePropertyKeysByFilePath(applicationProperties.getWecubeGatewayServerUrl(), request);
     }
