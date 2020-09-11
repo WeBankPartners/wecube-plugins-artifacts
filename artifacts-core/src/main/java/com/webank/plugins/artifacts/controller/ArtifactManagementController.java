@@ -29,12 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.constant.ArtifactsConstants;
-import com.webank.plugins.artifacts.dto.ConfigPackageDto;
 import com.webank.plugins.artifacts.dto.JsonResponse;
-import com.webank.plugins.artifacts.dto.PackageComparisionRequestDto;
-import com.webank.plugins.artifacts.dto.PackageComparisionResultDto;
-import com.webank.plugins.artifacts.dto.PackageDto;
-import com.webank.plugins.artifacts.dto.SinglePackageQueryResultDto;
 import com.webank.plugins.artifacts.service.ArtifactService;
 import com.webank.plugins.artifacts.service.ConfigFileManagementService;
 import com.webank.plugins.artifacts.service.NexusArtifactManagementService;
@@ -42,7 +37,6 @@ import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.OperateCiDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
-import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
 
 @RestController
 public class ArtifactManagementController {
@@ -60,9 +54,6 @@ public class ArtifactManagementController {
     @Autowired
     private NexusArtifactManagementService nexusArtifactManagementService;
 
-    @Autowired
-    private ConfigFileManagementService configFileManagementService;
-    
     @GetMapping("/system-design-versions")
     public JsonResponse getSystemDesignVersions() {
         return okayWithData(artifactService.getSystemDesignVersions());
@@ -84,27 +75,7 @@ public class ArtifactManagementController {
 
     }
 
-    @PostMapping("/unit-designs/{unit-design-id}/packages/query")
-    public JsonResponse queryPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
-            @RequestBody PaginationQuery queryObject) {
-        PaginationQueryResult<Map<String, Object>> results = configFileManagementService
-                .queryDeployPackages(unitDesignId, queryObject);
-        return okayWithData(results);
-    }
-
-    @GetMapping("/unit-designs/{unit-design-id}/packages/{package-id}/query")
-    public JsonResponse querySinglePackage(@PathVariable(value = "unit-design-id") String unitDesignId,
-            @PathVariable(value = "package-id") String packageId) {
-        SinglePackageQueryResultDto result = configFileManagementService.querySinglePackage(unitDesignId, packageId);
-        return okayWithData(result);
-    }
     
-    @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/comparison")
-    public JsonResponse packageComparision(@PathVariable(value = "unit-design-id") String unitDesignId,
-            @PathVariable(value = "package-id") String packageId, @RequestBody PackageComparisionRequestDto comparisonReqDto) {
-        PackageComparisionResultDto result = configFileManagementService.packageComparision(unitDesignId, packageId, comparisonReqDto);
-        return okayWithData(result);
-    }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/queryNexusDirectiry")
     public JsonResponse queryNexusPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
@@ -132,9 +103,10 @@ public class ArtifactManagementController {
         return okay();
     }
 
+    
 //    @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/files/query")
 //    public JsonResponse getFiles(@PathVariable(value = "package-id") String packageId,
-//            @RequestBody FileQueryRequestDto fileQueryRequestDto) {
+//            @RequestBody Map<String, String> additionalProperties) {
 ////        if (additionalProperties.get("currentDir") == null) {
 ////            throw new PluginException("3000", "Field 'currentDir' is required.");
 ////        }
@@ -143,19 +115,6 @@ public class ArtifactManagementController {
 ////        //TODO
 ////        return null;
 //    }
-    
-    
-    @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/files/query")
-    public JsonResponse getFiles(@PathVariable(value = "package-id") String packageId,
-            @RequestBody Map<String, String> additionalProperties) {
-//        if (additionalProperties.get("currentDir") == null) {
-//            throw new PluginException("3000", "Field 'currentDir' is required.");
-//        }
-        return okayWithData(artifactService.getCurrentDirs(packageId, additionalProperties.get("currentDir")));
-        
-//        //TODO
-//        return null;
-    }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/property-keys/query")
     public JsonResponse getKeys(@PathVariable(value = "package-id") String packageId,
@@ -164,14 +123,6 @@ public class ArtifactManagementController {
             throw new PluginException("3001", "Field 'filePath' is required.");
         }
         return okayWithData(artifactService.getPropertyKeys(packageId, additionalProperties.get("filePath")));
-    }
-
-    @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/save")
-    public JsonResponse saveConfigFiles(@PathVariable(value = "unit-design-id") String unitDesignId,
-            @PathVariable(value = "package-id") String packageId, @RequestBody PackageDto packageDomain) {
-        ConfigPackageDto result = configFileManagementService.saveConfigFiles(unitDesignId, packageId,
-                packageDomain);
-        return okayWithData(result);
     }
 
     @PostMapping("/enum/codes/diff-config/save")

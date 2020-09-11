@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -24,7 +25,7 @@ import com.webank.plugins.artifacts.dto.FileQueryRequestDto;
 import com.webank.plugins.artifacts.dto.FileQueryResultItemDto;
 import com.webank.plugins.artifacts.dto.PackageComparisionRequestDto;
 import com.webank.plugins.artifacts.dto.PackageComparisionResultDto;
-import com.webank.plugins.artifacts.dto.PackageDto;
+import com.webank.plugins.artifacts.dto.PackageConfigFilesUpdateRequestDto;
 import com.webank.plugins.artifacts.dto.SinglePackageQueryResultDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.CmdbDiffConfigDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
@@ -38,23 +39,23 @@ import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultDa
 @Service
 public class ConfigFileManagementService extends AbstractArtifactService {
     private static final Logger log = LoggerFactory.getLogger(ConfigFileManagementService.class);
-    
+
     public PackageComparisionResultDto packageComparision(String unitDesignId, String packageGuid,
             PackageComparisionRequestDto comparisonReqDto) {
         String baselinePackageGuid = comparisonReqDto.getBaselinePackageId();
-        if(StringUtils.isBlank(baselinePackageGuid)){
+        if (StringUtils.isBlank(baselinePackageGuid)) {
             throw new PluginException("Baseline package should provide.");
         }
-        
+
         Map<String, Object> packageCiMap = retrievePackageCiByGuid(packageGuid);
         Map<String, Object> baselinePackageCiMap = retrievePackageCiByGuid(baselinePackageGuid);
-        
+
         PackageComparisionResultDto result = new PackageComparisionResultDto();
         result.setDeployFilePath(getDeployFileInfos(packageCiMap));
         result.setDiffConfFile(getDiffConfFileInfos(packageCiMap));
         result.setStartFilePath(getStartFileInfos(packageCiMap));
         result.setStopFilePath(getStopFileInfos(packageCiMap));
-        
+
         String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
         for (ConfigFileDto configFile : result.getDiffConfFile()) {
             List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(packageGuid, configFile.getFilename(),
@@ -241,8 +242,6 @@ public class ConfigFileManagementService extends AbstractArtifactService {
 
         return dto;
     }
-
-    
 
     @SuppressWarnings("unchecked")
     public SinglePackageQueryResultDto querySinglePackage(String unitDesignId, String packageId) {
@@ -474,17 +473,31 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         return files;
     }
 
-    public ConfigPackageDto saveConfigFiles(String unitDesignId, String packageId, PackageDto packageDto) {
-        String files = String.join("|", packageDto.getConfigFilesWithPath());
-        Map<String, Object> pkg = ImmutableMap.<String, Object>builder() //
-                .put("guid", packageId) //
-                .put("deploy_file_path", packageDto.getDeployFile()) //
-                .put("start_file_path", packageDto.getStartFile()) //
-                .put("stop_file_path", packageDto.getStopFile()) //
-                .put("diff_conf_file", files) //
-                .put("is_decompression", packageDto.getIsDecompression()) //
-                .build();
-        cmdbServiceV2Stub.updateCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
+    public ConfigPackageDto updateConfigFilesOfPackage(String unitDesignId, String packageId,
+            PackageConfigFilesUpdateRequestDto packageReqDto) {
+        String diffConfigFileStr = String.join("|", packageReqDto.getDiffConfFile().stream().map(dto -> {
+            return dto.getFilename();
+        }).collect(Collectors.toList()));
+
+        // TODO
+//        String files = String.join("|", packageDto.getConfigFilesWithPath());
+        Map<String, Object> packageUpdateParams = new HashMap<String, Object>();
+        packageUpdateParams.put("guid",packageId);
+        packageUpdateParams.put("deploy_file_path",getExepectedFileName(packageReqDto.getDeployFilePath()));
+        packageUpdateParams.put("start_file_path",getExepectedFileName(packageReqDto.getStartFilePath()));
+        packageUpdateParams.put("stop_file_path",getExepectedFileName(packageReqDto.getStopFilePath()));
+        packageUpdateParams.put("is_decompression",packageReqDto.getIsDecompression());
+        packageUpdateParams.put("diff_conf_file",diffConfigFileStr);
+        
+//        Map<String, Object> pkg = ImmutableMap.<String, Object>builder() //
+//                .put("guid", packageId) //
+//                .put("deploy_file_path", packageDto.getDeployFile()) //
+//                .put("start_file_path", packageDto.getStartFile()) //
+//                .put("stop_file_path", packageDto.getStopFile()) //
+//                .put("diff_conf_file", files) //
+//                .put("is_decompression", packageDto.getIsDecompression()) //
+//                .build();
+        cmdbServiceV2Stub.updateCiData(cmdbDataProperties.getCiTypeIdOfPackage(), packageUpdateParams);
 
         ConfigPackageDto result = new ConfigPackageDto();
         result.setPackageId(packageId);
@@ -503,6 +516,14 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         // processDiffConfigurations(unitDesignId, packageId, result);
 
         return result;
+    }
+    
+    private String getExepectedFileName(List<ConfigFileDto> dtos){
+        if(dtos == null || dtos.isEmpty()){
+            return null;
+        }
+        
+        return dtos.get(0).getFilename();
     }
 
     private List<SaltConfigKeyInfoDto> calculatePropertyKeys(String packageId, String filePath,
