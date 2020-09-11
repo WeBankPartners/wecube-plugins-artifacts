@@ -10,6 +10,7 @@ public class FileQueryResultItemDto {
     private Boolean isDir;
     private String comparisonResult;
     private String md5;
+    private Boolean exists = true;
 
     private List<FileQueryResultItemDto> children;
 
@@ -73,6 +74,14 @@ public class FileQueryResultItemDto {
         this.path = path;
     }
 
+    public Boolean getExists() {
+        return exists;
+    }
+
+    public void setExists(Boolean exists) {
+        this.exists = exists;
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -86,6 +95,8 @@ public class FileQueryResultItemDto {
         builder.append(comparisonResult);
         builder.append(", md5=");
         builder.append(md5);
+        builder.append(", exists=");
+        builder.append(exists);
         builder.append(", children=");
         builder.append(children);
         builder.append("]");

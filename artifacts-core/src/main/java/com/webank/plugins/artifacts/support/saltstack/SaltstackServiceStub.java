@@ -1,5 +1,6 @@
 package com.webank.plugins.artifacts.support.saltstack;
 
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -29,7 +30,25 @@ public class SaltstackServiceStub {
         log.info("About to call {} with parameters: {} ", targetUrl, request);
         PackageFilesListResponse response = restTemplate.postForObject(targetUrl, request, PackageFilesListResponse.class);
         log.info("Saltstack plugin response: {} ", response);
-        validateResponse(response, false);
+//        validateResponse(response, false);
+        
+        if (response == null) {
+            throw new SaltstackRemoteCallException("Saltstack plugin failure due to no response.");
+        }
+        if (!SaltstackResponse.RESULT_CODE_OK.equalsIgnoreCase(response.getResultCode())) {
+            
+            ResultData<SaltFileNodeResultItemDto> resultData = response.getResultData();
+            if(resultData != null){
+                List<SaltFileNodeResultItemDto> itemDtos = resultData.getOutputs();
+                if(itemDtos != null && (!itemDtos.isEmpty())){
+                    if("2".equals(itemDtos.get(0).getErrorCode())){
+                        throw new SaltFileNotExistException(itemDtos.get(0).getErrorMessage());
+                    }
+                }
+            }
+            
+            throw new SaltstackRemoteCallException("Saltstack plugin call error: " + response.getResultMessage(), response);
+        }
 
         return response.getResultData();
         

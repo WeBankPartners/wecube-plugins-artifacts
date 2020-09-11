@@ -611,6 +611,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         String rootDirName = getDeployPackageRootDir(packageCiMap);
         String packageEndpoint = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
         for (String filePath : filePathList) {
+            log.info("handle filepath:{}", filePath);
             FileQueryResultItemDto resultItemDto = handleSingleFilePath(packageCiGuid, filePath, packageCiMap,
                     packageEndpoint, rootDirName);
 
@@ -626,19 +627,25 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         String rawBaseName = filePath;
         if (rawBaseName.indexOf("/") > 0) {
             rawBaseName = rawBaseName.substring(0, rawBaseName.lastIndexOf("/"));
+        } else {
+            rawBaseName = rootDirName;
         }
 
-        if (!filePath.startsWith(rootDirName)) {
+        String fullFilepath = filePath;
+
+        if (filePath.equals(rootDirName)) {
+            fullFilepath = filePath;
+        } else if (!filePath.startsWith(rootDirName)) {
             if (filePath.startsWith("/")) {
                 log.info("not start with slash:{}", filePath);
-                filePath = rootDirName + filePath;
+                fullFilepath = rootDirName + filePath;
             } else {
-                filePath = rootDirName + "/" + filePath;
+                fullFilepath = rootDirName + "/" + filePath;
             }
         }
 
-        String baseDirName = filePath.substring(0, filePath.lastIndexOf("/"));
-        String fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
+        String baseDirName = fullFilepath.substring(0, fullFilepath.lastIndexOf("/"));
+        String fileName = fullFilepath.substring(fullFilepath.lastIndexOf("/") + 1);
         FileQueryResultItemDto resultItemDto = new FileQueryResultItemDto();
         resultItemDto.setName(rawBaseName);
         resultItemDto.setPath(baseDirName);
@@ -647,39 +654,56 @@ public class ConfigFileManagementService extends AbstractArtifactService {
 
         List<SaltFileNodeDto> saltFileNodes = listFilesOfCurrentDirs(baseDirName, packageEndpoint);
 
+        boolean currentFileExist = false;
         for (SaltFileNodeDto saltFileNode : saltFileNodes) {
             FileQueryResultItemDto childResultItemDto = null;
-            if (fileName.equals(saltFileNode.getName()) && saltFileNode.getIsDir()) {
-                childResultItemDto = new FileQueryResultItemDto();
-                childResultItemDto.setComparisonResult(null);
-                childResultItemDto.setIsDir(true);
-                childResultItemDto.setMd5(saltFileNode.getMd5());
-                childResultItemDto.setName(fileName);
-                childResultItemDto.setPath(filePath);
+            if (fileName.equals(saltFileNode.getName())) {
+                currentFileExist = true;
 
-                List<SaltFileNodeDto> childSaltFileNodes = listFilesOfCurrentDirs(filePath, packageEndpoint);
-                for (SaltFileNodeDto childSaltFileNode : childSaltFileNodes) {
-                    String childFilePath = filePath + "/" + childSaltFileNode.getName();
-                    FileQueryResultItemDto grandResultItemDto = convertToFileQueryResultItemDto(childSaltFileNode,
-                            childFilePath);
-                    childResultItemDto.addFileQueryResultItem(grandResultItemDto);
+                if (saltFileNode.getIsDir()) {
+                    childResultItemDto = new FileQueryResultItemDto();
+                    childResultItemDto.setComparisonResult(null);
+                    childResultItemDto.setIsDir(true);
+                    childResultItemDto.setMd5(saltFileNode.getMd5());
+                    childResultItemDto.setName(fileName);
+                    childResultItemDto.setPath(baseDirName+"/"+saltFileNode.getName());
+
+                    List<SaltFileNodeDto> childSaltFileNodes = listFilesOfCurrentDirs(fullFilepath, packageEndpoint);
+                    for (SaltFileNodeDto childSaltFileNode : childSaltFileNodes) {
+                        String childFilePath = fullFilepath + "/" + childSaltFileNode.getName();
+                        FileQueryResultItemDto grandResultItemDto = convertToFileQueryResultItemDto(childSaltFileNode,
+                                childFilePath);
+                        childResultItemDto.addFileQueryResultItem(grandResultItemDto);
+                    }
+
+                } else {
+                    childResultItemDto = convertToFileQueryResultItemDto(saltFileNode, baseDirName);
                 }
             } else {
-                childResultItemDto = convertToFileQueryResultItemDto(saltFileNode, filePath);
+                childResultItemDto = convertToFileQueryResultItemDto(saltFileNode, baseDirName);
             }
             resultItemDto.addFileQueryResultItem(childResultItemDto);
+        }
+        
+        if(!currentFileExist){
+            FileQueryResultItemDto noneExistResultItem = new FileQueryResultItemDto();
+            noneExistResultItem.setName(fileName);
+            noneExistResultItem.setExists(false);
+            noneExistResultItem.setPath(fullFilepath);
+            
+            resultItemDto.addFileQueryResultItem(noneExistResultItem);
         }
 
         return resultItemDto;
     }
 
-    private FileQueryResultItemDto convertToFileQueryResultItemDto(SaltFileNodeDto saltFileNodeDto, String filePath) {
+    private FileQueryResultItemDto convertToFileQueryResultItemDto(SaltFileNodeDto saltFileNodeDto, String baseDirName) {
         FileQueryResultItemDto dto = new FileQueryResultItemDto();
         dto.setComparisonResult(null);
         dto.setIsDir(saltFileNodeDto.getIsDir());
         dto.setName(saltFileNodeDto.getName());
         dto.setMd5(saltFileNodeDto.getMd5());
-        dto.setPath(filePath);
+        dto.setPath(baseDirName+"/"+saltFileNodeDto.getName());
 
         return dto;
     }

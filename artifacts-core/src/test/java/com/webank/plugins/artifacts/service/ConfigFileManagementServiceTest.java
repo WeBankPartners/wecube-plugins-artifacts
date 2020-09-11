@@ -101,7 +101,7 @@ public class ConfigFileManagementServiceTest {
     public void testqueryDeployConfigFilesAsLeafFile() throws JsonProcessingException {
         String packageId = "0045_0000000005";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
-        String filePath = "conf/application-dev.properties";
+        String filePath = "conf/application-dev11.properties";
 //        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
         
         List<String> fileList = new ArrayList<String>();
