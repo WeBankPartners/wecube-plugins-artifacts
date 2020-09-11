@@ -19,7 +19,6 @@ import com.webank.plugins.artifacts.dto.JsonResponse;
 import com.webank.plugins.artifacts.dto.PackageComparisionRequestDto;
 import com.webank.plugins.artifacts.dto.PackageComparisionResultDto;
 import com.webank.plugins.artifacts.dto.PackageConfigFilesUpdateRequestDto;
-import com.webank.plugins.artifacts.dto.PackageDto;
 import com.webank.plugins.artifacts.dto.SinglePackageQueryResultDto;
 import com.webank.plugins.artifacts.service.ConfigFileManagementService;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;

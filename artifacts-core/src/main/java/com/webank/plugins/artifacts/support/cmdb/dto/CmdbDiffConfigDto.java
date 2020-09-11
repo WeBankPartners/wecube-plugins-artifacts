@@ -38,4 +38,20 @@ public class CmdbDiffConfigDto {
         this.displayName = displayName;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("CmdbDiffConfigDto [guid=");
+        builder.append(guid);
+        builder.append(", key=");
+        builder.append(key);
+        builder.append(", diffExpr=");
+        builder.append(diffExpr);
+        builder.append(", displayName=");
+        builder.append(displayName);
+        builder.append("]");
+        return builder.toString();
+    }
+
+    
 }

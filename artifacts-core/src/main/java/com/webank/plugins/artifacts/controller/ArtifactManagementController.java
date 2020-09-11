@@ -31,7 +31,6 @@ import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.constant.ArtifactsConstants;
 import com.webank.plugins.artifacts.dto.JsonResponse;
 import com.webank.plugins.artifacts.service.ArtifactService;
-import com.webank.plugins.artifacts.service.ConfigFileManagementService;
 import com.webank.plugins.artifacts.service.NexusArtifactManagementService;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CatCodeDto;

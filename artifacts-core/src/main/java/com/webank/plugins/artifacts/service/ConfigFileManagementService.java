@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.google.common.collect.ImmutableMap;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.dto.ConfigFileDto;
 import com.webank.plugins.artifacts.dto.ConfigKeyInfoDto;
