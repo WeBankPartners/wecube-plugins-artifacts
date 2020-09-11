@@ -5,13 +5,14 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SinglePackageQueryResultDto {
-    
+
     private String packageId;
     @JsonProperty("baseline_package")
     private String baselinePackage;
-    
-    private boolean isCompress;
-    
+
+    @JsonProperty("is_compress")
+    private Boolean isCompress;
+
     @JsonProperty("start_file_path")
     private List<ConfigFileDto> startFilePath;
     @JsonProperty("stop_file_path")
@@ -20,7 +21,7 @@ public class SinglePackageQueryResultDto {
     private List<ConfigFileDto> deployFilePath;
     @JsonProperty("diff_conf_file")
     private List<ConfigFileDto> diffConfFile;
-    
+
     @JsonProperty("diff_conf_variable")
     private List<DiffConfVariableInfoDto> diffConfVariable;
 
@@ -30,14 +31,6 @@ public class SinglePackageQueryResultDto {
 
     public void setPackageId(String packageId) {
         this.packageId = packageId;
-    }
-
-    public boolean isCompress() {
-        return isCompress;
-    }
-
-    public void setCompress(boolean isCompress) {
-        this.isCompress = isCompress;
     }
 
     public List<ConfigFileDto> getStartFilePath() {
@@ -87,8 +80,37 @@ public class SinglePackageQueryResultDto {
     public void setBaselinePackage(String baselinePackage) {
         this.baselinePackage = baselinePackage;
     }
-    
-    
-    
 
+    public Boolean getIsCompress() {
+        return isCompress;
+    }
+
+    public void setIsCompress(Boolean isCompress) {
+        this.isCompress = isCompress;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("SinglePackageQueryResultDto [packageId=");
+        builder.append(packageId);
+        builder.append(", baselinePackage=");
+        builder.append(baselinePackage);
+        builder.append(", isCompress=");
+        builder.append(isCompress);
+        builder.append(", startFilePath=");
+        builder.append(startFilePath);
+        builder.append(", stopFilePath=");
+        builder.append(stopFilePath);
+        builder.append(", deployFilePath=");
+        builder.append(deployFilePath);
+        builder.append(", diffConfFile=");
+        builder.append(diffConfFile);
+        builder.append(", diffConfVariable=");
+        builder.append(diffConfVariable);
+        builder.append("]");
+        return builder.toString();
+    }
+
+    
 }

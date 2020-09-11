@@ -32,4 +32,19 @@ public class ConfigKeyInfoDto {
     public void setType(String type) {
         this.type = type;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("ConfigKeyInfoDto [line=");
+        builder.append(line);
+        builder.append(", key=");
+        builder.append(key);
+        builder.append(", type=");
+        builder.append(type);
+        builder.append("]");
+        return builder.toString();
+    }
+    
+    
 }

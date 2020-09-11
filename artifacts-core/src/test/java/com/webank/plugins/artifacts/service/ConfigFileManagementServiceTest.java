@@ -12,8 +12,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webank.plugins.artifacts.dto.FileQueryRequestDto;
 import com.webank.plugins.artifacts.dto.FileQueryResultItemDto;
+import com.webank.plugins.artifacts.dto.SinglePackageQueryResultDto;
 import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
@@ -26,6 +29,8 @@ public class ConfigFileManagementServiceTest {
     @Autowired
     ConfigFileManagementService service;
     
+    ObjectMapper objectMapper = new ObjectMapper();
+    
     @Before
     public void setUp() {
         String token = "***REMOVED***";
@@ -35,19 +40,89 @@ public class ConfigFileManagementServiceTest {
     }
     
     @Test
-    public void testqueryDeployConfigFilesAsRootDir() {
+    public void testQuerySinglePackage() throws JsonProcessingException{
+        String unitDesignId = "0039_0000000017";
+        String packageId = "0045_0000000005";
+        SinglePackageQueryResultDto result = service.querySinglePackage( unitDesignId,  packageId);
+        
+        String sJson = objectMapper.writeValueAsString(result);
+        System.out.println(sJson);
+    }
+    
+    @Test
+    public void testqueryDeployConfigFilesAsConfDir() throws JsonProcessingException {
         String packageId = "0045_0000000005";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
-//        String filePath = "demo-app-spring-boot_1.5.3";
+        String filePath = "conf";
+//        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
         
         List<String> fileList = new ArrayList<String>();
-//        fileList.add(filePath);
+        fileList.add(filePath);
         fileQueryRequestDto.setFileList(fileList);
         
         List<FileQueryResultItemDto> resultItemDtos = service.queryDeployConfigFiles(packageId, fileQueryRequestDto);
         
-        System.out.println(resultItemDtos.size());
-        System.out.println(resultItemDtos);
+        
+        String sJson = objectMapper.writeValueAsString(resultItemDtos);
+        
+        System.out.println(sJson);
+    }
+    
+    @Test
+    public void testqueryDeployConfigFilesAsLeafFile() throws JsonProcessingException {
+        String packageId = "0045_0000000005";
+        FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
+        String filePath = "conf/application-dev.properties";
+//        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
+        
+        List<String> fileList = new ArrayList<String>();
+        fileList.add(filePath);
+        fileQueryRequestDto.setFileList(fileList);
+        
+        List<FileQueryResultItemDto> resultItemDtos = service.queryDeployConfigFiles(packageId, fileQueryRequestDto);
+        
+        
+        String sJson = objectMapper.writeValueAsString(resultItemDtos);
+        
+        System.out.println(sJson);
+    }
+    
+    @Test
+    public void testqueryDeployConfigFilesAsMultiFile() throws JsonProcessingException {
+        String packageId = "0045_0000000005";
+        FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
+        String filePath0 = "conf";
+        String filePath1 = "bin";
+//        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
+        
+        List<String> fileList = new ArrayList<String>();
+        fileList.add(filePath0);
+        fileList.add(filePath1);
+        fileQueryRequestDto.setFileList(fileList);
+        
+        List<FileQueryResultItemDto> resultItemDtos = service.queryDeployConfigFiles(packageId, fileQueryRequestDto);
+        
+        
+        String sJson = objectMapper.writeValueAsString(resultItemDtos);
+        
+        System.out.println(sJson);
+    }
+    
+    @Test
+    public void testqueryDeployConfigFilesAsRootDir() throws JsonProcessingException {
+        String packageId = "0045_0000000005";
+        FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
+//        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
+        
+        List<String> fileList = new ArrayList<String>();
+        fileQueryRequestDto.setFileList(fileList);
+        
+        List<FileQueryResultItemDto> resultItemDtos = service.queryDeployConfigFiles(packageId, fileQueryRequestDto);
+        
+        
+        String sJson = objectMapper.writeValueAsString(resultItemDtos);
+        
+        System.out.println(sJson);
     }
 
     @Test

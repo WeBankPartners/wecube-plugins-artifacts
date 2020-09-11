@@ -45,4 +45,19 @@ public class ConfigFileDto {
         this.configKeyInfos.add(dto);
     }
 
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("ConfigFileDto [filename=");
+        builder.append(filename);
+        builder.append(", comparisonResult=");
+        builder.append(comparisonResult);
+        builder.append(", configKeyInfos=");
+        builder.append(configKeyInfos);
+        builder.append("]");
+        return builder.toString();
+    }
+    
+    
+
 }

@@ -22,6 +22,7 @@ import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProper
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
+import com.webank.plugins.artifacts.support.cmdb.StandardCmdbEntityRestClient;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
@@ -58,6 +59,9 @@ public abstract class AbstractArtifactService {
 
     @Autowired
     protected ApplicationProperties applicationProperties;
+    
+    @Autowired
+    protected StandardCmdbEntityRestClient standardCmdbEntityRestClient;
     
     public String uploadPackageToS3(File file) {
         if (file == null) {
