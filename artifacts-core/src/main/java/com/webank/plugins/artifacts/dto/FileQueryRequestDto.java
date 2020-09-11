@@ -21,5 +21,7 @@ public class FileQueryRequestDto {
     public void setFileList(List<String> fileList) {
         this.fileList = fileList;
     }
+    
+  
 
 }

@@ -48,7 +48,7 @@ public class SaltstackServiceStub {
     }
 
     @SuppressWarnings("unused")
-    private ResultData<Object> post(String targetUrl, SaltstackRequest parameters) {
+    private ResultData<Object> post(String targetUrl, SaltstackRequest<?> parameters) {
         log.info("About to call {} with parameters: {} ", targetUrl, parameters);
         SaltstackResponse<Object> response = restTemplate.postForObject(targetUrl, parameters, DefaultSaltstackResponse.class);
         log.info("Saltstack plugin response: {} ", response);
@@ -57,7 +57,7 @@ public class SaltstackServiceStub {
         return response.getResultData();
     }
 
-    private void validateResponse(SaltstackResponse response, boolean dataRequired) {
+    private void validateResponse(SaltstackResponse<?> response, boolean dataRequired) {
         if (response == null) {
             throw new SaltstackRemoteCallException("Saltstack plugin failure due to no response.");
         }
@@ -81,5 +81,6 @@ public class SaltstackServiceStub {
     }
     
     public static class PackageFilesListResponse extends SaltstackResponse<SaltFileNodeResultItemDto>{
+        
     }
 }

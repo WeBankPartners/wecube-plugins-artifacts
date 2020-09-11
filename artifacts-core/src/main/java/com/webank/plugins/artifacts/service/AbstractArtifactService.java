@@ -34,12 +34,18 @@ import com.webank.plugins.artifacts.support.saltstack.SaltstackServiceStub;
 
 public abstract class AbstractArtifactService {
     private static final Logger log = LoggerFactory.getLogger(AbstractArtifactService.class);
+    public static final String FILE_COMP_DELETED = "deleted";
+    public static final String FILE_COMP_NEW = "new";
+    public static final String FILE_COMP_CHANGED = "changed";
+    public static final String FILE_COMP_SAME = "same";
     
     protected static final String CONSTANT_FIX_DATE = "fixed_date";
     protected static final String S3_KEY_DELIMITER = "_";
     protected static final String CONSTANT_CAT_CAT_TYPE = "cat.catType";
     protected static final String CONSTANT_INPUT_TYPE = "inputType";
     protected static final String CONSTANT_CI_TYPE = "ciType";
+    
+    
 
     @Autowired
     protected CmdbServiceV2Stub cmdbServiceV2Stub;

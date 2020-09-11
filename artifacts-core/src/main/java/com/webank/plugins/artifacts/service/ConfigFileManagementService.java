@@ -26,6 +26,7 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
 import com.webank.plugins.artifacts.support.saltstack.SaltConfigFileDto;
 import com.webank.plugins.artifacts.support.saltstack.SaltConfigKeyInfoDto;
+import com.webank.plugins.artifacts.support.saltstack.SaltFileNodeDto;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackRequest.DefaultSaltstackRequest;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultData;
 
@@ -33,27 +34,65 @@ import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultDa
 public class ConfigFileManagementService extends AbstractArtifactService{
     private static final Logger log = LoggerFactory.getLogger(ConfigFileManagementService.class);
     
-    public List<FileQueryResultItemDto> queryDeployConfigFiles(String packageId, FileQueryRequestDto fileQueryRequestDto) {
+    public List<FileQueryResultItemDto> queryDeployConfigFiles(String packageCiGuid, FileQueryRequestDto fileQueryRequestDto) {
         List<String> fileList = fileQueryRequestDto.getFileList();
         if(fileList == null) {
             throw new PluginException("File list cannot be null to query files.");
         }
         
+        Map<String,Object> packageCiMap = retrievePackageCiByGuid(packageCiGuid);
+        log.info("packageCiMap:{}", packageCiMap);
         //
         if(fileList.isEmpty()) {
             //means root directory
             log.info("file list is empty and adding root as default");
-            fileList.add("");
+            String rootDirName = getDeployPackageRootDir(packageCiMap);
+            fileList = new ArrayList<String>();
+            fileList.add(rootDirName);
         }
         
         String baselinePackageGuid = fileQueryRequestDto.getBaselinePackage();
-        return doQueryDeployConfigFiles(packageId, baselinePackageGuid, fileList);
+        return doQueryDeployConfigFiles(packageCiGuid, baselinePackageGuid, fileList, packageCiMap);
     }
     
-    private List<FileQueryResultItemDto> doQueryDeployConfigFiles(String packageId, String baselinePackageGuid, List<String> fileList){
-        List<FileQueryResultItemDto> result = new ArrayList<FileQueryResultItemDto>();
+    private String getDeployPackageRootDir(Map<String,Object> packageCiMap) {
+        String  packageEndpoint = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
+        List<SaltFileNodeDto> saltFileNodes = listFilesOfCurrentDirs("", packageEndpoint);
+        return saltFileNodes.get(0).getName();
+    }
+    
+    private List<FileQueryResultItemDto> doQueryDeployConfigFiles(String packageCiGuid, String baselinePackageGuid, List<String> fileList, Map<String,Object> packageCiMap){
+        List<FileQueryResultItemDto> resultItemDtos = new ArrayList<FileQueryResultItemDto>();
+        String  packageEndpoint = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
+        for(String filePath : fileList) {
+            FileQueryResultItemDto resultItemDto = new FileQueryResultItemDto();
+            resultItemDto.setName(filePath);
+            resultItemDto.setIsDir(true);
+            resultItemDto.setComparisonResult(null);
+            
+            List<SaltFileNodeDto> saltFileNodes = listFilesOfCurrentDirs(filePath, packageEndpoint);
+            
+            log.info("size:{}, object:{}",saltFileNodes.size(),  saltFileNodes);
+            
+            for(SaltFileNodeDto saltFileNode: saltFileNodes) {
+                FileQueryResultItemDto childResultItemDto = convertToFileQueryResultItemDto(saltFileNode);
+                resultItemDto.addFileQueryResultItem(childResultItemDto);
+            }
+            
+            resultItemDtos.add(resultItemDto);
+        }
         //TODO
-        return result;
+        return resultItemDtos;
+    }
+    
+    private FileQueryResultItemDto convertToFileQueryResultItemDto(SaltFileNodeDto saltFileNodeDto) {
+        FileQueryResultItemDto dto = new FileQueryResultItemDto();
+        dto.setComparisonResult(null);
+        dto.setIsDir(saltFileNodeDto.getIsDir());
+        dto.setName(saltFileNodeDto.getName());
+        dto.setMd5(saltFileNodeDto.getMd5());
+        
+        return dto;
     }
     
     public PackageComparisionResultDto packageComparision(String unitDesignId, String packageId, PackageComparisionRequestDto comparisonReqDto){

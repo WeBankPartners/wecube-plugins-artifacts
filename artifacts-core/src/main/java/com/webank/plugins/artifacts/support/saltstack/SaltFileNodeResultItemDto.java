@@ -26,6 +26,18 @@ public class SaltFileNodeResultItemDto {
     public void setFiles(List<SaltFileNodeDto> files) {
         this.files = files;
     }
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("[errorCode=");
+        builder.append(errorCode);
+        builder.append(", errorMessage=");
+        builder.append(errorMessage);
+        builder.append(", files=");
+        builder.append(files);
+        builder.append("]");
+        return builder.toString();
+    }
     
     
 

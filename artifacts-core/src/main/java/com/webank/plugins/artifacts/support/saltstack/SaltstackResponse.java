@@ -53,6 +53,17 @@ public class SaltstackResponse<DATATYPE> {
         public void setOutputs(List<DATATYPE> outputs) {
             this.outputs = outputs;
         }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("[outputs=");
+            builder.append(outputs);
+            builder.append("]");
+            return builder.toString();
+        }
+        
+        
     }
 
     public static class DefaultSaltstackResponse extends SaltstackResponse<Object> {
@@ -60,6 +71,6 @@ public class SaltstackResponse<DATATYPE> {
 
     @Override
     public String toString() {
-        return "SaltstackResponse [resultCode=" + resultCode + ", resultMessage=" + resultMessage + ", resultData=" + resultData + "]";
+        return "[resultCode=" + resultCode + ", resultMessage=" + resultMessage + ", resultData=" + resultData + "]";
     }
 }
