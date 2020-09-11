@@ -115,7 +115,7 @@ public abstract class AbstractArtifactService {
         return endpointWithKey;
     }
     
-    protected String retrieveS3EndpointWithKeyByPackageCiMap(Map<String,Object> pkgCiMap) {
+    public String retrieveS3EndpointWithKeyByPackageCiMap(Map<String,Object> pkgCiMap) {
         String s3Key = pkgCiMap.get("md5_value") + S3_KEY_DELIMITER + pkgCiMap.get("name");
         String endpointWithKey = applicationProperties.getArtifactsS3ServerUrl() + "/"
                 + applicationProperties.getArtifactsS3BucketName() + "/" + s3Key;
@@ -137,7 +137,7 @@ public abstract class AbstractArtifactService {
         return pkg;
     }
     
-    protected List<SaltFileNodeDto> listFilesOfCurrentDirs(String currentDir, String endpoint) {
+    public List<SaltFileNodeDto> listFilesOfCurrentDirs(String currentDir, String endpoint) {
         DefaultSaltstackRequest request = new DefaultSaltstackRequest();
         List<Map<String, Object>> inputParamMaps = new ArrayList<Map<String, Object>>();
         Map<String, Object> inputParamMap = new HashMap<String, Object>();

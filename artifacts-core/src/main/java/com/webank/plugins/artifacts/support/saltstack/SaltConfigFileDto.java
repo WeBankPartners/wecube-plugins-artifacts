@@ -41,6 +41,21 @@ public class SaltConfigFileDto {
     public void setConfigKeyInfos(List<SaltConfigKeyInfoDto> configKeyInfos) {
         this.configKeyInfos = configKeyInfos;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("SaltConfigFileDto [errorCode=");
+        builder.append(errorCode);
+        builder.append(", errorMessage=");
+        builder.append(errorMessage);
+        builder.append(", filePath=");
+        builder.append(filePath);
+        builder.append(", configKeyInfos=");
+        builder.append(configKeyInfos);
+        builder.append("]");
+        return builder.toString();
+    }
     
     
 

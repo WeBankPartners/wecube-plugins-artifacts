@@ -184,7 +184,7 @@ public class ConfigFileManagementServiceTest {
         PaginationQuery query = new PaginationQuery();
         PaginationQueryResult<Map<String,Object>> result = service.queryDeployPackages(unitDesignId, query);
         
-        System.out.println(result.getContents().size());
+        System.out.println(result.getContents());
     }
 
 }
