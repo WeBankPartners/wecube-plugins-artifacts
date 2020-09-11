@@ -38,6 +38,40 @@ import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultDa
 @Service
 public class ConfigFileManagementService extends AbstractArtifactService {
     private static final Logger log = LoggerFactory.getLogger(ConfigFileManagementService.class);
+    
+    public PackageComparisionResultDto packageComparision(String unitDesignId, String packageGuid,
+            PackageComparisionRequestDto comparisonReqDto) {
+        String baselinePackageGuid = comparisonReqDto.getBaselinePackageId();
+        if(StringUtils.isBlank(baselinePackageGuid)){
+            throw new PluginException("Baseline package should provide.");
+        }
+        
+        Map<String, Object> packageCiMap = retrievePackageCiByGuid(packageGuid);
+        Map<String, Object> baselinePackageCiMap = retrievePackageCiByGuid(baselinePackageGuid);
+        
+        PackageComparisionResultDto result = new PackageComparisionResultDto();
+        result.setDeployFilePath(getDeployFileInfos(packageCiMap));
+        result.setDiffConfFile(getDiffConfFileInfos(packageCiMap));
+        result.setStartFilePath(getStartFileInfos(packageCiMap));
+        result.setStopFilePath(getStopFileInfos(packageCiMap));
+        
+        String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
+        for (ConfigFileDto configFile : result.getDiffConfFile()) {
+            List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(packageGuid, configFile.getFilename(),
+                    s3EndpointOfPackageId);
+            for (SaltConfigKeyInfoDto saltConfigInfo : saltConfigKeyInfos) {
+                ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
+                configKeyInfo.setKey(saltConfigInfo.getKey());
+                configKeyInfo.setLine(saltConfigInfo.getLine());
+                configKeyInfo.setType(saltConfigInfo.getType());
+
+                configFile.addConfigKeyInfo(configKeyInfo);
+
+            }
+        }
+
+        return result;
+    }
 
     public List<FileQueryResultItemDto> queryDeployConfigFiles(String packageCiGuid,
             FileQueryRequestDto fileQueryRequestDto) {
@@ -208,23 +242,21 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         return dto;
     }
 
-    public PackageComparisionResultDto packageComparision(String unitDesignId, String packageId,
-            PackageComparisionRequestDto comparisonReqDto) {
-        // TODO
+    
 
-        return null;
-    }
-
+    @SuppressWarnings("unchecked")
     public SinglePackageQueryResultDto querySinglePackage(String unitDesignId, String packageId) {
         Map<String, Object> packageCiMap = retrievePackageCiByGuid(packageId);
         log.info("currPackageCi:{}", packageCiMap);
         log.info("baseline_package:{}", packageCiMap.get("baseline_package"));
-        Object baselinePackageObj = packageCiMap.get("baseline_package");
+        Map<String, Object> baselinePackageCiMap = (Map<String, Object>) packageCiMap.get("baseline_package");
         String baselinePackageGuid = null;
-        
-        if(baselinePackageObj != null){
-        log.info("baselinePackageObj:{}", baselinePackageObj.getClass().getName());
-//        String baselinePackageGuid = (String) packageCiMap.get("baseline_package");
+
+        if (baselinePackageCiMap != null) {
+            log.info("baselinePackageObj:{}", baselinePackageCiMap.getClass().getName());
+            // String baselinePackageGuid = (String)
+            // packageCiMap.get("baseline_package");
+            baselinePackageGuid = (String) baselinePackageCiMap.get("guid");
         }
 
         SinglePackageQueryResultDto result = new SinglePackageQueryResultDto();
@@ -237,7 +269,6 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         result.setStopFilePath(getStopFileInfos(packageCiMap));
         result.setDiffConfFile(getDiffConfFileInfos(packageCiMap));
 
-        Map<String, Object> baselinePackageCiMap = null;
         SinglePackageQueryResultDto baselineResult = null;
         if (StringUtils.isNoneBlank(baselinePackageGuid)) {
             baselinePackageCiMap = retrievePackageCiByGuid(baselinePackageGuid);
@@ -254,38 +285,38 @@ public class ConfigFileManagementService extends AbstractArtifactService {
 
         String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
         List<CmdbDiffConfigDto> allCmdbDiffConfigs = getAllCmdbDiffConfigs();
-        
+
         Set<String> allDiffConfigKeys = new HashSet<String>();
-        //process all diff files
-        for(ConfigFileDto configFile : result.getDiffConfFile()){
+        // process all diff files
+        for (ConfigFileDto configFile : result.getDiffConfFile()) {
             List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(packageId, configFile.getFilename(),
                     s3EndpointOfPackageId);
-            for(SaltConfigKeyInfoDto saltConfigInfo : saltConfigKeyInfos){
+            for (SaltConfigKeyInfoDto saltConfigInfo : saltConfigKeyInfos) {
                 ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
                 configKeyInfo.setKey(saltConfigInfo.getKey());
                 configKeyInfo.setLine(saltConfigInfo.getLine());
                 configKeyInfo.setType(saltConfigInfo.getType());
-                
+
                 configFile.addConfigKeyInfo(configKeyInfo);
-                
+
                 allDiffConfigKeys.add(saltConfigInfo.getKey());
             }
         }
 
         List<DiffConfVariableInfoDto> diffConfVariables = new ArrayList<DiffConfVariableInfoDto>();
-        for(String diffConfigKey: allDiffConfigKeys){
+        for (String diffConfigKey : allDiffConfigKeys) {
             CmdbDiffConfigDto cmdbDiffConfig = findoutFromCmdbDiffConfigsByKey(diffConfigKey, allCmdbDiffConfigs);
-            if(cmdbDiffConfig == null){
+            if (cmdbDiffConfig == null) {
                 log.info("Cannot find cmdb diff config key:{}", diffConfigKey);
                 continue;
             }
-            
+
             DiffConfVariableInfoDto diffVarInfo = new DiffConfVariableInfoDto();
-            diffVarInfo.setBound(false);//TODO
+            diffVarInfo.setBound(false);// TODO
             diffVarInfo.setDiffConfigGuid(cmdbDiffConfig.getGuid());
             diffVarInfo.setDiffExpr(cmdbDiffConfig.getDiffExpr());
             diffVarInfo.setKey(cmdbDiffConfig.getKey());
-            
+
             diffConfVariables.add(diffVarInfo);
         }
 
@@ -345,8 +376,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
     private List<ConfigFileDto> getDiffConfFileInfos(Map<String, Object> packageCiMap) {
         String filePathsStr = (String) packageCiMap.get("diff_conf_file");
         List<ConfigFileDto> files = parseFilePathString(filePathsStr);
-        
-        
+
         return files;
     }
 

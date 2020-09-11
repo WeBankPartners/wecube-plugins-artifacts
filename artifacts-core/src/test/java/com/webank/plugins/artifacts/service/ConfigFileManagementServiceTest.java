@@ -16,6 +16,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webank.plugins.artifacts.dto.FileQueryRequestDto;
 import com.webank.plugins.artifacts.dto.FileQueryResultItemDto;
+import com.webank.plugins.artifacts.dto.PackageComparisionRequestDto;
+import com.webank.plugins.artifacts.dto.PackageComparisionResultDto;
 import com.webank.plugins.artifacts.dto.SinglePackageQueryResultDto;
 import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
@@ -40,9 +42,36 @@ public class ConfigFileManagementServiceTest {
     }
     
     @Test
+    public void testPackageComparision(){
+        String unitDesignId = "0039_0000000017";
+        String packageGuid = "0045_0000000005";
+        
+        String baselinePackageGuid = "0045_0000000005";
+        
+        PackageComparisionRequestDto comparisonReqDto = new PackageComparisionRequestDto();
+        comparisonReqDto.setBaselinePackageId(baselinePackageGuid);
+        
+        PackageComparisionResultDto result =  service.packageComparision( unitDesignId,  packageGuid,
+                 comparisonReqDto);
+        
+        System.out.println(toJson(result));
+    }
+    
+    
+    private String toJson(Object object){
+        try {
+            String sJson = objectMapper.writeValueAsString(object);
+            return sJson;
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("", e);
+        }
+    }
+    
+    @Test
     public void testQuerySinglePackage() throws JsonProcessingException{
         String unitDesignId = "0039_0000000017";
-        String packageId = "0045_0000000005";
+        String packageId = "0045_0000000011";
+//        String packageId = "0045_0000000005";
         SinglePackageQueryResultDto result = service.querySinglePackage( unitDesignId,  packageId);
         
         String sJson = objectMapper.writeValueAsString(result);
@@ -72,6 +101,27 @@ public class ConfigFileManagementServiceTest {
     public void testqueryDeployConfigFilesAsLeafFile() throws JsonProcessingException {
         String packageId = "0045_0000000005";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
+        String filePath = "conf/application-dev.properties";
+//        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
+        
+        List<String> fileList = new ArrayList<String>();
+        fileList.add(filePath);
+        fileQueryRequestDto.setFileList(fileList);
+        
+        List<FileQueryResultItemDto> resultItemDtos = service.queryDeployConfigFiles(packageId, fileQueryRequestDto);
+        
+        
+        String sJson = objectMapper.writeValueAsString(resultItemDtos);
+        
+        System.out.println(sJson);
+    }
+    
+    @Test
+    public void testqueryDeployConfigFilesAsLeafFileWithBaseline() throws JsonProcessingException {
+        String baselinePackageId = "0045_0000000005";
+        String packageId = "0045_0000000011";
+        FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
+        fileQueryRequestDto.setBaselinePackage(baselinePackageId);
         String filePath = "conf/application-dev.properties";
 //        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
         
