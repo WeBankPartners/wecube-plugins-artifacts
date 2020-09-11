@@ -140,7 +140,7 @@
       </Card>
       <Card v-if="tabData.length ? true : false" class="artifact-management-bottom-card artifact-management-top-card">
         <div class="batchOperation">
-          <Button type="primary" @click="showBatchTreeModal">绑定/解绑</Button>
+          <Button type="primary" @click="showBatchBindModal">绑定/解绑</Button>
         </div>
 
         <Tabs v-model="activeTab" @on-click="tabChange">
@@ -152,8 +152,18 @@
             <Table :data="item.tableData || []" :columns="attrsTableColomnOptions"></Table>
           </TabPane>
         </Tabs>
-        <Modal :mask-closable="false" v-model="isShowBatchTreeModal" :title="currentTreeModal.title">
-          <Tree :data="batchTreeData" show-checkbox> </Tree>
+        <Modal :mask-closable="false" v-model="isShowBatchBindModal" title="批量绑定/解绑" @on-ok="saveBatchOperation" @on-cancel="cancelBatchOperation">
+          <Card>
+            <div slot="title">
+              <Checkbox border size="small" :indeterminate="isIndeterminate" :value="isChecked" @click.prevent.native="batchSelect">全选</Checkbox>
+            </div>
+            <ul style="height:300px;overflow-y:auto">
+              <li class="bind-style" v-for="(bindData, index) in batchBindData" :key="index">
+                <Checkbox v-model="bindData.checked">{{ bindData.title }}</Checkbox>
+                <div style="margin-left:20px">{{ bindData.filename }}</div>
+              </li>
+            </ul>
+          </Card>
         </Modal>
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
@@ -384,8 +394,10 @@ export default {
         }
       ],
 
-      isShowBatchTreeModal: false,
-      batchTreeData: []
+      isShowBatchBindModal: false,
+      batchBindData: [],
+      isIndeterminate: false,
+      isChecked: false
     }
   },
   computed: {
@@ -416,38 +428,75 @@ export default {
       return obj
     }
   },
+  watch: {
+    batchBindData: {
+      handler (bindData) {
+        this.isChecked = bindData.every(bd => {
+          return bd.checked === true
+        })
+        if (this.isChecked) {
+          this.isIndeterminate = false
+        } else {
+          this.isIndeterminate = bindData.some(bd => {
+            return bd.checked === true
+          })
+        }
+      },
+      immediate: true,
+      deep: true
+    }
+  },
   methods: {
-    showBatchTreeModal () {
-      console.log(this.tabData)
-      let xx = []
+    batchSelect () {
+      this.batchBindData.forEach(item => {
+        item.checked = !this.isChecked
+      })
+      this.isChecked = !this.isChecked
+    },
+    showBatchBindModal () {
+      this.batchBindData = []
+      let tempBindData = []
       this.tabData.forEach(fileTable => {
         const file = fileTable.path.split('/').slice(-1)[0]
         fileTable.tableData.forEach(row => {
           const title = row.replaceType + row.key
-          xx.push({
+          tempBindData.push({
             title: title,
-            id: [row.id],
+            id: row.id,
             filename: [file],
             checked: !!row.isBinding
           })
         })
       })
-      console.log(xx)
-      xx.forEach(x => {
-        let hasKey = this.batchTreeData.filter(td => td.title === x.title)
+      tempBindData.forEach(tbd => {
+        let hasKey = this.batchBindData.filter(item => item.title === tbd.title)
         if (hasKey.length > 0) {
-          hasKey[0].id.push(x.id)
-          hasKey[0].filename.push(x.filename[0])
+          hasKey[0].filename.push(tbd.filename[0])
         } else {
-          this.batchTreeData.push(x)
+          this.batchBindData.push(tbd)
         }
       })
-      this.batchTreeData.forEach(td => {
-        td.title = td.title + '   ' + JSON.stringify(td.filename)
-      })
-      console.log(this.batchTreeData)
-      this.isShowBatchTreeModal = true
+      this.isShowBatchBindModal = true
     },
+    async saveBatchOperation () {
+      let bindConfigIds = []
+      this.batchBindData.forEach(bt => {
+        if (bt.checked) {
+          bindConfigIds.push(bt.id)
+        }
+      })
+      let params = [
+        {
+          id: this.packageId,
+          diff_conf_variable: bindConfigIds
+        }
+      ]
+      const { status } = await updateEntity(cmdbPackageName, DEPLOY_PACKAGE, params)
+      if (status === 'OK') {
+        console.log('bind')
+      }
+    },
+    cancelBatchOperation () {},
     clearSelectSystemDesign () {
       this.systemDesignVersion = ''
       this.treeData = []
@@ -969,9 +1018,7 @@ export default {
     },
     genFilesTreedata (data) {
       const { files, currentDir, treeTag } = data
-      console.log(currentDir)
       if (currentDir) {
-        console.log(1)
         const filesArray = currentDir.split('/')
         let targetNode = this.treeDataCollection[this.currentTreeModal.key].treeData
         filesArray.forEach((dir, index) => {
@@ -985,7 +1032,6 @@ export default {
             }
           })
         })
-        console.log(targetNode)
         if (!('expand' in targetNode)) {
           targetNode.expand = true
         }
@@ -1006,12 +1052,9 @@ export default {
             selectedChild.push(child)
           }
         })
-        console.log(selectedChild)
         // 选中文件夹选中文件处理
         this.treeDataCollection[this.currentTreeModal.key].selectNode = this.treeDataCollection[this.currentTreeModal.key].selectNode.concat(selectedChild)
-        console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
       } else {
-        console.log(2)
         this.treeDataCollection[this.currentTreeModal.key].treeData = this.formatChildrenData({
           files,
           currentDir,
@@ -1067,13 +1110,9 @@ export default {
       console.log(checked, currentChecked)
     },
     async changeChildChecked (checked, currentChecked) {
-      console.log(currentChecked)
-      console.log(checked)
       if (currentChecked.children) {
         await this.expandNode(currentChecked)
       }
-      console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
-      debugger
       // 排除文件夹(未全选、全选)
       // TODO 选中文件夹并包含文件判断
       // this.treeDataCollection[this.currentTreeModal.key].selectNode = checked.filter(item => item.children === undefined && item.path !== undefined)
@@ -1083,9 +1122,6 @@ export default {
       console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
     },
     async expandNode (node) {
-      console.log(this.$refs.xx.getCheckedNodes())
-      console.log(this.$refs.xx.getSelectedNodes())
-      console.log(this.$refs.xx.getCheckedAndIndeterminateNodes())
       console.log(node)
       // if (node.expand && !node.children[0].title) {
       //   this.getFiles(this.packageId, node.path)
@@ -1239,7 +1275,6 @@ export default {
     },
     showFilesModal (row, event) {
       event.stopPropagation()
-      console.log(row)
       this.tabData = []
       // 以下4个变量类型为字符串
       this.packageInput.diff_conf_file = row.diff_conf_file
@@ -1361,7 +1396,6 @@ export default {
       }
     },
     onOk () {
-      console.log(this.treeDataCollection[this.currentTreeModal.key].selectNode)
       this.diffTabData = ''
       let files = []
       this.treeDataCollection[this.currentTreeModal.key].selectNode.forEach(_ => {
@@ -1370,10 +1404,8 @@ export default {
           comparisonResult: null
         })
       })
-      console.log(files)
       this.diffTabData = files.join('|')
       this.packageInput[this.currentTreeModal.key] = files
-      console.log(this.packageInput)
       // this.treeDataCollection[this.currentTreeModal.key].selectNode = []
       // } else {
       //   this.packageInput[this.currentTreeModal.key] = this.selectFile
@@ -1598,4 +1630,8 @@ export default {
 //   position: absolute;
 //   right: 60px;
 // }
+.bind-style {
+  list-style: none;
+  margin: 8px;
+}
 </style>
