@@ -7,6 +7,8 @@ public class FileQueryResultItemDto {
 
     private String name;
     private String path;
+    private String rootDirName;
+    private String relativePath;
     private Boolean isDir;
     private String comparisonResult;
     private String md5;
@@ -82,6 +84,14 @@ public class FileQueryResultItemDto {
         this.exists = exists;
     }
 
+    public String getRelativePath() {
+        return relativePath;
+    }
+
+    public void setRelativePath(String relativePath) {
+        this.relativePath = relativePath;
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -89,6 +99,10 @@ public class FileQueryResultItemDto {
         builder.append(name);
         builder.append(", path=");
         builder.append(path);
+        builder.append(", rootDirName=");
+        builder.append(rootDirName);
+        builder.append(", relativePath=");
+        builder.append(relativePath);
         builder.append(", isDir=");
         builder.append(isDir);
         builder.append(", comparisonResult=");
@@ -101,6 +115,14 @@ public class FileQueryResultItemDto {
         builder.append(children);
         builder.append("]");
         return builder.toString();
+    }
+
+    public String getRootDirName() {
+        return rootDirName;
+    }
+
+    public void setRootDirName(String rootDirName) {
+        this.rootDirName = rootDirName;
     }
 
 }

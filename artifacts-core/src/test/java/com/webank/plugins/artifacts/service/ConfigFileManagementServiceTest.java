@@ -79,7 +79,7 @@ public class ConfigFileManagementServiceTest {
     }
     
     @Test
-    public void testqueryDeployConfigFilesAsConfDir() throws JsonProcessingException {
+    public void testQueryDeployConfigFilesAsConfDir() throws JsonProcessingException {
         String packageId = "0045_0000000005";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
         String filePath = "conf";
@@ -98,7 +98,7 @@ public class ConfigFileManagementServiceTest {
     }
     
     @Test
-    public void testqueryDeployConfigFilesAsLeafFile() throws JsonProcessingException {
+    public void testQueryDeployConfigFilesAsLeafFile() throws JsonProcessingException {
         String packageId = "0045_0000000005";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
         String filePath = "conf/application-dev11.properties";
@@ -117,7 +117,7 @@ public class ConfigFileManagementServiceTest {
     }
     
     @Test
-    public void testqueryDeployConfigFilesAsLeafFileWithBaseline() throws JsonProcessingException {
+    public void testQueryDeployConfigFilesAsLeafFileWithBaseline() throws JsonProcessingException {
         String baselinePackageId = "0045_0000000005";
         String packageId = "0045_0000000011";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
@@ -138,17 +138,24 @@ public class ConfigFileManagementServiceTest {
     }
     
     @Test
-    public void testqueryDeployConfigFilesAsMultiFile() throws JsonProcessingException {
+    public void testQueryDeployConfigFilesAsMultiFile() throws JsonProcessingException {
         String packageId = "0045_0000000005";
+        String baselinePackageId = "0045_0000000005";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
         String filePath0 = "conf";
         String filePath1 = "bin";
+//        String filePath2 = "bin111";
+//        String filePath3 = "bin111/aaaa.txt";
 //        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
         
         List<String> fileList = new ArrayList<String>();
         fileList.add(filePath0);
         fileList.add(filePath1);
+//        fileList.add(filePath2);
+//        fileList.add(filePath3);
         fileQueryRequestDto.setFileList(fileList);
+        
+        fileQueryRequestDto.setBaselinePackage(baselinePackageId);
         
         List<FileQueryResultItemDto> resultItemDtos = service.queryDeployConfigFiles(packageId, fileQueryRequestDto);
         
