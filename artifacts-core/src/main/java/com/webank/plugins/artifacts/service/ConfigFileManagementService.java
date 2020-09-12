@@ -38,6 +38,43 @@ import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultDa
 @Service
 public class ConfigFileManagementService extends AbstractArtifactService {
     private static final Logger log = LoggerFactory.getLogger(ConfigFileManagementService.class);
+    
+    public ConfigPackageDto updateConfigFilesOfPackage(String unitDesignId, String packageId,
+            PackageConfigFilesUpdateRequestDto packageReqDto) {
+        String diffConfigFileStr = String.join("|", packageReqDto.getDiffConfFile().stream().map(dto -> {
+            return dto.getFilename();
+        }).collect(Collectors.toList()));
+
+        // TODO
+        // String files = String.join("|", packageDto.getConfigFilesWithPath());
+        Map<String, Object> packageUpdateParams = new HashMap<String, Object>();
+        packageUpdateParams.put("guid", packageId);
+        packageUpdateParams.put("deploy_file_path", getExepectedFileName(packageReqDto.getDeployFilePath()));
+        packageUpdateParams.put("start_file_path", getExepectedFileName(packageReqDto.getStartFilePath()));
+        packageUpdateParams.put("stop_file_path", getExepectedFileName(packageReqDto.getStopFilePath()));
+        packageUpdateParams.put("is_decompression", packageReqDto.getIsDecompression());
+        packageUpdateParams.put("diff_conf_file", diffConfigFileStr);
+
+        cmdbServiceV2Stub.updateCiData(cmdbDataProperties.getCiTypeIdOfPackage(), packageUpdateParams);
+
+        ConfigPackageDto result = new ConfigPackageDto();
+        result.setPackageId(packageId);
+        result.setUnitDesignId(unitDesignId);
+
+        String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageId(packageId);
+
+        // query keys by file
+        // for (String filePath : packageDto.getConfigFilesWithPath()) {
+        // log.info("try to calculate filepath:{}", filePath);
+        // ConfigFileDto deployConfigFile = calculatePropertyKeys(packageId,
+        // filePath, s3EndpointOfPackageId);
+        // result.addDeployConfigFile(deployConfigFile);
+        // }
+
+        // processDiffConfigurations(unitDesignId, packageId, result);
+
+        return result;
+    }
 
     public PackageComparisionResultDto packageComparision(String unitDesignId, String packageGuid,
             PackageComparisionRequestDto comparisonReqDto) {
@@ -76,7 +113,6 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         //
         if (inputFilePathList.isEmpty()) {
             // means root directory
-            log.info("file list is empty and adding root as default");
             String rootDirName = getDeployPackageRootDir(packageCiMap);
             filePathList.add(rootDirName);
         } else {
@@ -106,15 +142,14 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         String baselinePackageGuid = null;
 
         if (baselinePackageCiMap != null) {
-            log.info("baselinePackageObj:{}", baselinePackageCiMap.getClass().getName());
-            // String baselinePackageGuid = (String)
-            // packageCiMap.get("baseline_package");
             baselinePackageGuid = (String) baselinePackageCiMap.get("guid");
         }
 
         SinglePackageQueryResultDto result = new SinglePackageQueryResultDto();
         result.setPackageId(packageId);
         result.setBaselinePackage(baselinePackageGuid);
+        
+        Object isDecompression = packageCiMap.get("is_decompression");//TODO
         result.setIsCompress(null);// TODO
 
         result.setStartFilePath(getStartFileInfos(packageCiMap));
@@ -155,6 +190,10 @@ public class ConfigFileManagementService extends AbstractArtifactService {
                 allDiffConfigKeys.add(saltConfigInfo.getKey());
             }
         }
+        
+        List<Object> boundDiffConfVariables = (List<Object>) packageCiMap.get("diff_conf_variable");
+        //TODO
+        log.info("size of bound diff conf variables:{}", boundDiffConfVariables.size());
 
         List<DiffConfVariableInfoDto> diffConfVariables = new ArrayList<DiffConfVariableInfoDto>();
         for (String diffConfigKey : allDiffConfigKeys) {
@@ -163,9 +202,12 @@ public class ConfigFileManagementService extends AbstractArtifactService {
                 log.info("Cannot find cmdb diff config key:{}", diffConfigKey);
                 continue;
             }
+         // TODO
+            Boolean bound = verifyIfBoundToCurrentPackage(cmdbDiffConfig);
 
             DiffConfVariableInfoDto diffVarInfo = new DiffConfVariableInfoDto();
-            diffVarInfo.setBound(false);// TODO
+            
+            diffVarInfo.setBound(bound);
             diffVarInfo.setDiffConfigGuid(cmdbDiffConfig.getGuid());
             diffVarInfo.setDiffExpr(cmdbDiffConfig.getDiffExpr());
             diffVarInfo.setKey(cmdbDiffConfig.getKey());
@@ -176,6 +218,11 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         result.setDiffConfVariable(diffConfVariables);
 
         return result;
+    }
+    
+    private boolean verifyIfBoundToCurrentPackage(CmdbDiffConfigDto cmdbDiffConfig){
+        //TODO
+        return false;
     }
 
     private CmdbDiffConfigDto findoutFromCmdbDiffConfigsByKey(String key, List<CmdbDiffConfigDto> allCmdbDiffConfigs) {
@@ -327,50 +374,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         return files;
     }
 
-    public ConfigPackageDto updateConfigFilesOfPackage(String unitDesignId, String packageId,
-            PackageConfigFilesUpdateRequestDto packageReqDto) {
-        String diffConfigFileStr = String.join("|", packageReqDto.getDiffConfFile().stream().map(dto -> {
-            return dto.getFilename();
-        }).collect(Collectors.toList()));
-
-        // TODO
-        // String files = String.join("|", packageDto.getConfigFilesWithPath());
-        Map<String, Object> packageUpdateParams = new HashMap<String, Object>();
-        packageUpdateParams.put("guid", packageId);
-        packageUpdateParams.put("deploy_file_path", getExepectedFileName(packageReqDto.getDeployFilePath()));
-        packageUpdateParams.put("start_file_path", getExepectedFileName(packageReqDto.getStartFilePath()));
-        packageUpdateParams.put("stop_file_path", getExepectedFileName(packageReqDto.getStopFilePath()));
-        packageUpdateParams.put("is_decompression", packageReqDto.getIsDecompression());
-        packageUpdateParams.put("diff_conf_file", diffConfigFileStr);
-
-        // Map<String, Object> pkg = ImmutableMap.<String, Object>builder() //
-        // .put("guid", packageId) //
-        // .put("deploy_file_path", packageDto.getDeployFile()) //
-        // .put("start_file_path", packageDto.getStartFile()) //
-        // .put("stop_file_path", packageDto.getStopFile()) //
-        // .put("diff_conf_file", files) //
-        // .put("is_decompression", packageDto.getIsDecompression()) //
-        // .build();
-        cmdbServiceV2Stub.updateCiData(cmdbDataProperties.getCiTypeIdOfPackage(), packageUpdateParams);
-
-        ConfigPackageDto result = new ConfigPackageDto();
-        result.setPackageId(packageId);
-        result.setUnitDesignId(unitDesignId);
-
-        String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageId(packageId);
-
-        // query keys by file
-        // for (String filePath : packageDto.getConfigFilesWithPath()) {
-        // log.info("try to calculate filepath:{}", filePath);
-        // ConfigFileDto deployConfigFile = calculatePropertyKeys(packageId,
-        // filePath, s3EndpointOfPackageId);
-        // result.addDeployConfigFile(deployConfigFile);
-        // }
-
-        // processDiffConfigurations(unitDesignId, packageId, result);
-
-        return result;
-    }
+    
 
     private String getExepectedFileName(List<ConfigFileDto> dtos) {
         if (dtos == null || dtos.isEmpty()) {
@@ -666,24 +670,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         }
     }
 
-    private FileQueryResultItemDto pickoutFromFileQueryResultItemsByRelativePath(String relativePath,
-            FileQueryResultItemDto rootFileQueryResultItem) {
-
-        if (relativePath.equals(rootFileQueryResultItem.getRelativePath())) {
-            return rootFileQueryResultItem;
-        }
-
-        for (FileQueryResultItemDto childItem : rootFileQueryResultItem.getChildren()) {
-
-            FileQueryResultItemDto child = pickoutFromFileQueryResultItemsByRelativePath(relativePath, childItem);
-            if (child != null) {
-                return child;
-            }
-        }
-
-        return null;
-    }
-
+    
     private String getDeployPackageRootDir(Map<String, Object> packageCiMap) {
         String packageEndpoint = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
         List<SaltFileNodeDto> saltFileNodes = listFilesOfCurrentDirs("", packageEndpoint);
