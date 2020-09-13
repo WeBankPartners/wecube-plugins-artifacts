@@ -89,6 +89,10 @@ public abstract class AbstractArtifactService {
         return cmdbServiceV2Stub.createCiData(cmdbDataProperties.getCiTypeIdOfPackage(), pkg);
     }
     
+    protected void updatePackageCi(Map<String,Object> packageUpdateParamsMap){
+        cmdbServiceV2Stub.updateCiData(cmdbDataProperties.getCiTypeIdOfPackage(), packageUpdateParamsMap);
+    }
+    
     protected String genMd5Value(File file) {
         if (file == null) {
             return null;
