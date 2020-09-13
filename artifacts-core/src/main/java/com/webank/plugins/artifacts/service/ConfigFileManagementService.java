@@ -39,8 +39,13 @@ import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultDa
 public class ConfigFileManagementService extends AbstractArtifactService {
     private static final Logger log = LoggerFactory.getLogger(ConfigFileManagementService.class);
     
-    public ConfigPackageDto updateConfigFilesOfPackage(String unitDesignId, String packageId,
+    public ConfigPackageDto updateConfigFilesOfPackage(String unitDesignId, String packageCiGuid,
             PackageConfigFilesUpdateRequestDto packageReqDto) {
+        
+        Map<String, Object> oldPackageCiMap = retrievePackageCiByGuid(packageCiGuid);
+        List<String> oldDiffConfFiles = getDiffConfFilesAsStringList(oldPackageCiMap);
+        
+        
         String diffConfigFileStr = String.join("|", packageReqDto.getDiffConfFile().stream().map(dto -> {
             return dto.getFilename();
         }).collect(Collectors.toList()));
@@ -48,7 +53,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         // TODO
         // String files = String.join("|", packageDto.getConfigFilesWithPath());
         Map<String, Object> packageUpdateParams = new HashMap<String, Object>();
-        packageUpdateParams.put("guid", packageId);
+        packageUpdateParams.put("guid", packageCiGuid);
         packageUpdateParams.put("deploy_file_path", getExepectedFileName(packageReqDto.getDeployFilePath()));
         packageUpdateParams.put("start_file_path", getExepectedFileName(packageReqDto.getStartFilePath()));
         packageUpdateParams.put("stop_file_path", getExepectedFileName(packageReqDto.getStopFilePath()));
@@ -58,22 +63,30 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         cmdbServiceV2Stub.updateCiData(cmdbDataProperties.getCiTypeIdOfPackage(), packageUpdateParams);
 
         ConfigPackageDto result = new ConfigPackageDto();
-        result.setPackageId(packageId);
+        result.setPackageId(packageCiGuid);
         result.setUnitDesignId(unitDesignId);
 
-        String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageId(packageId);
+        String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageId(packageCiGuid);
 
-        // query keys by file
-        // for (String filePath : packageDto.getConfigFilesWithPath()) {
-        // log.info("try to calculate filepath:{}", filePath);
-        // ConfigFileDto deployConfigFile = calculatePropertyKeys(packageId,
-        // filePath, s3EndpointOfPackageId);
-        // result.addDeployConfigFile(deployConfigFile);
-        // }
-
-        // processDiffConfigurations(unitDesignId, packageId, result);
+       
 
         return result;
+    }
+    
+    private List<String> getDiffConfFilesAsStringList(Map<String, Object> packageCiMap){
+        String diffConfFileStr = (String) packageCiMap.get("diff_conf_file");
+        List<String> diffConfFiles = new ArrayList<String>();
+        
+        if(StringUtils.isBlank(diffConfFileStr)){
+            return diffConfFiles;
+        }
+        
+        String [] diffConfFileStrParts = diffConfFileStr.split("\\|");
+        for(String diffConfFileStrPart : diffConfFileStrParts){
+            diffConfFiles.add(diffConfFileStrPart);
+        }
+        
+        return diffConfFiles;
     }
 
     public PackageComparisionResultDto packageComparision(String unitDesignId, String packageGuid,
