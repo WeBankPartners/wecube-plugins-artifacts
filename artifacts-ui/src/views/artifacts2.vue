@@ -41,8 +41,8 @@
       </Card>
       <!-- 差异化变量 -->
       <Card v-if="packageDetail.diff_conf_file.length ? true : false" class="artifact-management-bottom-card artifact-management-top-card">
-        <div class="batchOperation">
-          <Button type="primary" @click="showBatchBindModal">绑定管理</Button>
+        <div class="batchOperation" style="text-align: right;">
+          <Button type="primary" size="small" @click="showBatchBindModal">绑定管理</Button>
         </div>
         <Tabs @on-click="tabChange">
           <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.shorFileName" :key="index">
