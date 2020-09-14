@@ -218,6 +218,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             diffVarInfo.setDiffConfigGuid(cmdbDiffConfig.getGuid());
             diffVarInfo.setDiffExpr(cmdbDiffConfig.getDiffExpr());
             diffVarInfo.setKey(cmdbDiffConfig.getKey());
+            diffVarInfo.setFixedDate(cmdbDiffConfig.getFixedDate());
 
             diffConfVariables.add(diffVarInfo);
         }
@@ -318,6 +319,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             dto.setGuid((String) diffConfigMap.get("guid"));
             dto.setKey((String) diffConfigMap.get("code"));
             dto.setDisplayName((String) diffConfigMap.get("displayName"));
+            dto.setFixedDate((String)diffConfigMap.get("fixed_date"));
 
             diffConfigs.add(dto);
         }

@@ -5,6 +5,7 @@ public class CmdbDiffConfigDto {
     private String key;
     private String diffExpr;
     private String displayName;
+    private String fixedDate;
 
     public String getGuid() {
         return guid;
@@ -36,6 +37,16 @@ public class CmdbDiffConfigDto {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+    
+    
+
+    public String getFixedDate() {
+        return fixedDate;
+    }
+
+    public void setFixedDate(String fixedDate) {
+        this.fixedDate = fixedDate;
     }
 
     @Override

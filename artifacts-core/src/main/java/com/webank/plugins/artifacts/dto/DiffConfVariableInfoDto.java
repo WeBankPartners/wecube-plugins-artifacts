@@ -6,6 +6,7 @@ public class DiffConfVariableInfoDto {
     private String diffConfigGuid;
     private Boolean bound;
     private String diffExpr; // JSON
+    private String fixedDate;
 
     public String getKey() {
         return key;
@@ -46,5 +47,15 @@ public class DiffConfVariableInfoDto {
     public void setDiffExpr(String diffExpr) {
         this.diffExpr = diffExpr;
     }
+
+    public String getFixedDate() {
+        return fixedDate;
+    }
+
+    public void setFixedDate(String fixedDate) {
+        this.fixedDate = fixedDate;
+    }
+    
+    
 
 }
