@@ -654,7 +654,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             if (baselineItem == null) {
                 item.setComparisonResult(FILE_COMP_NEW);
             } else {
-                if (item.getIsDir()) {
+                if (item.getIsDir() != null && item.getIsDir()) {
                     item.setComparisonResult(FILE_COMP_SAME);
                 } else {
                     String md5 = item.getMd5();
