@@ -25,6 +25,7 @@ public class StandardCmdbEntityRestClient {
     private static final Logger log = LoggerFactory.getLogger(StandardCmdbEntityRestClient.class);
     private static final String QUERY_DIFF_CONFIGURATION = "/wecmdb/entities/diff_configuration/query";
     private static final String CREATE_REQUEST_URL = "/wecmdb/entities/{entity-name}/create";
+    private static final String UPDATE_REQUEST_URL = "/wecmdb/entities/{entity-name}/update";
 
     @Autowired
     private RestTemplate restTemplate;
@@ -33,6 +34,11 @@ public class StandardCmdbEntityRestClient {
     private ApplicationProperties applicationProperties;
 
     private ObjectMapper objectMapper = new ObjectMapper();
+    
+    public void updateDiffConfigurationCi(List<Map<String, Object>> ciAttrsMapToUpdate ) {
+        String entityName = "diff_configuration";
+        this.updateEntity(entityName, ciAttrsMapToUpdate);
+    }
 
     @SuppressWarnings("unchecked")
     public CmdbDiffConfigDto createDiffConfigurationCi(String varName, String varValue) {
@@ -71,6 +77,30 @@ public class StandardCmdbEntityRestClient {
         }
 
         return null;
+    }
+    
+    public Object updateEntity(String entityName, List<Map<String, Object>> requestParams) {
+        String requestUriStr = String.format("%s%s", applicationProperties.getWecubeGatewayServerUrl(),
+                UPDATE_REQUEST_URL);
+        URI requestUri = restTemplate.getUriTemplateHandler().expand(requestUriStr, entityName);
+        
+        long timeMilliSeconds = System.currentTimeMillis();
+        if (log.isInfoEnabled()) {
+            log.info("SEND QUERY post [{}] url={}, request={}", timeMilliSeconds, requestUri.toString(),
+                    toJson(requestParams));
+        }
+        StandardCmdbEntityResponseDto result = restTemplate.postForObject(requestUri, requestParams,
+                StandardCmdbEntityResponseDto.class);
+
+        if (log.isInfoEnabled()) {
+            log.info("RECEIVE QUERY post [{}] url={},result={}", timeMilliSeconds, requestUri.toString(), result);
+        }
+
+        if (StandardCmdbEntityResponseDto.STATUS_ERROR.equals(result.getStatus())) {
+            throw new PluginException(result.getMessage());
+        }
+
+        return result.getData();
     }
 
     public Object createEntity(String entityName, List<Map<String, Object>> requestParams) {

@@ -21,6 +21,7 @@ import com.webank.plugins.artifacts.dto.ConfigFileDto;
 import com.webank.plugins.artifacts.dto.ConfigKeyInfoDto;
 import com.webank.plugins.artifacts.dto.ConfigPackageDto;
 import com.webank.plugins.artifacts.dto.DiffConfVariableInfoDto;
+import com.webank.plugins.artifacts.dto.DiffConfigurationUpdateDto;
 import com.webank.plugins.artifacts.dto.FileQueryRequestDto;
 import com.webank.plugins.artifacts.dto.FileQueryResultItemDto;
 import com.webank.plugins.artifacts.dto.PackageComparisionRequestDto;
@@ -40,6 +41,23 @@ import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultDa
 @Service
 public class ConfigFileManagementService extends AbstractArtifactService {
     private static final Logger log = LoggerFactory.getLogger(ConfigFileManagementService.class);
+    
+    public void updateDiffConfigurations(List<DiffConfigurationUpdateDto> diffConfsToUpdate) {
+        if(diffConfsToUpdate == null || diffConfsToUpdate.isEmpty()) {
+            return;
+        }
+        List<Map<String, Object>> requestParamsMaps = new ArrayList<Map<String, Object>>();
+        for(DiffConfigurationUpdateDto dto : diffConfsToUpdate) {
+            Map<String, Object> requstParamsMap = new HashMap<String, Object>();
+            requstParamsMap.put("id", dto.getId());
+            requstParamsMap.put("variable_value", dto.getDiffExpr());
+            
+            requestParamsMaps.add(requstParamsMap);
+        }
+        
+        standardCmdbEntityRestClient.updateDiffConfigurationCi(requestParamsMaps);
+        
+    }
 
     public ConfigPackageDto updateConfigFilesOfPackage(String unitDesignId, String packageCiGuid,
             PackageConfigFilesUpdateRequestDto packageReqDto) {

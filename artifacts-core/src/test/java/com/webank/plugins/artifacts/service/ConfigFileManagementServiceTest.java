@@ -144,15 +144,15 @@ public class ConfigFileManagementServiceTest {
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
         String filePath0 = "conf";
         String filePath1 = "bin";
-//        String filePath2 = "bin111";
-//        String filePath3 = "bin111/aaaa.txt";
+        String filePath2 = "bin111";
+        String filePath3 = "bin111/aaaa.txt";
 //        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
         
         List<String> fileList = new ArrayList<String>();
         fileList.add(filePath0);
         fileList.add(filePath1);
-//        fileList.add(filePath2);
-//        fileList.add(filePath3);
+        fileList.add(filePath2);
+        fileList.add(filePath3);
         fileQueryRequestDto.setFileList(fileList);
         
         fileQueryRequestDto.setBaselinePackage(baselinePackageId);

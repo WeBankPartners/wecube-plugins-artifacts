@@ -1,7 +1,7 @@
 package com.webank.plugins.artifacts.controller;
 
 import static com.webank.plugins.artifacts.dto.JsonResponse.okayWithData;
-
+import static com.webank.plugins.artifacts.dto.JsonResponse.okay;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.webank.plugins.artifacts.dto.ConfigPackageDto;
+import com.webank.plugins.artifacts.dto.DiffConfigurationUpdateDto;
 import com.webank.plugins.artifacts.dto.FileQueryRequestDto;
 import com.webank.plugins.artifacts.dto.FileQueryResultItemDto;
 import com.webank.plugins.artifacts.dto.JsonResponse;
@@ -29,6 +30,12 @@ public class PackageConfigManagementController {
 
     @Autowired
     private ConfigFileManagementService configFileManagementService;
+    
+    @PostMapping("/artifacts/packages/wecmdb/entities/diff_configuration/update")
+    public JsonResponse updateDiffConfiguration(List<DiffConfigurationUpdateDto> updateRequestDto) {
+        configFileManagementService.updateDiffConfigurations(updateRequestDto);
+        return okay();
+    }
     
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/files/query")
     public JsonResponse queryPackageFiles(@PathVariable(value = "package-id") String packageId,
