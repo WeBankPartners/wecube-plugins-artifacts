@@ -19,12 +19,14 @@ export const getAllCITypesWithAttr = data => {
 export const getSystemDesignVersions = () => req.get(`/system-design-versions`)
 export const getSystemDesignVersion = version => req.get(`/system-design-versions/${version}`)
 export const queryPackages = (guid, data) => req.post(`/unit-designs/${guid}/packages/query`, data)
+export const getPackageDetail = (guid, packageId) => req.get(`/unit-designs/${guid}/packages/${packageId}/query`)
 export const deleteCiDatas = data => req.post(`/ci-types/${data.id}/ci-data/batch-delete`, data.deleteData)
 export const operateCiState = (ciTypeId, guid, op) => {
   const payload = [{ ciTypeId, guid }]
   return req.post(`/ci/state/operate?operation=${op}`, payload)
 }
 export const getFiles = (guid, packageId, data) => req.post(`/unit-designs/${guid}/packages/${packageId}/files/query`, data)
+export const updateDiffConfigs = (guid, packageId, data) => req.post(`/unit-designs/${guid}/packages/${packageId}/update`, data)
 export const getKeys = (guid, packageId, data) => req.post(`/unit-designs/${guid}/packages/${packageId}/property-keys/query`, data)
 export const saveConfigFiles = (guid, packageId, data) => req.post(`/unit-designs/${guid}/packages/${packageId}/save`, data)
 export const retrieveEntity = (packageName, entityName) => req.get(`/platform/v1/packages/${packageName}/entities/${entityName}/retrieve`)

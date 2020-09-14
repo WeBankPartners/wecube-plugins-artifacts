@@ -64,5 +64,6 @@
   "select_key": "选择",
   "select_online": "在线选择",
   "tip_conf_bind": "绑定后将替换变量值",
-  "tip_conf_unbind": "解绑后不会替换变量值"
+  "tip_conf_unbind": "解绑后不会替换变量值",
+  "artifacts_property_isbind": "绑定"
 }
