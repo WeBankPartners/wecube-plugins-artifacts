@@ -33,6 +33,7 @@ import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
 import com.webank.plugins.artifacts.support.saltstack.SaltConfigFileDto;
 import com.webank.plugins.artifacts.support.saltstack.SaltConfigKeyInfoDto;
 import com.webank.plugins.artifacts.support.saltstack.SaltFileNodeDto;
+import com.webank.plugins.artifacts.support.saltstack.SaltFileNotExistException;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackRequest.DefaultSaltstackRequest;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultData;
 
@@ -59,194 +60,12 @@ public class ConfigFileManagementService extends AbstractArtifactService {
 
         updateConfigFilesToPackageCi(packageCiGuid, packageReqDto);
 
-        //TODO
+        // TODO
         ConfigPackageDto result = new ConfigPackageDto();
         result.setPackageId(packageCiGuid);
         result.setUnitDesignId(unitDesignId);
 
         return result;
-    }
-
-    private void processDiffConfFilesIfExistDiffConfFiles(String packageGuid, Map<String, Object> packageCiMap,
-            List<ConfigFileDto> newDiffConfFiles, List<String> oldDiffConfFiles,
-            List<CmdbDiffConfigDto> allCmdbDiffConfigs) {
-        List<ConfigFileDto> sameDiffFiles = new ArrayList<ConfigFileDto>();
-        List<ConfigFileDto> newDiffFiles = new ArrayList<ConfigFileDto>();
-
-        for (ConfigFileDto configFile : newDiffConfFiles) {
-            String filename = configFile.getFilename();
-            if (oldDiffConfFiles.contains(filename)) {
-                sameDiffFiles.add(configFile);
-            } else {
-                newDiffFiles.add(configFile);
-            }
-        }
-
-        Set<String> boundDiffConfVarGuids = getBoundDiffConfVarGuidsFromPackage(packageCiMap);
-        Set<String> toBindDiffConfVarGuids = new HashSet<String>();
-
-        String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
-
-        for (ConfigFileDto configFile : sameDiffFiles) {
-            List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(packageGuid, configFile.getFilename(),
-                    s3EndpointOfPackageId);
-            for (SaltConfigKeyInfoDto saltConfigKeyInfo : saltConfigKeyInfos) {
-                ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
-                configKeyInfo.setKey(saltConfigKeyInfo.getKey());
-                configKeyInfo.setLine(saltConfigKeyInfo.getLine());
-                configKeyInfo.setType(saltConfigKeyInfo.getType());
-
-                configFile.addConfigKeyInfo(configKeyInfo);
-
-                CmdbDiffConfigDto cmdbDiffConfig = findoutFromCmdbDiffConfigsByKey(saltConfigKeyInfo.getKey(),
-                        allCmdbDiffConfigs);
-
-                if (boundDiffConfVarGuids.contains(cmdbDiffConfig.getGuid())) {
-                    toBindDiffConfVarGuids.add(cmdbDiffConfig.getGuid());
-                }
-            }
-        }
-
-        Set<String> configFileKeys = new HashSet<String>();
-        for (ConfigFileDto configFile : newDiffFiles) {
-            String filepath = configFile.getFilename();
-            if (configFile.getIsDir()) {
-                log.info("filepath {} is directory", filepath);
-                continue;
-            }
-            List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(packageGuid, configFile.getFilename(),
-                    s3EndpointOfPackageId);
-
-            for (SaltConfigKeyInfoDto saltConfigKeyInfo : saltConfigKeyInfos) {
-                ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
-                configKeyInfo.setKey(saltConfigKeyInfo.getKey());
-                configKeyInfo.setLine(saltConfigKeyInfo.getLine());
-                configKeyInfo.setType(saltConfigKeyInfo.getType());
-
-                configFile.addConfigKeyInfo(configKeyInfo);
-
-                configFileKeys.add(saltConfigKeyInfo.getKey());
-            }
-        }
-
-        for (String configFileKey : configFileKeys) {
-            CmdbDiffConfigDto cmdbDiffConfig = findoutFromCmdbDiffConfigsByKey(configFileKey, allCmdbDiffConfigs);
-            if (cmdbDiffConfig == null) {
-                CmdbDiffConfigDto newCmdbDiffConfig = this.standardCmdbEntityRestClient
-                        .createDiffConfigurationCi(configFileKey, null);
-                if (newCmdbDiffConfig == null) {
-                    throw new PluginException("Failed to create new Diff configuration key:{}", configFileKey);
-                }
-
-                allCmdbDiffConfigs.add(cmdbDiffConfig);
-                toBindDiffConfVarGuids.add(newCmdbDiffConfig.getGuid());
-            } else {
-                toBindDiffConfVarGuids.add(cmdbDiffConfig.getGuid());
-            }
-        }
-
-        this.updateDiffConfVariablesToPackageCi(packageGuid, toBindDiffConfVarGuids);
-
-    }
-
-    private void processDiffConfFilesIfNotExistDiffConfFiles(String packageGuid, Map<String, Object> packageCiMap,
-            List<ConfigFileDto> newDiffConfFiles, List<CmdbDiffConfigDto> allCmdbDiffConfigs) {
-        if (newDiffConfFiles == null || newDiffConfFiles.isEmpty()) {
-            return;
-        }
-        String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
-        Set<String> configFileKeys = new HashSet<String>();
-        for (ConfigFileDto configFile : newDiffConfFiles) {
-            String filepath = configFile.getFilename();
-            if (configFile.getIsDir()) {
-                log.info("filepath {} is directory", filepath);
-                continue;
-            }
-
-            List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(packageGuid, filepath,
-                    s3EndpointOfPackageId);
-
-            for (SaltConfigKeyInfoDto saltConfigKeyInfo : saltConfigKeyInfos) {
-                ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
-                configKeyInfo.setKey(saltConfigKeyInfo.getKey());
-                configKeyInfo.setLine(saltConfigKeyInfo.getLine());
-                configKeyInfo.setType(saltConfigKeyInfo.getType());
-
-                configFile.addConfigKeyInfo(configKeyInfo);
-
-                configFileKeys.add(saltConfigKeyInfo.getKey());
-            }
-        }
-
-        List<String> toBoundDiffConfVariableGuids = new ArrayList<String>();
-        for (String configFileKey : configFileKeys) {
-            CmdbDiffConfigDto cmdbDiffConfig = findoutFromCmdbDiffConfigsByKey(configFileKey, allCmdbDiffConfigs);
-            if (cmdbDiffConfig == null) {
-                CmdbDiffConfigDto newCmdbDiffConfig = this.standardCmdbEntityRestClient
-                        .createDiffConfigurationCi(configFileKey, null);
-                if (newCmdbDiffConfig == null) {
-                    throw new PluginException("Failed to create new Diff configuration key:{}", configFileKey);
-                }
-
-                allCmdbDiffConfigs.add(cmdbDiffConfig);
-                toBoundDiffConfVariableGuids.add(newCmdbDiffConfig.getGuid());
-            } else {
-                if (!toBoundDiffConfVariableGuids.contains(cmdbDiffConfig.getGuid())) {
-                    toBoundDiffConfVariableGuids.add(cmdbDiffConfig.getGuid());
-                }
-            }
-        }
-
-        this.updateDiffConfVariablesToPackageCi(packageGuid, toBoundDiffConfVariableGuids);
-
-    }
-
-    private String assembleDiffConfigFileString(List<ConfigFileDto> diffConfFiles) {
-        String diffConfigFileStr = String.join("|", diffConfFiles.stream().map(dto -> {
-            return dto.getFilename();
-        }).collect(Collectors.toList()));
-
-        return diffConfigFileStr;
-    }
-
-    private void updateDiffConfVariablesToPackageCi(String packageCiGuid, Collection<String> diffConfVariableGuids) {
-        List<String> guids = new ArrayList<String>();
-        guids.addAll(diffConfVariableGuids);
-        Map<String, Object> packageUpdateParams = new HashMap<String, Object>();
-        packageUpdateParams.put("guid", packageCiGuid);
-        packageUpdateParams.put("diff_conf_variable", guids);
-        this.updatePackageCi(packageUpdateParams);
-    }
-
-    private void updateConfigFilesToPackageCi(String packageCiGuid, PackageConfigFilesUpdateRequestDto packageReqDto) {
-        List<ConfigFileDto> newDiffConfFiles = packageReqDto.getDiffConfFile();
-        String diffConfigFileStr = assembleDiffConfigFileString(newDiffConfFiles);
-
-        Map<String, Object> packageUpdateParams = new HashMap<String, Object>();
-        packageUpdateParams.put("guid", packageCiGuid);
-        packageUpdateParams.put("deploy_file_path", getExepectedFileName(packageReqDto.getDeployFilePath()));
-        packageUpdateParams.put("start_file_path", getExepectedFileName(packageReqDto.getStartFilePath()));
-        packageUpdateParams.put("stop_file_path", getExepectedFileName(packageReqDto.getStopFilePath()));
-        packageUpdateParams.put("is_decompression", packageReqDto.getIsDecompression());
-        packageUpdateParams.put("diff_conf_file", diffConfigFileStr);
-
-        this.updatePackageCi(packageUpdateParams);
-    }
-
-    private List<String> getDiffConfFilesAsStringList(Map<String, Object> packageCiMap) {
-        String diffConfFileStr = (String) packageCiMap.get("diff_conf_file");
-        List<String> diffConfFiles = new ArrayList<String>();
-
-        if (StringUtils.isBlank(diffConfFileStr)) {
-            return diffConfFiles;
-        }
-
-        String[] diffConfFileStrParts = diffConfFileStr.split("\\|");
-        for (String diffConfFileStrPart : diffConfFileStrParts) {
-            diffConfFiles.add(diffConfFileStrPart);
-        }
-
-        return diffConfFiles;
     }
 
     public PackageComparisionResultDto packageComparision(String unitDesignId, String packageGuid,
@@ -297,7 +116,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
                 packageCiMap, rootDirName);
 
         if (baselinePackageCiMap != null) {
-            String baselineRootDirName = getDeployPackageRootDir(packageCiMap);
+            String baselineRootDirName = getDeployPackageRootDir(baselinePackageCiMap);
             List<FileQueryResultItemDto> baselinePackageFileQueryResultItems = doQueryDeployConfigFiles(
                     baselinePackageGuid, filePathList, baselinePackageCiMap, baselineRootDirName);
             doExecuteFileQueryComparison(fileQueryResultItems, baselinePackageFileQueryResultItems);
@@ -920,7 +739,14 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         resultItemDto.setRootDirName(rootDirName);
         resultItemDto.setRelativePath(calRelativePath(baseDirName, rootDirName));
 
-        List<SaltFileNodeDto> saltFileNodes = listFilesOfCurrentDirs(baseDirName, packageEndpoint);
+        List<SaltFileNodeDto> saltFileNodes = new ArrayList<SaltFileNodeDto>();
+        try {
+            saltFileNodes = listFilesOfCurrentDirs(baseDirName, packageEndpoint);
+        } catch (SaltFileNotExistException e) {
+            log.info("File does not exist,filename:{}", baseDirName);
+            resultItemDto.setExists(false);
+            return resultItemDto;
+        }
 
         boolean currentFileExist = false;
         for (SaltFileNodeDto saltFileNode : saltFileNodes) {
@@ -939,7 +765,14 @@ public class ConfigFileManagementService extends AbstractArtifactService {
                     childResultItemDto.setPath(tmpPath);
                     childResultItemDto.setRelativePath(calRelativePath(tmpPath, rootDirName));
 
-                    List<SaltFileNodeDto> childSaltFileNodes = listFilesOfCurrentDirs(fullFilepath, packageEndpoint);
+                    List<SaltFileNodeDto> childSaltFileNodes = new ArrayList<SaltFileNodeDto>();
+
+                    try {
+                        childSaltFileNodes = listFilesOfCurrentDirs(fullFilepath, packageEndpoint);
+                    } catch (SaltFileNotExistException e) {
+                        log.info("Child file does not exist, filename:{}", fullFilepath);
+                        childResultItemDto.setExists(false);
+                    }
                     for (SaltFileNodeDto childSaltFileNode : childSaltFileNodes) {
                         FileQueryResultItemDto grandResultItemDto = convertToFileQueryResultItemDto(childSaltFileNode,
                                 fullFilepath, rootDirName);
@@ -998,5 +831,187 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         dto.setRelativePath(calRelativePath(tmpPath, rootDirName));
 
         return dto;
+    }
+
+    private void processDiffConfFilesIfExistDiffConfFiles(String packageGuid, Map<String, Object> packageCiMap,
+            List<ConfigFileDto> newDiffConfFiles, List<String> oldDiffConfFiles,
+            List<CmdbDiffConfigDto> allCmdbDiffConfigs) {
+        List<ConfigFileDto> sameDiffFiles = new ArrayList<ConfigFileDto>();
+        List<ConfigFileDto> newDiffFiles = new ArrayList<ConfigFileDto>();
+
+        for (ConfigFileDto configFile : newDiffConfFiles) {
+            String filename = configFile.getFilename();
+            if (oldDiffConfFiles.contains(filename)) {
+                sameDiffFiles.add(configFile);
+            } else {
+                newDiffFiles.add(configFile);
+            }
+        }
+
+        Set<String> boundDiffConfVarGuids = getBoundDiffConfVarGuidsFromPackage(packageCiMap);
+        Set<String> toBindDiffConfVarGuids = new HashSet<String>();
+
+        String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
+
+        for (ConfigFileDto configFile : sameDiffFiles) {
+            List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(packageGuid, configFile.getFilename(),
+                    s3EndpointOfPackageId);
+            for (SaltConfigKeyInfoDto saltConfigKeyInfo : saltConfigKeyInfos) {
+                ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
+                configKeyInfo.setKey(saltConfigKeyInfo.getKey());
+                configKeyInfo.setLine(saltConfigKeyInfo.getLine());
+                configKeyInfo.setType(saltConfigKeyInfo.getType());
+
+                configFile.addConfigKeyInfo(configKeyInfo);
+
+                CmdbDiffConfigDto cmdbDiffConfig = findoutFromCmdbDiffConfigsByKey(saltConfigKeyInfo.getKey(),
+                        allCmdbDiffConfigs);
+
+                if (boundDiffConfVarGuids.contains(cmdbDiffConfig.getGuid())) {
+                    toBindDiffConfVarGuids.add(cmdbDiffConfig.getGuid());
+                }
+            }
+        }
+
+        Set<String> configFileKeys = new HashSet<String>();
+        for (ConfigFileDto configFile : newDiffFiles) {
+            String filepath = configFile.getFilename();
+            if (configFile.getIsDir()) {
+                log.info("filepath {} is directory", filepath);
+                continue;
+            }
+            List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(packageGuid, configFile.getFilename(),
+                    s3EndpointOfPackageId);
+
+            for (SaltConfigKeyInfoDto saltConfigKeyInfo : saltConfigKeyInfos) {
+                ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
+                configKeyInfo.setKey(saltConfigKeyInfo.getKey());
+                configKeyInfo.setLine(saltConfigKeyInfo.getLine());
+                configKeyInfo.setType(saltConfigKeyInfo.getType());
+
+                configFile.addConfigKeyInfo(configKeyInfo);
+
+                configFileKeys.add(saltConfigKeyInfo.getKey());
+            }
+        }
+
+        for (String configFileKey : configFileKeys) {
+            CmdbDiffConfigDto cmdbDiffConfig = findoutFromCmdbDiffConfigsByKey(configFileKey, allCmdbDiffConfigs);
+            if (cmdbDiffConfig == null) {
+                CmdbDiffConfigDto newCmdbDiffConfig = this.standardCmdbEntityRestClient
+                        .createDiffConfigurationCi(configFileKey, null);
+                if (newCmdbDiffConfig == null) {
+                    throw new PluginException("Failed to create new Diff configuration key:{}", configFileKey);
+                }
+
+                allCmdbDiffConfigs.add(cmdbDiffConfig);
+                toBindDiffConfVarGuids.add(newCmdbDiffConfig.getGuid());
+            } else {
+                toBindDiffConfVarGuids.add(cmdbDiffConfig.getGuid());
+            }
+        }
+
+        this.updateDiffConfVariablesToPackageCi(packageGuid, toBindDiffConfVarGuids);
+
+    }
+
+    private void processDiffConfFilesIfNotExistDiffConfFiles(String packageGuid, Map<String, Object> packageCiMap,
+            List<ConfigFileDto> newDiffConfFiles, List<CmdbDiffConfigDto> allCmdbDiffConfigs) {
+        if (newDiffConfFiles == null || newDiffConfFiles.isEmpty()) {
+            return;
+        }
+        String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
+        Set<String> configFileKeys = new HashSet<String>();
+        for (ConfigFileDto configFile : newDiffConfFiles) {
+            String filepath = configFile.getFilename();
+            if (configFile.getIsDir()) {
+                log.info("filepath {} is directory", filepath);
+                continue;
+            }
+
+            List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(packageGuid, filepath,
+                    s3EndpointOfPackageId);
+
+            for (SaltConfigKeyInfoDto saltConfigKeyInfo : saltConfigKeyInfos) {
+                ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
+                configKeyInfo.setKey(saltConfigKeyInfo.getKey());
+                configKeyInfo.setLine(saltConfigKeyInfo.getLine());
+                configKeyInfo.setType(saltConfigKeyInfo.getType());
+
+                configFile.addConfigKeyInfo(configKeyInfo);
+
+                configFileKeys.add(saltConfigKeyInfo.getKey());
+            }
+        }
+
+        List<String> toBoundDiffConfVariableGuids = new ArrayList<String>();
+        for (String configFileKey : configFileKeys) {
+            CmdbDiffConfigDto cmdbDiffConfig = findoutFromCmdbDiffConfigsByKey(configFileKey, allCmdbDiffConfigs);
+            if (cmdbDiffConfig == null) {
+                CmdbDiffConfigDto newCmdbDiffConfig = this.standardCmdbEntityRestClient
+                        .createDiffConfigurationCi(configFileKey, null);
+                if (newCmdbDiffConfig == null) {
+                    throw new PluginException("Failed to create new Diff configuration key:{}", configFileKey);
+                }
+
+                allCmdbDiffConfigs.add(cmdbDiffConfig);
+                toBoundDiffConfVariableGuids.add(newCmdbDiffConfig.getGuid());
+            } else {
+                if (!toBoundDiffConfVariableGuids.contains(cmdbDiffConfig.getGuid())) {
+                    toBoundDiffConfVariableGuids.add(cmdbDiffConfig.getGuid());
+                }
+            }
+        }
+
+        this.updateDiffConfVariablesToPackageCi(packageGuid, toBoundDiffConfVariableGuids);
+
+    }
+
+    private String assembleDiffConfigFileString(List<ConfigFileDto> diffConfFiles) {
+        String diffConfigFileStr = String.join("|", diffConfFiles.stream().map(dto -> {
+            return dto.getFilename();
+        }).collect(Collectors.toList()));
+
+        return diffConfigFileStr;
+    }
+
+    private void updateDiffConfVariablesToPackageCi(String packageCiGuid, Collection<String> diffConfVariableGuids) {
+        List<String> guids = new ArrayList<String>();
+        guids.addAll(diffConfVariableGuids);
+        Map<String, Object> packageUpdateParams = new HashMap<String, Object>();
+        packageUpdateParams.put("guid", packageCiGuid);
+        packageUpdateParams.put("diff_conf_variable", guids);
+        this.updatePackageCi(packageUpdateParams);
+    }
+
+    private void updateConfigFilesToPackageCi(String packageCiGuid, PackageConfigFilesUpdateRequestDto packageReqDto) {
+        List<ConfigFileDto> newDiffConfFiles = packageReqDto.getDiffConfFile();
+        String diffConfigFileStr = assembleDiffConfigFileString(newDiffConfFiles);
+
+        Map<String, Object> packageUpdateParams = new HashMap<String, Object>();
+        packageUpdateParams.put("guid", packageCiGuid);
+        packageUpdateParams.put("deploy_file_path", getExepectedFileName(packageReqDto.getDeployFilePath()));
+        packageUpdateParams.put("start_file_path", getExepectedFileName(packageReqDto.getStartFilePath()));
+        packageUpdateParams.put("stop_file_path", getExepectedFileName(packageReqDto.getStopFilePath()));
+        packageUpdateParams.put("is_decompression", packageReqDto.getIsDecompression());
+        packageUpdateParams.put("diff_conf_file", diffConfigFileStr);
+
+        this.updatePackageCi(packageUpdateParams);
+    }
+
+    private List<String> getDiffConfFilesAsStringList(Map<String, Object> packageCiMap) {
+        String diffConfFileStr = (String) packageCiMap.get("diff_conf_file");
+        List<String> diffConfFiles = new ArrayList<String>();
+
+        if (StringUtils.isBlank(diffConfFileStr)) {
+            return diffConfFiles;
+        }
+
+        String[] diffConfFileStrParts = diffConfFileStr.split("\\|");
+        for (String diffConfFileStrPart : diffConfFileStrParts) {
+            diffConfFiles.add(diffConfFileStrPart);
+        }
+
+        return diffConfFiles;
     }
 }
