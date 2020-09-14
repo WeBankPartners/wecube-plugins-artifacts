@@ -1,7 +1,8 @@
 package com.webank.plugins.artifacts.controller;
 
-import static com.webank.plugins.artifacts.dto.JsonResponse.okayWithData;
 import static com.webank.plugins.artifacts.dto.JsonResponse.okay;
+import static com.webank.plugins.artifacts.dto.JsonResponse.okayWithData;
+
 import java.util.List;
 import java.util.Map;
 
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.webank.plugins.artifacts.dto.ConfigPackageDto;
 import com.webank.plugins.artifacts.dto.DiffConfigurationUpdateDto;
 import com.webank.plugins.artifacts.dto.FileQueryRequestDto;
 import com.webank.plugins.artifacts.dto.FileQueryResultItemDto;

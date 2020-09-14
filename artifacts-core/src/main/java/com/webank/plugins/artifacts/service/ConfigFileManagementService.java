@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.dto.ConfigFileDto;
 import com.webank.plugins.artifacts.dto.ConfigKeyInfoDto;
-import com.webank.plugins.artifacts.dto.ConfigPackageDto;
 import com.webank.plugins.artifacts.dto.DiffConfVariableInfoDto;
 import com.webank.plugins.artifacts.dto.DiffConfigurationUpdateDto;
 import com.webank.plugins.artifacts.dto.FileQueryRequestDto;
