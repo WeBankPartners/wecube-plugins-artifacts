@@ -32,6 +32,7 @@ public class ConfigFilesSaltInfoEnricher {
             SaltFileNodeDto nodeDto = getSaltFileNodeBySingleFilepath(packageGuid, packageCiMap, formatFilename(f.getFilename()));
             if (nodeDto == null) {
                 log.info("Cannot find salt file node for {}", f.getFilename());
+                
                 continue;
             }
 

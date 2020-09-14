@@ -17,6 +17,9 @@ public class PackageConfigFilesUpdateRequestDto {
 
     @JsonProperty("is_decompression")
     private Boolean isDecompression;
+    
+    @JsonProperty("diff_conf_variable")
+    private List<DiffConfVariableInfoDto> diffConfVariable;
 
     public List<ConfigFileDto> getStartFilePath() {
         return startFilePath;
@@ -58,4 +61,13 @@ public class PackageConfigFilesUpdateRequestDto {
         this.isDecompression = isDecompression;
     }
 
+    public List<DiffConfVariableInfoDto> getDiffConfVariable() {
+        return diffConfVariable;
+    }
+
+    public void setDiffConfVariable(List<DiffConfVariableInfoDto> diffConfVariable) {
+        this.diffConfVariable = diffConfVariable;
+    }
+
+    
 }

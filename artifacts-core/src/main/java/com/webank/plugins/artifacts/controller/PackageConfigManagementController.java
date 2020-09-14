@@ -72,7 +72,7 @@ public class PackageConfigManagementController {
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/update")
     public JsonResponse updateConfigFilesOfPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
             @PathVariable(value = "package-id") String packageId, @RequestBody PackageConfigFilesUpdateRequestDto packageDomain) {
-        ConfigPackageDto result = configFileManagementService.updateConfigFilesOfPackage(unitDesignId, packageId,
+        SinglePackageQueryResultDto result = configFileManagementService.updateConfigFilesOfPackage(unitDesignId, packageId,
                 packageDomain);
         return okayWithData(result);
     }
