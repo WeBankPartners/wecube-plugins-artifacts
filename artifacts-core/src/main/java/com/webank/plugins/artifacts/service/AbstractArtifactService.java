@@ -6,8 +6,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -23,6 +25,7 @@ import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
 import com.webank.plugins.artifacts.support.cmdb.StandardCmdbEntityRestClient;
+import com.webank.plugins.artifacts.support.cmdb.dto.CmdbDiffConfigDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
@@ -166,5 +169,73 @@ public abstract class AbstractArtifactService {
         }
         
         return fileNodes;
+    }
+    
+    protected Boolean convertCmdbObjectToBoolean(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+
+        if (obj instanceof Boolean) {
+            return (Boolean) obj;
+        }
+
+        if (obj instanceof String) {
+            if ("true".equalsIgnoreCase((String) obj)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        return null;
+    }
+    
+    @SuppressWarnings("unchecked")
+    protected Set<String> getBoundDiffConfVarGuidsFromPackage(Map<String, Object> packageCiMap) {
+        Set<String> guids = new HashSet<String>();
+
+        List<Object> boundDiffConfVariables = (List<Object>) packageCiMap.get("diff_conf_variable");
+        if (boundDiffConfVariables == null || boundDiffConfVariables.isEmpty()) {
+            return guids;
+        }
+
+        for (Object obj : boundDiffConfVariables) {
+            if (obj == null) {
+                continue;
+            }
+
+            if (obj instanceof Map) {
+                Map<String, Object> boundDiffMap = (Map<String, Object>) obj;
+                guids.add((String) boundDiffMap.get("guid"));
+            }
+
+            if (obj instanceof String) {
+                guids.add((String) obj);
+            }
+        }
+
+        return guids;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected boolean verifyIfBoundToCurrentPackage(CmdbDiffConfigDto cmdbDiffConfig,
+            List<Object> boundDiffConfVariables) {
+        if (boundDiffConfVariables == null || boundDiffConfVariables.isEmpty()) {
+            return false;
+        }
+        for (Object boundDiffConfVariable : boundDiffConfVariables) {
+            String diffConfVarGuid = null;
+            if (boundDiffConfVariable instanceof Map) {
+                Map<String, Object> boundDiffConfVariableMap = (Map<String, Object>) boundDiffConfVariable;
+                diffConfVarGuid = (String) boundDiffConfVariableMap.get("guid");
+            } else {
+                diffConfVarGuid = (String) boundDiffConfVariable;
+            }
+            if (diffConfVarGuid.equals(cmdbDiffConfig.getGuid())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

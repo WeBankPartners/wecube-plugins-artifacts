@@ -68,14 +68,7 @@ public class ConfigFileManagementServiceTest {
         System.out.println(toJson(result));
     }
 
-    private String toJson(Object object) {
-        try {
-            String sJson = objectMapper.writeValueAsString(object);
-            return sJson;
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("", e);
-        }
-    }
+    
 
     @Test
     public void testUpdateSinglePackage() throws IOException, URISyntaxException {
@@ -217,6 +210,15 @@ public class ConfigFileManagementServiceTest {
         PaginationQueryResult<Map<String, Object>> result = service.queryDeployPackages(unitDesignId, query);
 
         System.out.println(result.getContents());
+    }
+    
+    private String toJson(Object object) {
+        try {
+            String sJson = objectMapper.writeValueAsString(object);
+            return sJson;
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("", e);
+        }
     }
 
 }

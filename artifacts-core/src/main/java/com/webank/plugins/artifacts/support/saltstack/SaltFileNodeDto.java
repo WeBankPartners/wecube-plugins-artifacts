@@ -24,7 +24,7 @@ public class SaltFileNodeDto {
     public Boolean getIsDir() {
         return isDir;
     }
-    public void setDir(Boolean isDir) {
+    public void setIsDir(Boolean isDir) {
         this.isDir = isDir;
     }
     public String getMd5() {

@@ -66,7 +66,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         List<ConfigFileDto> newDiffConfFiles = packageReqDto.getDiffConfFile();
 
         List<CmdbDiffConfigDto> allCmdbDiffConfigs = getAllCmdbDiffConfigs();
-        
+
         List<DiffConfVariableInfoDto> diffConfVariables = packageReqDto.getDiffConfVariable();
 
         if (oldDiffConfFiles.isEmpty()) {
@@ -78,10 +78,9 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         }
 
         updateConfigFilesToPackageCi(packageCiGuid, packageReqDto);
-        
-        SinglePackageQueryResultDto packageQueryResult = querySinglePackage( unitDesignId,  packageCiGuid);
 
-        
+        SinglePackageQueryResultDto packageQueryResult = querySinglePackage(unitDesignId, packageCiGuid);
+
         return packageQueryResult;
     }
 
@@ -122,18 +121,18 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         //
         if (inputFilePathList.isEmpty()) {
             // means root directory
-            String rootDirName = getDeployPackageRootDir(packageCiMap);
+            String rootDirName = getDeployPackageRootDirName(packageCiMap);
             filePathList.add(rootDirName);
         } else {
             filePathList.addAll(inputFilePathList);
         }
 
-        String rootDirName = getDeployPackageRootDir(packageCiMap);
+        String rootDirName = getDeployPackageRootDirName(packageCiMap);
         List<FileQueryResultItemDto> fileQueryResultItems = doQueryDeployConfigFiles(packageCiGuid, filePathList,
                 packageCiMap, rootDirName);
 
         if (baselinePackageCiMap != null) {
-            String baselineRootDirName = getDeployPackageRootDir(baselinePackageCiMap);
+            String baselineRootDirName = getDeployPackageRootDirName(baselinePackageCiMap);
             List<FileQueryResultItemDto> baselinePackageFileQueryResultItems = doQueryDeployConfigFiles(
                     baselinePackageGuid, filePathList, baselinePackageCiMap, baselineRootDirName);
             doExecuteFileQueryComparison(fileQueryResultItems, baselinePackageFileQueryResultItems);
@@ -171,7 +170,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             baselineResult = new SinglePackageQueryResultDto();
             baselineResult.setPackageId(baselinePackageGuid);
             baselineResult.setBaselinePackage(null);
-            
+
             Object isDecompressionBaseline = baselinePackageCiMap.get("is_decompression");
             baselineResult.setIsCompress(convertCmdbObjectToBoolean(isDecompressionBaseline));
 
@@ -227,74 +226,10 @@ public class ConfigFileManagementService extends AbstractArtifactService {
 
         return result;
     }
+
     
-    private Boolean convertCmdbObjectToBoolean(Object obj) {
-        if(obj == null) {
-            return null;
-        }
-        
-        if(obj instanceof Boolean) {
-            return (Boolean)obj;
-        }
-        
-        if(obj instanceof String) {
-            if("true".equalsIgnoreCase((String)obj)){
-                return true;
-            }else {
-                return false;
-            }
-        }
-        
-        return null;
-    }
 
-    @SuppressWarnings("unchecked")
-    private Set<String> getBoundDiffConfVarGuidsFromPackage(Map<String, Object> packageCiMap) {
-        Set<String> guids = new HashSet<String>();
-
-        List<Object> boundDiffConfVariables = (List<Object>) packageCiMap.get("diff_conf_variable");
-        if (boundDiffConfVariables == null || boundDiffConfVariables.isEmpty()) {
-            return guids;
-        }
-
-        for (Object obj : boundDiffConfVariables) {
-            if (obj == null) {
-                continue;
-            }
-            
-            if(obj instanceof Map) {
-                Map<String, Object> boundDiffMap = (Map<String, Object>)obj;
-                guids.add((String)boundDiffMap.get("guid"));
-            }
-
-            if (obj instanceof String) {
-                guids.add((String) obj);
-            }
-        }
-
-        return guids;
-    }
-
-    @SuppressWarnings("unchecked")
-    private boolean verifyIfBoundToCurrentPackage(CmdbDiffConfigDto cmdbDiffConfig,
-            List<Object> boundDiffConfVariables) {
-        if (boundDiffConfVariables == null || boundDiffConfVariables.isEmpty()) {
-            return false;
-        }
-        for (Object boundDiffConfVariable : boundDiffConfVariables) {
-            String diffConfVarGuid = null;
-            if(boundDiffConfVariable instanceof Map) {
-                Map<String,Object> boundDiffConfVariableMap = (Map<String,Object>)boundDiffConfVariable;
-                diffConfVarGuid = (String) boundDiffConfVariableMap.get("guid");
-            }else {
-                diffConfVarGuid = (String) boundDiffConfVariable;
-            }
-            if (diffConfVarGuid.equals(cmdbDiffConfig.getGuid())) {
-                return true;
-            }
-        }
-        return false;
-    }
+    
 
     private CmdbDiffConfigDto findoutFromCmdbDiffConfigsByKey(String key, List<CmdbDiffConfigDto> allCmdbDiffConfigs) {
         if (allCmdbDiffConfigs == null || allCmdbDiffConfigs.isEmpty()) {
@@ -319,7 +254,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             dto.setGuid((String) diffConfigMap.get("guid"));
             dto.setKey((String) diffConfigMap.get("code"));
             dto.setDisplayName((String) diffConfigMap.get("displayName"));
-            dto.setFixedDate((String)diffConfigMap.get("fixed_date"));
+            dto.setFixedDate((String) diffConfigMap.get("fixed_date"));
 
             diffConfigs.add(dto);
         }
@@ -574,12 +509,35 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         return newFiles;
     }
 
-    protected SaltFileNodeDto getSaltFileNodeBySingleFilepath(String packageGuid, Map<String, Object> packageCiMap,
-            String filepath) {
+    private SaltFileNodeDto getSaltFileNodeBySingleFilepath(String packageGuid, Map<String, Object> packageCiMap,
+            String filepath, String rootDirName) {
         String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
+        List<SaltFileNodeDto> saltFileNodes = null;
+        if (rootDirName.equals(filepath)) {
+            try {
+                saltFileNodes = listFilesOfCurrentDirs(filepath, s3EndpointOfPackageId);
+                SaltFileNodeDto fileNode = new SaltFileNodeDto();
+                fileNode.setIsDir(true);
+                fileNode.setMd5(null);
+                fileNode.setName(filepath);
+                fileNode.setPath(filepath);
+                return fileNode;
+            } catch (SaltFileNotExistException e) {
+                log.info("file not exist:{}", filepath);
+                return null;
+            }
+        }
+
+        filepath = formatFilepathWithRootDirNamePrefix(filepath, rootDirName);
+
         String baseDirName = filepath.substring(0, filepath.lastIndexOf("/"));
         String filename = filepath.substring(filepath.lastIndexOf("/") + 1);
-        List<SaltFileNodeDto> saltFileNodes = listFilesOfCurrentDirs(baseDirName, s3EndpointOfPackageId);
+        try {
+            saltFileNodes = listFilesOfCurrentDirs(baseDirName, s3EndpointOfPackageId);
+        } catch (SaltFileNotExistException e) {
+            log.info("file not exist:{}", filepath);
+            return null;
+        }
         for (SaltFileNodeDto dto : saltFileNodes) {
             if (filename.equals(dto.getName())) {
                 return dto;
@@ -589,10 +547,24 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         return null;
     }
 
+    private String formatFilepathWithRootDirNamePrefix(String filepath, String rootDirName) {
+        if (filepath.startsWith(rootDirName + "/")) {
+            return filepath;
+        }
+
+        if (filepath.startsWith("/")) {
+            filepath = rootDirName + filepath;
+        } else {
+            filepath = rootDirName + "/" + filepath;
+        }
+
+        return filepath;
+    }
+
     private PackageComparisionResultDto buildPackageComparisionResult(String packageGuid,
             Map<String, Object> packageCiMap) {
         PackageComparisionResultDto result = new PackageComparisionResultDto();
-        String packageFileName = getDeployPackageRootDir(packageCiMap);
+        String packageFileName = getDeployPackageRootDirName(packageCiMap);
         ConfigFilesSaltInfoEnricher enricher = new ConfigFilesSaltInfoEnricher(packageFileName, packageGuid,
                 packageCiMap, this);
         List<ConfigFileDto> deployFiles = enricher.enrichFileInfoBySalt(getDeployFileInfos(packageCiMap));
@@ -735,7 +707,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         }
     }
 
-    private String getDeployPackageRootDir(Map<String, Object> packageCiMap) {
+    private String getDeployPackageRootDirName(Map<String, Object> packageCiMap) {
         String packageEndpoint = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
         List<SaltFileNodeDto> saltFileNodes = listFilesOfCurrentDirs("", packageEndpoint);
         return saltFileNodes.get(0).getName();
@@ -755,10 +727,46 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         return resultItemDtos;
     }
 
+    private FileQueryResultItemDto queryFilesForRootDirName(String packageCiGuid, String filePath,
+            Map<String, Object> packageCiMap, String packageEndpoint, String rootDirName) {
+        FileQueryResultItemDto resultItemDto = new FileQueryResultItemDto();
+        resultItemDto.setName(filePath);
+        resultItemDto.setPath(filePath);
+        resultItemDto.setIsDir(true);
+        resultItemDto.setRootDirName(rootDirName);
+        resultItemDto.setRelativePath(rootDirName);
+
+        List<SaltFileNodeDto> saltFileNodes = null;
+        try {
+            saltFileNodes = listFilesOfCurrentDirs(rootDirName, packageEndpoint);
+            resultItemDto.setExists(true);
+        } catch (SaltFileNotExistException e) {
+            log.info("File does not exist,filename:{}", rootDirName);
+            resultItemDto.setExists(false);
+            resultItemDto.setComparisonResult(FILE_COMP_DELETED);
+            return resultItemDto;
+        }
+
+        for (SaltFileNodeDto saltFileNode : saltFileNodes) {
+            FileQueryResultItemDto childResultItemDto = convertToFileQueryResultItemDto(saltFileNode, rootDirName,
+                    rootDirName);
+            childResultItemDto.setExists(true);
+            resultItemDto.addFileQueryResultItem(childResultItemDto);
+        }
+
+        return resultItemDto;
+    }
+
     private FileQueryResultItemDto queryFilesForSingleFilepath(String packageCiGuid, String filePath,
             Map<String, Object> packageCiMap, String packageEndpoint, String rootDirName) {
 
-        
+        if (rootDirName.equals(filePath)) {
+            FileQueryResultItemDto result = queryFilesForRootDirName(packageCiGuid, filePath, packageCiMap,
+                    packageEndpoint, rootDirName);
+
+            return result;
+        }
+
         String rawBaseName = filePath;
         if (rawBaseName.indexOf("/") > 0) {
             rawBaseName = rawBaseName.substring(0, rawBaseName.lastIndexOf("/"));
@@ -766,27 +774,13 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             rawBaseName = rootDirName;
         }
 
-        String fullFilepath = filePath;
+        String fullFilepath = formatFilepathWithRootDirNamePrefix(filePath, rootDirName);
 
-        if (filePath.equals(rootDirName)) {
-            fullFilepath = filePath;
-        } else if (!filePath.startsWith(rootDirName)) {
-            if (filePath.startsWith("/")) {
-                fullFilepath = rootDirName + filePath;
-            } else {
-                fullFilepath = rootDirName + "/" + filePath;
-            }
-        }
-        
         log.info("to process filePath:{}, fullFilepath:{}", filePath, fullFilepath);
 
-        String baseDirName = fullFilepath;
-        String fileName = null;
-        if (fullFilepath.lastIndexOf("/") > 0) {
-            baseDirName = fullFilepath.substring(0, fullFilepath.lastIndexOf("/"));
-            fileName = fullFilepath.substring(fullFilepath.lastIndexOf("/") + 1);
-        }
-        
+        String baseDirName = fullFilepath.substring(0, fullFilepath.lastIndexOf("/"));
+        String fileName = fullFilepath.substring(fullFilepath.lastIndexOf("/") + 1);
+
         FileQueryResultItemDto resultItemDto = new FileQueryResultItemDto();
         resultItemDto.setName(rawBaseName);
         resultItemDto.setPath(baseDirName);
@@ -892,39 +886,39 @@ public class ConfigFileManagementService extends AbstractArtifactService {
 
         return dto;
     }
-    
+
     private boolean checkIfSameDiffConfFiles(List<ConfigFileDto> newDiffConfFiles, List<String> oldDiffConfFiles) {
-        if(newDiffConfFiles.size() != oldDiffConfFiles.size()) {
+        if (newDiffConfFiles.size() != oldDiffConfFiles.size()) {
             return false;
         }
-        
-        for(ConfigFileDto configFile : newDiffConfFiles) {
-            if(!oldDiffConfFiles.contains(configFile.getFilename())) {
+
+        for (ConfigFileDto configFile : newDiffConfFiles) {
+            if (!oldDiffConfFiles.contains(configFile.getFilename())) {
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     private void processDiffConfFilesIfSameDiffConfFiles(String packageGuid, Map<String, Object> packageCiMap,
             List<ConfigFileDto> newDiffConfFiles, List<String> oldDiffConfFiles,
             List<CmdbDiffConfigDto> allCmdbDiffConfigs, List<DiffConfVariableInfoDto> diffConfVariables) {
         Set<String> toBindDiffConfVarGuids = new HashSet<String>();
-        
-        if(diffConfVariables == null) {
+
+        if (diffConfVariables == null) {
             throw new PluginException("Diff conf variables cannot be null.");
         }
-        
-        for(DiffConfVariableInfoDto diffConfVarInfo : diffConfVariables) {
-            if( (diffConfVarInfo.getBound() != null) && (diffConfVarInfo.getBound() == true)) {
+
+        for (DiffConfVariableInfoDto diffConfVarInfo : diffConfVariables) {
+            if ((diffConfVarInfo.getBound() != null) && (diffConfVarInfo.getBound() == true)) {
                 toBindDiffConfVarGuids.add(diffConfVarInfo.getDiffConfigGuid());
             }
         }
-        
+
         this.updateDiffConfVariablesToPackageCi(packageGuid, toBindDiffConfVarGuids);
     }
-    
+
     private void processDiffConfFilesIfModifiedDiffConfFiles(String packageGuid, Map<String, Object> packageCiMap,
             List<ConfigFileDto> newDiffConfFiles, List<String> oldDiffConfFiles,
             List<CmdbDiffConfigDto> allCmdbDiffConfigs, List<DiffConfVariableInfoDto> diffConfVariables) {
@@ -965,10 +959,18 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             }
         }
 
+        String rootDirName = getDeployPackageRootDirName(packageCiMap);
+
         Set<String> configFileKeys = new HashSet<String>();
         for (ConfigFileDto configFile : newDiffFiles) {
+            SaltFileNodeDto saltFileNode = getSaltFileNodeBySingleFilepath(packageGuid, packageCiMap,
+                    configFile.getFilename(), rootDirName);
+            if (saltFileNode == null) {
+                throw new PluginException(
+                        String.format("Diff configuration file %s does not exist.", configFile.getFilename()));
+            }
             String filepath = configFile.getFilename();
-            if (configFile.getIsDir()) {
+            if (saltFileNode.getIsDir()) {
                 log.info("filepath {} is directory", filepath);
                 continue;
             }
@@ -1009,20 +1011,16 @@ public class ConfigFileManagementService extends AbstractArtifactService {
     private void processDiffConfFilesIfExistDiffConfFiles(String packageGuid, Map<String, Object> packageCiMap,
             List<ConfigFileDto> newDiffConfFiles, List<String> oldDiffConfFiles,
             List<CmdbDiffConfigDto> allCmdbDiffConfigs, List<DiffConfVariableInfoDto> diffConfVariables) {
-        //TODO
-        if(checkIfSameDiffConfFiles(newDiffConfFiles, oldDiffConfFiles)) {
-            processDiffConfFilesIfSameDiffConfFiles( packageGuid, packageCiMap,
-                     newDiffConfFiles,  oldDiffConfFiles,
-                     allCmdbDiffConfigs, diffConfVariables);
-            
+        if (checkIfSameDiffConfFiles(newDiffConfFiles, oldDiffConfFiles)) {
+            processDiffConfFilesIfSameDiffConfFiles(packageGuid, packageCiMap, newDiffConfFiles, oldDiffConfFiles,
+                    allCmdbDiffConfigs, diffConfVariables);
+
             return;
-        }else {
-            processDiffConfFilesIfModifiedDiffConfFiles( packageGuid,  packageCiMap,
-                     newDiffConfFiles, oldDiffConfFiles,
-                     allCmdbDiffConfigs,  diffConfVariables);
+        } else {
+            processDiffConfFilesIfModifiedDiffConfFiles(packageGuid, packageCiMap, newDiffConfFiles, oldDiffConfFiles,
+                    allCmdbDiffConfigs, diffConfVariables);
+            return;
         }
-        
-        
 
     }
 
@@ -1032,8 +1030,15 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             return;
         }
         String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
+        String rootDirName = getDeployPackageRootDirName(packageCiMap);
         Set<String> configFileKeys = new HashSet<String>();
         for (ConfigFileDto configFile : newDiffConfFiles) {
+            SaltFileNodeDto saltFileNode = getSaltFileNodeBySingleFilepath(packageGuid, packageCiMap,
+                    configFile.getFilename(), rootDirName);
+            if (saltFileNode == null) {
+                throw new PluginException(
+                        String.format("Diff configuration file %s does not exist.", configFile.getFilename()));
+            }
             String filepath = configFile.getFilename();
             if (configFile.getIsDir()) {
                 log.info("filepath {} is directory", filepath);
