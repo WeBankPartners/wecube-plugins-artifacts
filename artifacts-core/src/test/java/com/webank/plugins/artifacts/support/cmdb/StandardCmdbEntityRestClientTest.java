@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.dto.CmdbDiffConfigDto;
 
+@Ignore
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
 @SpringBootTest
