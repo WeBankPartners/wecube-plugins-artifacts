@@ -20,6 +20,9 @@ public class PackageConfigFilesUpdateRequestDto {
     
     @JsonProperty("diff_conf_variable")
     private List<DiffConfVariableInfoDto> diffConfVariable;
+    
+    @JsonProperty("baseline_package")
+    private String baselinePackage;
 
     public List<ConfigFileDto> getStartFilePath() {
         return startFilePath;
@@ -69,5 +72,11 @@ public class PackageConfigFilesUpdateRequestDto {
         this.diffConfVariable = diffConfVariable;
     }
 
-    
+    public String getBaselinePackage() {
+        return baselinePackage;
+    }
+
+    public void setBaselinePackage(String baselinePackage) {
+        this.baselinePackage = baselinePackage;
+    }
 }

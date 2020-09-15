@@ -4,11 +4,11 @@ public class PackageComparisionRequestDto {
 
     private String baselinePackage;
 
-    public String getBaselinePackageId() {
+    public String getBaselinePackage() {
         return baselinePackage;
     }
 
-    public void setBaselinePackageId(String baselinePackage) {
+    public void setBaselinePackage(String baselinePackage) {
         this.baselinePackage = baselinePackage;
     }
 

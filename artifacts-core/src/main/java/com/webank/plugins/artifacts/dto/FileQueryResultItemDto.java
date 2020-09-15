@@ -7,8 +7,6 @@ public class FileQueryResultItemDto {
 
     private String name;
     private String path;
-    private String rootDirName;
-    private String relativePath;
     private Boolean isDir;
     private String comparisonResult;
     private String md5;
@@ -56,6 +54,13 @@ public class FileQueryResultItemDto {
         if (this.children == null) {
             this.children = new ArrayList<FileQueryResultItemDto>();
         }
+        
+        String itemPath = item.getPath();
+        for(FileQueryResultItemDto child : this.children) {
+            if(child.getPath().equals(itemPath)) {
+                return;
+            }
+        }
 
         this.children.add(item);
     }
@@ -82,47 +87,6 @@ public class FileQueryResultItemDto {
 
     public void setExists(Boolean exists) {
         this.exists = exists;
-    }
-
-    public String getRelativePath() {
-        return relativePath;
-    }
-
-    public void setRelativePath(String relativePath) {
-        this.relativePath = relativePath;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("FileQueryResultItemDto [name=");
-        builder.append(name);
-        builder.append(", path=");
-        builder.append(path);
-        builder.append(", rootDirName=");
-        builder.append(rootDirName);
-        builder.append(", relativePath=");
-        builder.append(relativePath);
-        builder.append(", isDir=");
-        builder.append(isDir);
-        builder.append(", comparisonResult=");
-        builder.append(comparisonResult);
-        builder.append(", md5=");
-        builder.append(md5);
-        builder.append(", exists=");
-        builder.append(exists);
-        builder.append(", children=");
-        builder.append(children);
-        builder.append("]");
-        return builder.toString();
-    }
-
-    public String getRootDirName() {
-        return rootDirName;
-    }
-
-    public void setRootDirName(String rootDirName) {
-        this.rootDirName = rootDirName;
     }
 
 }

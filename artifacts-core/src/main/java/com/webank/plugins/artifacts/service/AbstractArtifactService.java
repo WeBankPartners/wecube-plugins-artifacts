@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.google.common.collect.ImmutableMap;
 import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
+import com.webank.plugins.artifacts.dto.ConfigFileDto;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.CmdbServiceV2Stub;
@@ -237,5 +239,34 @@ public abstract class AbstractArtifactService {
             }
         }
         return false;
+    }
+    
+    @SuppressWarnings("unchecked")
+    protected String getBaselinePackageGuidFromCiMap(Map<String, Object> packageCiMap) {
+        Map<String, Object> baselinePackageCiMap = (Map<String, Object>) packageCiMap.get("baseline_package");
+        if(baselinePackageCiMap == null) {
+            return null;
+        }
+        
+        String baselinePackageGuid = (String) baselinePackageCiMap.get("guid");
+
+        return baselinePackageGuid;
+    }
+    
+    
+    protected String assembleFileItemsToString(List<ConfigFileDto> dtos) {
+        if (dtos == null ) {
+            return null;
+        }
+        
+        if(dtos.isEmpty()) {
+            return "";
+        }
+        
+        String configFileStr = String.join("|", dtos.stream().map(dto -> {
+            return dto.getFilename();
+        }).collect(Collectors.toList()));
+
+        return configFileStr;
     }
 }

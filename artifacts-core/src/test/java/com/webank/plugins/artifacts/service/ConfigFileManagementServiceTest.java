@@ -61,7 +61,7 @@ public class ConfigFileManagementServiceTest {
         String baselinePackageGuid = "0045_0000000005";
 
         PackageComparisionRequestDto comparisonReqDto = new PackageComparisionRequestDto();
-        comparisonReqDto.setBaselinePackageId(baselinePackageGuid);
+        comparisonReqDto.setBaselinePackage(baselinePackageGuid);
 
         PackageComparisionResultDto result = service.packageComparision(unitDesignId, packageGuid, comparisonReqDto);
 
@@ -106,6 +106,7 @@ public class ConfigFileManagementServiceTest {
         String packageId = "0045_0000000005";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
         String filePath = "conf";
+        fileQueryRequestDto.setExpandAll(false);
 //        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
 
         List<String> fileList = new ArrayList<String>();
@@ -123,8 +124,9 @@ public class ConfigFileManagementServiceTest {
     public void testQueryDeployConfigFilesAsLeafFile() throws JsonProcessingException {
         String packageId = "0045_0000000005";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
-        String filePath = "conf/application-dev11.properties";
-//        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
+//        String filePath = "conf/application-dev11.properties";
+        String filePath = "demo-app-spring-boot_1.5.3/conf";
+        fileQueryRequestDto.setExpandAll(false);
 
         List<String> fileList = new ArrayList<String>();
         fileList.add(filePath);
@@ -160,22 +162,23 @@ public class ConfigFileManagementServiceTest {
     @Test
     public void testQueryDeployConfigFilesAsMultiFile() throws JsonProcessingException {
         String packageId = "0045_0000000005";
-        String baselinePackageId = "0045_0000000005";
+//        String baselinePackageId = "0045_0000000005";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
-        String filePath0 = "conf";
-        String filePath1 = "bin";
-        String filePath2 = "bin111";
-        String filePath3 = "bin111/aaaa.txt";
+        fileQueryRequestDto.setExpandAll(true);
+        String filePath0 = "demo-app-spring-boot_1.5.3/conf";
+        String filePath1 = "demo-app-spring-boot_1.5.3/bin";
+//        String filePath2 = "bin111";
+//        String filePath3 = "bin111/aaaa.txt";
 //        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
 
         List<String> fileList = new ArrayList<String>();
         fileList.add(filePath0);
         fileList.add(filePath1);
-        fileList.add(filePath2);
-        fileList.add(filePath3);
+//        fileList.add(filePath2);
+//        fileList.add(filePath3);
         fileQueryRequestDto.setFileList(fileList);
 
-        fileQueryRequestDto.setBaselinePackage(baselinePackageId);
+//        fileQueryRequestDto.setBaselinePackage(baselinePackageId);
 
         List<FileQueryResultItemDto> resultItemDtos = service.queryDeployConfigFiles(packageId, fileQueryRequestDto);
 

@@ -1,5 +1,6 @@
 package com.webank.plugins.artifacts.dto;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -10,20 +11,20 @@ public class SinglePackageQueryResultDto {
     @JsonProperty("baseline_package")
     private String baselinePackage;
 
-    @JsonProperty("is_compress")
-    private Boolean isCompress;
+    @JsonProperty("is_decompression")
+    private Boolean isDecompression;
 
     @JsonProperty("start_file_path")
-    private List<ConfigFileDto> startFilePath;
+    private List<ConfigFileDto> startFilePath = new ArrayList<>();
     @JsonProperty("stop_file_path")
-    private List<ConfigFileDto> stopFilePath;
+    private List<ConfigFileDto> stopFilePath = new ArrayList<>();
     @JsonProperty("deploy_file_path")
-    private List<ConfigFileDto> deployFilePath;
+    private List<ConfigFileDto> deployFilePath = new ArrayList<>();
     @JsonProperty("diff_conf_file")
-    private List<ConfigFileDto> diffConfFile;
+    private List<ConfigFileDto> diffConfFile = new ArrayList<>();
 
     @JsonProperty("diff_conf_variable")
-    private List<DiffConfVariableInfoDto> diffConfVariable;
+    private List<DiffConfVariableInfoDto> diffConfVariable = new ArrayList<>();
 
     public String getPackageId() {
         return packageId;
@@ -81,12 +82,12 @@ public class SinglePackageQueryResultDto {
         this.baselinePackage = baselinePackage;
     }
 
-    public Boolean getIsCompress() {
-        return isCompress;
+    public Boolean getIsDecompression() {
+        return isDecompression;
     }
 
-    public void setIsCompress(Boolean isCompress) {
-        this.isCompress = isCompress;
+    public void setIsDecompression(Boolean isDecompression) {
+        this.isDecompression = isDecompression;
     }
 
     @Override
@@ -96,8 +97,8 @@ public class SinglePackageQueryResultDto {
         builder.append(packageId);
         builder.append(", baselinePackage=");
         builder.append(baselinePackage);
-        builder.append(", isCompress=");
-        builder.append(isCompress);
+        builder.append(", isDecompression=");
+        builder.append(isDecompression);
         builder.append(", startFilePath=");
         builder.append(startFilePath);
         builder.append(", stopFilePath=");
@@ -111,6 +112,8 @@ public class SinglePackageQueryResultDto {
         builder.append("]");
         return builder.toString();
     }
+
+    
 
     
 }
