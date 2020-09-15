@@ -438,8 +438,14 @@ public class ConfigFileManagementService extends AbstractArtifactService {
 
         inputParamMaps.add(inputParamMap);
         request.setInputs(inputParamMaps);
-        ResultData<SaltConfigFileDto> resultData = saltstackServiceStub
-                .getReleasedPackagePropertyKeysByFilePath(applicationProperties.getWecubeGatewayServerUrl(), request);
+        ResultData<SaltConfigFileDto> resultData = null;
+        try {
+            resultData = saltstackServiceStub.getReleasedPackagePropertyKeysByFilePath(
+                    applicationProperties.getWecubeGatewayServerUrl(), request);
+        } catch (SaltstackRemoteCallException e) {
+            log.info("errors to get conf key from {},error:{}", filePath, e.getMessage());
+            return Collections.emptyList();
+        }
 
         List<SaltConfigFileDto> saltConfigFileDtos = resultData.getOutputs();
         if (saltConfigFileDtos == null || saltConfigFileDtos.isEmpty()) {

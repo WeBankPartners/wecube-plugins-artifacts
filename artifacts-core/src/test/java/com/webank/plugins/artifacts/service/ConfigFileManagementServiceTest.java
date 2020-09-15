@@ -33,7 +33,7 @@ import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
 
-@Ignore
+//@Ignore
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -105,8 +105,8 @@ public class ConfigFileManagementServiceTest {
     public void testQueryDeployConfigFilesAsConfDir() throws JsonProcessingException {
         String packageId = "0045_0000000005";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
-        String filePath = "conf";
-        fileQueryRequestDto.setExpandAll(false);
+        String filePath = "demo-app-spring-boot_1.5.3/conf";
+        fileQueryRequestDto.setExpandAll(true);
 //        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
 
         List<String> fileList = new ArrayList<String>();
@@ -145,8 +145,7 @@ public class ConfigFileManagementServiceTest {
         String packageId = "0045_0000000011";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
         fileQueryRequestDto.setBaselinePackage(baselinePackageId);
-        String filePath = "conf/application-dev.properties";
-//        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
+        String filePath = "demo-app-spring-boot_1.5.3/conf";
 
         List<String> fileList = new ArrayList<String>();
         fileList.add(filePath);
