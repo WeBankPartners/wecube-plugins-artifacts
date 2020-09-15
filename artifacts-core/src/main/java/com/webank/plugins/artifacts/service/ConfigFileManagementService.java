@@ -34,6 +34,7 @@ import com.webank.plugins.artifacts.support.saltstack.SaltConfigFileDto;
 import com.webank.plugins.artifacts.support.saltstack.SaltConfigKeyInfoDto;
 import com.webank.plugins.artifacts.support.saltstack.SaltFileNodeDto;
 import com.webank.plugins.artifacts.support.saltstack.SaltFileNotExistException;
+import com.webank.plugins.artifacts.support.saltstack.SaltstackRemoteCallException;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackRequest.DefaultSaltstackRequest;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultData;
 
@@ -602,8 +603,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
     private PackageComparisionResultDto buildPackageComparisionResult(String packageGuid,
             Map<String, Object> packageCiMap) {
         PackageComparisionResultDto result = new PackageComparisionResultDto();
-        ConfigFilesSaltInfoEnricher enricher = new ConfigFilesSaltInfoEnricher(packageGuid,
-                packageCiMap, this);
+        ConfigFilesSaltInfoEnricher enricher = new ConfigFilesSaltInfoEnricher(packageGuid, packageCiMap, this);
         List<ConfigFileDto> deployFiles = enricher.enrichFileInfoBySalt(getDeployFileInfos(packageCiMap));
         result.setDeployFilePath(deployFiles);
 
@@ -618,16 +618,20 @@ public class ConfigFileManagementService extends AbstractArtifactService {
 
         String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
         for (ConfigFileDto configFile : result.getDiffConfFile()) {
-            List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(packageGuid, configFile.getFilename(),
-                    s3EndpointOfPackageId);
-            for (SaltConfigKeyInfoDto saltConfigInfo : saltConfigKeyInfos) {
-                ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
-                configKeyInfo.setKey(saltConfigInfo.getKey());
-                configKeyInfo.setLine(saltConfigInfo.getLine());
-                configKeyInfo.setType(saltConfigInfo.getType());
+            try {
+                List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(packageGuid,
+                        configFile.getFilename(), s3EndpointOfPackageId);
+                for (SaltConfigKeyInfoDto saltConfigInfo : saltConfigKeyInfos) {
+                    ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
+                    configKeyInfo.setKey(saltConfigInfo.getKey());
+                    configKeyInfo.setLine(saltConfigInfo.getLine());
+                    configKeyInfo.setType(saltConfigInfo.getType());
 
-                configFile.addConfigKeyInfo(configKeyInfo);
+                    configFile.addConfigKeyInfo(configKeyInfo);
 
+                }
+            } catch (SaltstackRemoteCallException e) {
+                log.info("errors to get keys from {},error:{}", configFile.getFilename(), e.getMessage());
             }
         }
 
@@ -663,10 +667,10 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             if (baselineItem == null) {
                 item.setComparisonResult(FILE_COMP_NEW);
             } else {
-                if(FILE_COMP_DELETED.equals(item.getComparisonResult())) {
+                if (FILE_COMP_DELETED.equals(item.getComparisonResult())) {
                     continue;
                 }
-                
+
                 if (item.getIsDir() != null && item.getIsDir()) {
                     item.setComparisonResult(FILE_COMP_SAME);
                 } else {
@@ -891,9 +895,9 @@ public class ConfigFileManagementService extends AbstractArtifactService {
     private void queryFilesForSingleFilepathNotExpendAll(String packageCiGuid, String filepath,
             Map<String, Object> packageCiMap, String packageEndpoint, List<FileQueryResultItemDto> fileQueryResultItems,
             Map<String, FileQueryResultItemDto> pathAndFileQueryResultItems) {
-        
+
         List<SaltFileNodeDto> saltFileNodes = listFilesOfCurrentDirs(filepath, packageEndpoint);
-        for(SaltFileNodeDto saltFileNode: saltFileNodes) {
+        for (SaltFileNodeDto saltFileNode : saltFileNodes) {
             String childFilePath = filepath + "/" + saltFileNode.getName();
             FileQueryResultItemDto childRootResultItem = pathAndFileQueryResultItems.get(childFilePath);
             if (childRootResultItem == null) {
@@ -908,7 +912,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
                 pathAndFileQueryResultItems.put(childRootResultItem.getPath(), childRootResultItem);
             }
         }
-       
+
     }
 
     private void queryFilesForSingleFilepath(String packageCiGuid, String filepath, Map<String, Object> packageCiMap,
@@ -1170,12 +1174,12 @@ public class ConfigFileManagementService extends AbstractArtifactService {
 
         this.updatePackageCi(packageUpdateParams);
     }
-    
+
     private String convertCmdbBooleanToString(Boolean bool) {
-        if(bool == null) {
+        if (bool == null) {
             return null;
         }
-        
+
         return String.valueOf(bool);
     }
 
