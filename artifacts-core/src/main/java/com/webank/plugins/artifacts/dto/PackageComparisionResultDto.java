@@ -1,18 +1,19 @@
 package com.webank.plugins.artifacts.dto;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class PackageComparisionResultDto {
     @JsonProperty("start_file_path")
-    private List<ConfigFileDto> startFilePath;
+    private List<ConfigFileDto> startFilePath = new ArrayList<>();
     @JsonProperty("stop_file_path")
-    private List<ConfigFileDto> stopFilePath;
+    private List<ConfigFileDto> stopFilePath = new ArrayList<>();
     @JsonProperty("deploy_file_path")
-    private List<ConfigFileDto> deployFilePath;
+    private List<ConfigFileDto> deployFilePath = new ArrayList<>();
     @JsonProperty("diff_conf_file")
-    private List<ConfigFileDto> diffConfFile;
+    private List<ConfigFileDto> diffConfFile = new ArrayList<>();
     
     public List<ConfigFileDto> getStartFilePath() {
         return startFilePath;

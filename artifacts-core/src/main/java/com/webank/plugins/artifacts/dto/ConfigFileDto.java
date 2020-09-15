@@ -9,7 +9,7 @@ public class ConfigFileDto {
     private String md5;
     private Boolean isDir;
 
-    private List<ConfigKeyInfoDto> configKeyInfos;
+    private List<ConfigKeyInfoDto> configKeyInfos = new ArrayList<>();
 
     public String getFilename() {
         return filename;

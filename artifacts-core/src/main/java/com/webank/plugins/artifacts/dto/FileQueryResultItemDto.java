@@ -12,7 +12,7 @@ public class FileQueryResultItemDto {
     private String md5;
     private Boolean exists = true;
 
-    private List<FileQueryResultItemDto> children;
+    private List<FileQueryResultItemDto> children = new ArrayList<>();
 
     public String getName() {
         return name;
