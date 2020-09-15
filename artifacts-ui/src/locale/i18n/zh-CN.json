@@ -57,7 +57,7 @@
   "artifacts_parse_error": "[转义失败]: ",
   "artifacts_please_paste_here": "请在这粘贴",
   "is_decompression": "是否解压",
-  "configuration": "选择已有配置",
+  "baseline_package": "基线版本",
   "is_files_exist": "该文件不存在",
   "bind_key": "绑定",
   "untie_key": "解绑",
@@ -65,5 +65,6 @@
   "select_online": "在线选择",
   "tip_conf_bind": "绑定后将替换变量值",
   "tip_conf_unbind": "解绑后不会替换变量值",
-  "artifacts_property_isbind": "绑定"
+  "artifacts_property_isbind": "绑定",
+  "multi_bind_config": "绑定管理"
 }

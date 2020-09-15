@@ -57,7 +57,7 @@
   "artifacts_parse_error": "[Parse Error]: ",
   "artifacts_please_paste_here": "Please Paste Here",
   "is_decompression": "Decompression",
-  "configuration": "Configuration",
+  "baseline_package": "BaseLine",
   "is_files_exist": "The File Does Not Exist",
   "bind_key": "Bind",
   "untie_key": "Unbind",
@@ -65,5 +65,6 @@
   "select_online": "Select Online",
   "tip_conf_bind": "Bind the item to replace it",
   "tip_conf_unbind": "Unbind the item to leave it as is",
-  "artifacts_property_isbind": "IsBind"
+  "artifacts_property_isbind": "IsBind",
+  "multi_bind_config": "绑定管理"
 }
