@@ -101,9 +101,9 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         Map<String, Object> packageCiMap = retrievePackageCiByGuid(packageGuid);
         Map<String, Object> baselinePackageCiMap = retrievePackageCiByGuid(baselinePackageGuid);
 
-        PackageComparisionResultDto result = buildPackageComparisionResult(packageGuid, packageCiMap);
+        PackageComparisionResultDto result = buildPackageComparisionResult(packageGuid, packageCiMap, baselinePackageCiMap, false);
         PackageComparisionResultDto baselineResult = buildPackageComparisionResult(baselinePackageGuid,
-                baselinePackageCiMap);
+                baselinePackageCiMap,baselinePackageCiMap, true);
 
         performPackageConfigComparison(result, baselineResult);
 
@@ -607,39 +607,45 @@ public class ConfigFileManagementService extends AbstractArtifactService {
     }
 
     private PackageComparisionResultDto buildPackageComparisionResult(String packageGuid,
-            Map<String, Object> packageCiMap) {
+            Map<String, Object> packageCiMap, Map<String, Object> baselinePackageCiMap, boolean isBaseline) {
+        Map<String, Object>  configFilesSrcPackageMap = null;
+        if (isBaseline) {
+            configFilesSrcPackageMap = packageCiMap;
+        }else {
+            configFilesSrcPackageMap = baselinePackageCiMap;
+        }
         PackageComparisionResultDto result = new PackageComparisionResultDto();
         ConfigFilesSaltInfoEnricher enricher = new ConfigFilesSaltInfoEnricher(packageGuid, packageCiMap, this);
-        List<ConfigFileDto> deployFiles = enricher.enrichFileInfoBySalt(getDeployFileInfos(packageCiMap));
+        List<ConfigFileDto> deployFiles = enricher.enrichFileInfoBySalt(getDeployFileInfos(configFilesSrcPackageMap));
         result.setDeployFilePath(deployFiles);
 
-        List<ConfigFileDto> diffConfFiles = enricher.enrichFileInfoBySalt(getDiffConfFileInfos(packageCiMap));
+        List<ConfigFileDto> diffConfFiles = enricher.enrichFileInfoBySalt(getDiffConfFileInfos(configFilesSrcPackageMap));
         result.setDiffConfFile(diffConfFiles);
 
-        List<ConfigFileDto> startFiles = enricher.enrichFileInfoBySalt(getStartFileInfos(packageCiMap));
+        List<ConfigFileDto> startFiles = enricher.enrichFileInfoBySalt(getStartFileInfos(configFilesSrcPackageMap));
         result.setStartFilePath(startFiles);
 
-        List<ConfigFileDto> stopFiles = enricher.enrichFileInfoBySalt(getStopFileInfos(packageCiMap));
+        List<ConfigFileDto> stopFiles = enricher.enrichFileInfoBySalt(getStopFileInfos(configFilesSrcPackageMap));
         result.setStopFilePath(stopFiles);
 
-        String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
-        for (ConfigFileDto configFile : result.getDiffConfFile()) {
-            try {
-                List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(packageGuid,
-                        configFile.getFilename(), s3EndpointOfPackageId);
-                for (SaltConfigKeyInfoDto saltConfigInfo : saltConfigKeyInfos) {
-                    ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
-                    configKeyInfo.setKey(saltConfigInfo.getKey());
-                    configKeyInfo.setLine(saltConfigInfo.getLine());
-                    configKeyInfo.setType(saltConfigInfo.getType());
-
-                    configFile.addConfigKeyInfo(configKeyInfo);
-
-                }
-            } catch (SaltstackRemoteCallException e) {
-                log.info("errors to get keys from {},error:{}", configFile.getFilename(), e.getMessage());
-            }
-        }
+//        String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
+//        for (ConfigFileDto configFile : result.getDiffConfFile()) {
+//            try {
+//                List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(packageGuid,
+//                        configFile.getFilename(), s3EndpointOfPackageId);
+//                for (SaltConfigKeyInfoDto saltConfigInfo : saltConfigKeyInfos) {
+//                    ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
+//                    configKeyInfo.setKey(saltConfigInfo.getKey());
+//                    configKeyInfo.setLine(saltConfigInfo.getLine());
+//                    configKeyInfo.setType(saltConfigInfo.getType());
+//
+//                    configFile.addConfigKeyInfo(configKeyInfo);
+//
+//                }
+//            } catch (SaltstackRemoteCallException e) {
+//                log.info("errors to get keys from {},error:{}", configFile.getFilename(), e.getMessage());
+//            }
+//        }
 
         return result;
     }
@@ -808,6 +814,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
     private void queryFilesForSingleFilepathExpendAll(String packageCiGuid, String filepath,
             Map<String, Object> packageCiMap, String packageEndpoint, List<FileQueryResultItemDto> fileQueryResultItems,
             Map<String, FileQueryResultItemDto> pathAndFileQueryResultItems) {
+        queryFilesForRootDir(packageEndpoint, fileQueryResultItems, pathAndFileQueryResultItems);
         String[] filepathParts = filepath.split("/");
 
         String rootFilepath = filepathParts[0];
