@@ -245,36 +245,36 @@ public class ConfigFileManagementService extends AbstractArtifactService {
 
         performFileComparison(newStartFiles, oldStartFiles);
 
-        if (!oldStartFiles.isEmpty()) {
-            for (ConfigFileDto f : oldStartFiles) {
-                f.setComparisonResult(FILE_COMP_DELETED);
-                newResult.getStartFilePath().add(f);
-            }
-        }
+//        if (!oldStartFiles.isEmpty()) {
+//            for (ConfigFileDto f : oldStartFiles) {
+//                f.setComparisonResult(FILE_COMP_DELETED);
+//                newResult.getStartFilePath().add(f);
+//            }
+//        }
 
         performFileComparison(newStopFiles, oldStopFiles);
-        if (!oldStopFiles.isEmpty()) {
-            for (ConfigFileDto f : oldStopFiles) {
-                f.setComparisonResult(FILE_COMP_DELETED);
-                newResult.getStopFilePath().add(f);
-            }
-        }
+//        if (!oldStopFiles.isEmpty()) {
+//            for (ConfigFileDto f : oldStopFiles) {
+//                f.setComparisonResult(FILE_COMP_DELETED);
+//                newResult.getStopFilePath().add(f);
+//            }
+//        }
 
         performFileComparison(newDeployFiles, oldDeployFiles);
-        if (!oldDeployFiles.isEmpty()) {
-            for (ConfigFileDto f : oldDeployFiles) {
-                f.setComparisonResult(FILE_COMP_DELETED);
-                newResult.getDeployFilePath().add(f);
-            }
-        }
+//        if (!oldDeployFiles.isEmpty()) {
+//            for (ConfigFileDto f : oldDeployFiles) {
+//                f.setComparisonResult(FILE_COMP_DELETED);
+//                newResult.getDeployFilePath().add(f);
+//            }
+//        }
 
         performFileComparison(newDiffConfFiles, oldDiffConfFiles);
-        if (!oldDiffConfFiles.isEmpty()) {
-            for (ConfigFileDto f : oldDiffConfFiles) {
-                f.setComparisonResult(FILE_COMP_DELETED);
-                newResult.getDiffConfFile().add(f);
-            }
-        }
+//        if (!oldDiffConfFiles.isEmpty()) {
+//            for (ConfigFileDto f : oldDiffConfFiles) {
+//                f.setComparisonResult(FILE_COMP_DELETED);
+//                newResult.getDiffConfFile().add(f);
+//            }
+//        }
 
     }
 
