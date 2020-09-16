@@ -157,12 +157,12 @@
         <div class="batchOperation" style="text-align: right;">
           <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
         </div>
+        <Spin size="large" fix v-if="tabTableLoading">
+          <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
+          <div>{{ $t('artifacts_loading') }}</div>
+        </Spin>
         <Tabs @on-click="tabChange">
           <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.shorFileName" :key="index">
-            <Spin size="large" fix v-if="tabTableLoading">
-              <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
-              <div>{{ $t('artifacts_loading') }}</div>
-            </Spin>
             <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
           </TabPane>
         </Tabs>
@@ -179,7 +179,7 @@
             <ul style="height:300px;overflow-y:auto">
               <li class="bind-style" v-for="(bindData, index) in batchBindData" :key="index">
                 <Checkbox v-model="bindData.bound">{{ bindData.key }}</Checkbox>
-                <div style="margin-left:20px;color: #c4c3c3;">{{ bindData.fileNames }}</div>
+                <div style="margin-left: 10px;color: #c4c3c3;display: inline-block;">[{{ bindData.fileNames }}]</div>
               </li>
             </ul>
           </Card>
@@ -1165,6 +1165,7 @@ export default {
       this.isBatchBindAllChecked = !this.isBatchBindAllChecked
     },
     async saveBatchBindOperation () {
+      this.tabTableLoading = true
       let tempData = this.formatPackageDetail(this.packageDetail)
       tempData.diff_conf_variable = this.batchBindData
       const { status, data } = await updatePackage(this.guid, this.packageId, tempData)
@@ -1172,6 +1173,7 @@ export default {
         let uData = this.formatPackageDetail(data)
         this.packageDetail = uData
       }
+      this.tabTableLoading = false
     },
     cancelBatchBindOperation () {
       this.isShowBatchBindModal = false
