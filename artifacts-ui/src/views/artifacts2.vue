@@ -153,10 +153,10 @@
         <!-- 包配置文件选择 -->
         <Modal :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" @on-ok="saveConfigFileTree" @on-cancel="closeConfigFileTree" draggable>
           <CheckboxGroup v-if="packageInput.baseline_package">
-            <Button type="dashed" size="small" @click="checkConfigFileTreeVis('new')"><span style="color:#18b566;">new</span></Button>
-            <Button type="dashed" size="small" @click="checkConfigFileTreeVis('same')"><span>same</span></Button>
-            <Button type="dashed" size="small" @click="checkConfigFileTreeVis('changed')"><span style="color:#2d8cf0;">changed</span></Button>
-            <Button type="dashed" size="small" @click="checkConfigFileTreeVis('deleted')"><span style="color:#cccccc;">deleted</span></Button>
+            <Button :style="toggleCheckFileTreeNew" type="dashed" size="small" @click="checkConfigFileTreeVis('new')"><span style="color:#18b566;">new</span></Button>
+            <Button :style="toggleCheckFileTreeSame" type="dashed" size="small" @click="checkConfigFileTreeVis('same')"><span>same</span></Button>
+            <Button :style="toggleCheckFileTreeChanged" type="dashed" size="small" @click="checkConfigFileTreeVis('changed')"><span style="color:#2d8cf0;">changed</span></Button>
+            <Button :style="toggleCheckFileTreeDeleted" type="dashed" size="small" @click="checkConfigFileTreeVis('deleted')"><span style="color:#cccccc;">deleted</span></Button>
           </CheckboxGroup>
           <Tree ref="configTree" :data="configFileTree.treeData" :load-data="configFileTreeLoadNode" @on-toggle-expand="configFileTreeExpand" @on-check-change="changeChildChecked" show-checkbox> </Tree>
         </Modal>
@@ -332,6 +332,10 @@ export default {
         treeData: []
       },
       configFileTreeTitle: '',
+      toggleCheckFileTreeNew: '',
+      toggleCheckFileTreeSame: '',
+      toggleCheckFileTreeChanged: '',
+      toggleCheckFileTreeDeleted: '',
       // -------------------
       // 差异化变量数据
       // -------------------
@@ -1093,19 +1097,65 @@ export default {
         this.packageInput.deploy_file_path = saveData
       }
     },
-    _travelConfigFileTreeNodes (node, status) {
+    _travelConfigFileTreeNodes (node, status, checked) {
+      let changeParent = false
       if (!node.isDir && node.comparisonResult === status) {
-        this.$set(node, 'checked', true)
+        console.log('travel ', node.title, checked)
+        this.$set(node, 'checked', checked)
+        if (!checked) {
+          changeParent = true
+        }
       }
       if (node.children && node.expand) {
         node.children.forEach(el => {
-          this._travelConfigFileTreeNodes(el, status)
+          let tmpChangeParent = this._travelConfigFileTreeNodes(el, status, checked)
+          if (tmpChangeParent) {
+            this.$set(node, 'checked', false)
+          }
         })
       }
+      return changeParent
     },
     checkConfigFileTreeVis (status) {
+      let checked = true
+      if (status === 'new') {
+        if (this.toggleCheckFileTreeNew) {
+          checked = false
+          this.toggleCheckFileTreeNew = ''
+        } else {
+          checked = true
+          this.toggleCheckFileTreeNew = 'box-shadow: rgb(165 165 165) 2px 2px 2px 0px inset; background: rgb(238 238 238);'
+        }
+      } else if (status === 'same') {
+        if (this.toggleCheckFileTreeSame) {
+          checked = false
+          this.toggleCheckFileTreeSame = ''
+        } else {
+          checked = true
+          this.toggleCheckFileTreeSame = 'box-shadow: rgb(165 165 165) 2px 2px 2px 0px inset; background: rgb(238 238 238);'
+        }
+      } else if (status === 'changed') {
+        if (this.toggleCheckFileTreeChanged) {
+          checked = false
+          this.toggleCheckFileTreeChanged = ''
+        } else {
+          checked = true
+          this.toggleCheckFileTreeChanged = 'box-shadow: rgb(165 165 165) 2px 2px 2px 0px inset; background: rgb(238 238 238);'
+        }
+      } else if (status === 'deleted') {
+        if (this.toggleCheckFileTreeDeleted) {
+          checked = false
+          this.toggleCheckFileTreeDeleted = ''
+        } else {
+          checked = true
+          this.toggleCheckFileTreeDeleted = 'box-shadow: rgb(165 165 165) 2px 2px 2px 0px inset; background: rgb(238 238 238);'
+        }
+      }
       this.configFileTree.treeData.forEach(el => {
-        this._travelConfigFileTreeNodes(el, status)
+        let tmpChangeParent = this._travelConfigFileTreeNodes(el, status, checked)
+        if (tmpChangeParent) {
+          this.$set(el, 'checked', false)
+        }
       })
     },
     async configFileTreeLoadNode (item, callback) {
