@@ -122,11 +122,13 @@ public class ConfigFileManagementServiceTest {
 
     @Test
     public void testQueryDeployConfigFilesAsLeafFile() throws JsonProcessingException {
-        String packageId = "0045_0000000005";
+        String packageId = "0045_0000000030";
+        String baseline = "0045_0000000005";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
 //        String filePath = "conf/application-dev11.properties";
-        String filePath = "demo-app-spring-boot_1.5.3/conf";
+        String filePath = "demo-app-spring-boot_1.5.3";
         fileQueryRequestDto.setExpandAll(false);
+        fileQueryRequestDto.setBaselinePackage(baseline);
 
         List<String> fileList = new ArrayList<String>();
         fileList.add(filePath);
