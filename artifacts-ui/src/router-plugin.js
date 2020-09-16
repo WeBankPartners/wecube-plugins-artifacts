@@ -1,4 +1,4 @@
-import Artifacts from './views/artifacts.vue'
+import Artifacts from './views/artifacts2.vue'
 
 export default [
   {
