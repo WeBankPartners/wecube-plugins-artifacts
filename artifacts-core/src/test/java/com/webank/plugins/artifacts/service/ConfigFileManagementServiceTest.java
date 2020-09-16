@@ -58,7 +58,7 @@ public class ConfigFileManagementServiceTest {
         String unitDesignId = "0039_0000000017";
         String packageGuid = "0045_0000000027";
 
-        String baselinePackageGuid = "0045_0000000005";
+        String baselinePackageGuid = "0045_0000000024";
 
         PackageComparisionRequestDto comparisonReqDto = new PackageComparisionRequestDto();
         comparisonReqDto.setBaselinePackage(baselinePackageGuid);
