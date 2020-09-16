@@ -33,7 +33,7 @@ import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
 
-//@Ignore
+@Ignore
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
 @SpringBootTest
