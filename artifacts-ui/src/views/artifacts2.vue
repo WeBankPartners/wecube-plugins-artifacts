@@ -53,10 +53,10 @@
                 <div id="diff_conf_file">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.diff_conf_file" :key="index">
                     <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index].filename" />
-                    <div v-if="packageInput.diff_conf_file[index].comparisonResult === 'new'" style="width:60px;margin: 0 8px;display: inline-block;color:#19be6b;">[{{ packageInput.diff_conf_file[index].comparisonResult }}]</div>
-                    <div v-if="packageInput.diff_conf_file[index].comparisonResult === 'same'" style="width:60px;margin: 0 8px;display: inline-block;">[{{ packageInput.diff_conf_file[index].comparisonResult }}]</div>
-                    <div v-if="packageInput.diff_conf_file[index].comparisonResult === 'changed'" style="width:60px;margin: 0 8px;display: inline-block;color:#2d8cf0;">[{{ packageInput.diff_conf_file[index].comparisonResult }}]</div>
-                    <div v-if="packageInput.diff_conf_file[index].comparisonResult === 'deleted'" style="width:60px;margin: 0 8px;display: inline-block;color:#cccccc;">[{{ packageInput.diff_conf_file[index].comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'diff_conf_file')"></Button>
                   </div>
                 </div>
@@ -73,10 +73,10 @@
                 <div id="start_file_path">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.start_file_path" :key="index">
                     <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path[index].filename" />
-                    <div v-if="file.comparisonResult === 'new'" style="width:60px;margin: 0 8px;display: inline-block;color:#19be6b;">[{{ file.comparisonResult }}]</div>
-                    <div v-if="file.comparisonResult === 'same'" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                    <div v-if="file.comparisonResult === 'changed'" style="width:60px;margin: 0 8px;display: inline-block;color:#2d8cf0;">[{{ file.comparisonResult }}]</div>
-                    <div v-if="file.comparisonResult === 'deleted'" style="width:60px;margin: 0 8px;display: inline-block;color:#cccccc;">[{{ file.comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
                   </div>
                 </div>
@@ -93,10 +93,10 @@
                 <div id="stop_file_path">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.stop_file_path" :key="index">
                     <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path[index].filename" />
-                    <div v-if="packageInput.stop_file_path[index].comparisonResult === 'new'" style="width:60px;margin: 0 8px;display: inline-block;color:#19be6b;">[{{ packageInput.stop_file_path[index].comparisonResult }}]</div>
-                    <div v-if="packageInput.stop_file_path[index].comparisonResult === 'same'" style="width:60px;margin: 0 8px;display: inline-block;">[{{ packageInput.stop_file_path[index].comparisonResult }}]</div>
-                    <div v-if="packageInput.stop_file_path[index].comparisonResult === 'changed'" style="width:60px;margin: 0 8px;display: inline-block;color:#2d8cf0;">[{{ packageInput.stop_file_path[index].comparisonResult }}]</div>
-                    <div v-if="packageInput.stop_file_path[index].comparisonResult === 'deleted'" style="width:60px;margin: 0 8px;display: inline-block;color:#cccccc;">[{{ packageInput.stop_file_path[index].comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
                   </div>
                 </div>
@@ -113,10 +113,10 @@
                 <div id="deploy_file_path">
                   <div style="margin-bottom:5px" v-for="(file, index) in packageInput.deploy_file_path" :key="index">
                     <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path[index].filename" />
-                    <div v-if="packageInput.deploy_file_path[index].comparisonResult === 'new'" style="width:60px;margin: 0 8px;display: inline-block;color:#19be6b;">[{{ packageInput.deploy_file_path[index].comparisonResult }}]</div>
-                    <div v-if="packageInput.deploy_file_path[index].comparisonResult === 'same'" style="width:60px;margin: 0 8px;display: inline-block;">[{{ packageInput.deploy_file_path[index].comparisonResult }}]</div>
-                    <div v-if="packageInput.deploy_file_path[index].comparisonResult === 'changed'" style="width:60px;margin: 0 8px;display: inline-block;color:#2d8cf0;">[{{ packageInput.deploy_file_path[index].comparisonResult }}]</div>
-                    <div v-if="packageInput.deploy_file_path[index].comparisonResult === 'deleted'" style="width:60px;margin: 0 8px;display: inline-block;color:#cccccc;">[{{ packageInput.deploy_file_path[index].comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
                   </div>
                 </div>
@@ -143,7 +143,7 @@
         </Modal>
         <!-- 包配置文件选择 -->
         <Modal :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" @on-ok="saveConfigFileTree" @on-cancel="closeConfigFileTree" draggable>
-          <CheckboxGroup>
+          <CheckboxGroup v-if="packageInput.baseline_package">
             <Button type="dashed" size="small" @click="checkConfigFileTreeVis('new')"><span style="color:#18b566;">new</span></Button>
             <Button type="dashed" size="small" @click="checkConfigFileTreeVis('same')"><span>same</span></Button>
             <Button type="dashed" size="small" @click="checkConfigFileTreeVis('changed')"><span style="color:#2d8cf0;">changed</span></Button>
@@ -914,13 +914,6 @@ export default {
         }
       } else {
         treeNode.render = (h, params) => {
-          if (params.data.comparisonResult === 'new') {
-            params.data.nodeStyle = '"color: #19be6b;"'
-          } else if (params.data.comparisonResult === 'changed') {
-            params.data.nodeStyle = '"color: #2d8cf0;"'
-          } else if (params.data.comparisonResult === 'deleted') {
-            params.data.nodeStyle = '"color: #cccccc;"'
-          }
           if (params.data.comparisonResult) {
             if (params.data.comparisonResult === 'new') {
               return (
@@ -1092,7 +1085,7 @@ export default {
       callback(this.formatConfigFileTree(data))
     },
     configFileTreeExpand (item) {
-      console.log('configFileTreeExpand', item)
+      // console.log('configFileTreeExpand', item)
     },
     async changeChildChecked (checkedList, item) {
       if (item.isDir) {
@@ -1157,7 +1150,7 @@ export default {
       ]
     },
     tabChange (tabName) {
-      console.log('tabChange', tabName)
+      // console.log('tabChange', tabName)
     },
     showBatchBindModal () {
       // 复制一份数据用于临时使用bound勾选状态
@@ -1217,7 +1210,7 @@ export default {
       }
     },
     updateAutoFillValue (val, row) {
-      console.log('updateAutoFillValue', row)
+      // console.log('updateAutoFillValue', row)
     },
     checkFillRule (v) {
       if (v === null || v === undefined) {
@@ -1312,5 +1305,20 @@ export default {
 .bind-style {
   list-style: none;
   margin: 8px;
+}
+
+.baseline-cmp-new {
+  color: #19be6b;
+}
+
+.baseline-cmp-same {
+}
+
+.baseline-cmp-changed {
+  color: #2d8cf0;
+}
+
+.baseline-cmp-deleted {
+  color: #cccccc;
 }
 </style>
