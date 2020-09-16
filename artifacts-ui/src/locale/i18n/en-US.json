@@ -65,7 +65,7 @@
   "select_online": "Select Online",
   "tip_conf_bind": "Bind the item to replace it",
   "tip_conf_unbind": "Unbind the item to leave it as is",
-  "artifacts_property_isbind": "IsBind",
+  "artifacts_property_isbind": "Bind Status",
   "artifacts_bind_success": "Bind Success",
   "multi_bind_config": "Binding Manage",
   "check_all": "Check All",
