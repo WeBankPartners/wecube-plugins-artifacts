@@ -515,10 +515,23 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             if (oldFile == null) {
                 newFile.setComparisonResult(FILE_COMP_NEW);
             } else {
-                if (newFile.getMd5() != null && newFile.getMd5().equals(oldFile.getMd5())) {
-                    newFile.setComparisonResult(FILE_COMP_SAME);
-                } else {
-                    newFile.setComparisonResult(FILE_COMP_CHANGED);
+                if(FILE_COMP_DELETED.equals(oldFile.getComparisonResult())) {
+                    if(FILE_COMP_DELETED.equals(newFile.getComparisonResult())) {
+                        //nothing
+                    }else {
+                        newFile.setComparisonResult(FILE_COMP_NEW);
+                    }
+                }else {
+                    if(FILE_COMP_DELETED.equals(newFile.getComparisonResult())) {
+                        //nothing
+                    }else{
+                        if (newFile.getMd5() != null && newFile.getMd5().equals(oldFile.getMd5())) {
+                            newFile.setComparisonResult(FILE_COMP_SAME);
+                        } else {
+                            newFile.setComparisonResult(FILE_COMP_CHANGED);
+                        }
+                    }
+                   
                 }
             }
         }
