@@ -40,9 +40,18 @@
         <ArtifactsSimpleTable class="artifact-management-package-table" :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
         <!-- 包配置模态框 -->
         <Modal width="70" :mask-closable="false" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')">
-          <Select clearable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" v-model="packageInput.baseline_package">
-            <Option v-for="conf in tableData.filter(conf => conf.guid !== packageId)" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
-          </Select>
+          <Card class="artifact-management-files-card">
+            <Row>
+              <Col style="text-align: right" span="5">
+                <span style="margin-right: 10px">{{ $t('baseline_package') }}</span>
+              </Col>
+              <Col span="18" offset="1">
+                <Select clearable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" v-model="packageInput.baseline_package">
+                  <Option v-for="conf in tableData.filter(conf => conf.guid !== packageId)" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
+                </Select>
+              </Col>
+            </Row>
+          </Card>
           <Card class="artifact-management-files-card">
             <Row>
               <Col style="text-align: right" span="5">
@@ -144,10 +153,10 @@
         <!-- 包配置文件选择 -->
         <Modal :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" @on-ok="saveConfigFileTree" @on-cancel="closeConfigFileTree" draggable>
           <CheckboxGroup v-if="packageInput.baseline_package">
-            <Button type="dashed" size="small" @click="checkConfigFileTreeVis('new')"><span style="color:#18b566;">new</span></Button>
-            <Button type="dashed" size="small" @click="checkConfigFileTreeVis('same')"><span>same</span></Button>
-            <Button type="dashed" size="small" @click="checkConfigFileTreeVis('changed')"><span style="color:#2d8cf0;">changed</span></Button>
-            <Button type="dashed" size="small" @click="checkConfigFileTreeVis('deleted')"><span style="color:#cccccc;">deleted</span></Button>
+            <Button :style="toggleCheckFileTreeNew" type="dashed" size="small" @click="checkConfigFileTreeVis('new')"><span style="color:#18b566;">new</span></Button>
+            <Button :style="toggleCheckFileTreeSame" type="dashed" size="small" @click="checkConfigFileTreeVis('same')"><span>same</span></Button>
+            <Button :style="toggleCheckFileTreeChanged" type="dashed" size="small" @click="checkConfigFileTreeVis('changed')"><span style="color:#2d8cf0;">changed</span></Button>
+            <Button :style="toggleCheckFileTreeDeleted" type="dashed" size="small" @click="checkConfigFileTreeVis('deleted')"><span style="color:#cccccc;">deleted</span></Button>
           </CheckboxGroup>
           <Tree ref="configTree" :data="configFileTree.treeData" :load-data="configFileTreeLoadNode" @on-toggle-expand="configFileTreeExpand" @on-check-change="changeChildChecked" show-checkbox> </Tree>
         </Modal>
@@ -171,10 +180,10 @@
             <Option v-for="conf in onlinePackages" :value="conf.downloadUrl" :key="conf.downloadUrl">{{ conf.name }}</Option>
           </Select>
         </Modal>
-        <Modal :mask-closable="false" v-model="isShowBatchBindModal" :title="$t('multi_bind_config')" @on-ok="saveBatchBindOperation" @on-cancel="cancelBatchBindOperation">
+        <Modal :mask-closable="false" v-model="isShowBatchBindModal" :title="$t('multi_bind_config')">
           <Card>
             <div slot="title">
-              <Checkbox border size="small" :indeterminate="isBatchBindIndeterminate" :value="isBatchBindAllChecked" @click.prevent.native="batchBindSelectAll">全选</Checkbox>
+              <Checkbox border size="small" :indeterminate="isBatchBindIndeterminate" :value="isBatchBindAllChecked" @click.prevent.native="batchBindSelectAll">{{ $t('check_all') }}</Checkbox>
             </div>
             <ul style="height:300px;overflow-y:auto">
               <li class="bind-style" v-for="(bindData, index) in batchBindData" :key="index">
@@ -183,6 +192,10 @@
               </li>
             </ul>
           </Card>
+          <div slot="footer">
+            <Button @click="cancelBatchBindOperation">{{ $t('artifacts_cancel') }}</Button>
+            <Button type="primary" @click="saveBatchBindOperation">{{ $t('artifacts_save') }}</Button>
+          </div>
         </Modal>
         <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setConfigRowValue" @on-cancel="closeConfigSelectModal">
           <Select filterable clearable v-model="currentConfigValue">
@@ -319,6 +332,10 @@ export default {
         treeData: []
       },
       configFileTreeTitle: '',
+      toggleCheckFileTreeNew: '',
+      toggleCheckFileTreeSame: '',
+      toggleCheckFileTreeChanged: '',
+      toggleCheckFileTreeDeleted: '',
       // -------------------
       // 差异化变量数据
       // -------------------
@@ -342,6 +359,25 @@ export default {
       allDiffConfigs: [],
       attrsTableColomnOptions: [
         {
+          title: this.$t('artifacts_property_isbind'),
+          width: 70,
+          render: (h, params) => {
+            if (params.row.conf_variable.bound) {
+              return (
+                <span>
+                  <Icon type="md-code-download" style="font-size: 18px;" />
+                </span>
+              )
+            } else {
+              return (
+                <span>
+                  <Icon type="md-code" style="font-size: 18px;" />
+                </span>
+              )
+            }
+          }
+        },
+        {
           title: this.$t('artifacts_property_seq'),
           key: 'index',
           width: 70
@@ -350,14 +386,6 @@ export default {
           title: this.$t('artifacts_line_number'),
           width: 100,
           key: 'line'
-        },
-        {
-          title: this.$t('artifacts_property_isbind'),
-          width: 70,
-          render: (h, params) => {
-            // show static view only if confirmed
-            return <span>{params.row.conf_variable.bound ? 'Y' : 'N'}</span>
-          }
         },
         {
           title: this.$t('artifacts_property_name'),
@@ -792,10 +820,10 @@ export default {
     async baseLinePackageChanged (v) {
       if (v) {
         const found = this.tableData.find(row => row.guid === v)
-        this.packageInput.diff_conf_file = found.diff_conf_file ? found.diff_conf_file : []
-        this.packageInput.start_file_path = found.start_file_path ? found.start_file_path : []
-        this.packageInput.stop_file_path = found.stop_file_path ? found.stop_file_path : []
-        this.packageInput.deploy_file_path = found.deploy_file_path ? found.deploy_file_path : []
+        this.packageInput.diff_conf_file = found.diff_conf_file ? JSON.parse(JSON.stringify(found.diff_conf_file)) : []
+        this.packageInput.start_file_path = found.start_file_path ? JSON.parse(JSON.stringify(found.start_file_path)) : []
+        this.packageInput.stop_file_path = found.stop_file_path ? JSON.parse(JSON.stringify(found.stop_file_path)) : []
+        this.packageInput.deploy_file_path = found.deploy_file_path ? JSON.parse(JSON.stringify(found.deploy_file_path)) : []
         this.packageInput.is_decompression = found.is_decompression || 0
       }
       await this.syncBaselineFileStatus()
@@ -804,11 +832,12 @@ export default {
       event.stopPropagation()
       // 以下4个变量类型为字符串
       // row从table数据中来，此时baseline_package为对象
+      console.log(row)
       this.packageInput.baseline_package = row.baseline_package ? row.baseline_package.guid : null
-      this.packageInput.diff_conf_file = row.diff_conf_file
-      this.packageInput.start_file_path = row.start_file_path
-      this.packageInput.stop_file_path = row.stop_file_path
-      this.packageInput.deploy_file_path = row.deploy_file_path
+      this.packageInput.diff_conf_file = JSON.parse(JSON.stringify(row.diff_conf_file))
+      this.packageInput.start_file_path = JSON.parse(JSON.stringify(row.start_file_path))
+      this.packageInput.stop_file_path = JSON.parse(JSON.stringify(row.stop_file_path))
+      this.packageInput.deploy_file_path = JSON.parse(JSON.stringify(row.deploy_file_path))
       this.packageInput.is_decompression = row.is_decompression || 0
       this.packageId = row.guid
       await this.syncBaselineFileStatus()
@@ -924,7 +953,7 @@ export default {
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #19be6b;">
                     {params.data.title}
-                    <span style="font-size:6px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                   </span>
                 </span>
               )
@@ -934,7 +963,7 @@ export default {
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #2d8cf0;">
                     {params.data.title}
-                    <span style="font-size:6px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                   </span>
                 </span>
               )
@@ -944,7 +973,7 @@ export default {
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #cccccc;">
                     {params.data.title}
-                    <span style="font-size:6px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                   </span>
                 </span>
               )
@@ -954,7 +983,7 @@ export default {
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span>
                     {params.data.title}
-                    <span style="font-size:6px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                   </span>
                 </span>
               )
@@ -1068,19 +1097,65 @@ export default {
         this.packageInput.deploy_file_path = saveData
       }
     },
-    _travelConfigFileTreeNodes (node, status) {
+    _travelConfigFileTreeNodes (node, status, checked) {
+      let changeParent = false
       if (!node.isDir && node.comparisonResult === status) {
-        this.$set(node, 'checked', true)
+        console.log('travel ', node.title, checked)
+        this.$set(node, 'checked', checked)
+        if (!checked) {
+          changeParent = true
+        }
       }
       if (node.children && node.expand) {
         node.children.forEach(el => {
-          this._travelConfigFileTreeNodes(el, status)
+          let tmpChangeParent = this._travelConfigFileTreeNodes(el, status, checked)
+          if (tmpChangeParent) {
+            this.$set(node, 'checked', false)
+          }
         })
       }
+      return changeParent
     },
     checkConfigFileTreeVis (status) {
+      let checked = true
+      if (status === 'new') {
+        if (this.toggleCheckFileTreeNew) {
+          checked = false
+          this.toggleCheckFileTreeNew = ''
+        } else {
+          checked = true
+          this.toggleCheckFileTreeNew = 'box-shadow: rgb(165 165 165) 2px 2px 2px 0px inset; background: rgb(238 238 238);'
+        }
+      } else if (status === 'same') {
+        if (this.toggleCheckFileTreeSame) {
+          checked = false
+          this.toggleCheckFileTreeSame = ''
+        } else {
+          checked = true
+          this.toggleCheckFileTreeSame = 'box-shadow: rgb(165 165 165) 2px 2px 2px 0px inset; background: rgb(238 238 238);'
+        }
+      } else if (status === 'changed') {
+        if (this.toggleCheckFileTreeChanged) {
+          checked = false
+          this.toggleCheckFileTreeChanged = ''
+        } else {
+          checked = true
+          this.toggleCheckFileTreeChanged = 'box-shadow: rgb(165 165 165) 2px 2px 2px 0px inset; background: rgb(238 238 238);'
+        }
+      } else if (status === 'deleted') {
+        if (this.toggleCheckFileTreeDeleted) {
+          checked = false
+          this.toggleCheckFileTreeDeleted = ''
+        } else {
+          checked = true
+          this.toggleCheckFileTreeDeleted = 'box-shadow: rgb(165 165 165) 2px 2px 2px 0px inset; background: rgb(238 238 238);'
+        }
+      }
       this.configFileTree.treeData.forEach(el => {
-        this._travelConfigFileTreeNodes(el, status)
+        let tmpChangeParent = this._travelConfigFileTreeNodes(el, status, checked)
+        if (tmpChangeParent) {
+          this.$set(el, 'checked', false)
+        }
       })
     },
     async configFileTreeLoadNode (item, callback) {
@@ -1151,9 +1226,11 @@ export default {
     renderConfigButton (params) {
       let row = params.row
       return [
-        <Button disabled={!!row.conf_variable.fixedDate} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showConfigKeyModal(row)}>
-          {this.$t('select_key')}
-        </Button>,
+        <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip')}>
+          <Button disabled={!!row.conf_variable.fixedDate} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showConfigKeyModal(row)}>
+            {this.$t('select_key')}
+          </Button>
+        </Tooltip>,
         // disable no dirty data or row is confirmed
         <Button disabled={!!(row.conf_variable.diffExpr === row.conf_variable.originDiffExpr || row.conf_variable.fixedDate)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveConfigVariableValue(row)}>
           {this.$t('artifacts_save')}
@@ -1176,6 +1253,7 @@ export default {
       this.isBatchBindAllChecked = !this.isBatchBindAllChecked
     },
     async saveBatchBindOperation () {
+      this.isShowBatchBindModal = false
       this.tabTableLoading = true
       let tempData = this.formatPackageDetail(this.packageDetail)
       tempData.diff_conf_variable = this.batchBindData
@@ -1183,6 +1261,9 @@ export default {
       if (status === 'OK') {
         let uData = this.formatPackageDetail(data)
         this.packageDetail = uData
+        this.$Notice.success({
+          title: this.$t('artifacts_bind_success')
+        })
       }
       this.tabTableLoading = false
     },
@@ -1257,6 +1338,9 @@ export default {
             elFileVar.conf_variable.diffExpr = row.conf_variable.diffExpr
           }
         })
+      })
+      this.$Notice.success({
+        title: this.$t('artifacts_successed')
       })
     }
   },
