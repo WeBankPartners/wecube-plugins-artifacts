@@ -681,11 +681,27 @@ public class ConfigFileManagementService extends AbstractArtifactService {
 
         for (int idx = 0; idx < size; idx++) {
             FileQueryResultItemDto rootItem = fileQueryResultItems.get(idx);
-            FileQueryResultItemDto rootBaselineItem = baselinePackageFileQueryResultItems.get(idx);
+            FileQueryResultItemDto rootBaselineItem = findoutFileQueryResultItemByName(rootItem.getName(), baselinePackageFileQueryResultItems);
 
-            compareRootFileQueryResultItemDto(rootItem, rootBaselineItem);
+            if(rootBaselineItem != null) {
+                compareRootFileQueryResultItemDto(rootItem, rootBaselineItem);
+            }
         }
 
+    }
+    
+    private FileQueryResultItemDto findoutFileQueryResultItemByName(String name,List<FileQueryResultItemDto> baselinePackageFileQueryResultItems) {
+        if(baselinePackageFileQueryResultItems == null || baselinePackageFileQueryResultItems.isEmpty()) {
+            return null;
+        }
+        
+        for(FileQueryResultItemDto item : baselinePackageFileQueryResultItems) {
+            if(name.equals(item.getName())) {
+                return item;
+            }
+        }
+        
+        return null;
     }
 
     private void compareRootFileQueryResultItemDto(FileQueryResultItemDto rootItem,
@@ -745,15 +761,15 @@ public class ConfigFileManagementService extends AbstractArtifactService {
 
                 FileQueryResultItemDto item = fileItems.get(pathKey);
                 if (item == null) {
-                    FileQueryResultItemDto deletedBaselineItem = new FileQueryResultItemDto();
-                    deletedBaselineItem.setComparisonResult(FILE_COMP_DELETED);
-                    deletedBaselineItem.setExists(deletedRelativeFile.getExists());
-                    deletedBaselineItem.setIsDir(deletedRelativeFile.getIsDir());
-                    deletedBaselineItem.setMd5(deletedRelativeFile.getMd5());
-                    deletedBaselineItem.setName(deletedRelativeFile.getName());
-                    deletedBaselineItem.setPath(deletedRelativeFile.getPath());
+                    item = new FileQueryResultItemDto();
+                    item.setComparisonResult(FILE_COMP_DELETED);
+                    item.setExists(deletedRelativeFile.getExists());
+                    item.setIsDir(deletedRelativeFile.getIsDir());
+                    item.setMd5(deletedRelativeFile.getMd5());
+                    item.setName(deletedRelativeFile.getName());
+                    item.setPath(deletedRelativeFile.getPath());
 
-                    parentItem.addFileQueryResultItem(deletedBaselineItem);
+                    parentItem.addFileQueryResultItem(item);
                 }
 
                 parentItem = item;
