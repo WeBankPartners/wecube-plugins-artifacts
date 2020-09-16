@@ -31,3 +31,5 @@ plugins:
   artifacts-s3-secret-key: secret_key
   artifacts-s3-bucket-name: wecube-artifacts
   jwt-signing-key: ${JWT_SIGNING_KEY:}
+  artifacts-local-enabled: ${UPLOAD_ENABLED:true}
+  artifacts-nexus-enabled: ${UPLOAD_NEXUS_ENABLED:true}

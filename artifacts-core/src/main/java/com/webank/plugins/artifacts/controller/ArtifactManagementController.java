@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.constant.ArtifactsConstants;
@@ -52,6 +53,9 @@ public class ArtifactManagementController {
 
     @Autowired
     private NexusArtifactManagementService nexusArtifactManagementService;
+    
+    @Autowired
+    private ApplicationProperties applicationProperties;
 
     @GetMapping("/system-design-versions")
     public JsonResponse getSystemDesignVersions() {
@@ -67,6 +71,9 @@ public class ArtifactManagementController {
     @PostMapping("/unit-designs/{unit-design-id}/packages/upload")
     public JsonResponse uploadPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
             @RequestParam(value = "file", required = false) MultipartFile multipartFile, HttpServletRequest request) {
+        if(!applicationProperties.isArtifactsLocalEnabled()) {
+            throw new PluginException("Package uploading is disabled!").withErrorCode("3010");
+        }
         File file = convertMultiPartToFile(multipartFile);
         String url = artifactService.uploadPackageToS3(file);
         return okayWithData(artifactService.savePackageToCmdb(file, unitDesignId,
@@ -79,12 +86,18 @@ public class ArtifactManagementController {
     @PostMapping("/unit-designs/{unit-design-id}/packages/queryNexusDirectiry")
     public JsonResponse queryNexusPackages(@PathVariable(value = "unit-design-id") String unitDesignId,
             @RequestBody PaginationQuery queryObject) {
+        if(!applicationProperties.isArtifactsNexusEnabled()) {
+            throw new PluginException("Package uploading is disabled!").withErrorCode("3010");
+        }
         return okayWithData(nexusArtifactManagementService.queryNexusDirectory(unitDesignId, queryObject));
     }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/uploadNexusPackage")
     public JsonResponse uploadNexusPackage(@PathVariable(value = "unit-design-id") String unitDesignId,
             @RequestParam(value = "downloadUrl", required = false) String downloadUrl, HttpServletRequest request) {
+        if(!applicationProperties.isArtifactsNexusEnabled()) {
+            throw new PluginException("Package uploading is disabled!").withErrorCode("3010");
+        }
         nexusArtifactManagementService.asyncUploadNexusPackageToS3(unitDesignId, downloadUrl,
                 (String) request.getAttribute(ArtifactsConstants.UPLOAD_NAME));
         return okay();
@@ -101,19 +114,6 @@ public class ArtifactManagementController {
         artifactService.active(packageId);
         return okay();
     }
-
-    
-//    @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/files/query")
-//    public JsonResponse getFiles(@PathVariable(value = "package-id") String packageId,
-//            @RequestBody Map<String, String> additionalProperties) {
-////        if (additionalProperties.get("currentDir") == null) {
-////            throw new PluginException("3000", "Field 'currentDir' is required.");
-////        }
-//        return okayWithData(artifactService.getCurrentDirs(packageId, additionalProperties.get("currentDir")));
-//        
-////        //TODO
-////        return null;
-//    }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/{package-id}/property-keys/query")
     public JsonResponse getKeys(@PathVariable(value = "package-id") String packageId,

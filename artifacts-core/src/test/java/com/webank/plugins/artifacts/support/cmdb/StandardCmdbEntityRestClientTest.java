@@ -32,7 +32,7 @@ public class StandardCmdbEntityRestClientTest {
 
     @Before
     public void setUp() {
-        String token = "***REMOVED***";
+        String token = null;
         token = String.format("Bearer %s", token);
 
         AuthorizationStorage.getIntance().set(token);
