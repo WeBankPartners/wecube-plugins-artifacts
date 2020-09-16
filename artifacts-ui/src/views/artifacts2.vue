@@ -792,10 +792,10 @@ export default {
     async baseLinePackageChanged (v) {
       if (v) {
         const found = this.tableData.find(row => row.guid === v)
-        this.packageInput.diff_conf_file = found.diff_conf_file ? found.diff_conf_file : []
-        this.packageInput.start_file_path = found.start_file_path ? found.start_file_path : []
-        this.packageInput.stop_file_path = found.stop_file_path ? found.stop_file_path : []
-        this.packageInput.deploy_file_path = found.deploy_file_path ? found.deploy_file_path : []
+        this.packageInput.diff_conf_file = found.diff_conf_file ? JSON.parse(JSON.stringify(found.diff_conf_file)) : []
+        this.packageInput.start_file_path = found.start_file_path ? JSON.parse(JSON.stringify(found.start_file_path)) : []
+        this.packageInput.stop_file_path = found.stop_file_path ? JSON.parse(JSON.stringify(found.stop_file_path)) : []
+        this.packageInput.deploy_file_path = found.deploy_file_path ? JSON.parse(JSON.stringify(found.deploy_file_path)) : []
         this.packageInput.is_decompression = found.is_decompression || 0
       }
       await this.syncBaselineFileStatus()
@@ -804,11 +804,12 @@ export default {
       event.stopPropagation()
       // 以下4个变量类型为字符串
       // row从table数据中来，此时baseline_package为对象
+      console.log(row)
       this.packageInput.baseline_package = row.baseline_package ? row.baseline_package.guid : null
-      this.packageInput.diff_conf_file = row.diff_conf_file
-      this.packageInput.start_file_path = row.start_file_path
-      this.packageInput.stop_file_path = row.stop_file_path
-      this.packageInput.deploy_file_path = row.deploy_file_path
+      this.packageInput.diff_conf_file = JSON.parse(JSON.stringify(row.diff_conf_file))
+      this.packageInput.start_file_path = JSON.parse(JSON.stringify(row.start_file_path))
+      this.packageInput.stop_file_path = JSON.parse(JSON.stringify(row.stop_file_path))
+      this.packageInput.deploy_file_path = JSON.parse(JSON.stringify(row.deploy_file_path))
       this.packageInput.is_decompression = row.is_decompression || 0
       this.packageId = row.guid
       await this.syncBaselineFileStatus()
