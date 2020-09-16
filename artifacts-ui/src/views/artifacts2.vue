@@ -687,10 +687,10 @@ export default {
       this.pageInfo.pageSize = pageSize
       this.queryPackages()
     },
-    rowClick (row) {
+    async rowClick (row) {
       this.packageId = row.guid
       // 获取包文件及差异化变量数据
-      this.syncPackageDetail()
+      await this.syncPackageDetail()
     },
     initPackageDetail () {
       this.packageDetail = {
@@ -830,17 +830,18 @@ export default {
     },
     async showFilesModal (row, event) {
       event.stopPropagation()
+      this.packageId = row.guid
+      await this.syncPackageDetail()
       // 以下4个变量类型为字符串
       // row从table数据中来，此时baseline_package为对象
-      console.log(row)
-      this.packageInput.baseline_package = row.baseline_package ? row.baseline_package.guid : null
-      this.packageInput.diff_conf_file = JSON.parse(JSON.stringify(row.diff_conf_file))
-      this.packageInput.start_file_path = JSON.parse(JSON.stringify(row.start_file_path))
-      this.packageInput.stop_file_path = JSON.parse(JSON.stringify(row.stop_file_path))
-      this.packageInput.deploy_file_path = JSON.parse(JSON.stringify(row.deploy_file_path))
+      this.packageInput.baseline_package = this.packageDetail.baseline_package ? this.packageDetail.baseline_package : null
+      this.packageInput.diff_conf_file = JSON.parse(JSON.stringify(this.packageDetail.diff_conf_file))
+      this.packageInput.start_file_path = JSON.parse(JSON.stringify(this.packageDetail.start_file_path))
+      this.packageInput.stop_file_path = JSON.parse(JSON.stringify(this.packageDetail.stop_file_path))
+      this.packageInput.deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.deploy_file_path))
       this.packageInput.is_decompression = row.is_decompression || 0
       this.packageId = row.guid
-      await this.syncBaselineFileStatus()
+      // await this.syncBaselineFileStatus()
       this.isShowFilesModal = true
       this.$nextTick(() => {
         this.genSortable('diff_conf_file')
@@ -918,21 +919,40 @@ export default {
             return (
               <span>
                 <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
-                <span style="color: #19be6b;">{params.data.title}</span>
+                <span style="color: #19be6b;">
+                  {params.data.title}
+                  <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                </span>
               </span>
             )
           } else if (params.data.comparisonResult === 'changed') {
             return (
               <span>
                 <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
-                <span style="color: #2d8cf0;">{params.data.title}</span>
+                <span style="color: #2d8cf0;">
+                  {params.data.title}
+                  <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                </span>
               </span>
             )
           } else if (params.data.comparisonResult === 'deleted') {
             return (
               <span>
                 <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
-                <span style="color: #cccccc;">{params.data.title}</span>
+                <span style="color: #cccccc;">
+                  {params.data.title}
+                  <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                </span>
+              </span>
+            )
+          } else if (params.data.comparisonResult === 'same') {
+            return (
+              <span>
+                <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
+                <span>
+                  {params.data.title}
+                  <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                </span>
               </span>
             )
           } else {
@@ -1164,8 +1184,18 @@ export default {
     },
     async configFileTreeLoadNode (item, callback) {
       if (item.isDir && !item.disabled) {
-        const { data } = await getFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package, fileList: [item.path], expandAll: false })
-        callback(this.formatConfigFileTree(data))
+        let baselinePackage = this.packageInput.baseline_package
+        if (item.comparisonResult === 'new') {
+          baselinePackage = null
+        }
+        const { data } = await getFiles(this.guid, this.packageId, { baselinePackage: baselinePackage, fileList: [item.path], expandAll: false })
+        let treeChild = this.formatConfigFileTree(data)
+        if (item.comparisonResult === 'new') {
+          treeChild.forEach(_ => {
+            _.comparisonResult = 'new'
+          })
+        }
+        callback(treeChild)
       } else {
         let emptyData = []
         callback(emptyData)
