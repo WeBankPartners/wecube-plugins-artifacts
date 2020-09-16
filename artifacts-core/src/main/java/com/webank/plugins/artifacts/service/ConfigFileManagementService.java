@@ -528,13 +528,13 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         if (oldFiles == null || oldFiles.isEmpty()) {
             return null;
         }
-        String newFilenameWithoutPrefix = filename.substring(filename.indexOf("/"));
+//        String newFilenameWithoutPrefix = filename.substring(filename.indexOf("/"));
         ConfigFileDto foundFile = null;
         for (ConfigFileDto oldFile : oldFiles) {
             String oldFilename = oldFile.getFilename();
-            String oldFilenameWithoutPrefix = oldFilename.substring(oldFilename.indexOf("/"));
+//            String oldFilenameWithoutPrefix = oldFilename.substring(oldFilename.indexOf("/"));
 
-            if (newFilenameWithoutPrefix.equals(oldFilenameWithoutPrefix)) {
+            if (filename.equals(oldFilename)) {
                 foundFile = oldFile;
                 break;
             }
