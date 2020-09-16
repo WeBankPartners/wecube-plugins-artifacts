@@ -40,9 +40,18 @@
         <ArtifactsSimpleTable class="artifact-management-package-table" :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
         <!-- 包配置模态框 -->
         <Modal width="70" :mask-closable="false" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')">
-          <Select clearable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" v-model="packageInput.baseline_package">
-            <Option v-for="conf in tableData.filter(conf => conf.guid !== packageId)" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
-          </Select>
+          <Card class="artifact-management-files-card">
+            <Row>
+              <Col style="text-align: right" span="5">
+                <span style="margin-right: 10px">{{ $t('baseline_package') }}</span>
+              </Col>
+              <Col span="18" offset="1">
+                <Select clearable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" v-model="packageInput.baseline_package">
+                  <Option v-for="conf in tableData.filter(conf => conf.guid !== packageId)" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
+                </Select>
+              </Col>
+            </Row>
+          </Card>
           <Card class="artifact-management-files-card">
             <Row>
               <Col style="text-align: right" span="5">
