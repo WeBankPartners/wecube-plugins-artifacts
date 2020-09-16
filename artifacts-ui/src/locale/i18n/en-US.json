@@ -68,5 +68,6 @@
   "artifacts_property_isbind": "IsBind",
   "artifacts_bind_success": "Bind Success",
   "multi_bind_config": "Binding Manage",
-  "check_all": "Check All"
+  "check_all": "Check All",
+  "variable_select_key_tooltip": "Choose a Key(variable) and use it's Value"
 }

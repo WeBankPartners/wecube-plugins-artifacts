@@ -1176,9 +1176,11 @@ export default {
     renderConfigButton (params) {
       let row = params.row
       return [
-        <Button disabled={!!row.conf_variable.fixedDate} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showConfigKeyModal(row)}>
-          {this.$t('select_key')}
-        </Button>,
+        <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip')}>
+          <Button disabled={!!row.conf_variable.fixedDate} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showConfigKeyModal(row)}>
+            {this.$t('select_key')}
+          </Button>
+        </Tooltip>,
         // disable no dirty data or row is confirmed
         <Button disabled={!!(row.conf_variable.diffExpr === row.conf_variable.originDiffExpr || row.conf_variable.fixedDate)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveConfigVariableValue(row)}>
           {this.$t('artifacts_save')}
