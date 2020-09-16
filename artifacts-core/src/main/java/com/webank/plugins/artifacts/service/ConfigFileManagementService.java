@@ -158,17 +158,21 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         SinglePackageQueryResultDto result = new SinglePackageQueryResultDto();
         result.setPackageId(packageId);
         result.setBaselinePackage(baselinePackageGuid);
+        ConfigFilesSaltInfoEnricher currentEnricher = new ConfigFilesSaltInfoEnricher(packageId, packageCiMap,
+            this);
 
         Object isDecompression = packageCiMap.get("is_decompression");
         result.setIsDecompression(convertCmdbObjectToBoolean(isDecompression));
-        result.setStartFilePath(getStartFileInfos(packageCiMap));
-        result.setDeployFilePath(getDeployFileInfos(packageCiMap));
-        result.setStopFilePath(getStopFileInfos(packageCiMap));
-        result.setDiffConfFile(getDiffConfFileInfos(packageCiMap));
+        result.setStartFilePath(currentEnricher.enrichFileInfoBySalt(getStartFileInfos(packageCiMap)));
+        result.setDeployFilePath(currentEnricher.enrichFileInfoBySalt(getDeployFileInfos(packageCiMap)));
+        result.setStopFilePath(currentEnricher.enrichFileInfoBySalt(getStopFileInfos(packageCiMap)));
+        result.setDiffConfFile(currentEnricher.enrichFileInfoBySalt(getDiffConfFileInfos(packageCiMap)));
 
         SinglePackageQueryResultDto baselineResult = null;
         if (StringUtils.isNoneBlank(baselinePackageGuid)) {
             Map<String, Object> baselinePackageCiMap = retrievePackageCiByGuid(baselinePackageGuid);
+            ConfigFilesSaltInfoEnricher baselineEnricher = new ConfigFilesSaltInfoEnricher(baselinePackageGuid, baselinePackageCiMap,
+                    this);
             baselineResult = new SinglePackageQueryResultDto();
             baselineResult.setPackageId(baselinePackageGuid);
             baselineResult.setBaselinePackage(null);
@@ -176,10 +180,10 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             Object isDecompressionBaseline = baselinePackageCiMap.get("is_decompression");
             baselineResult.setIsDecompression(convertCmdbObjectToBoolean(isDecompressionBaseline));
 
-            baselineResult.setStartFilePath(getStartFileInfos(baselinePackageCiMap));
-            baselineResult.setDeployFilePath(getDeployFileInfos(baselinePackageCiMap));
-            baselineResult.setStopFilePath(getStopFileInfos(baselinePackageCiMap));
-            baselineResult.setDiffConfFile(getDiffConfFileInfos(baselinePackageCiMap));
+            baselineResult.setStartFilePath(baselineEnricher.enrichFileInfoBySalt(getStartFileInfos(baselinePackageCiMap)));
+            baselineResult.setDeployFilePath(baselineEnricher.enrichFileInfoBySalt(getDeployFileInfos(baselinePackageCiMap)));
+            baselineResult.setStopFilePath(baselineEnricher.enrichFileInfoBySalt(getStopFileInfos(baselinePackageCiMap)));
+            baselineResult.setDiffConfFile(baselineEnricher.enrichFileInfoBySalt(getDiffConfFileInfos(baselinePackageCiMap)));
 
             doCompareFilesWithBaselineFiles(result, baselineResult);
         }
@@ -513,7 +517,11 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         for (ConfigFileDto newFile : newFiles) {
             ConfigFileDto oldFile = peekIfFoundConfigFileByFilename(newFile.getFilename(), oldFiles);
             if (oldFile == null) {
-                newFile.setComparisonResult(FILE_COMP_NEW);
+                if(FILE_COMP_DELETED.equals(newFile.getComparisonResult())) {
+                    //nothing
+                }else {
+                    newFile.setComparisonResult(FILE_COMP_NEW);
+                }
             } else {
                 if(FILE_COMP_DELETED.equals(oldFile.getComparisonResult())) {
                     if(FILE_COMP_DELETED.equals(newFile.getComparisonResult())) {
