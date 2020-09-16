@@ -21,7 +21,7 @@
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
     </Col>
-    <Col span="17" offset="1">
+    <Col span="17" style="margin-left: 35px;">
       <!-- 包管理 -->
       <Card v-if="guid" class="artifact-management-top-card">
         <!-- 本地上传 -->
@@ -360,18 +360,18 @@ export default {
       attrsTableColomnOptions: [
         {
           title: this.$t('artifacts_property_isbind'),
-          width: 70,
+          width: 100,
           render: (h, params) => {
             if (params.row.conf_variable.bound) {
               return (
                 <span>
-                  <Icon type="md-code-download" style="font-size: 18px;" />
+                  <Icon type="md-checkmark-circle" color="#2d8cf0" style="font-size: 18px;" />
                 </span>
               )
             } else {
               return (
                 <span>
-                  <Icon type="md-code" style="font-size: 18px;" />
+                  <Icon type="md-close-circle" color="red" style="font-size: 18px;" />
                 </span>
               )
             }
