@@ -26,8 +26,8 @@
         <systemParameter name="NEXUS_PASSWORD" scopeType="global" defaultValue="admin123"/>
         <systemParameter name="NEXUS_REPOSITORY" scopeType="global" defaultValue="maven-releases"/>
         <systemParameter name="CMDB_ARTIFACT_PATH" scopeType="global" defaultValue="artifact_path"/>
-		<systemParameter name="UPLOAD_ENABLED" scopeType="global" defaultValue="true"/>
-		<systemParameter name="UPLOAD_NEXUS_ENABLED" scopeType="global" defaultValue="true"/>
+		<systemParameter name="UPLOAD_ENABLED" scopeType="plugins" defaultValue="true"/>
+		<systemParameter name="UPLOAD_NEXUS_ENABLED" scopeType="plugins" defaultValue="true"/>
 	</systemParameters>
 
     <!-- 5.权限设定 -->
