@@ -881,6 +881,9 @@ export default {
         treeNode.expand = children.length > 0
         treeNode.loading = false
         treeNode.children = []
+        if (element.comparisonResult === 'deleted') {
+          treeNode.disabled = true
+        }
         treeNode.render = (h, params) => {
           if (params.data.comparisonResult === 'new') {
             return (
@@ -989,7 +992,7 @@ export default {
           }
         }
       }
-      if (checkNodes.indexOf(element.path) >= 0) {
+      if (checkNodes.indexOf(element.path) >= 0 && !treeNode.isDir) {
         treeNode.checked = true
       }
       tree.push(treeNode)
@@ -1081,25 +1084,33 @@ export default {
       })
     },
     async configFileTreeLoadNode (item, callback) {
-      const { data } = await getFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package, fileList: [item.path], expandAll: false })
-      callback(this.formatConfigFileTree(data))
+      if (item.isDir && !item.disabled) {
+        const { data } = await getFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package, fileList: [item.path], expandAll: false })
+        callback(this.formatConfigFileTree(data))
+      } else {
+        let emptyData = []
+        callback(emptyData)
+      }
     },
     configFileTreeExpand (item) {
       // console.log('configFileTreeExpand', item)
     },
     async changeChildChecked (checkedList, item) {
-      if (item.isDir) {
-        const { data } = await getFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package, fileList: [item.path], expandAll: false })
-        let children = this.formatConfigFileTree(data)
-        item.children = children.map(_ => {
-          if (_.isDir) {
-            _.checked = false
-          } else {
-            _.checked = item.checked
-          }
-          return _
-        })
-        item.expand = true
+      if (item.isDir && item.checked) {
+        // 获取文件夹下的子列表
+        if (!item.expand) {
+          const { data } = await getFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package, fileList: [item.path], expandAll: false })
+          let children = this.formatConfigFileTree(data)
+          item.children = children.map(_ => {
+            if (_.isDir) {
+              _.checked = false
+            } else {
+              _.checked = item.checked
+            }
+            return _
+          })
+          item.expand = true
+        }
       }
     },
     async handleDelete (row) {
