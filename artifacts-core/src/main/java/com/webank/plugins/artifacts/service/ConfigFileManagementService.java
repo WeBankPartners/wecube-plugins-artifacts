@@ -685,6 +685,12 @@ public class ConfigFileManagementService extends AbstractArtifactService {
 
             if(rootBaselineItem != null) {
                 compareRootFileQueryResultItemDto(rootItem, rootBaselineItem);
+            }else {
+                if(FILE_COMP_DELETED.equals(rootItem.getComparisonResult())) {
+                    //nothing
+                }else {
+                    rootItem.setComparisonResult(FILE_COMP_NEW);
+                }
             }
         }
 
