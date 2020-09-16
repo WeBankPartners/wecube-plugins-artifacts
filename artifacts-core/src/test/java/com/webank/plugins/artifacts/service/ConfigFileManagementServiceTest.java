@@ -33,7 +33,7 @@ import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
 
-@Ignore
+//@Ignore
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -47,7 +47,7 @@ public class ConfigFileManagementServiceTest {
 
     @Before
     public void setUp() {
-        String token = null;
+        String token = "***REMOVED***";
         token = String.format("Bearer %s", token);
 
         AuthorizationStorage.getIntance().set(token);
@@ -94,7 +94,7 @@ public class ConfigFileManagementServiceTest {
     public void testQuerySinglePackage() throws JsonProcessingException {
         String unitDesignId = "0039_0000000017";
 //        String packageId = "0045_0000000011";
-        String packageId = "0045_0000000005";
+        String packageId = "0045_0000000024";
         SinglePackageQueryResultDto result = service.querySinglePackage(unitDesignId, packageId);
 
         String sJson = objectMapper.writeValueAsString(result);

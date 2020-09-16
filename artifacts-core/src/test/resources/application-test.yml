@@ -1,7 +1,7 @@
 plugins:
   pacakge-name: artifacts
 
-  wecube-gateway-server-url: http://localhost:19110
+  wecube-gateway-server-url: http://106.55.254.210:19110
   artifacts-nexus-server-url: http://localhost:18888
   artifacts-nexus-username: admin
   artifacts-nexus-password: admin123
