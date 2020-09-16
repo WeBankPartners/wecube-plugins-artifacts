@@ -1079,6 +1079,10 @@ export default {
     initTreeConfig (type) {
       this.configFileTree.treeType = type
       this.configFileTree.treeData = []
+      this.toggleCheckFileTreeNew = ''
+      this.toggleCheckFileTreeSame = ''
+      this.toggleCheckFileTreeChanged = ''
+      this.toggleCheckFileTreeDeleted = ''
     },
     saveConfigFileTree () {
       let saveData = []
