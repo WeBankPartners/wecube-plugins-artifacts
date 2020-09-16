@@ -1208,8 +1208,17 @@ export default {
       if (item.isDir && item.checked) {
         // 获取文件夹下的子列表
         if (!item.expand) {
-          const { data } = await getFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package, fileList: [item.path], expandAll: false })
+          let baselinePackage = this.packageInput.baseline_package
+          if (item.comparisonResult === 'new') {
+            baselinePackage = null
+          }
+          const { data } = await getFiles(this.guid, this.packageId, { baselinePackage: baselinePackage, fileList: [item.path], expandAll: false })
           let children = this.formatConfigFileTree(data)
+          if (item.comparisonResult === 'new') {
+            children.forEach(_ => {
+              _.comparisonResult = 'new'
+            })
+          }
           item.children = children.map(_ => {
             if (_.isDir) {
               _.checked = false
