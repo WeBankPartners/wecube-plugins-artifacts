@@ -66,5 +66,7 @@
   "tip_conf_bind": "绑定后将替换变量值",
   "tip_conf_unbind": "解绑后不会替换变量值",
   "artifacts_property_isbind": "绑定",
-  "multi_bind_config": "绑定管理"
+  "artifacts_bind_success": "绑定成功",
+  "multi_bind_config": "绑定管理",
+  "check_all": "全选"
 }

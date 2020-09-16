@@ -171,10 +171,10 @@
             <Option v-for="conf in onlinePackages" :value="conf.downloadUrl" :key="conf.downloadUrl">{{ conf.name }}</Option>
           </Select>
         </Modal>
-        <Modal :mask-closable="false" v-model="isShowBatchBindModal" :title="$t('multi_bind_config')" @on-ok="saveBatchBindOperation" @on-cancel="cancelBatchBindOperation">
+        <Modal :mask-closable="false" v-model="isShowBatchBindModal" :title="$t('multi_bind_config')">
           <Card>
             <div slot="title">
-              <Checkbox border size="small" :indeterminate="isBatchBindIndeterminate" :value="isBatchBindAllChecked" @click.prevent.native="batchBindSelectAll">全选</Checkbox>
+              <Checkbox border size="small" :indeterminate="isBatchBindIndeterminate" :value="isBatchBindAllChecked" @click.prevent.native="batchBindSelectAll">{{ $t('check_all') }}</Checkbox>
             </div>
             <ul style="height:300px;overflow-y:auto">
               <li class="bind-style" v-for="(bindData, index) in batchBindData" :key="index">
@@ -183,6 +183,10 @@
               </li>
             </ul>
           </Card>
+          <div slot="footer">
+            <Button @click="cancelBatchBindOperation">{{ $t('artifacts_cancel') }}</Button>
+            <Button type="primary" @click="saveBatchBindOperation">{{ $t('artifacts_save') }}</Button>
+          </div>
         </Modal>
         <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setConfigRowValue" @on-cancel="closeConfigSelectModal">
           <Select filterable clearable v-model="currentConfigValue">
@@ -342,6 +346,25 @@ export default {
       allDiffConfigs: [],
       attrsTableColomnOptions: [
         {
+          title: this.$t('artifacts_property_isbind'),
+          width: 70,
+          render: (h, params) => {
+            if (params.row.conf_variable.bound) {
+              return (
+                <span>
+                  <Icon type="md-code-download" style="font-size: 18px;" />
+                </span>
+              )
+            } else {
+              return (
+                <span>
+                  <Icon type="md-code" style="font-size: 18px;" />
+                </span>
+              )
+            }
+          }
+        },
+        {
           title: this.$t('artifacts_property_seq'),
           key: 'index',
           width: 70
@@ -350,14 +373,6 @@ export default {
           title: this.$t('artifacts_line_number'),
           width: 100,
           key: 'line'
-        },
-        {
-          title: this.$t('artifacts_property_isbind'),
-          width: 70,
-          render: (h, params) => {
-            // show static view only if confirmed
-            return <span>{params.row.conf_variable.bound ? 'Y' : 'N'}</span>
-          }
         },
         {
           title: this.$t('artifacts_property_name'),
@@ -925,7 +940,7 @@ export default {
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #19be6b;">
                     {params.data.title}
-                    <span style="font-size:6px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                   </span>
                 </span>
               )
@@ -935,7 +950,7 @@ export default {
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #2d8cf0;">
                     {params.data.title}
-                    <span style="font-size:6px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                   </span>
                 </span>
               )
@@ -945,7 +960,7 @@ export default {
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #cccccc;">
                     {params.data.title}
-                    <span style="font-size:6px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                   </span>
                 </span>
               )
@@ -955,7 +970,7 @@ export default {
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span>
                     {params.data.title}
-                    <span style="font-size:6px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                   </span>
                 </span>
               )
@@ -1177,6 +1192,7 @@ export default {
       this.isBatchBindAllChecked = !this.isBatchBindAllChecked
     },
     async saveBatchBindOperation () {
+      this.isShowBatchBindModal = false
       this.tabTableLoading = true
       let tempData = this.formatPackageDetail(this.packageDetail)
       tempData.diff_conf_variable = this.batchBindData
@@ -1184,6 +1200,9 @@ export default {
       if (status === 'OK') {
         let uData = this.formatPackageDetail(data)
         this.packageDetail = uData
+        this.$Notice.success({
+          title: this.$t('artifacts_bind_success')
+        })
       }
       this.tabTableLoading = false
     },
@@ -1258,6 +1277,9 @@ export default {
             elFileVar.conf_variable.diffExpr = row.conf_variable.diffExpr
           }
         })
+      })
+      this.$Notice.success({
+        title: this.$t('artifacts_successed')
       })
     }
   },

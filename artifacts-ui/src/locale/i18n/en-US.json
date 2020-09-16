@@ -66,5 +66,7 @@
   "tip_conf_bind": "Bind the item to replace it",
   "tip_conf_unbind": "Unbind the item to leave it as is",
   "artifacts_property_isbind": "IsBind",
-  "multi_bind_config": "绑定管理"
+  "artifacts_bind_success": "Bind Success",
+  "multi_bind_config": "Binding Manage",
+  "check_all": "Check All"
 }
