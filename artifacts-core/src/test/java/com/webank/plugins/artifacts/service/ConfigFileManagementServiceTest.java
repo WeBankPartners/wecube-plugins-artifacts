@@ -33,7 +33,7 @@ import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
 
-//@Ignore
+@Ignore
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -162,22 +162,22 @@ public class ConfigFileManagementServiceTest {
 
     @Test
     public void testQueryDeployConfigFilesAsMultiFile() throws JsonProcessingException {
-        String packageId = "0045_0000000027";
+        String packageId = "0045_0000000011";
         String baselinePackageId = "0045_0000000005";
         FileQueryRequestDto fileQueryRequestDto = new FileQueryRequestDto();
         fileQueryRequestDto.setExpandAll(true);
         fileQueryRequestDto.setBaselinePackage(baselinePackageId);
         String filePath0 = "current/bin";
-//        String filePath1 = "demo-app-spring-boot_1.5.3/bin";
-//        String filePath2 = "bin111";
-//        String filePath3 = "bin111/aaaa.txt";
+        String filePath1 = "current/lib/aaa.txt";
+        String filePath2 = "bin111.log";
+        String filePath3 = "demo-app-spring-boot_1.5.3/bin111/aaaa.txt";
 //        String filePath = "demo-app-spring-boot_1.5.3/conf/application-dev.properties";
 
         List<String> fileList = new ArrayList<String>();
         fileList.add(filePath0);
-//        fileList.add(filePath1);
-//        fileList.add(filePath2);
-//        fileList.add(filePath3);
+        fileList.add(filePath1);
+        fileList.add(filePath2);
+        fileList.add(filePath3);
         fileQueryRequestDto.setFileList(fileList);
 
 //        fileQueryRequestDto.setBaselinePackage(baselinePackageId);
