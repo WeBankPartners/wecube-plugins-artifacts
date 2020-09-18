@@ -911,9 +911,6 @@ export default {
         treeNode.expand = children.length > 0
         treeNode.loading = false
         treeNode.children = []
-        if (element.comparisonResult === 'deleted') {
-          treeNode.disabled = true
-        }
         treeNode.render = (h, params) => {
           if (params.data.comparisonResult === 'new') {
             return (
@@ -1065,27 +1062,22 @@ export default {
       this.initTreeConfig(type)
       this.isShowTreeModal = true
       let queryFiles = []
-      let queryPaths = []
       if (type === 0) {
         this.configFileTreeTitle = this.$t('artifacts_select_config_files')
-        queryPaths = this.packageInput.diff_conf_file.map(_ => _.filename.substring(0, _.filename.lastIndexOf('/')))
         queryFiles = this.packageInput.diff_conf_file.map(_ => _.filename)
       } else if (type === 1) {
         this.configFileTreeTitle = this.$t('artifacts_select_start_script')
-        queryPaths = this.packageInput.start_file_path.map(_ => _.filename.substring(0, _.filename.lastIndexOf('/')))
         queryFiles = this.packageInput.start_file_path.map(_ => _.filename)
       } else if (type === 2) {
         this.configFileTreeTitle = this.$t('artifacts_select_stop_script')
-        queryPaths = this.packageInput.stop_file_path.map(_ => _.filename.substring(0, _.filename.lastIndexOf('/')))
         queryFiles = this.packageInput.stop_file_path.map(_ => _.filename)
       } else if (type === 3) {
         this.configFileTreeTitle = this.$t('artifacts_select_deploy_script')
-        queryPaths = this.packageInput.deploy_file_path.map(_ => _.filename.substring(0, _.filename.lastIndexOf('/')))
         queryFiles = this.packageInput.deploy_file_path.map(_ => _.filename)
       }
       const { data } = await getFiles(this.guid, this.packageId, {
         baselinePackage: this.packageInput.baseline_package,
-        fileList: queryPaths,
+        fileList: queryFiles,
         expandAll: true
       })
       this.configFileTree.treeData = this.formatConfigFileTree(data, queryFiles)
@@ -1124,7 +1116,6 @@ export default {
     _travelConfigFileTreeNodes (node, status, checked) {
       let changeParent = false
       if (!node.isDir && node.comparisonResult === status) {
-        console.log('travel ', node.title, checked)
         this.$set(node, 'checked', checked)
         if (!checked) {
           changeParent = true
@@ -1134,6 +1125,7 @@ export default {
         node.children.forEach(el => {
           let tmpChangeParent = this._travelConfigFileTreeNodes(el, status, checked)
           if (tmpChangeParent) {
+            changeParent = tmpChangeParent
             this.$set(node, 'checked', false)
           }
         })
