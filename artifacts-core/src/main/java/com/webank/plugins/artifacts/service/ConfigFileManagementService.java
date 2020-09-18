@@ -180,10 +180,10 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             Object isDecompressionBaseline = baselinePackageCiMap.get("is_decompression");
             baselineResult.setIsDecompression(convertCmdbObjectToBoolean(isDecompressionBaseline));
 
-            baselineResult.setStartFilePath(baselineEnricher.enrichFileInfoBySalt(getStartFileInfos(baselinePackageCiMap)));
-            baselineResult.setDeployFilePath(baselineEnricher.enrichFileInfoBySalt(getDeployFileInfos(baselinePackageCiMap)));
-            baselineResult.setStopFilePath(baselineEnricher.enrichFileInfoBySalt(getStopFileInfos(baselinePackageCiMap)));
-            baselineResult.setDiffConfFile(baselineEnricher.enrichFileInfoBySalt(getDiffConfFileInfos(baselinePackageCiMap)));
+            baselineResult.setStartFilePath(baselineEnricher.enrichFileInfoBySalt(getStartFileInfos(packageCiMap)));
+            baselineResult.setDeployFilePath(baselineEnricher.enrichFileInfoBySalt(getDeployFileInfos(packageCiMap)));
+            baselineResult.setStopFilePath(baselineEnricher.enrichFileInfoBySalt(getStopFileInfos(packageCiMap)));
+            baselineResult.setDiffConfFile(baselineEnricher.enrichFileInfoBySalt(getDiffConfFileInfos(packageCiMap)));
 
             doCompareFilesWithBaselineFiles(result, baselineResult);
         }

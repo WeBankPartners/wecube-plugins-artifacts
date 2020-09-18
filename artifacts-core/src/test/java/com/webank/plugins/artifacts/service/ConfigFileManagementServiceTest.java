@@ -20,8 +20,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webank.plugins.artifacts.dto.FileQueryRequestDto;
 import com.webank.plugins.artifacts.dto.FileQueryResultItemDto;
@@ -94,11 +96,25 @@ public class ConfigFileManagementServiceTest {
     public void testQuerySinglePackage() throws JsonProcessingException {
         String unitDesignId = "0039_0000000017";
 //        String packageId = "0045_0000000011";
-        String packageId = "0045_0000000024";
+        String packageId = "0045_0000000011";
         SinglePackageQueryResultDto result = service.querySinglePackage(unitDesignId, packageId);
 
         String sJson = objectMapper.writeValueAsString(result);
         System.out.println(sJson);
+    }
+    
+    @Test
+    public void testQueryFilesReadInputFromJson() throws JsonParseException, JsonMappingException, IOException {
+        String packageId = "0045_0000000011";
+        String sJson = "{\"baselinePackage\":\"0045_0000000005\",\"fileList\":[\"demo-app-spring-boot_1.5.3/bin/deploy.sh\",\"demo-app-spring-boot_1.5.3/bin/start.sh\",\"demo-app-spring-boot_1.5.3/lib/demo-app-spring-boot.jar\",\"out.log\",\"current/bin/start.sh\"],\"expandAll\":true}";
+        FileQueryRequestDto fileQueryRequestDto = objectMapper.readValue(sJson, FileQueryRequestDto.class);
+        
+        
+        List<FileQueryResultItemDto> resultItemDtos = service.queryDeployConfigFiles(packageId, fileQueryRequestDto);
+
+        String resultJson = objectMapper.writeValueAsString(resultItemDtos);
+
+        System.out.println(resultJson);
     }
 
     @Test
