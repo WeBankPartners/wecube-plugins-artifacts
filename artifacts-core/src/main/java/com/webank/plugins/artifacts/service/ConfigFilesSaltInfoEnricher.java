@@ -48,8 +48,17 @@ public class ConfigFilesSaltInfoEnricher {
     private SaltFileNodeDto getSaltFileNodeBySingleFilepath(String packageGuid, Map<String, Object> packageCiMap,
             String filepath) {
         String s3EndpointOfPackageId = service.retrieveS3EndpointWithKeyByPackageCiMap(packageCiMap);
-        String baseDirName = filepath.substring(0, filepath.lastIndexOf("/"));
-        String filename = filepath.substring(filepath.lastIndexOf("/") + 1);
+        if(filepath.startsWith("/") && filepath.length() > 1) {
+            filepath = filepath.substring(1);
+        }
+        
+        String baseDirName = "";
+        String filename = filepath;
+        if(filepath.indexOf("/") > 0) {
+            baseDirName = filepath.substring(0, filepath.lastIndexOf("/"));
+            filename = filepath.substring(filepath.lastIndexOf("/") + 1);
+        }
+        
         try {
             List<SaltFileNodeDto> saltFileNodes = service.listFilesOfCurrentDirs(baseDirName, s3EndpointOfPackageId);
             for (SaltFileNodeDto dto : saltFileNodes) {

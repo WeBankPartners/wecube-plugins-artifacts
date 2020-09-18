@@ -593,11 +593,17 @@ public class ConfigFileManagementService extends AbstractArtifactService {
                 return null;
             }
         }
+        
+        if(filepath.startsWith("/") && filepath.length() > 1) {
+            filepath = filepath.substring(1);
+        }
 
-        filepath = formatFilepathWithRootDirNamePrefix(filepath, rootDirName);
-
-        String baseDirName = filepath.substring(0, filepath.lastIndexOf("/"));
-        String filename = filepath.substring(filepath.lastIndexOf("/") + 1);
+        String baseDirName = "";
+        String filename = filepath;
+        if(filepath.indexOf("/") > 0) {
+            baseDirName = filepath.substring(0, filepath.lastIndexOf("/"));
+            filename = filepath.substring(filepath.lastIndexOf("/") + 1);
+        }
         try {
             saltFileNodes = listFilesOfCurrentDirs(baseDirName, s3EndpointOfPackageId);
         } catch (SaltFileNotExistException e) {
@@ -611,20 +617,6 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         }
 
         return null;
-    }
-
-    private String formatFilepathWithRootDirNamePrefix(String filepath, String rootDirName) {
-        if (filepath.startsWith(rootDirName + "/")) {
-            return filepath;
-        }
-
-        if (filepath.startsWith("/")) {
-            filepath = rootDirName + filepath;
-        } else {
-            filepath = rootDirName + "/" + filepath;
-        }
-
-        return filepath;
     }
 
     private PackageComparisionResultDto buildPackageComparisionResult(String packageGuid,
