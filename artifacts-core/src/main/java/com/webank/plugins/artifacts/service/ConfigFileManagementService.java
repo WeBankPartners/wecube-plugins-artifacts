@@ -886,7 +886,9 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             log.info("File does not exist,filename:{}", rootResultItem);
             rootResultItem.setExists(false);
             rootResultItem.setComparisonResult(FILE_COMP_DELETED);
-            return;
+            if(filepathParts.length == 1) {
+                rootResultItem.setIsDir(false);
+            }
         }
 
         String parentPath = rootFilepath;
@@ -902,7 +904,11 @@ public class ConfigFileManagementService extends AbstractArtifactService {
                 currentResultItem.setName(filepathPart);
                 currentResultItem.setComparisonResult(FILE_COMP_DELETED);
                 currentResultItem.setExists(false);
-                currentResultItem.setIsDir(true);
+                if(index == (filepathParts.length -1)) {
+                    currentResultItem.setIsDir(false);
+                }else {
+                    currentResultItem.setIsDir(true);
+                }
 
                 parentFileQueryResultItem.addFileQueryResultItem(currentResultItem);
                 pathAndFileQueryResultItems.put(currentResultItem.getPath(), currentResultItem);
@@ -1142,8 +1148,6 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             if (saltFileNode == null) {
                 configFile.setComparisonResult(FILE_COMP_DELETED);
                 continue;
-//                throw new PluginException(
-//                        String.format("Diff configuration file %s does not exist.", configFile.getFilename()));
             }
             String filepath = configFile.getFilename();
             if (saltFileNode.getIsDir()) {
