@@ -540,7 +540,7 @@ export default {
     selectSystemDesignVersion (guid) {
       this.getSystemDesignVersion(guid)
       this.guid = ''
-      this.tabData = []
+      this.initPackageDetail()
       this.uploaded = false
     },
     clearSelectSystemDesign () {
@@ -577,7 +577,7 @@ export default {
       if (node.length && node[0].level === 3) {
         this.guid = node[0].data.r_guid
         this.queryPackages()
-        this.tabData = []
+        this.initPackageDetail()
       }
     },
     getHeaders () {
