@@ -38,6 +38,12 @@
         <!-- <div v-if="uploaded" style="width: 100%;height:26px"></div> -->
         <!-- 包列表table -->
         <ArtifactsSimpleTable class="artifact-management-package-table" :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
+        <!-- 包在线上传选择 -->
+        <Modal :mask-closable="false" v-model="isShowOnlineModal" :title="$t('select_online')" @on-ok="onUploadHandler" @on-cancel="closeOnlineModal">
+          <Select filterable clearable v-model="selectedOnlinePackage">
+            <Option v-for="conf in onlinePackages" :value="conf.downloadUrl" :key="conf.downloadUrl">{{ conf.name }}</Option>
+          </Select>
+        </Modal>
         <!-- 包配置模态框 -->
         <Modal width="70" :mask-closable="false" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')">
           <Card class="artifact-management-files-card">
@@ -175,11 +181,6 @@
             <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
           </TabPane>
         </Tabs>
-        <Modal :mask-closable="false" v-model="isShowOnlineModal" :title="$t('select_online')" @on-ok="onUploadHandler" @on-cancel="closeOnlineModal">
-          <Select filterable clearable v-model="selectedOnlinePackage">
-            <Option v-for="conf in onlinePackages" :value="conf.downloadUrl" :key="conf.downloadUrl">{{ conf.name }}</Option>
-          </Select>
-        </Modal>
         <Modal :mask-closable="false" v-model="isShowBatchBindModal" :title="$t('multi_bind_config')">
           <Card>
             <div slot="title">
@@ -655,6 +656,7 @@ export default {
       this.isShowOnlineModal = false
     },
     async queryOnlinePackages () {
+      this.onlinePackages = []
       const { status, data } = await queryArtifactsList(this.guid, { filters: [], paging: false })
       if (status === 'OK') {
         this.onlinePackages = data
