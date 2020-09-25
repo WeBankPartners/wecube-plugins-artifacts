@@ -142,7 +142,9 @@ public class NexusArtifactManagementService extends AbstractArtifactService{
 
             List<NexusAssetItemInfo> queryAssetItems = nexusSearchAssetResponse.getItems();
             for (NexusAssetItemInfo assetItem : queryAssetItems) {
-                if (assetItem.getPath().endsWith("jar") || assetItem.getPath().endsWith("zip")) {
+                if (assetItem.getPath().endsWith("jar") || assetItem.getPath().endsWith("zip")
+                        || assetItem.getPath().endsWith("tar") || assetItem.getPath().endsWith("gz")
+                        || assetItem.getPath().endsWith("tgz")) {
                     NexusDirectiryDto directiryDto = new NexusDirectiryDto();
                     directiryDto.setDownloadUrl(assetItem.getDownloadUrl());
                     directiryDto.setName(
