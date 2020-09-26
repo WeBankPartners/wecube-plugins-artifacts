@@ -8,6 +8,7 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -20,10 +21,10 @@ public class NexusClient {
     private static final Logger log = LoggerFactory.getLogger(NexusClient.class);
 
     @Autowired
+    @Qualifier("simpleRestTemplate")
     private RestTemplate restTemplate;
     
 
-    @SuppressWarnings("unchecked")
     public NexusSearchAssetResponse  searchAsset(URI targetUri, String nexusUsername, String nexusPassword) {
         log.info("About to call {} ", targetUri.toString());
         HttpHeaders headers = new HttpHeaders();
@@ -35,7 +36,7 @@ public class NexusClient {
         return  responseEntity.getBody();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public <D, R extends NexusResponse> D  get(String targetUrl, String nexusUsername, String nexusPassword, Class<R> responseType) {
         log.info("About to call {} ", targetUrl);
         HttpHeaders headers = new HttpHeaders();
