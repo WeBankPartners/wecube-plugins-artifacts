@@ -35,7 +35,7 @@ import com.webank.plugins.artifacts.utils.Base64Utils;
 public class NexusArtifactManagementService extends AbstractArtifactService{
     private static final Logger log = LoggerFactory.getLogger(NexusArtifactManagementService.class);
 
-    private static final String NEXUS_SEARCH_ASSET_API_PATH = "/service/rest/beta/search/assets";
+    private static final String NEXUS_SEARCH_ASSET_API_PATH = "/service/rest/v1/search/assets";
     
     @Autowired
     private NexusClient nexusClient;
@@ -142,7 +142,9 @@ public class NexusArtifactManagementService extends AbstractArtifactService{
 
             List<NexusAssetItemInfo> queryAssetItems = nexusSearchAssetResponse.getItems();
             for (NexusAssetItemInfo assetItem : queryAssetItems) {
-                if (assetItem.getPath().endsWith("jar") || assetItem.getPath().endsWith("zip")) {
+                if (assetItem.getPath().endsWith("jar") || assetItem.getPath().endsWith("zip")
+                        || assetItem.getPath().endsWith("tar") || assetItem.getPath().endsWith("gz")
+                        || assetItem.getPath().endsWith("tgz")) {
                     NexusDirectiryDto directiryDto = new NexusDirectiryDto();
                     directiryDto.setDownloadUrl(assetItem.getDownloadUrl());
                     directiryDto.setName(
