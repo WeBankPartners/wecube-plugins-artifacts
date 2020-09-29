@@ -45,10 +45,10 @@
           </Select>
         </Modal>
         <!-- 包配置模态框 -->
-        <Modal width="70" :mask-closable="false" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')">
+        <Modal width="70" :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')">
           <Card class="artifact-management-files-card">
             <Row>
-              <Col style="text-align: right" span="5">
+              <Col style="text-align: right;line-height:32px" span="5">
                 <span style="margin-right: 10px">{{ $t('baseline_package') }}</span>
               </Col>
               <Col span="18" offset="1">
@@ -121,7 +121,7 @@
           <Card class="artifact-management-files-card">
             <Row>
               <Col style="text-align: right" span="5">
-                <span style="margin-right: 10px">{{ $t('artifacts_deploy_script') }}</span>
+                <span style="margin-right: 10px;">{{ $t('artifacts_deploy_script') }}</span>
                 <Button type="info" ghost @click="() => showTreeModal(3, packageInput.deploy_file_path || [])">{{ $t('artifacts_select_file') }}</Button>
               </Col>
               <Col span="18" offset="1">
@@ -157,14 +157,16 @@
           </div>
         </Modal>
         <!-- 包配置文件选择 -->
-        <Modal :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" @on-ok="saveConfigFileTree" @on-cancel="closeConfigFileTree" draggable>
+        <Modal :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" @on-ok="saveConfigFileTree" @on-cancel="closeConfigFileTree" draggable width="700">
           <CheckboxGroup v-if="packageInput.baseline_package">
             <Button :style="toggleCheckFileTreeNew" type="dashed" size="small" @click="checkConfigFileTreeVis('new')"><span style="color:#18b566;">new</span></Button>
             <Button :style="toggleCheckFileTreeSame" type="dashed" size="small" @click="checkConfigFileTreeVis('same')"><span>same</span></Button>
             <Button :style="toggleCheckFileTreeChanged" type="dashed" size="small" @click="checkConfigFileTreeVis('changed')"><span style="color:#2d8cf0;">changed</span></Button>
             <Button :style="toggleCheckFileTreeDeleted" type="dashed" size="small" @click="checkConfigFileTreeVis('deleted')"><span style="color:#cccccc;">deleted</span></Button>
           </CheckboxGroup>
-          <Tree ref="configTree" :data="configFileTree.treeData" :load-data="configFileTreeLoadNode" @on-toggle-expand="configFileTreeExpand" @on-check-change="changeChildChecked" show-checkbox> </Tree>
+          <div style="height:450px;overflow-y:auto">
+            <Tree ref="configTree" :data="configFileTree.treeData" :load-data="configFileTreeLoadNode" @on-toggle-expand="configFileTreeExpand" @on-check-change="changeChildChecked" show-checkbox> </Tree>
+          </div>
         </Modal>
       </Card>
       <!-- 差异化变量 -->
