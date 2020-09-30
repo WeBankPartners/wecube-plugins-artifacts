@@ -1058,7 +1058,8 @@ public class ConfigFileManagementService extends AbstractArtifactService {
                 CmdbDiffConfigDto cmdbDiffConfig = findoutFromCmdbDiffConfigsByKey(saltConfigKeyInfo.getKey(),
                         allCmdbDiffConfigs);
 
-                if (boundDiffConfVarGuids.contains(cmdbDiffConfig.getGuid())) {
+                if (cmdbDiffConfig != null && StringUtils.isNoneBlank(cmdbDiffConfig.getGuid()) 
+                        && boundDiffConfVarGuids.contains(cmdbDiffConfig.getGuid())) {
                     toBindDiffConfVarGuids.add(cmdbDiffConfig.getGuid());
                 }
             }
@@ -1105,7 +1106,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
                     throw new PluginException("Failed to create new Diff configuration key:{}", configFileKey);
                 }
 
-                allCmdbDiffConfigs.add(cmdbDiffConfig);
+                allCmdbDiffConfigs.add(newCmdbDiffConfig);
                 toBindDiffConfVarGuids.add(newCmdbDiffConfig.getGuid());
             } else {
                 toBindDiffConfVarGuids.add(cmdbDiffConfig.getGuid());
@@ -1180,7 +1181,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
                     throw new PluginException("Failed to create new Diff configuration key:{}", configFileKey);
                 }
 
-                allCmdbDiffConfigs.add(cmdbDiffConfig);
+                allCmdbDiffConfigs.add(newCmdbDiffConfig);
                 toBoundDiffConfVariableGuids.add(newCmdbDiffConfig.getGuid());
             } else {
                 if (!toBoundDiffConfVariableGuids.contains(cmdbDiffConfig.getGuid())) {

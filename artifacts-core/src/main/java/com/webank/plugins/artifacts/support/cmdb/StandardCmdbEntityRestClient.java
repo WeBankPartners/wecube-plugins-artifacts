@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +48,9 @@ public class StandardCmdbEntityRestClient {
         Map<String, Object> requestDataMap = new HashMap<>();
         requestDataMap.put("code", varName);
         requestDataMap.put("variable_name", varName);
-        requestDataMap.put("variable_value", varValue);
+        if(StringUtils.isNoneBlank(varValue)){
+            requestDataMap.put("variable_value", varValue);
+        }
 
         requestParams.add(requestDataMap);
         Object result = createEntity(entityName, requestParams);
