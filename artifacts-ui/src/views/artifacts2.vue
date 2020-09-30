@@ -208,6 +208,11 @@
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
     </Col>
+    <Modal :mask-closable="false" v-model="isShowChangeRootCIModal" title="修改填充规则根CI" @on-ok="setConfigRowValue">
+      <Select v-model="activeCI" style="width:400px">
+        <Option v-for="item in rootCI" :value="item.value" :key="item.value">{{ item.label }}</Option>
+      </Select>
+    </Modal>
   </Row>
 </template>
 
@@ -269,9 +274,13 @@ export default {
           key: 'upload_time'
         },
         {
-          title: this.$t('artifacts_md5_value'),
+          title: this.$t('baseline_package'),
           key: 'md5_value',
-          render: (h, params) => this.renderCell(params.row.md5_value)
+          render: (h, params) => {
+            const baseLine = params.row.baseline_package.code || ''
+            console.log(params.row.baseline_package)
+            return <span>{baseLine}</span>
+          }
         },
         {
           title: this.$t('artifacts_uploaded_by'),
@@ -323,7 +332,7 @@ export default {
         start_file_path: [],
         stop_file_path: [],
         deploy_file_path: [],
-        is_decompression: 0
+        is_decompression: 'false'
       },
       saveConfigLoading: false,
       // -------------------
@@ -404,6 +413,21 @@ export default {
           }
         },
         {
+          title: '根CI',
+          width: 200,
+          render: (h, params) => {
+            const diffExpr = params.row.conf_variable.diffExpr
+            const rootCI = diffExpr ? JSON.parse(JSON.parse(params.row.conf_variable.diffExpr)[0].value)[0].ciTypeId : 51
+            const rootSet = { 50: '应用实例', 51: '数据库实例' }
+            return (
+              <div>
+                <span>{rootSet[rootCI]}</span>
+                <Icon type="md-create" onClick={() => this.changeRootCI(rootCI)}></Icon>
+              </div>
+            )
+          }
+        },
+        {
           title: this.$t('artifacts_property_value_fill_rule'),
           render: (h, params) => {
             // show static view only if confirmed
@@ -411,7 +435,7 @@ export default {
               <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} isReadOnly={true} v-model={params.row.conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
             ) : (
               <div style="align-items:center;display:flex;">
-                <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} v-model={params.row.conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
+                <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" ref="" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} v-model={params.row.conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
               </div>
             )
           }
@@ -424,6 +448,13 @@ export default {
             return <div style="padding-top:5px">{this.renderConfigButton(params)}</div>
           }
         }
+      ],
+
+      isShowChangeRootCIModal: false,
+      activeCI: '',
+      rootCI: [
+        { value: 50, label: '应用实例' },
+        { value: 51, label: '数据库实例' }
       ]
     }
   },
@@ -447,6 +478,10 @@ export default {
     }
   },
   methods: {
+    changeRootCI (rootCI) {
+      this.activeCI = rootCI
+      this.isShowChangeRootCIModal = true
+    },
     async fetchData () {
       const [sysData, packageCiType] = await Promise.all([getSystemDesignVersions(), getPackageCiTypeId()])
       if (sysData.status === 'OK' && sysData.data.contents instanceof Array) {
@@ -671,6 +706,7 @@ export default {
         content.forEach(c => {
           res += c.filename + '|'
         })
+        res = res.substring(0, res.length - 1)
       } else {
         res = content
       }
@@ -782,7 +818,7 @@ export default {
         start_file_path: [],
         stop_file_path: [],
         deploy_file_path: [],
-        is_decompression: 0
+        is_decompression: 'false'
       }
     },
     async syncBaselineFileStatus () {
@@ -828,7 +864,7 @@ export default {
         this.packageInput.start_file_path = found.start_file_path ? JSON.parse(JSON.stringify(found.start_file_path)) : []
         this.packageInput.stop_file_path = found.stop_file_path ? JSON.parse(JSON.stringify(found.stop_file_path)) : []
         this.packageInput.deploy_file_path = found.deploy_file_path ? JSON.parse(JSON.stringify(found.deploy_file_path)) : []
-        this.packageInput.is_decompression = found.is_decompression || 0
+        this.packageInput.is_decompression = found.is_decompression || 'false'
       }
       await this.syncBaselineFileStatus()
     },
@@ -843,7 +879,7 @@ export default {
       this.packageInput.start_file_path = JSON.parse(JSON.stringify(this.packageDetail.start_file_path))
       this.packageInput.stop_file_path = JSON.parse(JSON.stringify(this.packageDetail.stop_file_path))
       this.packageInput.deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.deploy_file_path))
-      this.packageInput.is_decompression = row.is_decompression || 0
+      this.packageInput.is_decompression = row.is_decompression || 'false'
       this.packageId = row.guid
       // await this.syncBaselineFileStatus()
       this.isShowFilesModal = true
