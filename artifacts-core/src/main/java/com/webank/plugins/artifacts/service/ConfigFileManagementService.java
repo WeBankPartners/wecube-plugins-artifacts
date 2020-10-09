@@ -1120,6 +1120,10 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             Map<String, Object> packageCiMap, List<ConfigFileDto> newDiffConfFiles, List<String> oldDiffConfFiles,
             List<CmdbDiffConfigDto> allCmdbDiffConfigs, List<DiffConfVariableInfoDto> diffConfVariables) {
         if (checkIfSameDiffConfFiles(newDiffConfFiles, oldDiffConfFiles)) {
+            if(diffConfVariables == null) {
+                log.debug("variables to bind is null.");
+                return;
+            }
             processDiffConfFilesIfSameDiffConfFiles(packageUpdateResult, packageCiMap, newDiffConfFiles,
                     oldDiffConfFiles, allCmdbDiffConfigs, diffConfVariables);
 
