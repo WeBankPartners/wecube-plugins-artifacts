@@ -28,11 +28,9 @@ import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.google.common.collect.ImmutableMap;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.dto.AutoCreateDeployPackageDto;
 import com.webank.plugins.artifacts.dto.AutoCreateDeployPackageResultDto;
-import com.webank.plugins.artifacts.dto.ConfigFileDto;
 import com.webank.plugins.artifacts.dto.ConfigKeyInfoDto;
 import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
 import com.webank.plugins.artifacts.support.cmdb.dto.CmdbDiffConfigDto;
@@ -45,7 +43,6 @@ import com.webank.plugins.artifacts.support.nexus.NexusDirectiryDto;
 import com.webank.plugins.artifacts.support.nexus.NexusSearchAssetResponse;
 import com.webank.plugins.artifacts.support.saltstack.SaltConfigFileDto;
 import com.webank.plugins.artifacts.support.saltstack.SaltConfigKeyInfoDto;
-import com.webank.plugins.artifacts.support.saltstack.SaltFileNodeDto;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackRemoteCallException;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackRequest.DefaultSaltstackRequest;
 import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultData;
@@ -80,13 +77,13 @@ public class NexusArtifactManagementService extends AbstractArtifactService{
         
         String nexusArtifactUrl = nexusBaseUrl+nexusRepository+autoCreateDeployPackageDto.getNexusUrl();
         
-        log.info("about to upload artifact to S3:{}", nexusArtifactUrl);
+        log.info("About to upload artifact to S3:{}", nexusArtifactUrl);
         File artifactFile = convertNexusPackageToFile(nexusArtifactUrl,nexusArtifactUrl.substring(nexusArtifactUrl.lastIndexOf("/") + 1));
         String artifactS3URL = uploadPackageToS3(artifactFile);
 //        savePackageToCmdb(file, unitDesignId, uploadName, url, authorization);
         
         
-        log.info("finished uploading artifact to S3:{}", nexusArtifactUrl);
+        log.info("Finished uploading artifact to S3:{}", nexusArtifactUrl);
         
         Map<String, Object> newPackageCi = new HashMap<String, Object>();
         
@@ -98,7 +95,6 @@ public class NexusArtifactManagementService extends AbstractArtifactService{
         newPackageCi.put("upload_time", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         newPackageCi.put("unit_design", unitDesignGuid);
         
-        //TODO
         newPackageCi.put("deploy_file_path", calNewPackageDeployFilePath(autoCreateDeployPackageDto, baselinePackageCi));
         newPackageCi.put("start_file_path", calNewPackageStartFilePath(autoCreateDeployPackageDto, baselinePackageCi));
         newPackageCi.put("stop_file_path", calNewPackageStopFilePath(autoCreateDeployPackageDto, baselinePackageCi));
@@ -128,6 +124,7 @@ public class NexusArtifactManagementService extends AbstractArtifactService{
         
         Set<String> configFileKeys = new HashSet<String>();
         String diffConfFilePath = (String) newPackageCi.get("diff_conf_file");
+        log.info("To process diff conf file path:{}", diffConfFilePath);
         if(StringUtils.isBlank(diffConfFilePath)) {
             return toBindDiffConfVarGuids;
         }
@@ -164,6 +161,8 @@ public class NexusArtifactManagementService extends AbstractArtifactService{
                 }
             }
         }
+        
+        log.info("Total {} diff conf variables bound successfully.", toBindDiffConfVarGuids.size());
         
         return toBindDiffConfVarGuids;
     }
