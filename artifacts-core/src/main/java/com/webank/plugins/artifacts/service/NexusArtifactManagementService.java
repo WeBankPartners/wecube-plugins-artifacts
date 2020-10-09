@@ -12,8 +12,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -30,7 +32,10 @@ import com.google.common.collect.ImmutableMap;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.dto.AutoCreateDeployPackageDto;
 import com.webank.plugins.artifacts.dto.AutoCreateDeployPackageResultDto;
+import com.webank.plugins.artifacts.dto.ConfigFileDto;
+import com.webank.plugins.artifacts.dto.ConfigKeyInfoDto;
 import com.webank.plugins.artifacts.interceptor.AuthorizationStorage;
+import com.webank.plugins.artifacts.support.cmdb.dto.CmdbDiffConfigDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.CiDataDto;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQuery;
 import com.webank.plugins.artifacts.support.cmdb.dto.v2.PaginationQueryResult;
@@ -38,6 +43,12 @@ import com.webank.plugins.artifacts.support.nexus.NexusAssetItemInfo;
 import com.webank.plugins.artifacts.support.nexus.NexusClient;
 import com.webank.plugins.artifacts.support.nexus.NexusDirectiryDto;
 import com.webank.plugins.artifacts.support.nexus.NexusSearchAssetResponse;
+import com.webank.plugins.artifacts.support.saltstack.SaltConfigFileDto;
+import com.webank.plugins.artifacts.support.saltstack.SaltConfigKeyInfoDto;
+import com.webank.plugins.artifacts.support.saltstack.SaltFileNodeDto;
+import com.webank.plugins.artifacts.support.saltstack.SaltstackRemoteCallException;
+import com.webank.plugins.artifacts.support.saltstack.SaltstackRequest.DefaultSaltstackRequest;
+import com.webank.plugins.artifacts.support.saltstack.SaltstackResponse.ResultData;
 import com.webank.plugins.artifacts.utils.Base64Utils;
 
 @Service
@@ -104,18 +115,132 @@ public class NexusArtifactManagementService extends AbstractArtifactService{
         AutoCreateDeployPackageResultDto resultDto = new AutoCreateDeployPackageResultDto();
         resultDto.setGuid(createPackageCiGuid);
         
-        Collection<String> toBindDiffConfVarGuids = calToBindDiffConfVarGuids(baselinePackageCi);
+        Collection<String> toBindDiffConfVarGuids = calToBindDiffConfVarGuids(newPackageCi, baselinePackageCi);
         updateDiffConfVariablesToPackageCi(createPackageCiGuid, toBindDiffConfVarGuids);
         log.info("Finished auto creating deploy packge:{}", createPackageCiGuid);
         return resultDto;
     }
     
-    private Collection<String> calToBindDiffConfVarGuids(Map<String, Object> baselinePackageCi){
-        //TODO
-        return Collections.emptyList();
+    private Collection<String> calToBindDiffConfVarGuids(Map<String, Object> newPackageCi, Map<String, Object> baselinePackageCi){
+        List<CmdbDiffConfigDto> allCmdbDiffConfigs = getAllCmdbDiffConfigs();
+        String s3EndpointOfPackageId = retrieveS3EndpointWithKeyByPackageCiMap(newPackageCi);
+        Set<String> toBindDiffConfVarGuids = new HashSet<String>();
+        
+        Set<String> configFileKeys = new HashSet<String>();
+        String diffConfFilePath = (String) newPackageCi.get("diff_conf_file");
+        if(StringUtils.isBlank(diffConfFilePath)) {
+            return toBindDiffConfVarGuids;
+        }
+        String [] diffConfFileParts = diffConfFilePath.split("\\|");
+        for (String diffConfFilePart : diffConfFileParts) {
+            
+            List<SaltConfigKeyInfoDto> saltConfigKeyInfos = calculatePropertyKeys(diffConfFilePart,
+                    s3EndpointOfPackageId);
+
+            for (SaltConfigKeyInfoDto saltConfigKeyInfo : saltConfigKeyInfos) {
+                ConfigKeyInfoDto configKeyInfo = new ConfigKeyInfoDto();
+                configKeyInfo.setKey(saltConfigKeyInfo.getKey());
+                configKeyInfo.setLine(saltConfigKeyInfo.getLine());
+                configKeyInfo.setType(saltConfigKeyInfo.getType());
+
+                configFileKeys.add(saltConfigKeyInfo.getKey());
+            }
+        }
+        
+        for (String configFileKey : configFileKeys) {
+            CmdbDiffConfigDto cmdbDiffConfig = findoutFromCmdbDiffConfigsByKey(configFileKey, allCmdbDiffConfigs);
+            if (cmdbDiffConfig == null) {
+                CmdbDiffConfigDto newCmdbDiffConfig = this.standardCmdbEntityRestClient
+                        .createDiffConfigurationCi(configFileKey, null);
+                if (newCmdbDiffConfig == null) {
+                    throw new PluginException("Failed to create new Diff configuration key:{}", configFileKey);
+                }
+
+                allCmdbDiffConfigs.add(newCmdbDiffConfig);
+                toBindDiffConfVarGuids.add(newCmdbDiffConfig.getGuid());
+            } else {
+                if (!toBindDiffConfVarGuids.contains(cmdbDiffConfig.getGuid())) {
+                    toBindDiffConfVarGuids.add(cmdbDiffConfig.getGuid());
+                }
+            }
+        }
+        
+        return toBindDiffConfVarGuids;
+    }
+    
+    private List<SaltConfigKeyInfoDto> calculatePropertyKeys(String filePath,
+            String s3EndpointOfPackageId) {
+        DefaultSaltstackRequest request = new DefaultSaltstackRequest();
+        List<Map<String, Object>> inputParamMaps = new ArrayList<>();
+        Map<String, Object> inputParamMap = new HashMap<String, Object>();
+        inputParamMap.put("endpoint", s3EndpointOfPackageId);
+        inputParamMap.put("accessKey", applicationProperties.getArtifactsS3AccessKey());
+        inputParamMap.put("secretKey", applicationProperties.getArtifactsS3SecretKey());
+        inputParamMap.put("filePath", filePath);
+
+        inputParamMaps.add(inputParamMap);
+        request.setInputs(inputParamMaps);
+        ResultData<SaltConfigFileDto> resultData = null;
+        try {
+            resultData = saltstackServiceStub.getReleasedPackagePropertyKeysByFilePath(
+                    applicationProperties.getWecubeGatewayServerUrl(), request);
+        } catch (SaltstackRemoteCallException e) {
+            log.info("errors to get conf key from {},error:{}", filePath, e.getMessage());
+            return Collections.emptyList();
+        }
+
+        List<SaltConfigFileDto> saltConfigFileDtos = resultData.getOutputs();
+        if (saltConfigFileDtos == null || saltConfigFileDtos.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        SaltConfigFileDto saltConfigFileDto = saltConfigFileDtos.get(0);
+
+        List<SaltConfigKeyInfoDto> saltConfigKeyInfos = saltConfigFileDto.getConfigKeyInfos();
+        if (saltConfigKeyInfos == null || saltConfigKeyInfos.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return saltConfigKeyInfos;
+    }
+    
+    private CmdbDiffConfigDto findoutFromCmdbDiffConfigsByKey(String key, List<CmdbDiffConfigDto> allCmdbDiffConfigs) {
+        if (allCmdbDiffConfigs == null || allCmdbDiffConfigs.isEmpty()) {
+            return null;
+        }
+
+        for (CmdbDiffConfigDto dto : allCmdbDiffConfigs) {
+            if (key.equalsIgnoreCase(dto.getKey())) {
+                return dto;
+            }
+        }
+
+        return null;
+    }
+    
+    
+    private List<CmdbDiffConfigDto> getAllCmdbDiffConfigs() {
+        List<CmdbDiffConfigDto> diffConfigs = new ArrayList<CmdbDiffConfigDto>();
+        List<Map<String, Object>> diffConfigMaps = standardCmdbEntityRestClient.queryDiffConfigurations();
+        for (Map<String, Object> diffConfigMap : diffConfigMaps) {
+            CmdbDiffConfigDto dto = new CmdbDiffConfigDto();
+            dto.setDiffExpr((String) diffConfigMap.get("variable_value"));
+            dto.setGuid((String) diffConfigMap.get("guid"));
+            dto.setKey((String) diffConfigMap.get("code"));
+            dto.setDisplayName((String) diffConfigMap.get("displayName"));
+            dto.setFixedDate((String) diffConfigMap.get("fixed_date"));
+
+            diffConfigs.add(dto);
+        }
+
+        return diffConfigs;
     }
     
     private void updateDiffConfVariablesToPackageCi(String packageCiGuid, Collection<String> diffConfVariableGuids) {
+        if(diffConfVariableGuids == null || diffConfVariableGuids.isEmpty()) {
+            log.info("none diff conf variables to bind for package:{}", packageCiGuid);
+            return;
+        }
         List<String> guids = new ArrayList<String>();
         guids.addAll(diffConfVariableGuids);
         Map<String, Object> packageUpdateParams = new HashMap<String, Object>();
