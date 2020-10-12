@@ -178,7 +178,8 @@
           <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
           <div>{{ $t('artifacts_loading') }}</div>
         </Spin>
-        <Tabs @on-click="tabChange">
+        {{ name1 }}
+        <Tabs @on-click="changeTab">
           <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.shorFileName" :key="index">
             <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
           </TabPane>
@@ -208,11 +209,6 @@
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
     </Col>
-    <Modal :mask-closable="false" v-model="isShowChangeRootCIModal" title="修改填充规则根CI" @on-ok="setConfigRowValue">
-      <Select v-model="activeCI" style="width:400px">
-        <Option v-for="item in rootCI" :value="item.value" :key="item.value">{{ item.label }}</Option>
-      </Select>
-    </Modal>
   </Row>
 </template>
 
@@ -225,7 +221,7 @@ import axios from 'axios'
 import Sortable from 'sortablejs'
 
 // 业务运行实例ciTypeId
-const rootCiTypeId = 50
+// const rootCiTypeId = 50
 // cmdb插件包名
 const cmdbPackageName = 'wecmdb'
 // 差异配置key_name
@@ -237,6 +233,7 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      name1: '',
       // ---------------
       // 系统设计树形数据
       // ---------------
@@ -278,7 +275,6 @@ export default {
           key: 'md5_value',
           render: (h, params) => {
             const baseLine = params.row.baseline_package.code || ''
-            console.log(params.row.baseline_package)
             return <span>{baseLine}</span>
           }
         },
@@ -416,13 +412,15 @@ export default {
           title: '根CI',
           width: 200,
           render: (h, params) => {
-            const diffExpr = params.row.conf_variable.diffExpr
-            const rootCI = diffExpr ? JSON.parse(JSON.parse(params.row.conf_variable.diffExpr)[0].value)[0].ciTypeId : 51
-            const rootSet = { 50: '应用实例', 51: '数据库实例' }
+            params.row.rootCI = params.row.conf_variable.tempRootCI || params.row.conf_variable.originRootCI
             return (
               <div>
-                <span>{rootSet[rootCI]}</span>
-                <Icon type="md-create" onClick={() => this.changeRootCI(rootCI)}></Icon>
+                {params.row.rootCI}
+                <Select value={this.activeTabData[params.row._index].conf_variable.tempRootCI} onInput={v => this.test(v, params)} style="width:100px">
+                  {this.rootCI.map(item => {
+                    return <Option value={item.value}>{item.label}</Option>
+                  })}
+                </Select>
               </div>
             )
           }
@@ -432,10 +430,10 @@ export default {
           render: (h, params) => {
             // show static view only if confirmed
             return params.row.conf_variable.fixedDate ? (
-              <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} isReadOnly={true} v-model={params.row.conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
+              <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} isReadOnly={true} v-model={this.activeTabData[params.row._index].conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
             ) : (
               <div style="align-items:center;display:flex;">
-                <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" ref="" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} v-model={params.row.conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
+                <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.activeTabData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
               </div>
             )
           }
@@ -450,12 +448,11 @@ export default {
         }
       ],
 
-      isShowChangeRootCIModal: false,
-      activeCI: '',
       rootCI: [
         { value: 50, label: '应用实例' },
         { value: 51, label: '数据库实例' }
-      ]
+      ],
+      activeTabData: null
     }
   },
   computed: {},
@@ -478,9 +475,22 @@ export default {
     }
   },
   methods: {
-    changeRootCI (rootCI) {
-      this.activeCI = rootCI
-      this.isShowChangeRootCIModal = true
+    changeTab (tabName) {
+      this.name1 = tabName
+      this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.name1).configKeyInfos
+      console.log(this.activeTabData)
+    },
+    test (rootCI, params) {
+      // this.$root.$eventBus.$emit('clearSingleChartInterval', 123)
+      console.log(rootCI, params)
+      params.row.rootCI = rootCI
+      let activeTab = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.name1)
+      console.log(activeTab)
+      activeTab.configKeyInfos[params.index].conf_variable.tempRootCI = rootCI
+      activeTab.configKeyInfos[params.index].conf_variable.diffExpr = ''
+      activeTab.configKeyInfos[params.index].conf_variable.originDiffExpr = ''
+      console.log(this.packageDetail.diff_conf_file)
+      // console.log(this.packageDetail.diff_conf_file[params.row.conf_variable])
     },
     async fetchData () {
       const [sysData, packageCiType] = await Promise.all([getSystemDesignVersions(), getPackageCiTypeId()])
@@ -743,11 +753,14 @@ export default {
       }
     },
     formatPackageDetail (data) {
+      console.log(data)
       let dataString = JSON.stringify(data)
       let copyData = JSON.parse(dataString)
       copyData.diff_conf_variable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
+        elVar.originRootCI = JSON.parse(JSON.parse(elVar.diffExpr)[0].value)[0].ciTypeId || 50
+        elVar.tempRootCI = JSON.parse(JSON.parse(elVar.diffExpr)[0].value)[0].ciTypeId || 50
         elVar.withinFiles = []
         elVar.withinFileIndexes = []
         let index = 0
@@ -774,6 +787,7 @@ export default {
           index += 1
         })
       })
+      console.log(copyData)
       return copyData
     },
     async syncPackageDetail () {
@@ -781,6 +795,13 @@ export default {
       let { status, data } = await getPackageDetail(this.guid, this.packageId)
       if (status === 'OK') {
         this.packageDetail = this.formatPackageDetail(data)
+        if (this.packageDetail.diff_conf_file.length > 0) {
+          this.name1 = this.packageDetail.diff_conf_file[0].shorFileName
+          this.activeTabData = this.packageDetail.diff_conf_file[0].configKeyInfos
+        } else {
+          this.name1 = ''
+          this.activeTabData = {}
+        }
       }
     },
     renderActionButton (params) {

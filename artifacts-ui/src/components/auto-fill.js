@@ -60,6 +60,13 @@ export default {
   },
   watch: {
     value () {
+      console.log(this.value)
+      if (this.rootCiTypeId === 50) {
+        this.autoFillArray = [{ type: 'rule', value: '[{"ciTypeId":50}]' }]
+      }
+      if (this.rootCiTypeId === 51) {
+        this.autoFillArray = [{ type: 'rule', value: '[{"ciTypeId":51}]' }]
+      }
       this.initAutoFillArray()
     },
     allCiTypes () {
@@ -296,6 +303,7 @@ export default {
       const node = JSON.parse(this.autoFillArray[ruleIndex].value)[attrIndex]
       if (!node.parentRs || this.ciTypeAttrsObj[node.parentRs.attrId].inputType === 'ref' || this.ciTypeAttrsObj[node.parentRs.attrId].inputType === 'multiRef') {
         const ciTypeId = JSON.parse(this.autoFillArray[ruleIndex].value)[attrIndex].ciTypeId
+        // const ciTypeId = this.rootCiTypeId
         this.getRefData(ruleIndex, attrIndex, ciTypeId)
       } else if ((node.parentRs && this.ciTypeAttrsObj[node.parentRs.attrId].inputType === 'select') || this.ciTypeAttrsObj[node.parentRs.attrId].inputType === 'multiSelect') {
         this.showEnumOptions(ruleIndex, attrIndex)
