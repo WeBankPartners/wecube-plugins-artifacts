@@ -1,0 +1,161 @@
+{
+    "packageId": "0045_0000000005",
+    "baseline_package": null,
+    "is_compress": null,
+    "start_file_path": [
+        {
+            "filename": "current/bin/start.sh",
+            "comparisonResult": null,
+            "md5": null,
+            "isDir": null,
+            "configKeyInfos": null
+        }
+    ],
+    "stop_file_path": [
+        {
+            "filename": "current/bin/stop.sh",
+            "comparisonResult": null,
+            "md5": null,
+            "isDir": null,
+            "configKeyInfos": null
+        }
+    ],
+    "deploy_file_path": [
+        {
+            "filename": "demo-app-spring-boot_1.5.3/bin/deploy.sh",
+            "comparisonResult": null,
+            "md5": null,
+            "isDir": null,
+            "configKeyInfos": null
+        }
+    ],
+    "diff_conf_file": [
+        {
+            "filename": "demo-app-spring-boot_1.5.3/conf/application-prod.properties",
+            "comparisonResult": null,
+            "md5": null,
+            "isDir": null,
+            "configKeyInfos": [
+                {
+                    "line": "1",
+                    "key": "port",
+                    "type": "@"
+                },
+                {
+                    "line": "2",
+                    "key": "db_host_ip",
+                    "type": "@"
+                },
+                {
+                    "line": "2",
+                    "key": "db_host_port",
+                    "type": "@"
+                },
+                {
+                    "line": "2",
+                    "key": "db_name",
+                    "type": "@"
+                },
+                {
+                    "line": "3",
+                    "key": "db_username",
+                    "type": "@"
+                },
+                {
+                    "line": "4",
+                    "key": "db_password",
+                    "type": "@"
+                }
+            ]
+        },
+        {
+            "filename": "demo-app-spring-boot_1.5.3/bin/start.sh",
+            "comparisonResult": null,
+            "md5": null,
+            "isDir": null,
+            "configKeyInfos": [
+                {
+                    "line": "8",
+                    "key": "jmx_hostname",
+                    "type": "@"
+                },
+                {
+                    "line": "8",
+                    "key": "jmx_port",
+                    "type": "@"
+                },
+                {
+                    "line": "13",
+                    "key": "port",
+                    "type": "@"
+                }
+            ]
+        }
+    ],
+    "diff_conf_variable": [
+        {
+            "key": "db_host_ip",
+            "type": null,
+            "diffConfigGuid": "0044_0000000004",
+            "bound": true,
+            "diffExpr": "[{\"type\":\"rule\",\"value\":\"[{\\\"ciTypeId\\\":50},{\\\"ciTypeId\\\":48,\\\"parentRs\\\":{\\\"attrId\\\":926,\\\"isReferedFromParent\\\":1}},{\\\"ciTypeId\\\":49,\\\"parentRs\\\":{\\\"attrId\\\":908,\\\"isReferedFromParent\\\":0}},{\\\"ciTypeId\\\":48,\\\"parentRs\\\":{\\\"attrId\\\":910,\\\"isReferedFromParent\\\":1},\\\"filters\\\":[{\\\"name\\\":\\\"code\\\",\\\"operator\\\":\\\"eq\\\",\\\"type\\\":\\\"value\\\",\\\"value\\\":\\\"DB\\\"}]},{\\\"ciTypeId\\\":51,\\\"parentRs\\\":{\\\"attrId\\\":956,\\\"isReferedFromParent\\\":0}},{\\\"ciTypeId\\\":33,\\\"parentRs\\\":{\\\"attrId\\\":957,\\\"isReferedFromParent\\\":1}},{\\\"ciTypeId\\\":33,\\\"parentRs\\\":{\\\"attrId\\\":581,\\\"isReferedFromParent\\\":1}}]\"}]",
+            "fixedDate": null
+        },
+        {
+            "key": "jmx_port",
+            "type": null,
+            "diffConfigGuid": "0044_0000000002",
+            "bound": true,
+            "diffExpr": "[{\"type\":\"rule\",\"value\":\"[{\\\"ciTypeId\\\":50},{\\\"ciTypeId\\\":50,\\\"parentRs\\\":{\\\"attrId\\\":929,\\\"isReferedFromParent\\\":1}}]\"}]",
+            "fixedDate": null
+        },
+        {
+            "key": "db_name",
+            "type": null,
+            "diffConfigGuid": "0044_0000000006",
+            "bound": true,
+            "diffExpr": "[{\"type\":\"rule\",\"value\":\"[{\\\"ciTypeId\\\":50},{\\\"ciTypeId\\\":48,\\\"parentRs\\\":{\\\"attrId\\\":926,\\\"isReferedFromParent\\\":1}},{\\\"ciTypeId\\\":49,\\\"parentRs\\\":{\\\"attrId\\\":908,\\\"isReferedFromParent\\\":0}},{\\\"ciTypeId\\\":48,\\\"parentRs\\\":{\\\"attrId\\\":910,\\\"isReferedFromParent\\\":1},\\\"filters\\\":[{\\\"name\\\":\\\"code\\\",\\\"operator\\\":\\\"eq\\\",\\\"type\\\":\\\"value\\\",\\\"value\\\":\\\"DB\\\"}]},{\\\"ciTypeId\\\":51,\\\"parentRs\\\":{\\\"attrId\\\":956,\\\"isReferedFromParent\\\":0}},{\\\"ciTypeId\\\":51,\\\"parentRs\\\":{\\\"attrId\\\":1057,\\\"isReferedFromParent\\\":1}}]\"}]",
+            "fixedDate": null
+        },
+        {
+            "key": "port",
+            "type": null,
+            "diffConfigGuid": "0044_0000000003",
+            "bound": true,
+            "diffExpr": null,
+            "fixedDate": null
+        },
+        {
+            "key": "db_username",
+            "type": null,
+            "diffConfigGuid": "0044_0000000007",
+            "bound": false,
+            "diffExpr": "[{\"type\":\"rule\",\"value\":\"[{\\\"ciTypeId\\\":50},{\\\"ciTypeId\\\":48,\\\"parentRs\\\":{\\\"attrId\\\":926,\\\"isReferedFromParent\\\":1}},{\\\"ciTypeId\\\":49,\\\"parentRs\\\":{\\\"attrId\\\":908,\\\"isReferedFromParent\\\":0}},{\\\"ciTypeId\\\":48,\\\"parentRs\\\":{\\\"attrId\\\":910,\\\"isReferedFromParent\\\":1},\\\"filters\\\":[{\\\"name\\\":\\\"code\\\",\\\"operator\\\":\\\"eq\\\",\\\"type\\\":\\\"value\\\",\\\"value\\\":\\\"DB\\\"}]},{\\\"ciTypeId\\\":51,\\\"parentRs\\\":{\\\"attrId\\\":956,\\\"isReferedFromParent\\\":0}},{\\\"ciTypeId\\\":51,\\\"parentRs\\\":{\\\"attrId\\\":964,\\\"isReferedFromParent\\\":1}}]\"}]",
+            "fixedDate": null
+        },
+        {
+            "key": "db_host_port",
+            "type": null,
+            "diffConfigGuid": "0044_0000000005",
+            "bound": true,
+            "diffExpr": "[{\"type\":\"rule\",\"value\":\"[{\\\"ciTypeId\\\":50},{\\\"ciTypeId\\\":48,\\\"parentRs\\\":{\\\"attrId\\\":926,\\\"isReferedFromParent\\\":1}},{\\\"ciTypeId\\\":49,\\\"parentRs\\\":{\\\"attrId\\\":908,\\\"isReferedFromParent\\\":0}},{\\\"ciTypeId\\\":48,\\\"parentRs\\\":{\\\"attrId\\\":910,\\\"isReferedFromParent\\\":1},\\\"filters\\\":[{\\\"name\\\":\\\"code\\\",\\\"operator\\\":\\\"eq\\\",\\\"type\\\":\\\"value\\\",\\\"value\\\":\\\"DB\\\"}]},{\\\"ciTypeId\\\":51,\\\"parentRs\\\":{\\\"attrId\\\":956,\\\"isReferedFromParent\\\":0}},{\\\"ciTypeId\\\":51,\\\"parentRs\\\":{\\\"attrId\\\":958,\\\"isReferedFromParent\\\":1}}]\"}]",
+            "fixedDate": null
+        },
+        {
+            "key": "db_password",
+            "type": null,
+            "diffConfigGuid": "0044_0000000008",
+            "bound": false,
+            "diffExpr": "[{\"type\":\"rule\",\"value\":\"[{\\\"ciTypeId\\\":50},{\\\"ciTypeId\\\":48,\\\"parentRs\\\":{\\\"attrId\\\":926,\\\"isReferedFromParent\\\":1}},{\\\"ciTypeId\\\":49,\\\"parentRs\\\":{\\\"attrId\\\":908,\\\"isReferedFromParent\\\":0}},{\\\"ciTypeId\\\":48,\\\"parentRs\\\":{\\\"attrId\\\":910,\\\"isReferedFromParent\\\":1},\\\"filters\\\":[{\\\"name\\\":\\\"code\\\",\\\"operator\\\":\\\"eq\\\",\\\"type\\\":\\\"value\\\",\\\"value\\\":\\\"DB\\\"}]},{\\\"ciTypeId\\\":51,\\\"parentRs\\\":{\\\"attrId\\\":956,\\\"isReferedFromParent\\\":0}},{\\\"ciTypeId\\\":51,\\\"parentRs\\\":{\\\"attrId\\\":965,\\\"isReferedFromParent\\\":1}}]\"},{\"type\":\"specialDelimiter\",\"value\":\"&\\u0001\"},{\"type\":\"rule\",\"value\":\"[{\\\"ciTypeId\\\":50},{\\\"ciTypeId\\\":48,\\\"parentRs\\\":{\\\"attrId\\\":926,\\\"isReferedFromParent\\\":1}},{\\\"ciTypeId\\\":49,\\\"parentRs\\\":{\\\"attrId\\\":908,\\\"isReferedFromParent\\\":0}},{\\\"ciTypeId\\\":48,\\\"parentRs\\\":{\\\"attrId\\\":910,\\\"isReferedFromParent\\\":1},\\\"filters\\\":[{\\\"name\\\":\\\"code\\\",\\\"operator\\\":\\\"eq\\\",\\\"type\\\":\\\"value\\\",\\\"value\\\":\\\"DB\\\"}]},{\\\"ciTypeId\\\":51,\\\"parentRs\\\":{\\\"attrId\\\":956,\\\"isReferedFromParent\\\":0}},{\\\"ciTypeId\\\":51,\\\"parentRs\\\":{\\\"attrId\\\":944,\\\"isReferedFromParent\\\":1}}]\"}]",
+            "fixedDate": null
+        },
+        {
+            "key": "jmx_hostname",
+            "type": null,
+            "diffConfigGuid": "0044_0000000001",
+            "bound": true,
+            "diffExpr": "[{\"type\":\"rule\",\"value\":\"[{\\\"ciTypeId\\\":50},{\\\"ciTypeId\\\":32,\\\"parentRs\\\":{\\\"attrId\\\":927,\\\"isReferedFromParent\\\":1}},{\\\"ciTypeId\\\":32,\\\"parentRs\\\":{\\\"attrId\\\":546,\\\"isReferedFromParent\\\":1}}]\"}]",
+            "fixedDate": null
+        }
+    ]
+}
