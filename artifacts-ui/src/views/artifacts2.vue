@@ -407,7 +407,7 @@ export default {
           }
         },
         {
-          title: '根CI',
+          title: this.$t('root_ci'),
           width: 200,
           render: (h, params) => {
             if (this.activeTabData[params.row._index]) {
@@ -450,8 +450,8 @@ export default {
       ],
 
       rootCI: [
-        { value: 50, label: '应用实例' },
-        { value: 51, label: '数据库实例' }
+        { value: 50, label: this.$t('applications') },
+        { value: 51, label: this.$t('db_instance') }
       ],
       activeTab: '',
       activeTabData: null
