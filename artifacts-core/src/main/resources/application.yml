@@ -33,3 +33,4 @@ plugins:
   jwt-signing-key: ${JWT_SIGNING_KEY:}
   artifacts-local-enabled: ${UPLOAD_ENABLED:true}
   artifacts-nexus-enabled: ${UPLOAD_NEXUS_ENABLED:true}
+  property-encrypt-key-path:${PROPERTY_ENCRYPT_KEY_PATH:/data/certs/rsa_key}
