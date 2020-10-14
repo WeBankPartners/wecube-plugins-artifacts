@@ -395,7 +395,7 @@ export default {
         },
         {
           title: this.$t('artifacts_property_name'),
-          width: 200,
+          width: 140,
           render: (h, params) => {
             // show static view only if confirmed
             return (
@@ -408,7 +408,7 @@ export default {
         },
         {
           title: this.$t('root_ci'),
-          width: 200,
+          width: 120,
           render: (h, params) => {
             if (this.activeTabData[params.row._index]) {
               params.row.rootCI = params.row.conf_variable.tempRootCI || params.row.conf_variable.originRootCI
@@ -433,7 +433,7 @@ export default {
                 <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} isReadOnly={true} v-model={this.activeTabData[params.row._index].conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
               ) : (
                 <div style="align-items:center;display:flex;">
-                  <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.activeTabData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
+                  <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 10px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.activeTabData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
                 </div>
               )
             }
@@ -442,7 +442,7 @@ export default {
         {
           title: this.$t('artifacts_action'),
           key: 'state',
-          width: 150,
+          width: 100,
           render: (h, params) => {
             return <div style="padding-top:5px">{this.renderConfigButton(params)}</div>
           }
@@ -1499,9 +1499,6 @@ export default {
 
 .baseline-cmp-new {
   color: #19be6b;
-}
-
-.baseline-cmp-same {
 }
 
 .baseline-cmp-changed {
