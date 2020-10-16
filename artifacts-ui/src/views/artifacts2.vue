@@ -559,10 +559,14 @@ export default {
         _.level = level
         _.render = (h, params) => {
           return (
-            <div>
-              <span style="margin-right:4px;">{_.data.code}</span>
-              <span style="margin-right:10px;font-size:12px">[{_.data.name}]</span>
-              <span style={`font-size:12px;color:${color[_.data.state_code]}`}>{_.data.state_code}</span>
+            <div style="white-space: break-spaces;">
+              <div style="display:inline-block;margin-right:4px;max-width:60px;max-width:120px;overflow:hidden; text-overflow:ellipsis; white-space:nowrap;vertical-align: top;" title={_.data.code}>
+                {_.data.code}
+              </div>
+              <div style="display:inline-block;margin-right:4px;font-size:12px;max-width:120px;overflow:hidden; text-overflow:ellipsis; white-space:nowrap;vertical-align: top;" title={_.data.name}>
+                [{_.data.name}]
+              </div>
+              <div style={`display:inline-block;max-width:60px;font-size:12px;vertical-align:top;color:${color[_.data.state_code]}`}>{_.data.state_code}</div>
             </div>
           )
         }
