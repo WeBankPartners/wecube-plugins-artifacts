@@ -1058,7 +1058,8 @@ public class ConfigFileManagementService extends AbstractArtifactService {
                 CmdbDiffConfigDto cmdbDiffConfig = findoutFromCmdbDiffConfigsByKey(saltConfigKeyInfo.getKey(),
                         allCmdbDiffConfigs);
 
-                if (boundDiffConfVarGuids.contains(cmdbDiffConfig.getGuid())) {
+                if (cmdbDiffConfig != null && StringUtils.isNoneBlank(cmdbDiffConfig.getGuid()) 
+                        && boundDiffConfVarGuids.contains(cmdbDiffConfig.getGuid())) {
                     toBindDiffConfVarGuids.add(cmdbDiffConfig.getGuid());
                 }
             }
@@ -1105,7 +1106,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
                     throw new PluginException("Failed to create new Diff configuration key:{}", configFileKey);
                 }
 
-                allCmdbDiffConfigs.add(cmdbDiffConfig);
+                allCmdbDiffConfigs.add(newCmdbDiffConfig);
                 toBindDiffConfVarGuids.add(newCmdbDiffConfig.getGuid());
             } else {
                 toBindDiffConfVarGuids.add(cmdbDiffConfig.getGuid());
@@ -1119,6 +1120,10 @@ public class ConfigFileManagementService extends AbstractArtifactService {
             Map<String, Object> packageCiMap, List<ConfigFileDto> newDiffConfFiles, List<String> oldDiffConfFiles,
             List<CmdbDiffConfigDto> allCmdbDiffConfigs, List<DiffConfVariableInfoDto> diffConfVariables) {
         if (checkIfSameDiffConfFiles(newDiffConfFiles, oldDiffConfFiles)) {
+            if(diffConfVariables == null) {
+                log.debug("variables to bind is null.");
+                return;
+            }
             processDiffConfFilesIfSameDiffConfFiles(packageUpdateResult, packageCiMap, newDiffConfFiles,
                     oldDiffConfFiles, allCmdbDiffConfigs, diffConfVariables);
 
@@ -1180,7 +1185,7 @@ public class ConfigFileManagementService extends AbstractArtifactService {
                     throw new PluginException("Failed to create new Diff configuration key:{}", configFileKey);
                 }
 
-                allCmdbDiffConfigs.add(cmdbDiffConfig);
+                allCmdbDiffConfigs.add(newCmdbDiffConfig);
                 toBoundDiffConfVariableGuids.add(newCmdbDiffConfig.getGuid());
             } else {
                 if (!toBoundDiffConfVariableGuids.contains(cmdbDiffConfig.getGuid())) {

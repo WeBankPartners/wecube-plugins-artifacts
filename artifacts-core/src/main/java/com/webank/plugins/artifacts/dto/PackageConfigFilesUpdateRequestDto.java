@@ -20,7 +20,7 @@ public class PackageConfigFilesUpdateRequestDto {
     private Boolean isDecompression;
     
     @JsonProperty("diff_conf_variable")
-    private List<DiffConfVariableInfoDto> diffConfVariable = new ArrayList<>();
+    private List<DiffConfVariableInfoDto> diffConfVariable;
     
     @JsonProperty("baseline_package")
     private String baselinePackage;
