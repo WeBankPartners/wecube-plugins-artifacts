@@ -1,6 +1,6 @@
 <template>
   <Row id="weArtifacts" class="artifact-management">
-    <Col span="6">
+    <Col span="5">
       <!-- 系统设计版本 -->
       <Card>
         <p slot="title">{{ $t('artifacts_system_design_version') }}</p>
@@ -21,7 +21,7 @@
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
     </Col>
-    <Col span="17" style="margin-left: 35px;">
+    <Col span="18" style="margin-left: 35px;">
       <!-- 包管理 -->
       <Card v-if="guid" class="artifact-management-top-card">
         <!-- 本地上传 -->
@@ -178,7 +178,7 @@
           <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
           <div>{{ $t('artifacts_loading') }}</div>
         </Spin>
-        <Tabs @on-click="tabChange">
+        <Tabs @on-click="changeTab">
           <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.shorFileName" :key="index">
             <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
           </TabPane>
@@ -220,7 +220,7 @@ import axios from 'axios'
 import Sortable from 'sortablejs'
 
 // 业务运行实例ciTypeId
-const rootCiTypeId = 50
+const defaultRootCiTypeId = 50
 // cmdb插件包名
 const cmdbPackageName = 'wecmdb'
 // 差异配置key_name
@@ -269,9 +269,12 @@ export default {
           key: 'upload_time'
         },
         {
-          title: this.$t('artifacts_md5_value'),
+          title: this.$t('baseline_package'),
           key: 'md5_value',
-          render: (h, params) => this.renderCell(params.row.md5_value)
+          render: (h, params) => {
+            const baseLine = params.row.baseline_package.code || ''
+            return <span>{baseLine}</span>
+          }
         },
         {
           title: this.$t('artifacts_uploaded_by'),
@@ -323,7 +326,7 @@ export default {
         start_file_path: [],
         stop_file_path: [],
         deploy_file_path: [],
-        is_decompression: 0
+        is_decompression: 'false'
       },
       saveConfigLoading: false,
       // -------------------
@@ -392,7 +395,7 @@ export default {
         },
         {
           title: this.$t('artifacts_property_name'),
-          width: 200,
+          width: 140,
           render: (h, params) => {
             // show static view only if confirmed
             return (
@@ -404,27 +407,54 @@ export default {
           }
         },
         {
+          title: this.$t('root_ci'),
+          width: 120,
+          render: (h, params) => {
+            if (this.activeTabData[params.row._index]) {
+              params.row.rootCI = params.row.conf_variable.tempRootCI || params.row.conf_variable.originRootCI
+              return (
+                <div>
+                  <Select value={this.activeTabData[params.row._index].conf_variable.tempRootCI} onInput={v => this.changeRootCI(v, params)} style="width:100px">
+                    {this.rootCI.map(item => {
+                      return <Option value={item.value}>{item.label}</Option>
+                    })}
+                  </Select>
+                </div>
+              )
+            }
+          }
+        },
+        {
           title: this.$t('artifacts_property_value_fill_rule'),
           render: (h, params) => {
             // show static view only if confirmed
-            return params.row.conf_variable.fixedDate ? (
-              <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} isReadOnly={true} v-model={params.row.conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
-            ) : (
-              <div style="align-items:center;display:flex;">
-                <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} v-model={params.row.conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
-              </div>
-            )
+            if (this.activeTabData[params.row._index]) {
+              return params.row.conf_variable.fixedDate ? (
+                <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} isReadOnly={true} v-model={this.activeTabData[params.row._index].conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
+              ) : (
+                <div style="align-items:center;display:flex;">
+                  <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 10px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.activeTabData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
+                </div>
+              )
+            }
           }
         },
         {
           title: this.$t('artifacts_action'),
           key: 'state',
-          width: 150,
+          width: 100,
           render: (h, params) => {
             return <div style="padding-top:5px">{this.renderConfigButton(params)}</div>
           }
         }
-      ]
+      ],
+
+      rootCI: [
+        { value: 50, label: this.$t('applications') },
+        { value: 51, label: this.$t('db_instance') }
+      ],
+      activeTab: '',
+      activeTabData: null
     }
   },
   computed: {},
@@ -447,6 +477,20 @@ export default {
     }
   },
   methods: {
+    changeTab (tabName) {
+      this.activeTab = tabName
+      this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab).configKeyInfos
+    },
+    changeRootCI (rootCI, params) {
+      let activeTab = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab)
+      let confVariable = activeTab.configKeyInfos[params.index].conf_variable
+      confVariable.tempRootCI = rootCI
+      if (confVariable.tempRootCI === confVariable.originRootCI) {
+        confVariable.diffExpr = confVariable.originDiffExpr
+      } else {
+        confVariable.diffExpr = ''
+      }
+    },
     async fetchData () {
       const [sysData, packageCiType] = await Promise.all([getSystemDesignVersions(), getPackageCiTypeId()])
       if (sysData.status === 'OK' && sysData.data.contents instanceof Array) {
@@ -515,10 +559,14 @@ export default {
         _.level = level
         _.render = (h, params) => {
           return (
-            <div>
-              <span style="margin-right:4px;">{_.data.code}</span>
-              <span style="margin-right:10px;font-size:12px">[{_.data.name}]</span>
-              <span style={`font-size:12px;color:${color[_.data.state_code]}`}>{_.data.state_code}</span>
+            <div style="white-space: break-spaces;">
+              <div style="display:inline-block;margin-right:4px;max-width:60px;max-width:120px;overflow:hidden; text-overflow:ellipsis; white-space:nowrap;vertical-align: top;" title={_.data.code}>
+                {_.data.code}
+              </div>
+              <div style="display:inline-block;margin-right:4px;font-size:12px;max-width:120px;overflow:hidden; text-overflow:ellipsis; white-space:nowrap;vertical-align: top;" title={_.data.name}>
+                [{_.data.name}]
+              </div>
+              <div style={`display:inline-block;max-width:60px;font-size:12px;vertical-align:top;color:${color[_.data.state_code]}`}>{_.data.state_code}</div>
             </div>
           )
         }
@@ -671,6 +719,7 @@ export default {
         content.forEach(c => {
           res += c.filename + '|'
         })
+        res = res.substring(0, res.length - 1)
       } else {
         res = content
       }
@@ -712,6 +761,8 @@ export default {
       copyData.diff_conf_variable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
+        elVar.originRootCI = JSON.parse(JSON.parse(elVar.diffExpr)[0].value)[0].ciTypeId || defaultRootCiTypeId
+        elVar.tempRootCI = JSON.parse(JSON.parse(elVar.diffExpr)[0].value)[0].ciTypeId || defaultRootCiTypeId
         elVar.withinFiles = []
         elVar.withinFileIndexes = []
         let index = 0
@@ -745,6 +796,13 @@ export default {
       let { status, data } = await getPackageDetail(this.guid, this.packageId)
       if (status === 'OK') {
         this.packageDetail = this.formatPackageDetail(data)
+        if (this.packageDetail.diff_conf_file.length > 0) {
+          this.activeTab = this.packageDetail.diff_conf_file[0].shorFileName
+          this.activeTabData = this.packageDetail.diff_conf_file[0].configKeyInfos
+        } else {
+          this.activeTab = ''
+          this.activeTabData = {}
+        }
       }
     },
     renderActionButton (params) {
@@ -782,7 +840,7 @@ export default {
         start_file_path: [],
         stop_file_path: [],
         deploy_file_path: [],
-        is_decompression: 0
+        is_decompression: 'false'
       }
     },
     async syncBaselineFileStatus () {
@@ -828,7 +886,7 @@ export default {
         this.packageInput.start_file_path = found.start_file_path ? JSON.parse(JSON.stringify(found.start_file_path)) : []
         this.packageInput.stop_file_path = found.stop_file_path ? JSON.parse(JSON.stringify(found.stop_file_path)) : []
         this.packageInput.deploy_file_path = found.deploy_file_path ? JSON.parse(JSON.stringify(found.deploy_file_path)) : []
-        this.packageInput.is_decompression = found.is_decompression || 0
+        this.packageInput.is_decompression = found.is_decompression || 'false'
       }
       await this.syncBaselineFileStatus()
     },
@@ -843,7 +901,7 @@ export default {
       this.packageInput.start_file_path = JSON.parse(JSON.stringify(this.packageDetail.start_file_path))
       this.packageInput.stop_file_path = JSON.parse(JSON.stringify(this.packageDetail.stop_file_path))
       this.packageInput.deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.deploy_file_path))
-      this.packageInput.is_decompression = row.is_decompression || 0
+      this.packageInput.is_decompression = row.is_decompression || 'false'
       this.packageId = row.guid
       // await this.syncBaselineFileStatus()
       this.isShowFilesModal = true
@@ -1445,9 +1503,6 @@ export default {
 
 .baseline-cmp-new {
   color: #19be6b;
-}
-
-.baseline-cmp-same {
 }
 
 .baseline-cmp-changed {

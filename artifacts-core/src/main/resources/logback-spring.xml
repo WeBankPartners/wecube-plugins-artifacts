@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="30 seconds">
 
-    <property name="logPath" value="${ARTIFACTS_LOG_PATH:-/data/wecube/log/artifacts}"/>
+    <property name="logPath" value="${ARTIFACTS_LOG_PATH:-/log/artifacts}"/>
     <property name="logFile" value="artifacts"/>
 
     <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
