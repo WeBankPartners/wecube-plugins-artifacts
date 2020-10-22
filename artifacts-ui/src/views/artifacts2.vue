@@ -757,6 +757,9 @@ export default {
     },
     getRootCI (diffExpr) {
       let rootCI = defaultRootCiTypeId
+      if (!diffExpr) {
+        return rootCI
+      }
       const de = JSON.parse(diffExpr)
       const rootItem = de.find(item => item.type === 'rule')
       if (rootItem) {
