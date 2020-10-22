@@ -259,7 +259,13 @@ export default {
       tableData: [],
       tableColumns: [
         {
+          title: 'GUID',
+          width: 100,
+          key: 'guid'
+        },
+        {
           title: this.$t('artifacts_package_name'),
+          minWidth: 80,
           key: 'name',
           render: (h, params) => this.renderCell(params.row.name)
         },
@@ -270,6 +276,7 @@ export default {
         },
         {
           title: this.$t('baseline_package'),
+          width: 100,
           key: 'md5_value',
           render: (h, params) => {
             const baseLine = params.row.baseline_package.code || ''
@@ -278,31 +285,37 @@ export default {
         },
         {
           title: this.$t('artifacts_uploaded_by'),
+          minWidth: 80,
           key: 'upload_user',
           render: (h, params) => this.renderCell(params.row.upload_user)
         },
         {
           title: this.$t('artifacts_config_files'),
+          minWidth: 100,
           key: 'diff_conf_file',
           render: (h, params) => this.renderCell(params.row.diff_conf_file)
         },
         {
           title: this.$t('artifacts_start_script'),
+          minWidth: 100,
           key: 'start_file_path',
           render: (h, params) => this.renderCell(params.row.start_file_path)
         },
         {
           title: this.$t('artifacts_stop_script'),
+          minWidth: 100,
           key: 'stop_file_path',
           render: (h, params) => this.renderCell(params.row.stop_file_path)
         },
         {
           title: this.$t('artifacts_deploy_script'),
+          minWidth: 100,
           key: 'deploy_file_path',
           render: (h, params) => this.renderCell(params.row.deploy_file_path)
         },
         {
           title: this.$t('is_decompression'),
+          minWidth: 100,
           key: 'is_decompression',
           render: (h, params) => this.renderCell(params.row.is_decompression)
         },
