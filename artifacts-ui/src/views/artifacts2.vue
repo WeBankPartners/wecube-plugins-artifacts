@@ -755,14 +755,25 @@ export default {
         is_compress: null
       }
     },
+    getRootCI (diffExpr) {
+      let rootCI = defaultRootCiTypeId
+      const de = JSON.parse(diffExpr)
+      const rootItem = de.find(item => item.type === 'rule')
+      if (rootItem) {
+        const val = JSON.parse(rootItem.value)
+        rootCI = val[0].ciTypeId || defaultRootCiTypeId
+      }
+      return rootCI
+    },
     formatPackageDetail (data) {
       let dataString = JSON.stringify(data)
       let copyData = JSON.parse(dataString)
       copyData.diff_conf_variable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        elVar.originRootCI = JSON.parse(JSON.parse(elVar.diffExpr)[0].value)[0].ciTypeId || defaultRootCiTypeId
-        elVar.tempRootCI = JSON.parse(JSON.parse(elVar.diffExpr)[0].value)[0].ciTypeId || defaultRootCiTypeId
+        const rootCI = this.getRootCI(elVar.diffExpr)
+        elVar.originRootCI = rootCI
+        elVar.tempRootCI = rootCI
         elVar.withinFiles = []
         elVar.withinFileIndexes = []
         let index = 0
