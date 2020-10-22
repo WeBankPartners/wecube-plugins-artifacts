@@ -69,7 +69,14 @@ public class NexusArtifactManagementService extends AbstractArtifactService{
         String baselinePackageGuid = autoCreateDeployPackageDto.getBaselinePackage();
         Map<String, Object> baselinePackageCi = retrievePackageCiByGuid(baselinePackageGuid);
         
-        String unitDesignGuid = (String) baselinePackageCi.get("unit_design");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> unitDesignMap = (Map<String, Object>) baselinePackageCi.get("unit_design");
+        
+        if(unitDesignMap == null) {
+            throw new PluginException("Unit design does not exist for {}.", baselinePackageGuid) ;
+        }
+        
+        String unitDesignGuid = (String) unitDesignMap.get("guid");
         String isDecompression = (String) baselinePackageCi.get("is_decompression");
         
         String nexusBaseUrl = applicationProperties.getArtifactsNexusServerUrl();
