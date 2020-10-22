@@ -865,29 +865,31 @@ public class ConfigFileManagementService extends AbstractArtifactService {
         }
 
         List<SaltFileNodeDto> saltFileNodes = new ArrayList<SaltFileNodeDto>();
-        try {
-            saltFileNodes = listFilesOfCurrentDirs(rootFilepath, packageEndpoint);
-            for (SaltFileNodeDto saltFileNode : saltFileNodes) {
-                String childFilePath = rootFilepath + "/" + saltFileNode.getName();
-                FileQueryResultItemDto childRootResultItem = pathAndFileQueryResultItems.get(childFilePath);
-                if (childRootResultItem == null) {
-                    childRootResultItem = new FileQueryResultItemDto();
-                    childRootResultItem.setExists(true);
-                    childRootResultItem.setIsDir(saltFileNode.getIsDir());
-                    childRootResultItem.setMd5(saltFileNode.getMd5());
-                    childRootResultItem.setName(saltFileNode.getName());
-                    childRootResultItem.setPath(childFilePath);
-
-                    rootResultItem.addFileQueryResultItem(childRootResultItem);
-                    pathAndFileQueryResultItems.put(childRootResultItem.getPath(), childRootResultItem);
+        if(rootResultItem != null && rootResultItem.getIsDir()) {
+            try {
+                saltFileNodes = listFilesOfCurrentDirs(rootFilepath, packageEndpoint);
+                for (SaltFileNodeDto saltFileNode : saltFileNodes) {
+                    String childFilePath = rootFilepath + "/" + saltFileNode.getName();
+                    FileQueryResultItemDto childRootResultItem = pathAndFileQueryResultItems.get(childFilePath);
+                    if (childRootResultItem == null) {
+                        childRootResultItem = new FileQueryResultItemDto();
+                        childRootResultItem.setExists(true);
+                        childRootResultItem.setIsDir(saltFileNode.getIsDir());
+                        childRootResultItem.setMd5(saltFileNode.getMd5());
+                        childRootResultItem.setName(saltFileNode.getName());
+                        childRootResultItem.setPath(childFilePath);
+    
+                        rootResultItem.addFileQueryResultItem(childRootResultItem);
+                        pathAndFileQueryResultItems.put(childRootResultItem.getPath(), childRootResultItem);
+                    }
                 }
-            }
-        } catch (SaltFileNotExistException e) {
-            log.info("File does not exist,filename:{}", rootResultItem);
-            rootResultItem.setExists(false);
-            rootResultItem.setComparisonResult(FILE_COMP_DELETED);
-            if(filepathParts.length == 1) {
-                rootResultItem.setIsDir(false);
+            } catch (SaltFileNotExistException e) {
+                log.info("File does not exist,filename:{}", rootResultItem);
+                rootResultItem.setExists(false);
+                rootResultItem.setComparisonResult(FILE_COMP_DELETED);
+                if(filepathParts.length == 1) {
+                    rootResultItem.setIsDir(false);
+                }
             }
         }
 
