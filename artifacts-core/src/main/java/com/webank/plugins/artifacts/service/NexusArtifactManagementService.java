@@ -109,12 +109,12 @@ public class NexusArtifactManagementService extends AbstractArtifactService{
         newPackageCi.put("is_decompression", isDecompression);
         newPackageCi.put("baseline_package", baselinePackageGuid);
 
-        List<CiDataDto> createdPackageCis = cmdbServiceV2Stub.createCiData(cmdbDataProperties.getCiTypeIdOfPackage(), newPackageCi);
+        List<Object> createdPackageCis = cmdbServiceV2Stub.createCiData(cmdbDataProperties.getCiTypeIdOfPackage(), newPackageCi);
         if(createdPackageCis == null || createdPackageCis.isEmpty()) {
             throw new PluginException("Failed to create package CI.").withErrorCode("3013");
         }
-        CiDataDto createdPackageCi = createdPackageCis.get(0);
-        String createPackageCiGuid = (String) createdPackageCi.get("guid");
+        Map<String,Object> createdPackageCiMap = (Map<String, Object>) createdPackageCis.get(0);
+        String createPackageCiGuid = (String) createdPackageCiMap.get("guid");
         AutoCreateDeployPackageResultDto resultDto = new AutoCreateDeployPackageResultDto();
         resultDto.setGuid(createPackageCiGuid);
         
