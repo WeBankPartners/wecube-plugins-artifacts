@@ -109,6 +109,12 @@ class ItemPackage(Item):
     resource = package_api.UnitDesignPackages
 
 
+class ItemPackageUpdate(Item):
+    allow_methods = ('POST', )
+    name = 'artifacts.deploy-package.item.update'
+    resource = package_api.UnitDesignPackages
+
+
 class UnitDesignPackageBaselineCompare(base_controller.Controller):
     name = 'artifacts.deploy-package.baseline.compare'
     resource = package_api.UnitDesignPackages

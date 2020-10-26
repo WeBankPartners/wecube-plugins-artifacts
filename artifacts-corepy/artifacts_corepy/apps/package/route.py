@@ -46,3 +46,5 @@ def add_routes(api):
                   controller.UnitDesignPackageBaselineCompare())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/files/query',
                   controller.UnitDesignPackageFileTree())
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/update',
+                  controller.ItemPackageUpdate())

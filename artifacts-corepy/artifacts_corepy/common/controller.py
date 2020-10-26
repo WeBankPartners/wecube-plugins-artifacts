@@ -29,6 +29,15 @@ class Item(ItemController):
     def get(self, req, **kwargs):
         return self.make_resource(req).get(**kwargs)
 
+    def on_post(self, req, resp, **kwargs):
+        self._validate_method(req)
+        self._validate_data(req)
+        data = req.json
+        resp.json = {'code': 200, 'status': 'OK', 'data': self.update(req, data, **kwargs), 'message': 'success'}
+
+    def update(self, req, data, **kwargs):
+        return self.make_resource(req).update(data, **kwargs)
+
 
 class POSTCollection(CollectionController):
     def on_post(self, req, resp, **kwargs):

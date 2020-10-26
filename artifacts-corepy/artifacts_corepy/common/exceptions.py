@@ -26,7 +26,7 @@ class BatchPartialError(core_ex.Error):
 
 class PluginError(core_ex.Error):
     """系统间调用业务异常"""
-    code = 200
+    code = 400
 
     @property
     def title(self):

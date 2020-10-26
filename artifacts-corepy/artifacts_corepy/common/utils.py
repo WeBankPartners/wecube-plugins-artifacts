@@ -14,6 +14,7 @@ import re
 import shutil
 import tempfile
 import time
+from collections import Mapping, MutableMapping
 
 from talos.core import config
 
@@ -93,43 +94,34 @@ def lock(name, block=True, timeout=5):
 
 
 class CaseInsensitiveDict(dict):
-    @classmethod
-    def _k(cls, key):
-        return key.lower() if isinstance(key, (str, bytes)) else key
-
-    def __init__(self, *args, **kwargs):
-        super(CaseInsensitiveDict, self).__init__(*args, **kwargs)
-        self._convert_keys()
-
-    def __getitem__(self, key):
-        return super(CaseInsensitiveDict, self).__getitem__(self.__class__._k(key))
+    def __init__(self, data=None, **kwargs):
+        self._store = dict()
+        if data is None:
+            data = {}
+        self.update(data, **kwargs)
 
     def __setitem__(self, key, value):
-        super(CaseInsensitiveDict, self).__setitem__(self.__class__._k(key), value)
+        # Use the lowercased key for lookups, but store the actual
+        # key alongside the value.
+        self._store[key.lower()] = (key, value)
+
+    def __getitem__(self, key):
+        return self._store[key.lower()][1]
 
     def __delitem__(self, key):
-        return super(CaseInsensitiveDict, self).__delitem__(self.__class__._k(key))
+        del self._store[key.lower()]
+
+    def __iter__(self):
+        return (casedkey for casedkey, mappedvalue in self._store.values())
+
+    def __len__(self):
+        return len(self._store)
 
     def __contains__(self, key):
-        return super(CaseInsensitiveDict, self).__contains__(self.__class__._k(key))
+        return key.lower() in self._store
 
     def has_key(self, key):
-        return super(CaseInsensitiveDict, self).has_key(self.__class__._k(key))
+        return key.lower() in self._store
 
-    def pop(self, key, *args, **kwargs):
-        return super(CaseInsensitiveDict, self).pop(self.__class__._k(key), *args, **kwargs)
-
-    def get(self, key, *args, **kwargs):
-        return super(CaseInsensitiveDict, self).get(self.__class__._k(key), *args, **kwargs)
-
-    def setdefault(self, key, *args, **kwargs):
-        return super(CaseInsensitiveDict, self).setdefault(self.__class__._k(key), *args, **kwargs)
-
-    def update(self, E={}, **F):
-        super(CaseInsensitiveDict, self).update(self.__class__(E))
-        super(CaseInsensitiveDict, self).update(self.__class__(**F))
-
-    def _convert_keys(self):
-        for k in list(self.keys()):
-            v = super(CaseInsensitiveDict, self).pop(k)
-            self.__setitem__(k, v)
+    def __repr__(self):
+        return str(dict(self.items()))

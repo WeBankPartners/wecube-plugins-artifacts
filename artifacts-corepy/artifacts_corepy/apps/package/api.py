@@ -9,11 +9,14 @@ import os
 import logging
 import collections
 import re
+import shutil
 import tempfile
 import os.path
 from talos.core import config
 from talos.utils import http
 from talos.core import utils
+from talos.db import crud
+from talos.db import converter
 from talos.core.i18n import _
 from talos.utils import scoped_globals
 
@@ -321,6 +324,100 @@ class UnitDesignPackages(WeCubeResource):
     def create(self, data):
         cmdb_client = self.get_cmdb_client()
         return cmdb_client.create(CONF.wecube.wecmdb.citypes.deploy_package, data)
+
+    def update(self, data, unit_design_id, deploy_package_id):
+        class FileNameConcater(converter.NullConverter):
+            def convert(self, value):
+                return '|'.join([i.get('filename') for i in value if i.get('filename')])
+
+        class BooleanConverter(converter.NullConverter):
+            def convert(self, value):
+                return 'true' if utils.bool_from_string(value) else 'false'
+
+        validates = [
+            crud.ColumnValidator('guid', validate_on=['update:M'], rule='1, 36', rule_type='length', nullable=False),
+            crud.ColumnValidator('baseline_package',
+                                 validate_on=['update:O'],
+                                 rule='1, 36',
+                                 rule_type='length',
+                                 nullable=True),
+            crud.ColumnValidator('deploy_file_path',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=False),
+            crud.ColumnValidator('start_file_path',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=False),
+            crud.ColumnValidator('stop_file_path',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=False),
+            crud.ColumnValidator('diff_conf_file',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=False),
+            crud.ColumnValidator('diff_conf_variable',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 nullable=False),
+            crud.ColumnValidator('is_decompression',
+                                 validate_on=['update:O'],
+                                 rule='1, 36',
+                                 rule_type='length',
+                                 converter=BooleanConverter(),
+                                 nullable=True),
+        ]
+        cmdb_client = self.get_cmdb_client()
+        query = {"filters": [{"name": "guid", "operator": "eq", "value": deploy_package_id}], "paging": False}
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+        if not resp_json.get('data', {}).get('contents', []):
+            raise exceptions.PluginError(message=_("Can not find ci data for guid [%(rid)s]") %
+                                         {'rid': deploy_package_id})
+        deploy_package = resp_json['data']['contents'][0]
+        package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
+                                                        deploy_package['data']['deploy_package_url'])
+        data['guid'] = deploy_package_id
+        clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
+        if 'diff_conf_file' in data and 'diff_conf_variable' not in data:
+            self.update_file_variable(package_cached_dir, data['diff_conf_file'])
+            # 获取所有差异化配置项
+            empty_query = {"filters": [], "paging": False}
+            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, empty_query)
+            all_diff_configs = resp_json['data']['contents']
+            finder = artifact_utils.CaseInsensitiveDict()
+            for conf in all_diff_configs:
+                finder[conf['data']['variable_name']] = conf
+            package_diff_configs = []
+            new_diff_configs = set()
+            exist_diff_configs = set()
+            for conf_file in data['diff_conf_file']:
+                package_diff_configs.extend(conf_file['configKeyInfos'])
+            for diff_conf in package_diff_configs:
+                if diff_conf['name'] not in finder:
+                    new_diff_configs.add(diff_conf['name'])
+                else:
+                    exist_diff_configs.add(finder[diff_conf['name']]['data']['guid'])
+            # 创建新的差异化变量项
+            if len(new_diff_configs):
+                resp_json = cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [{
+                    'variable_name': c,
+                    'description': c
+                } for c in new_diff_configs])
+                bind_variables = list(exist_diff_configs)
+                bind_variables.extend([c['guid'] for c in resp_json['data']])
+                clean_data['diff_conf_variable'] = bind_variables
+        resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [clean_data])
+        return self.get(unit_design_id, deploy_package_id)
 
     def get(self, unit_design_id, deploy_package_id):
         cmdb_client = self.get_cmdb_client()
@@ -648,7 +745,14 @@ class UnitDesignPackages(WeCubeResource):
                         filepath = self.download_from_url(download_path, url)
                         LOG.info('download complete')
                         LOG.info('unpack package: %s to %s', guid, file_cache_dir)
-                        artifact_utils.unpack_file(filepath, file_cache_dir)
+                        try:
+                            # FIXME: exception for some files
+                            artifact_utils.unpack_file(filepath, file_cache_dir)
+                        except Exception as e:
+                            shutil.rmtree(file_cache_dir, ignore_errors=True)
+                            LOG.error('unpack failed')
+                            raise exceptions.PluginError(message=_('unpack file error: %(detail)s' %
+                                                                   {'detail': str(e)}))
                         LOG.info('unpack complete')
             else:
                 raise OSError(_('failed to acquire lock, package cache may not be available'))
