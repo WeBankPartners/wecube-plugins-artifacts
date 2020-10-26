@@ -80,7 +80,7 @@ public abstract class AbstractArtifactService {
         return url.substring(0, url.indexOf("?"));
     }
     
-    public List<CiDataDto> savePackageToCmdb(File file, String unitDesignId, String uploadUser, String deployPackageUrl,
+    public List<Object> savePackageToCmdb(File file, String unitDesignId, String uploadUser, String deployPackageUrl,
             String authorization) {
         Map<String, Object> pkg = ImmutableMap.<String, Object>builder().put("name", file.getName())
                 .put("deploy_package_url", deployPackageUrl).put("md5_value", genMd5Value(file))
