@@ -48,3 +48,5 @@ def add_routes(api):
                   controller.UnitDesignPackageFileTree())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/update',
                   controller.ItemPackageUpdate())
+    api.add_route('/artifacts/platform/v1/packages/wecmdb/entities/diff_configuration/update',
+                  controller.ItemDiffConfigUpdate())

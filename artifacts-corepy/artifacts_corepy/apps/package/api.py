@@ -384,38 +384,50 @@ class UnitDesignPackages(WeCubeResource):
             raise exceptions.PluginError(message=_("Can not find ci data for guid [%(rid)s]") %
                                          {'rid': deploy_package_id})
         deploy_package = resp_json['data']['contents'][0]
-        package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
-                                                        deploy_package['data']['deploy_package_url'])
         data['guid'] = deploy_package_id
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
-        if 'diff_conf_file' in data and 'diff_conf_variable' not in data:
-            self.update_file_variable(package_cached_dir, data['diff_conf_file'])
-            # 获取所有差异化配置项
-            empty_query = {"filters": [], "paging": False}
-            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, empty_query)
-            all_diff_configs = resp_json['data']['contents']
-            finder = artifact_utils.CaseInsensitiveDict()
-            for conf in all_diff_configs:
-                finder[conf['data']['variable_name']] = conf
-            package_diff_configs = []
-            new_diff_configs = set()
-            exist_diff_configs = set()
-            for conf_file in data['diff_conf_file']:
-                package_diff_configs.extend(conf_file['configKeyInfos'])
-            for diff_conf in package_diff_configs:
-                if diff_conf['name'] not in finder:
-                    new_diff_configs.add(diff_conf['name'])
-                else:
-                    exist_diff_configs.add(finder[diff_conf['name']]['data']['guid'])
-            # 创建新的差异化变量项
-            if len(new_diff_configs):
-                resp_json = cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [{
-                    'variable_name': c,
-                    'description': c
-                } for c in new_diff_configs])
+        # 根据用户指定进行变量绑定
+        auto_bind = True
+        if 'diff_conf_variable' in data:
+            clean_data['diff_conf_variable'] = [c['diffConfigGuid'] for c in data['diff_conf_variable'] if c['bound']]
+            auto_bind = False
+        # 根据diff_conf_file计算变量进行更新绑定
+        if 'diff_conf_file' in data:
+            new_diff_conf_file_list = set([f['filename'] for f in data['diff_conf_file']])
+            old_diff_conf_file_list = set(
+                [f['filename'] for f in self.build_file_object(deploy_package['data']['diff_conf_file'])])
+            # diff_conf_file值并未发生改变，无需下载文件更新变量
+            if new_diff_conf_file_list != old_diff_conf_file_list:
+                package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
+                                                                deploy_package['data']['deploy_package_url'])
+                self.update_file_variable(package_cached_dir, data['diff_conf_file'])
+                # 获取所有差异化配置项
+                empty_query = {"filters": [], "paging": False}
+                resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, empty_query)
+                all_diff_configs = resp_json['data']['contents']
+                finder = artifact_utils.CaseInsensitiveDict()
+                for conf in all_diff_configs:
+                    finder[conf['data']['variable_name']] = conf
+                package_diff_configs = []
+                new_diff_configs = set()
+                exist_diff_configs = set()
+                for conf_file in data['diff_conf_file']:
+                    package_diff_configs.extend(conf_file['configKeyInfos'])
+                for diff_conf in package_diff_configs:
+                    if diff_conf['name'] not in finder:
+                        new_diff_configs.add(diff_conf['name'])
+                    else:
+                        exist_diff_configs.add(finder[diff_conf['name']]['data']['guid'])
+                # 创建新的差异化变量项
                 bind_variables = list(exist_diff_configs)
-                bind_variables.extend([c['guid'] for c in resp_json['data']])
-                clean_data['diff_conf_variable'] = bind_variables
+                if len(new_diff_configs):
+                    resp_json = cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [{
+                        'variable_name': c,
+                        'description': c
+                    } for c in new_diff_configs])
+                    bind_variables.extend([c['guid'] for c in resp_json['data']])
+                if auto_bind:
+                    clean_data['diff_conf_variable'] = bind_variables
         resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [clean_data])
         return self.get(unit_design_id, deploy_package_id)
 
@@ -806,3 +818,13 @@ class UnitDesignNexusPackages(WeCubeResource):
         return nexus_client.list(CONF.wecube.nexus.repository,
                                  self.build_artifact_path(unit_design),
                                  extensions=['.zip', '.tar', '.tar.gz', 'tgz', '.jar'])
+
+
+class DiffConfig(WeCubeResource):
+    def update(self, data):
+        cmdb_client = self.get_cmdb_client()
+        format_datas = []
+        for d in data:
+            format_datas.append({'guid': d['id'], 'variable_value': d['variable_value']})
+        resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.diff_config, format_datas)
+        return resp_json['data']

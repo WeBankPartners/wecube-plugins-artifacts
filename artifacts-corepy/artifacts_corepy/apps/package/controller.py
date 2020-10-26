@@ -147,3 +147,9 @@ class UnitDesignPackageFileTree(base_controller.Controller):
 
     def filetree(self, req, **kwargs):
         return self.resource().filetree(**kwargs)
+
+
+class ItemDiffConfigUpdate(Item):
+    allow_methods = ('POST', )
+    name = 'artifacts.diff-config.update'
+    resource = package_api.DiffConfig
