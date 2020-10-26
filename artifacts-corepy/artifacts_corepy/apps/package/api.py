@@ -177,13 +177,14 @@ class UnitDesignPackages(WeCubeResource):
         query['filters'].append({"name": "unit_design", "operator": "eq", "value": unit_design_id})
         resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
         for i in resp_json['data']['contents']:
-            i['data']['deploy_file_path'] = self.build_file_object(i['data']['deploy_file_path'] or '')
-            i['data']['start_file_path'] = self.build_file_object(i['data']['start_file_path'] or '')
-            i['data']['stop_file_path'] = self.build_file_object(i['data']['stop_file_path'] or '')
-            i['data']['diff_conf_file'] = self.build_file_object(i['data']['diff_conf_file'] or '')
+            i['data']['deploy_file_path'] = self.build_file_object(i['data']['deploy_file_path'])
+            i['data']['start_file_path'] = self.build_file_object(i['data']['start_file_path'])
+            i['data']['stop_file_path'] = self.build_file_object(i['data']['stop_file_path'])
+            i['data']['diff_conf_file'] = self.build_file_object(i['data']['diff_conf_file'])
         return resp_json['data']
 
     def build_file_object(self, filenames, spliter='|'):
+        filenames = filenames or ''
         return [{
             'comparisonResult': None,
             'configKeyInfos': [],
