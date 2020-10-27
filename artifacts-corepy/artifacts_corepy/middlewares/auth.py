@@ -41,5 +41,7 @@ class JWTAuth(object):
                 req.auth_user = token_info['sub']
             except jwt.exceptions.ExpiredSignatureError as e:
                 raise base_ex.AuthError()
+            except jwt.exceptions.DecodeError as e:
+                raise base_ex.AuthError()
         else:
             raise base_ex.AuthError()
