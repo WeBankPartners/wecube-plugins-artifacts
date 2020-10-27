@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 from talos.core import config
+from talos.core import utils
 from artifacts_corepy.apps.package import controller
 from artifacts_corepy.common import nexus
 
@@ -11,7 +12,7 @@ CONF = config.CONF
 
 class SinkAdapter(object):
     def __call__(self, req, resp, repository):
-        if CONF.use_remote_nexus_only:
+        if utils.bool_from_string(CONF.use_remote_nexus_only):
             client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username, CONF.wecube.nexus.password)
         else:
             client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
@@ -44,9 +45,12 @@ def add_routes(api):
                   controller.ItemPackage())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/comparison',
                   controller.UnitDesignPackageBaselineCompare())
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/files/comparison',
+                  controller.UnitDesignPackageBaselineFilesCompare())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/files/query',
                   controller.UnitDesignPackageFileTree())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/update',
                   controller.ItemPackageUpdate())
     api.add_route('/artifacts/platform/v1/packages/wecmdb/entities/diff_configuration/update',
                   controller.ItemDiffConfigUpdate())
+    api.add_route('/packages/auto-create-deploy-package', controller.ItemUploadAndCreatePackage())

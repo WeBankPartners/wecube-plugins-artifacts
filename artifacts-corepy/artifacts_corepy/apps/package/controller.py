@@ -153,3 +153,40 @@ class ItemDiffConfigUpdate(Item):
     allow_methods = ('POST', )
     name = 'artifacts.diff-config.update'
     resource = package_api.DiffConfig
+
+
+class UnitDesignPackageBaselineFilesCompare(base_controller.Controller):
+    name = 'artifacts.deploy-package.baseline.files.compare'
+    resource = package_api.UnitDesignPackages
+
+    def on_post(self, req, resp, **kwargs):
+        self._validate_data(req)
+        data = req.json or {}
+        kwargs['baseline_package_id'] = data.pop('baselinePackage', None)
+        resp.json = {
+            'code': 200,
+            'status': 'OK',
+            'data': self.baseline_files_compare(req, data, **kwargs),
+            'message': 'success'
+        }
+
+    def baseline_files_compare(self, req, data, **kwargs):
+        return self.resource().baseline_files_compare(data, **kwargs)
+
+
+class ItemUploadAndCreatePackage(base_controller.Controller):
+    name = 'artifacts.deploy-package.upload_and_create'
+    resource = package_api.UnitDesignPackages
+
+    def on_post(self, req, resp, **kwargs):
+        self._validate_data(req)
+        data = req.json or {}
+        resp.json = {
+            'code': 200,
+            'status': 'OK',
+            'data': self.upload_and_create(req, data, **kwargs),
+            'message': 'success'
+        }
+
+    def upload_and_create(self, req, data, **kwargs):
+        return self.resource().upload_and_create(data, **kwargs)

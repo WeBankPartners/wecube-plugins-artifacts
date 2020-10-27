@@ -31,11 +31,11 @@ CONF = config.CONF
 
 
 def is_upload_local_enabled():
-    return CONF.wecube.upload_enabled
+    return utils.bool_from_string(CONF.wecube.upload_enabled)
 
 
 def is_upload_nexus_enabled():
-    return CONF.wecube.upload_nexus_enabled
+    return utils.bool_from_string(CONF.wecube.upload_nexus_enabled)
 
 
 def calculate_md5(fileobj):
@@ -54,10 +54,20 @@ def calculate_file_md5(filepath):
         return calculate_md5(fileobj)
 
 
+class FileNameConcater(converter.NullConverter):
+    def convert(self, value):
+        return '|'.join([i.get('filename') for i in value if i.get('filename')])
+
+
+class BooleanConverter(converter.NullConverter):
+    def convert(self, value):
+        return 'true' if utils.bool_from_string(value) else 'false'
+
+
 class WeCubeResource(object):
     def __init__(self, server=None, token=None):
         self.server = server or CONF.wecube.server
-        self.token = token or CONF.wecube.token
+        self.token = token or scoped_globals.GLOBALS.request.auth_token
 
     def get_cmdb_client(self):
         return wecmdb.WeCMDBClient(self.server, self.token)
@@ -222,7 +232,7 @@ class UnitDesignPackages(WeCubeResource):
             raise exceptions.PluginError(message=_("Can not find ci data for guid [%(rid)s]") % {'rid': unit_design_id})
         unit_design = resp_json['data']['contents'][0]
         nexus_server = None
-        if CONF.use_remote_nexus_only:
+        if utils.bool_from_string(CONF.use_remote_nexus_only):
             nexus_server = CONF.wecube.nexus.server.rstrip('/')
             nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
                                              CONF.wecube.nexus.password)
@@ -255,7 +265,7 @@ class UnitDesignPackages(WeCubeResource):
         if not resp_json.get('data', {}).get('contents', []):
             raise exceptions.PluginError(message=_("Can not find ci data for guid [%(rid)s]") % {'rid': unit_design_id})
         unit_design = resp_json['data']['contents'][0]
-        if CONF.use_remote_nexus_only:
+        if utils.bool_from_string(CONF.use_remote_nexus_only):
             # 更新unit_design.artifact_path && package.create 即上传成功
             url_info = self.download_url_parse(download_url)
             r_nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
@@ -322,19 +332,82 @@ class UnitDesignPackages(WeCubeResource):
                     package_result = self.create(package_rows)
                     return package_result['data']
 
+    def upload_and_create(self, data):
+        def _pop_none(d, k):
+            if k in d and d[k] is None:
+                d.pop(k)
+
+        validates = [
+            crud.ColumnValidator('nexusUrl',
+                                 validate_on=['update:M'],
+                                 rule='1, 255',
+                                 rule_type='length',
+                                 nullable=False),
+            crud.ColumnValidator('baselinePackage',
+                                 validate_on=['update:M'],
+                                 rule='1, 36',
+                                 rule_type='length',
+                                 nullable=False),
+            crud.ColumnValidator('startFilePath',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=True),
+            crud.ColumnValidator('stopFilePath',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=True),
+            crud.ColumnValidator('deployFilePath',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=True),
+            crud.ColumnValidator('diffConfFile',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=True),
+            crud.ColumnValidator('isDecompression',
+                                 validate_on=['update:O'],
+                                 rule='1, 36',
+                                 rule_type='length',
+                                 converter=BooleanConverter(),
+                                 nullable=True),
+        ]
+        clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
+        baseline_package_id = clean_data.get('baselinePackage')
+        cmdb_client = self.get_cmdb_client()
+        query = {"filters": [{"name": "guid", "operator": "eq", "value": baseline_package_id}], "paging": False}
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+        if not resp_json.get('data', {}).get('contents', []):
+            raise exceptions.PluginError(message=_("Can not find ci data for guid [%(rid)s]") %
+                                         {'rid': baseline_package_id})
+        baseline_package = resp_json['data']['contents'][0]
+        url = CONF.wecube.nexus.server.rstrip(
+            '/') + '/repository/' + CONF.wecube.nexus.repository + clean_data['nexusUrl']
+        unit_design_id = baseline_package['data']['unit_design']['guid']
+        new_pakcage = self.upload_from_nexus(url, unit_design_id)
+        update_data = {}
+        keys = [('startFilePath', 'start_file_path'), ('stopFilePath', 'stop_file_path'),
+                ('deployFilePath', 'deploy_file_path'), ('diffConfFile', 'diffConfFile')]
+        for s_key,d_key in keys:
+            if s_key in clean_data and clean_data[s_key] is not None:
+                update_data[d_key] = self.build_file_object(clean_data[s_key])
+            else:
+                update_data[d_key] = self.build_file_object(baseline_package['data'][d_key])
+        self.update(update_data, unit_design_id, new_pakcage['guid'])
+        return new_pakcage['guid']
+
     def create(self, data):
         cmdb_client = self.get_cmdb_client()
         return cmdb_client.create(CONF.wecube.wecmdb.citypes.deploy_package, data)
 
     def update(self, data, unit_design_id, deploy_package_id):
-        class FileNameConcater(converter.NullConverter):
-            def convert(self, value):
-                return '|'.join([i.get('filename') for i in value if i.get('filename')])
-
-        class BooleanConverter(converter.NullConverter):
-            def convert(self, value):
-                return 'true' if utils.bool_from_string(value) else 'false'
-
         validates = [
             crud.ColumnValidator('guid', validate_on=['update:M'], rule='1, 36', rule_type='length', nullable=False),
             crud.ColumnValidator('baseline_package',
@@ -515,6 +588,58 @@ class UnitDesignPackages(WeCubeResource):
         self.update_file_status(baseline_cached_dir, package_cached_dir, result['stop_file_path'])
         self.update_file_status(baseline_cached_dir, package_cached_dir, result['diff_conf_file'])
         return result
+
+    def baseline_files_compare(self, data, unit_design_id, deploy_package_id, baseline_package_id):
+        cmdb_client = self.get_cmdb_client()
+        query = {"filters": [{"name": "guid", "operator": "eq", "value": deploy_package_id}], "paging": False}
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+        if not resp_json.get('data', {}).get('contents', []):
+            raise exceptions.PluginError(message=_("Can not find ci data for guid [%(rid)s]") %
+                                         {'rid': deploy_package_id})
+        deploy_package = resp_json['data']['contents'][0]
+        baseline_package = None
+        if baseline_package_id:
+            query = {"filters": [{"name": "guid", "operator": "eq", "value": baseline_package_id}], "paging": False}
+            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+            if not resp_json.get('data', {}).get('contents', []):
+                raise exceptions.PluginError(message=_("Can not find ci data for guid [%(rid)s]") %
+                                             {'rid': baseline_package_id})
+            baseline_package = resp_json['data']['contents'][0]
+        # 确认baselin和package文件已下载并解压缓存在本地(加锁)
+        baseline_cached_dir = None
+        package_cached_dir = None
+        package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
+                                                        deploy_package['data']['deploy_package_url'])
+        if baseline_package:
+            baseline_cached_dir = self.ensure_package_cached(baseline_package['data']['guid'],
+                                                             baseline_package['data']['deploy_package_url'])
+        results = []
+        max_length = data.get('content_length', None) or -1
+        for f in data['files']:
+            package_filepath = os.path.join(package_cached_dir, f['path'])
+            exists = os.path.exists(package_filepath)
+            is_dir = os.path.isdir(package_filepath)
+            b_package_filepath = None
+            b_exists = None
+            b_is_dir = None
+            if baseline_package:
+                b_package_filepath = os.path.join(baseline_cached_dir, f['path'])
+                b_exists = os.path.exists(b_package_filepath)
+                b_is_dir = os.path.isdir(b_package_filepath)
+            if exists is False and (b_exists is False or (not baseline_package and not b_exists)):
+                raise exceptions.PluginError(message=_('%(file)s not exists in both package & baseline package') %
+                                             {'file': f['path']})
+            if is_dir is True or b_is_dir is True:
+                raise exceptions.PluginError(message=_('%(file)s is dir, not regular file') % {'file': f['path']})
+            result = {'path': f['path'], 'content': '', 'baseline_content': ''}
+            if not is_dir and exists:
+                with open(package_filepath, errors='replace') as f:
+                    result['content'] = f.read(max_length)
+            if not b_is_dir and b_exists:
+                with open(b_package_filepath, errors='replace') as f:
+                    result['baseline_content'] = f.read(max_length)
+            results.append(result)
+        return results
 
     def update_tree_status(self, baseline_path, package_path, nodes):
         self.update_file_status(baseline_path, package_path, nodes, file_key='name')
@@ -764,6 +889,10 @@ class UnitDesignPackages(WeCubeResource):
                         except Exception as e:
                             shutil.rmtree(file_cache_dir, ignore_errors=True)
                             LOG.error('unpack failed')
+                            if str(e).find('bad subsequent header') >= 0:
+                                raise exceptions.PluginError(message=_(
+                                    'unpack file error: %(detail)s, is file contains paxheader(mac archive) and modify with 7zip? (cause paxheader corruption)'
+                                    % {'detail': str(e)}))
                             raise exceptions.PluginError(message=_('unpack file error: %(detail)s' %
                                                                    {'detail': str(e)}))
                         LOG.info('unpack complete')
@@ -781,7 +910,7 @@ class UnitDesignPackages(WeCubeResource):
             nexus_server = None
             nexus_username = None
             nexus_password = None
-            if CONF.use_remote_nexus_only:
+            if utils.bool_from_string(CONF.use_remote_nexus_only):
                 nexus_server = CONF.wecube.nexus.server.rstrip('/')
                 nexus_username = CONF.wecube.nexus.username
                 nexus_password = CONF.wecube.nexus.password

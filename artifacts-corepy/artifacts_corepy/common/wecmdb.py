@@ -11,7 +11,7 @@ import logging
 from artifacts_corepy.common import exceptions
 from talos.core import config
 from talos.core.i18n import _
-from talos.utils import http
+from artifacts_corepy.common import utils
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -65,7 +65,7 @@ class WeCMDBClient(object):
     def get(self, url, param=None):
         LOG.info('GET %s', url)
         LOG.debug('Request: query - %s, data - None', str(param))
-        resp_json = http.RestfulJson.get(url, headers=self.build_headers(), params=param)
+        resp_json = utils.RestfulJson.get(url, headers=self.build_headers(), params=param)
         LOG.debug('Response: %s', str(resp_json))
         self.check_response(resp_json)
         return resp_json
@@ -73,7 +73,7 @@ class WeCMDBClient(object):
     def post(self, url, data, param=None):
         LOG.info('POST %s', url)
         LOG.debug('Request: query - %s, data - %s', str(param), str(data))
-        resp_json = http.RestfulJson.post(url, headers=self.build_headers(), params=param, json=data)
+        resp_json = utils.RestfulJson.post(url, headers=self.build_headers(), params=param, json=data)
         LOG.debug('Response: %s', str(resp_json))
         self.check_response(resp_json)
         return resp_json
