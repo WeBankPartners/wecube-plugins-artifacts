@@ -25,9 +25,55 @@ class BatchPartialError(core_ex.Error):
 
 
 class PluginError(core_ex.Error):
-    """系统间调用业务异常"""
-    code = 400
+    """基础异常"""
+    code = 200
+    error_code = 40000
+
+    def __init__(self, message=None, exception_data=None, error_code=None, **kwargs):
+        exception_data = exception_data or {}
+        exception_data['error_code'] = error_code or self.error_code
+        super(PluginError, self).__init__(self.message, self._exception_data, **kwargs)
 
     @property
     def title(self):
         return _('Plugin Business Processing Error')
+
+
+class ValidationError(PluginError):
+    """数据校验异常"""
+    code = 200
+    error_code = 40002
+
+    @property
+    def title(self):
+        return _('Validation Error')
+
+    @property
+    def message_format(self):
+        return _('detail: column %(attribute)s validate failed, because: %(msg)s')
+
+
+class FieldRequired(PluginError):
+    """字段缺失异常"""
+    code = 200
+    error_code = 40001
+
+    @property
+    def title(self):
+        return _('Field Missing')
+
+    @property
+    def message_format(self):
+        return _('column: %(attribute)s must be specific')
+
+
+class PluginCallError(PluginError):
+    """系统间调用异常"""
+    code = 200
+    error_code = 40003
+
+
+class NotFoundError(PluginError):
+    """查找系统间数据异常"""
+    code = 200
+    error_code = 40004

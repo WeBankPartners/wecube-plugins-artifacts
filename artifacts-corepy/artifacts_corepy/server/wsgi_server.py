@@ -68,9 +68,12 @@ def get_env_value(value, origin_value):
 
 def error_serializer(req, resp, exception):
     representation = exception.to_dict()
+    # replace code with internal application code
+    if 'error_code' in representation:
+        representation['code'] = representation.pop('error_code')
     representation['status'] = 'ERROR'
     representation['data'] = None
-    representation['message'] = representation.pop('description')
+    representation['message'] = representation.pop('description', '')
     resp.body = json.dumps(representation, cls=utils.ComplexEncoder)
     resp.content_type = 'application/json'
 

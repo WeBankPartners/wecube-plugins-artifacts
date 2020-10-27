@@ -5,10 +5,10 @@ from __future__ import absolute_import
 import cgi
 from talos.core import config
 from talos.core.i18n import _
-from talos.core import exceptions as core_ex
 from talos.common import controller as base_controller
 
 from artifacts_corepy.common.controller import Collection, Item, POSTCollection
+from artifacts_corepy.common import exceptions
 from artifacts_corepy.apps.package import api as package_api
 
 CONF = config.CONF
@@ -73,7 +73,7 @@ class CollectionUnitDesignNexusPackageUpload(object):
     def on_post(self, req, resp, **kwargs):
         download_url = req.params.get('downloadUrl', None)
         if not download_url:
-            raise core_ex.ValidationError(message=_('missing query: downloadUrl'))
+            raise exceptions.ValidationError(message=_('missing query: downloadUrl'))
         form = cgi.FieldStorage(fp=req.stream, environ=req.env)
         resp.json = {
             'code': 200,
@@ -123,7 +123,7 @@ class UnitDesignPackageBaselineCompare(base_controller.Controller):
         self._validate_data(req)
         data = req.json
         if 'baselinePackage' not in data:
-            raise core_ex.FieldRequired(attribute='baselinePackage')
+            raise exceptions.FieldRequired(attribute='baselinePackage')
         kwargs['baseline_package_id'] = data['baselinePackage']
         resp.json = {'code': 200, 'status': 'OK', 'data': self.baseline_compare(req, **kwargs), 'message': 'success'}
 
@@ -139,7 +139,7 @@ class UnitDesignPackageFileTree(base_controller.Controller):
         self._validate_data(req)
         data = req.json
         if 'fileList' not in data:
-            raise core_ex.FieldRequired(attribute='fileList')
+            raise exceptions.FieldRequired(attribute='fileList')
         kwargs['baseline_package_id'] = data.get('baselinePackage', None)
         kwargs['expand_all'] = data.get('expandAll', False)
         kwargs['files'] = data['fileList']

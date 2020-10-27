@@ -19,7 +19,8 @@ import functools
 from collections import Mapping, MutableMapping
 
 from talos.core import config
-from talos.core import exceptions
+from talos.core import exceptions as base_ex
+from artifacts_corepy.common import exceptions
 from talos.utils import http
 
 try:
@@ -135,51 +136,54 @@ def json_or_error(func):
     @functools.wraps(func)
     def _json_or_error(url, **kwargs):
         try:
-            return func(url, **kwargs)
-        except requests.ConnectionError as e:
-            LOG.error('http error: %s %s, reason: %s', func.__name__.upper(), url, str(e))
-            raise exceptions.CallBackError(message={
-                'code': 502,
-                'title': 'Connection Error',
-                'description': 'Failed to establish a new connection'
-            })
-        except requests.Timeout as e:
-            LOG.error('http error: %s %s, reason: %s', func.__name__.upper(), url, str(e))
-            raise exceptions.CallBackError(message={
-                'code': 504,
-                'title': 'Timeout Error',
-                'description': 'Server do not respond'
-            })
-        except requests.HTTPError as e:
-            LOG.error('http error: %s %s, reason: %s', func.__name__.upper(), url, str(e))
-            code = int(e.response.status_code)
-            message = RestfulJson.get_response_json(e.response, default={'code': code})
-            if code == 404:
-                message['title'] = 'Not Found'
-                message['description'] = 'The resource you request not exist'
-            # 如果后台返回的数据不符合要求，强行修正
-            if 'code' not in message:
-                message['code'] = code
-            if 'title' not in message:
-                message['title'] = message.get('title', e.response.reason)
-            if 'description' not in message:
-                message['description'] = message.get('message', str(e))
-            raise exceptions.CallBackError(message=message)
-        except Exception as e:
-            LOG.error('http error: %s %s, reason: %s', func.__name__.upper(), url, str(e))
-            message = RestfulJson.get_response_json(e.response,
-                                                    default={
-                                                        'code': 500,
-                                                        'title': 'Server Error',
-                                                        'description': str(e)
-                                                    })
-            if 'code' not in message:
-                message['code'] = 500
-            if 'title' not in message:
-                message['title'] = message.get('title', str(e))
-            if 'description' not in message:
-                message['description'] = message.get('message', str(e))
-            raise exceptions.CallBackError(message=message)
+            try:
+                return func(url, **kwargs)
+            except requests.ConnectionError as e:
+                LOG.error('http error: %s %s, reason: %s', func.__name__.upper(), url, str(e))
+                raise base_ex.CallBackError(message={
+                    'code': 50002,
+                    'title': 'Connection Error',
+                    'description': 'Failed to establish a new connection'
+                })
+            except requests.Timeout as e:
+                LOG.error('http error: %s %s, reason: %s', func.__name__.upper(), url, str(e))
+                raise base_ex.CallBackError(message={
+                    'code': 50004,
+                    'title': 'Timeout Error',
+                    'description': 'Server do not respond'
+                })
+            except requests.HTTPError as e:
+                LOG.error('http error: %s %s, reason: %s', func.__name__.upper(), url, str(e))
+                code = int(e.response.status_code)
+                message = RestfulJson.get_response_json(e.response, default={'code': code})
+                if code == 40004:
+                    message['title'] = 'Not Found'
+                    message['description'] = 'The resource you request not exist'
+                # 如果后台返回的数据不符合要求，强行修正
+                if 'code' not in message:
+                    message['code'] = code
+                if 'title' not in message:
+                    message['title'] = message.get('title', e.response.reason)
+                if 'description' not in message:
+                    message['description'] = message.get('message', str(e))
+                raise base_ex.CallBackError(message=message)
+            except Exception as e:
+                LOG.error('http error: %s %s, reason: %s', func.__name__.upper(), url, str(e))
+                message = RestfulJson.get_response_json(e.response,
+                                                        default={
+                                                            'code': 500,
+                                                            'title': 'Server Error',
+                                                            'description': str(e)
+                                                        })
+                if 'code' not in message:
+                    message['code'] = 500
+                if 'title' not in message:
+                    message['title'] = message.get('title', str(e))
+                if 'description' not in message:
+                    message['description'] = message.get('message', str(e))
+                raise base_ex.CallBackError(message=message)
+        except base_ex.CallBackError as e:
+            raise exceptions.PluginError(message=e.message, error_code=e.code)
 
     return _json_or_error
 
