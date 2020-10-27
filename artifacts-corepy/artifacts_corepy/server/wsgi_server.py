@@ -79,8 +79,9 @@ def error_serializer(req, resp, exception):
 
 
 application = base.initialize_server('artifacts_corepy',
-                                     os.environ.get('ARTIFACTS_COREPY_CONF', './etc/artifacts_corepy.conf'),
+                                     os.environ.get('ARTIFACTS_COREPY_CONF',
+                                                    '/etc/artifacts_corepy/artifacts_corepy.conf'),
                                      conf_dir=os.environ.get('ARTIFACTS_COREPY_CONF_DIR',
-                                                             './etc/artifacts_corepy.conf.d'),
+                                                             '/etc/artifacts_corepy/artifacts_corepy.conf.d'),
                                      middlewares=[auth.JWTAuth()])
 application.set_error_serializer(error_serializer)
