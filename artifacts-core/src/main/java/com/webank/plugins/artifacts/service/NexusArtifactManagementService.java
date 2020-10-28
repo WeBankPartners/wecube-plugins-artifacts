@@ -82,7 +82,7 @@ public class NexusArtifactManagementService extends AbstractArtifactService{
         String nexusBaseUrl = applicationProperties.getArtifactsNexusServerUrl();
         String nexusRepository = applicationProperties.getArtifactsNexusRepository();
         
-        String nexusArtifactUrl = nexusBaseUrl+nexusRepository+autoCreateDeployPackageDto.getNexusUrl();
+        String nexusArtifactUrl = nexusBaseUrl+ "/repository/" +nexusRepository+"/"+autoCreateDeployPackageDto.getNexusUrl();
         
         log.info("About to upload artifact to S3:{}", nexusArtifactUrl);
         File artifactFile = convertNexusPackageToFile(nexusArtifactUrl,nexusArtifactUrl.substring(nexusArtifactUrl.lastIndexOf("/") + 1));
