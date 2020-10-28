@@ -391,7 +391,7 @@ class UnitDesignPackages(WeCubeResource):
                                            {'rid': baseline_package_id})
         baseline_package = resp_json['data']['contents'][0]
         url = CONF.wecube.nexus.server.rstrip(
-            '/') + '/repository/' + CONF.wecube.nexus.repository + clean_data['nexusUrl']
+            '/') + '/repository/' + CONF.wecube.nexus.repository + '/' + clean_data['nexusUrl'].lstrip('/')
         unit_design_id = baseline_package['data']['unit_design']['guid']
         new_pakcage = self.upload_from_nexus(url, unit_design_id)
         update_data = {}

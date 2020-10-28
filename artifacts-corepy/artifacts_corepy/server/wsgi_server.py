@@ -63,7 +63,8 @@ def get_env_value(value, origin_value):
             else:
                 raise ValueError('keys with "RSA@", but rsa_key file not exists')
         return new_value
-    raise ValueError('config intercepter of get_env_value support "ENV@" only')
+    return value
+    # raise ValueError('config intercepter of get_env_value support "ENV@" only')
 
 
 def error_serializer(req, resp, exception):
