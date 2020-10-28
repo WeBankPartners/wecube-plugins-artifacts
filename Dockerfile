@@ -12,15 +12,15 @@ USER root
 ADD build/Centos-8.repo /etc/yum.repos.d/
 ADD artifacts-corepy/requirements.txt /tmp/requirements.txt
 ADD artifacts-corepy/dist/* /tmp/
-RUN mkdir -p /etc/artifacts-corepy/
-RUN mkdir -p /var/log/artifacts-corepy/
-ADD artifacts-corepy/etc/* /etc/artifacts-corepy/
+RUN mkdir -p /etc/artifacts_corepy/
+RUN mkdir -p /var/log/artifacts_corepy/
+ADD artifacts-corepy/etc/* /etc/artifacts_corepy/
 ADD nexus-data.tar.gz /nexus-data
 # Install && Clean up
 RUN yum clean all && yum makecache && yum install -y python3 python3-devel gcc libev-devel make  && \
-RUN pip3 install -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r /tmp/requirements.txt && \
-    pip3 install /tmp/*.whl && 
+    pip3 install -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r /tmp/requirements.txt && \
+    pip3 install /tmp/*.whl
 USER nexus
 CMD ["nohup", "sh" "-c" "${SONATYPE_DIR}/start-nexus-repository-manager.sh", "&"]
 USER root
-CMD ["/usr/local/bin/gunicorn", "--config", "/etc/artifacts-corepy/gunicorn.py", "artifacts_corepy.server.wsgi_server:application"]
+CMD ["/usr/local/bin/gunicorn", "--config", "/etc/artifacts_corepy/gunicorn.py", "artifacts_corepy.server.wsgi_server:application"]
