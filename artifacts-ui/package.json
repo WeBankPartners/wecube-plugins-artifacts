@@ -24,6 +24,7 @@
   "dependencies": {
     "axios": "^0.19.0",
     "core-js": "^2.6.11",
+    "diff": "^4.0.2",
     "view-design": "^4.0.2",
     "vue": "^2.6.10",
     "vue-i18n": "^5.0.3",
