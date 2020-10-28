@@ -20,7 +20,6 @@ ADD nexus-data.tar.gz /nexus-data
 RUN yum clean all && yum makecache && yum install -y python3 python3-devel gcc libev-devel make  && \
     pip3 install -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r /tmp/requirements.txt && \
     pip3 install /tmp/*.whl
-USER nexus
-CMD ["nohup", "sh" "-c" "${SONATYPE_DIR}/start-nexus-repository-manager.sh", "&"]
-USER root
-CMD ["/usr/local/bin/gunicorn", "--config", "/etc/artifacts_corepy/gunicorn.py", "artifacts_corepy.server.wsgi_server:application"]
+ADD build/start_all.sh /scripts/start_all.sh
+RUN chmod +x /scripts/start_all.sh
+CMD ["/bin/sh","-c","/scripts/start_all.sh"]
