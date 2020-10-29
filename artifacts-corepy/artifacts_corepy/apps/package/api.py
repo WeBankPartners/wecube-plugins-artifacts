@@ -459,7 +459,7 @@ class UnitDesignPackages(WeCubeResource):
         update_data['baseline_package'] = baseline_package_id
         update_data['is_decompression'] = baseline_package['data']['is_decompression']
         self.update(update_data, unit_design_id, new_pakcage['guid'], with_detail=False)
-        return new_pakcage['guid']
+        return {'guid': new_pakcage['guid']}
 
     def create(self, data):
         cmdb_client = self.get_cmdb_client()
@@ -515,11 +515,11 @@ class UnitDesignPackages(WeCubeResource):
         if 'baseline_package' in clean_data:
             if isinstance(clean_data['baseline_package'], dict):
                 if not clean_data['baseline_package']:
-                    del clean_data['baseline_package']
+                    clean_data['baseline_package'] = None
                 else:
                     clean_data['baseline_package'] = clean_data['baseline_package'].get('guid', None)
             elif isinstance(clean_data['baseline_package'], str) and not clean_data['baseline_package']:
-                del clean_data['baseline_package']
+                clean_data['baseline_package'] = None
         # 根据用户指定进行变量绑定
         auto_bind = True
         if 'diff_conf_variable' in data:
