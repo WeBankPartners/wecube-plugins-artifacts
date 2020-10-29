@@ -72,5 +72,9 @@
   "variable_select_key_tooltip": "选择已有的差异化变量使用其填充规则",
   "root_ci": "根CI",
   "applications": "应用实例",
-  "db_instance": "数据库实例"
+  "db_instance": "数据库实例",
+  "file_compare": "文件对比",
+  "original_content": "原始内容",
+  "new_content": "新内容",
+  "comparison_result": "比对结果"
 }

@@ -2,19 +2,19 @@
   <div class="compare-show-container">
     <div class="container-item">
       <Card>
-        <p slot="title">旧内容：</p>
+        <p slot="title">{{ $t('original_content') }}：</p>
         <p v-html="originContent" class="content-sty"></p>
       </Card>
     </div>
     <div class="container-item">
       <Card>
-        <p slot="title">新内容：</p>
+        <p slot="title">{{ $t('new_content') }}：</p>
         <p v-html="newContent" class="content-sty"></p>
       </Card>
     </div>
     <div class="container-item">
       <Card>
-        <p slot="title">比对结果：</p>
+        <p slot="title">{{ $t('comparison_result') }}：</p>
         <p v-html="compareResult" class="content-sty"></p>
       </Card>
     </div>
@@ -27,8 +27,8 @@ export default {
   name: '',
   data () {
     return {
-      originContent: 'beep boop12341234123333333333fdsgdsfgsafsadfasdfasdfasfasdfasdfasdfsadfasdfsdfg333333333333asdfasfasdfasdfasdfsadfasdfsdfg333333333333asdfasfasdfasdfasdfsadfasdfsdfg333333333333asdfasfasdfasdfasdfsadfasdfsdfg3333333333333333312341234',
-      newContent: 'beep boob bla1233333333333333333333333331234h',
+      originContent: '',
+      newContent: '',
       compareResult: ''
     }
   },
