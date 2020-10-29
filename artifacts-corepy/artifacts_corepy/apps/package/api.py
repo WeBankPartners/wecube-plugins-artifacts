@@ -330,10 +330,11 @@ class UnitDesignPackages(WeCubeResource):
             for f in nexus_files:
                 if f['name'] == url_info['filename']:
                     nexus_md5 = f['md5']
-            update_unit_design = {}
-            update_unit_design['guid'] = unit_design['data']['guid']
-            update_unit_design[CONF.wecube.wecmdb.artifact_field] = url_info['group']
-            cmdb_client.update(CONF.wecube.wecmdb.citypes.unit_design, [update_unit_design])
+            # ignore unit_design.artifact_path update
+            # update_unit_design = {}
+            # update_unit_design['guid'] = unit_design['data']['guid']
+            # update_unit_design[CONF.wecube.wecmdb.artifact_field] = url_info['group']
+            # cmdb_client.update(CONF.wecube.wecmdb.citypes.unit_design, [update_unit_design])
 
             package_rows = [{
                 'name': url_info['filename'],
@@ -446,23 +447,25 @@ class UnitDesignPackages(WeCubeResource):
         url = CONF.wecube.nexus.server.rstrip(
             '/') + '/repository/' + CONF.wecube.nexus.repository + '/' + clean_data['nexusUrl'].lstrip('/')
         unit_design_id = baseline_package['data']['unit_design']['guid']
-        new_pakcage = self.upload_from_nexus(url, unit_design_id)
+        new_pakcage = self.upload_from_nexus(url, unit_design_id)[0]
         update_data = {}
         keys = [('startFilePath', 'start_file_path'), ('stopFilePath', 'stop_file_path'),
-                ('deployFilePath', 'deploy_file_path'), ('diffConfFile', 'diffConfFile')]
+                ('deployFilePath', 'deploy_file_path'), ('diffConfFile', 'diff_conf_file')]
         for s_key, d_key in keys:
             if s_key in clean_data and clean_data[s_key] is not None:
                 update_data[d_key] = self.build_file_object(clean_data[s_key])
             else:
                 update_data[d_key] = self.build_file_object(baseline_package['data'][d_key])
-        self.update(update_data, unit_design_id, new_pakcage['guid'])
+        update_data['baseline_package'] = baseline_package_id
+        update_data['is_decompression'] = baseline_package['data']['is_decompression']
+        self.update(update_data, unit_design_id, new_pakcage['guid'], with_detail=False)
         return new_pakcage['guid']
 
     def create(self, data):
         cmdb_client = self.get_cmdb_client()
         return cmdb_client.create(CONF.wecube.wecmdb.citypes.deploy_package, data)
 
-    def update(self, data, unit_design_id, deploy_package_id):
+    def update(self, data, unit_design_id, deploy_package_id, with_detail=True):
         validates = [
             crud.ColumnValidator('guid', validate_on=['update:M'], rule='1, 36', rule_type='length', nullable=False),
             crud.ColumnValidator('baseline_package', validate_on=['update:O'], nullable=True),
@@ -560,7 +563,9 @@ class UnitDesignPackages(WeCubeResource):
                 if auto_bind:
                     clean_data['diff_conf_variable'] = bind_variables
         resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [clean_data])
-        return self.get(unit_design_id, deploy_package_id)
+        if with_detail:
+            return self.get(unit_design_id, deploy_package_id)
+        return resp_json['data']
 
     def get(self, unit_design_id, deploy_package_id):
         cmdb_client = self.get_cmdb_client()

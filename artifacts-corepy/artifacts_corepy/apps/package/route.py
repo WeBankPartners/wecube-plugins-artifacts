@@ -53,7 +53,7 @@ def add_routes(api):
                   controller.ItemPackageUpdate())
     api.add_route('/artifacts/platform/v1/packages/wecmdb/entities/diff_configuration/update',
                   controller.ItemDiffConfigUpdate())
-    api.add_route('/packages/auto-create-deploy-package', controller.ItemUploadAndCreatePackage())
+    api.add_route('/artifacts/packages/auto-create-deploy-package', controller.ItemUploadAndCreatePackage())
     api.add_route('/artifacts/ci-types/{ci_type_id}/references/by', controller.ItemCiReferences())
     api.add_route('/artifacts/ci-types/{ci_type_id}/attributes', controller.ItemCiAttributes())
 
