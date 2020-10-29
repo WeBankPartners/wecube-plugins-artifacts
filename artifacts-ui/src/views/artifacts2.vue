@@ -211,17 +211,21 @@
         </Modal>
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
+      <Modal :z-index="9999" width="1200" v-model="showFileCompare" :title="$t('file_compare')">
+        <CompareFile ref="compareParams"></CompareFile>
+      </Modal>
     </Col>
   </Row>
 </template>
 
 <script>
-import { getSpecialConnector, getAllCITypesWithAttr, getAllSystemEnumCodes, deleteCiDatas, operateCiState, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, retrieveEntity, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact } from '@/api/server.js'
+import { getSpecialConnector, getAllCITypesWithAttr, getAllSystemEnumCodes, deleteCiDatas, operateCiState, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, retrieveEntity, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact, getCompareContent } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
 import axios from 'axios'
 import Sortable from 'sortablejs'
+import CompareFile from './compare-file'
 // 业务运行实例ciTypeId
 const defaultRootCiTypeId = 50
 // cmdb插件包名
@@ -234,6 +238,11 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      showFileCompare: false,
+      compareParams: {
+        originContent: '',
+        newContent: ''
+      },
       // ---------------
       // 系统设计树形数据
       // ---------------
@@ -966,6 +975,18 @@ export default {
       this.initPackageInput()
       this.isShowFilesModal = false
     },
+    async getCompareFile (file) {
+      const params = {
+        baselinePackage: this.packageInput.baseline_package || '',
+        content_length: 2000,
+        files: [{ path: file.path }]
+      }
+      const { status, data } = await getCompareContent(this.guid, this.packageId, params)
+      if (status === 'OK') {
+        this.showFileCompare = true
+        this.$refs.compareParams.compareFile(data[0].baseline_content, data[0].content)
+      }
+    },
     async saveConfigFiles () {
       let obj = {
         baseline_package: this.packageInput.baseline_package,
@@ -1061,6 +1082,7 @@ export default {
                   <span style="color: #19be6b;">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                   </span>
                 </span>
               )
@@ -1071,6 +1093,7 @@ export default {
                   <span style="color: #2d8cf0;">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                   </span>
                 </span>
               )
@@ -1081,6 +1104,7 @@ export default {
                   <span style="color: #cccccc;">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                   </span>
                 </span>
               )
@@ -1091,6 +1115,7 @@ export default {
                   <span>
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                   </span>
                 </span>
               )
@@ -1101,6 +1126,7 @@ export default {
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #19be6b;">{params.data.title}</span>
+                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
             } else if (params.data.comparisonResult === 'changed') {
@@ -1108,6 +1134,7 @@ export default {
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #2d8cf0;">{params.data.title}</span>
+                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
             } else if (params.data.comparisonResult === 'deleted') {
@@ -1115,6 +1142,7 @@ export default {
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #cccccc;">{params.data.title}</span>
+                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
             } else {
@@ -1122,6 +1150,7 @@ export default {
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span>{params.data.title}</span>
+                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
             }
@@ -1474,6 +1503,9 @@ export default {
     this.getSpecialConnector()
     this.getAllCITypesWithAttr()
     this.getAllSystemEnumCodes()
+  },
+  components: {
+    CompareFile
   }
 }
 </script>
