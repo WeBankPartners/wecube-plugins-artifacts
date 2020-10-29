@@ -1,6 +1,6 @@
 <template>
   <Row id="weArtifacts" class="artifact-management">
-    <Col span="6">
+    <Col span="5">
       <!-- 系统设计版本 -->
       <Card>
         <p slot="title">{{ $t('artifacts_system_design_version') }}</p>
@@ -21,7 +21,7 @@
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
     </Col>
-    <Col span="17" style="margin-left: 35px;">
+    <Col span="18" style="margin-left: 35px;">
       <!-- 包管理 -->
       <Card v-if="guid" class="artifact-management-top-card">
         <!-- 本地上传 -->
@@ -72,6 +72,7 @@
                     <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <Icon type="ios-move" size="18" style="cursor:move" />
                     <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'diff_conf_file')"></Button>
                   </div>
                 </div>
@@ -92,6 +93,7 @@
                     <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <Icon type="ios-move" size="18" style="cursor:move" />
                     <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
                   </div>
                 </div>
@@ -112,6 +114,7 @@
                     <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <Icon type="ios-move" size="18" style="cursor:move" />
                     <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
                   </div>
                 </div>
@@ -132,6 +135,7 @@
                     <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <Icon type="ios-move" size="18" style="cursor:move" />
                     <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
                   </div>
                 </div>
@@ -178,7 +182,7 @@
           <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
           <div>{{ $t('artifacts_loading') }}</div>
         </Spin>
-        <Tabs @on-click="tabChange">
+        <Tabs @on-click="changeTab">
           <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.shorFileName" :key="index">
             <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
           </TabPane>
@@ -207,31 +211,38 @@
         </Modal>
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
+      <Modal :z-index="9999" width="1200" v-model="showFileCompare" :title="$t('file_compare')">
+        <CompareFile ref="compareParams"></CompareFile>
+      </Modal>
     </Col>
   </Row>
 </template>
 
 <script>
-import { getSpecialConnector, getAllCITypesWithAttr, getAllSystemEnumCodes, deleteCiDatas, operateCiState, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, retrieveEntity, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact } from '@/api/server.js'
+import { getSpecialConnector, getAllCITypesWithAttr, getAllSystemEnumCodes, deleteCiDatas, operateCiState, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, retrieveEntity, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact, getCompareContent } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
 import axios from 'axios'
 import Sortable from 'sortablejs'
-
+import CompareFile from './compare-file'
 // 业务运行实例ciTypeId
-const rootCiTypeId = 50
+const defaultRootCiTypeId = 50
 // cmdb插件包名
 const cmdbPackageName = 'wecmdb'
 // 差异配置key_name
 const DIFF_CONFIGURATION = 'diff_configuration'
 // // 部署包key_name
 // const DEPLOY_PACKAGE = 'deploy_package'
-
 export default {
   name: 'artifacts',
   data () {
     return {
+      showFileCompare: false,
+      compareParams: {
+        originContent: '',
+        newContent: ''
+      },
       // ---------------
       // 系统设计树形数据
       // ---------------
@@ -259,7 +270,13 @@ export default {
       tableData: [],
       tableColumns: [
         {
+          title: 'GUID',
+          width: 100,
+          key: 'guid'
+        },
+        {
           title: this.$t('artifacts_package_name'),
+          minWidth: 80,
           key: 'name',
           render: (h, params) => this.renderCell(params.row.name)
         },
@@ -269,37 +286,47 @@ export default {
           key: 'upload_time'
         },
         {
-          title: this.$t('artifacts_md5_value'),
+          title: this.$t('baseline_package'),
+          width: 100,
           key: 'md5_value',
-          render: (h, params) => this.renderCell(params.row.md5_value)
+          render: (h, params) => {
+            const baseLine = params.row.baseline_package.code || ''
+            return <span>{baseLine}</span>
+          }
         },
         {
           title: this.$t('artifacts_uploaded_by'),
+          minWidth: 80,
           key: 'upload_user',
           render: (h, params) => this.renderCell(params.row.upload_user)
         },
         {
           title: this.$t('artifacts_config_files'),
+          minWidth: 100,
           key: 'diff_conf_file',
           render: (h, params) => this.renderCell(params.row.diff_conf_file)
         },
         {
           title: this.$t('artifacts_start_script'),
+          minWidth: 100,
           key: 'start_file_path',
           render: (h, params) => this.renderCell(params.row.start_file_path)
         },
         {
           title: this.$t('artifacts_stop_script'),
+          minWidth: 100,
           key: 'stop_file_path',
           render: (h, params) => this.renderCell(params.row.stop_file_path)
         },
         {
           title: this.$t('artifacts_deploy_script'),
+          minWidth: 100,
           key: 'deploy_file_path',
           render: (h, params) => this.renderCell(params.row.deploy_file_path)
         },
         {
           title: this.$t('is_decompression'),
+          minWidth: 100,
           key: 'is_decompression',
           render: (h, params) => this.renderCell(params.row.is_decompression)
         },
@@ -323,7 +350,7 @@ export default {
         start_file_path: [],
         stop_file_path: [],
         deploy_file_path: [],
-        is_decompression: 0
+        is_decompression: 'false'
       },
       saveConfigLoading: false,
       // -------------------
@@ -392,7 +419,7 @@ export default {
         },
         {
           title: this.$t('artifacts_property_name'),
-          width: 200,
+          width: 140,
           render: (h, params) => {
             // show static view only if confirmed
             return (
@@ -404,27 +431,53 @@ export default {
           }
         },
         {
+          title: this.$t('root_ci'),
+          width: 120,
+          render: (h, params) => {
+            if (this.activeTabData[params.row._index]) {
+              params.row.rootCI = params.row.conf_variable.tempRootCI || params.row.conf_variable.originRootCI
+              return (
+                <div>
+                  <Select value={this.activeTabData[params.row._index].conf_variable.tempRootCI} onInput={v => this.changeRootCI(v, params)} style="width:100px">
+                    {this.rootCI.map(item => {
+                      return <Option value={item.value}>{item.label}</Option>
+                    })}
+                  </Select>
+                </div>
+              )
+            }
+          }
+        },
+        {
           title: this.$t('artifacts_property_value_fill_rule'),
           render: (h, params) => {
             // show static view only if confirmed
-            return params.row.conf_variable.fixedDate ? (
-              <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} isReadOnly={true} v-model={params.row.conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
-            ) : (
-              <div style="align-items:center;display:flex;">
-                <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 55px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={rootCiTypeId} v-model={params.row.conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
-              </div>
-            )
+            if (this.activeTabData[params.row._index]) {
+              return params.row.conf_variable.fixedDate ? (
+                <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} isReadOnly={true} v-model={this.activeTabData[params.row._index].conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
+              ) : (
+                <div style="align-items:center;display:flex;">
+                  <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 10px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.activeTabData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
+                </div>
+              )
+            }
           }
         },
         {
           title: this.$t('artifacts_action'),
           key: 'state',
-          width: 150,
+          width: 100,
           render: (h, params) => {
             return <div style="padding-top:5px">{this.renderConfigButton(params)}</div>
           }
         }
-      ]
+      ],
+      rootCI: [
+        { value: 50, label: this.$t('applications') },
+        { value: 51, label: this.$t('db_instance') }
+      ],
+      activeTab: '',
+      activeTabData: null
     }
   },
   computed: {},
@@ -447,6 +500,20 @@ export default {
     }
   },
   methods: {
+    changeTab (tabName) {
+      this.activeTab = tabName
+      this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab).configKeyInfos
+    },
+    changeRootCI (rootCI, params) {
+      let activeTab = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab)
+      let confVariable = activeTab.configKeyInfos[params.index].conf_variable
+      confVariable.tempRootCI = rootCI
+      if (confVariable.tempRootCI === confVariable.originRootCI) {
+        confVariable.diffExpr = confVariable.originDiffExpr
+      } else {
+        confVariable.diffExpr = ''
+      }
+    },
     async fetchData () {
       const [sysData, packageCiType] = await Promise.all([getSystemDesignVersions(), getPackageCiTypeId()])
       if (sysData.status === 'OK' && sysData.data.contents instanceof Array) {
@@ -515,10 +582,14 @@ export default {
         _.level = level
         _.render = (h, params) => {
           return (
-            <div>
-              <span style="margin-right:4px;">{_.data.code}</span>
-              <span style="margin-right:10px;font-size:12px">[{_.data.name}]</span>
-              <span style={`font-size:12px;color:${color[_.data.state_code]}`}>{_.data.state_code}</span>
+            <div style="white-space: break-spaces;">
+              <div style="display:inline-block;margin-right:4px;max-width:60px;max-width:120px;overflow:hidden; text-overflow:ellipsis; white-space:nowrap;vertical-align: top;" title={_.data.code}>
+                {_.data.code}
+              </div>
+              <div style="display:inline-block;margin-right:4px;font-size:12px;max-width:120px;overflow:hidden; text-overflow:ellipsis; white-space:nowrap;vertical-align: top;" title={_.data.name}>
+                [{_.data.name}]
+              </div>
+              <div style={`display:inline-block;max-width:60px;font-size:12px;vertical-align:top;color:${color[_.data.state_code]}`}>{_.data.state_code}</div>
             </div>
           )
         }
@@ -671,6 +742,7 @@ export default {
         content.forEach(c => {
           res += c.filename + '|'
         })
+        res = res.substring(0, res.length - 1)
       } else {
         res = content
       }
@@ -706,12 +778,28 @@ export default {
         is_compress: null
       }
     },
+    getRootCI (diffExpr) {
+      let rootCI = defaultRootCiTypeId
+      if (!diffExpr) {
+        return rootCI
+      }
+      const de = JSON.parse(diffExpr)
+      const rootItem = de.find(item => item.type === 'rule')
+      if (rootItem) {
+        const val = JSON.parse(rootItem.value)
+        rootCI = val[0].ciTypeId || defaultRootCiTypeId
+      }
+      return rootCI
+    },
     formatPackageDetail (data) {
       let dataString = JSON.stringify(data)
       let copyData = JSON.parse(dataString)
       copyData.diff_conf_variable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
+        const rootCI = this.getRootCI(elVar.diffExpr)
+        elVar.originRootCI = rootCI
+        elVar.tempRootCI = rootCI
         elVar.withinFiles = []
         elVar.withinFileIndexes = []
         let index = 0
@@ -745,6 +833,13 @@ export default {
       let { status, data } = await getPackageDetail(this.guid, this.packageId)
       if (status === 'OK') {
         this.packageDetail = this.formatPackageDetail(data)
+        if (this.packageDetail.diff_conf_file.length > 0) {
+          this.activeTab = this.packageDetail.diff_conf_file[0].shorFileName
+          this.activeTabData = this.packageDetail.diff_conf_file[0].configKeyInfos
+        } else {
+          this.activeTab = ''
+          this.activeTabData = {}
+        }
       }
     },
     renderActionButton (params) {
@@ -782,7 +877,7 @@ export default {
         start_file_path: [],
         stop_file_path: [],
         deploy_file_path: [],
-        is_decompression: 0
+        is_decompression: 'false'
       }
     },
     async syncBaselineFileStatus () {
@@ -828,7 +923,7 @@ export default {
         this.packageInput.start_file_path = found.start_file_path ? JSON.parse(JSON.stringify(found.start_file_path)) : []
         this.packageInput.stop_file_path = found.stop_file_path ? JSON.parse(JSON.stringify(found.stop_file_path)) : []
         this.packageInput.deploy_file_path = found.deploy_file_path ? JSON.parse(JSON.stringify(found.deploy_file_path)) : []
-        this.packageInput.is_decompression = found.is_decompression || 0
+        this.packageInput.is_decompression = found.is_decompression || 'false'
       }
       await this.syncBaselineFileStatus()
     },
@@ -843,7 +938,7 @@ export default {
       this.packageInput.start_file_path = JSON.parse(JSON.stringify(this.packageDetail.start_file_path))
       this.packageInput.stop_file_path = JSON.parse(JSON.stringify(this.packageDetail.stop_file_path))
       this.packageInput.deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.deploy_file_path))
-      this.packageInput.is_decompression = row.is_decompression || 0
+      this.packageInput.is_decompression = row.is_decompression || 'false'
       this.packageId = row.guid
       // await this.syncBaselineFileStatus()
       this.isShowFilesModal = true
@@ -879,6 +974,18 @@ export default {
     closeFilesModal () {
       this.initPackageInput()
       this.isShowFilesModal = false
+    },
+    async getCompareFile (file) {
+      const params = {
+        baselinePackage: this.packageInput.baseline_package || '',
+        content_length: 2000,
+        files: [{ path: file.path }]
+      }
+      const { status, data } = await getCompareContent(this.guid, this.packageId, params)
+      if (status === 'OK') {
+        this.showFileCompare = true
+        this.$refs.compareParams.compareFile(data[0].baseline_content, data[0].content)
+      }
     },
     async saveConfigFiles () {
       let obj = {
@@ -975,6 +1082,7 @@ export default {
                   <span style="color: #19be6b;">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                   </span>
                 </span>
               )
@@ -985,6 +1093,7 @@ export default {
                   <span style="color: #2d8cf0;">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                   </span>
                 </span>
               )
@@ -995,6 +1104,7 @@ export default {
                   <span style="color: #cccccc;">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                   </span>
                 </span>
               )
@@ -1005,6 +1115,7 @@ export default {
                   <span>
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                   </span>
                 </span>
               )
@@ -1015,6 +1126,7 @@ export default {
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #19be6b;">{params.data.title}</span>
+                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
             } else if (params.data.comparisonResult === 'changed') {
@@ -1022,6 +1134,7 @@ export default {
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #2d8cf0;">{params.data.title}</span>
+                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
             } else if (params.data.comparisonResult === 'deleted') {
@@ -1029,6 +1142,7 @@ export default {
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #cccccc;">{params.data.title}</span>
+                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
             } else {
@@ -1036,6 +1150,7 @@ export default {
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span>{params.data.title}</span>
+                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
             }
@@ -1388,6 +1503,9 @@ export default {
     this.getSpecialConnector()
     this.getAllCITypesWithAttr()
     this.getAllSystemEnumCodes()
+  },
+  components: {
+    CompareFile
   }
 }
 </script>
@@ -1402,38 +1520,30 @@ export default {
 }
 .artifact-management {
   padding: 20px;
-
   &-top-card {
     padding-bottom: 40px;
   }
-
   &-bottom-card {
     margin-top: 30px;
   }
-
   &-tree-body {
     position: relative;
   }
-
   &-save-button {
     float: right;
     margin-top: 10px;
   }
-
   &-files-card {
     margin-top: 10px;
-
     &:first-of-type {
       margin-top: 0;
     }
   }
-
   &-icon {
     margin: 0 2px;
     position: relative;
   }
 }
-
 // .batchOperation {
 //   position: absolute;
 //   right: 60px;
@@ -1442,18 +1552,12 @@ export default {
   list-style: none;
   margin: 8px;
 }
-
 .baseline-cmp-new {
   color: #19be6b;
 }
-
-.baseline-cmp-same {
-}
-
 .baseline-cmp-changed {
   color: #2d8cf0;
 }
-
 .baseline-cmp-deleted {
   color: #cccccc;
 }

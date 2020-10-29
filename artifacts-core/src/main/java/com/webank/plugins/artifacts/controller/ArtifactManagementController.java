@@ -30,6 +30,8 @@ import com.webank.plugins.artifacts.commons.ApplicationProperties;
 import com.webank.plugins.artifacts.commons.ApplicationProperties.CmdbDataProperties;
 import com.webank.plugins.artifacts.commons.PluginException;
 import com.webank.plugins.artifacts.constant.ArtifactsConstants;
+import com.webank.plugins.artifacts.dto.AutoCreateDeployPackageDto;
+import com.webank.plugins.artifacts.dto.AutoCreateDeployPackageResultDto;
 import com.webank.plugins.artifacts.dto.JsonResponse;
 import com.webank.plugins.artifacts.service.ArtifactService;
 import com.webank.plugins.artifacts.service.NexusArtifactManagementService;
@@ -81,7 +83,12 @@ public class ArtifactManagementController {
 
     }
 
-    
+    @PostMapping("/packages/auto-create-deploy-package")
+    public JsonResponse autoCreateDeployPackage(@RequestBody AutoCreateDeployPackageDto autoCreateDeployPackageDto, HttpServletRequest request) {
+        String uploadName = (String) request.getAttribute(ArtifactsConstants.UPLOAD_NAME);
+        AutoCreateDeployPackageResultDto result = nexusArtifactManagementService.autoCreateDeployPackage(autoCreateDeployPackageDto, uploadName);
+        return okayWithData(result);
+    }
 
     @PostMapping("/unit-designs/{unit-design-id}/packages/queryNexusDirectiry")
     public JsonResponse queryNexusPackages(@PathVariable(value = "unit-design-id") String unitDesignId,

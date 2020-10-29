@@ -14,6 +14,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
 import com.webank.plugins.artifacts.auth.filter.Http401AuthenticationEntryPoint;
 import com.webank.plugins.artifacts.auth.filter.JwtClientConfig;
 import com.webank.plugins.artifacts.auth.filter.JwtSsoBasedAuthenticationFilter;
@@ -24,6 +25,7 @@ import com.webank.plugins.artifacts.interceptor.ApiAccessInterceptor;
 @EnableWebMvc
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(jsr250Enabled = true, prePostEnabled = true, securedEnabled = true)
+@EnableEncryptableProperties
 @ComponentScan({ "com.webank.plugins.artifacts.controller" })
 public class SpringWebConfig extends WebSecurityConfigurerAdapter implements WebMvcConfigurer {
 
