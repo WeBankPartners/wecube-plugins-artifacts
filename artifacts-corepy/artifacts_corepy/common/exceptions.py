@@ -29,10 +29,14 @@ class PluginError(core_ex.Error):
     code = 200
     error_code = 40000
 
-    def __init__(self, message=None, exception_data=None, error_code=None, **kwargs):
+    def __init__(self, message=None, exception_data=None, **kwargs):
         exception_data = exception_data or {}
-        exception_data['error_code'] = error_code or self.error_code
+        exception_data['error_code'] = self.error_code
         super(PluginError, self).__init__(message, exception_data=exception_data, **kwargs)
+
+    def set_error_code(self, code):
+        self._exception_data['error_code'] = code
+        return self
 
     @property
     def title(self):

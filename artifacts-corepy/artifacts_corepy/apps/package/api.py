@@ -576,7 +576,7 @@ class UnitDesignPackages(WeCubeResource):
         all_diff_configs = resp_json['data']['contents']
         result = {}
         result['packageId'] = deploy_package_id
-        result['baseline_package'] = baseline_package
+        result['baseline_package'] = baseline_package.get('guid', None)
 
         result['is_decompression'] = utils.bool_from_string(deploy_package['data']['is_decompression'])
         # |切割为列表
@@ -996,7 +996,7 @@ class UnitDesignNexusPackages(WeCubeResource):
         artifact_path = artifact_path or '/'
         return artifact_path
 
-    def list(self, params, unit_design_id):
+    def list_by_post(self, query, unit_design_id):
         if not is_upload_nexus_enabled():
             raise exceptions.PluginError(message=_("Package uploading is disabled!"))
         cmdb_client = self.get_cmdb_client()
@@ -1009,7 +1009,7 @@ class UnitDesignNexusPackages(WeCubeResource):
         nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
                                          CONF.wecube.nexus.password)
         return nexus_client.list(CONF.wecube.nexus.repository,
-                                 self.build_artifact_path(unit_design),
+                                 self.get_unit_design_artifact_path(unit_design),
                                  extensions=['.zip', '.tar', '.tar.gz', 'tgz', '.jar'])
 
 

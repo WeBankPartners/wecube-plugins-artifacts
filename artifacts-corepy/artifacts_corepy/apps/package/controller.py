@@ -60,8 +60,8 @@ class CollectionUnitDesignPackages(POSTCollection):
     resource = package_api.UnitDesignPackages
 
 
-class CollectionUnitDesignNexusPackages(Collection):
-    allow_methods = ('GET', )
+class CollectionUnitDesignNexusPackages(POSTCollection):
+    allow_methods = ('POST', )
     name = 'artifacts.unit-design.nexus.packages'
     resource = package_api.UnitDesignNexusPackages
 

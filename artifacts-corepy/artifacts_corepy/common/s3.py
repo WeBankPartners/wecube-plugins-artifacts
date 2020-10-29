@@ -4,8 +4,13 @@ from __future__ import absolute_import
 
 import logging
 import re
+import os
+import urllib3
+import certifi
 
 import minio
+import minio.error
+from artifacts_corepy.common import exceptions
 from talos.core.i18n import _
 
 LOG = logging.getLogger(__name__)
@@ -29,5 +34,19 @@ class S3Downloader(object):
 
     def download_file(self, filepath, access_key, secret_key):
         secure = True if self.schema == 'https' else False
-        client = minio.Minio(self.host, access_key, secret_key, secure=secure)
-        return client.fget_object(self.bucket, self.object_key, filepath)
+        ca_certs = os.environ.get('SSL_CERT_FILE') or certifi.where()
+        http_client = urllib3.PoolManager(timeout=3,
+                                          maxsize=10,
+                                          cert_reqs='CERT_REQUIRED',
+                                          ca_certs=ca_certs,
+                                          retries=urllib3.Retry(total=1,
+                                                                backoff_factor=0.2,
+                                                                status_forcelist=[500, 502, 503, 504]))
+        client = minio.Minio(self.host, access_key, secret_key, secure=secure, http_client=http_client)
+        try:
+            return client.fget_object(self.bucket, self.object_key, filepath)
+        except minio.error.MinioError as e:
+            raise exceptions.PluginError(message=_('failed to download file[%(filepath)s]: %(reason)s') % {
+                'filepath': self.object_key,
+                'reason': str(e)
+            })
