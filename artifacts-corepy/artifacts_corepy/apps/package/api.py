@@ -88,7 +88,7 @@ class SystemDesign(WeCubeResource):
             },
             "filters": [{
                 "name": "fixed_date",
-                "operator": "notNull1",
+                "operator": "notNull",
                 "value": None
             }, {
                 "name": "fixed_date",
@@ -109,10 +109,8 @@ class SystemDesign(WeCubeResource):
             if (r_guid not in last_version):
                 last_version[r_guid] = content
         return {
-            'data': {
-                'contents': list(last_version.values()),
-                'pageInfo': None,
-            }
+            'contents': list(last_version.values()),
+            'pageInfo': None,
         }
 
     def get(self, rid):
@@ -165,6 +163,60 @@ class CiTypes(WeCubeResource):
         resp_json = cmdb_client.citypes(query)
         return resp_json['data']['contents']
 
+    def get_references(self, ci_type_id):
+        cmdb_client = self.get_cmdb_client()
+        query = {
+            "dialect": {
+                "showCiHistory": False
+            },
+            "filters": [{
+                "name": "referenceId",
+                "operator": "eq",
+                "value": ci_type_id
+            }, {
+                "name": "inputType",
+                "operator": "in",
+                "value": ["ref", "multiRef"]
+            }],
+            "paging":
+            False,
+            "refResources": ["ciType"]
+        }
+        resp_json = cmdb_client.citype_attrs(query)
+        return resp_json['data']['contents']
+
+    def get_attributes(self, accept_types, ci_type_id):
+        cmdb_client = self.get_cmdb_client()
+        query = {
+            "dialect": {
+                "showCiHistory": False
+            },
+            "filters": [{
+                "name": "ciTypeId",
+                "operator": "eq",
+                "value": ci_type_id
+            }],
+            "paging": False,
+            "sorting": {
+                "asc": True,
+                "field": "displaySeqNo"
+            }
+        }
+        if accept_types:
+            query['filters'].append({"name": "inputType", "operator": "in", "value": accept_types})
+        resp_json = cmdb_client.citype_attrs(query)
+        return resp_json['data']['contents']
+
+    def update_state(self, data, operation):
+        cmdb_client = self.get_cmdb_client()
+        result = cmdb_client.state_operation(operation, data)
+        return result['data']
+
+    def batch_delete(self, data, ci_type_id):
+        cmdb_client = self.get_cmdb_client()
+        result = cmdb_client.delete(ci_type_id, data)
+        return result['data']
+
 
 class EnumCodes(WeCubeResource):
     def list_by_post(self, query):
@@ -194,7 +246,8 @@ class UnitDesignPackages(WeCubeResource):
         return resp_json['data']
 
     def build_file_object(self, filenames, spliter='|'):
-        filenames = filenames or ''
+        if not filenames:
+            return []
         return [{
             'comparisonResult': None,
             'configKeyInfos': [],
@@ -412,11 +465,7 @@ class UnitDesignPackages(WeCubeResource):
     def update(self, data, unit_design_id, deploy_package_id):
         validates = [
             crud.ColumnValidator('guid', validate_on=['update:M'], rule='1, 36', rule_type='length', nullable=False),
-            crud.ColumnValidator('baseline_package',
-                                 validate_on=['update:O'],
-                                 rule='1, 36',
-                                 rule_type='length',
-                                 nullable=True),
+            crud.ColumnValidator('baseline_package', validate_on=['update:O'], nullable=True),
             crud.ColumnValidator('deploy_file_path',
                                  validate_on=['update:O'],
                                  rule=(list, tuple),
@@ -448,8 +497,6 @@ class UnitDesignPackages(WeCubeResource):
                                  nullable=False),
             crud.ColumnValidator('is_decompression',
                                  validate_on=['update:O'],
-                                 rule='1, 36',
-                                 rule_type='length',
                                  converter=BooleanConverter(),
                                  nullable=True),
         ]
@@ -462,6 +509,14 @@ class UnitDesignPackages(WeCubeResource):
         deploy_package = resp_json['data']['contents'][0]
         data['guid'] = deploy_package_id
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
+        if 'baseline_package' in clean_data:
+            if isinstance(clean_data['baseline_package'], dict):
+                if not clean_data['baseline_package']:
+                    del clean_data['baseline_package']
+                else:
+                    clean_data['baseline_package'] = clean_data['baseline_package'].get('guid', None)
+            elif isinstance(clean_data['baseline_package'], str) and not clean_data['baseline_package']:
+                del clean_data['baseline_package']
         # 根据用户指定进行变量绑定
         auto_bind = True
         if 'diff_conf_variable' in data:
@@ -490,10 +545,10 @@ class UnitDesignPackages(WeCubeResource):
                 for conf_file in data['diff_conf_file']:
                     package_diff_configs.extend(conf_file['configKeyInfos'])
                 for diff_conf in package_diff_configs:
-                    if diff_conf['name'] not in finder:
-                        new_diff_configs.add(diff_conf['name'])
+                    if diff_conf['key'] not in finder:
+                        new_diff_configs.add(diff_conf['key'])
                     else:
-                        exist_diff_configs.add(finder[diff_conf['name']]['data']['guid'])
+                        exist_diff_configs.add(finder[diff_conf['key']]['data']['guid'])
                 # 创建新的差异化变量项
                 bind_variables = list(exist_diff_configs)
                 if len(new_diff_configs):
@@ -691,41 +746,44 @@ class UnitDesignPackages(WeCubeResource):
         def _generate_tree_from_list(basepath, file_list):
             expanded_dirs = set()
             root_nodes = []
-            for f in file_list:
-                new_f = f.lstrip('/')
-                parts = new_f.split('/')
-                # filename on root
-                if len(parts) == 1:
-                    subpath = ''
-                    scan_results = []
-                    if (basepath, subpath) not in expanded_dirs:
-                        scan_results = _scan_dir(basepath, subpath)
-                        expanded_dirs.add((basepath, subpath))
-                    root_nodes.extend(scan_results)
-                    _add_children_node(parts[0], subpath, root_nodes)
-                # ends with a/b/c/
-                else:
-                    filename = parts.pop(-1)
-                    path_nodes = root_nodes
-                    subpath = ''
-                    for idx in range(len(parts)):
-                        # sec protection: you can not list dir out of basepath
-                        if parts[idx] not in ('', '.', '..'):
-                            scan_results = []
-                            if (basepath, subpath) not in expanded_dirs:
-                                scan_results = _scan_dir(basepath, subpath)
-                                expanded_dirs.add((basepath, subpath))
-                            path_nodes.extend(scan_results)
-                            node = _add_children_node(parts[idx], subpath, path_nodes, True)
-                            path_nodes = node['children']
-                            subpath = os.path.join(subpath, parts[idx])
-                    scan_results = []
-                    if (basepath, subpath) not in expanded_dirs:
-                        scan_results = _scan_dir(basepath, subpath)
-                        expanded_dirs.add((basepath, subpath))
-                    path_nodes.extend(scan_results)
-                    if filename:
-                        _add_children_node(filename, subpath, path_nodes)
+            if not file_list:
+                root_nodes.extend(_scan_dir(basepath, ''))
+            else:
+                for f in file_list:
+                    new_f = f.lstrip('/')
+                    parts = new_f.split('/')
+                    # filename on root
+                    if len(parts) == 1:
+                        subpath = ''
+                        scan_results = []
+                        if (basepath, subpath) not in expanded_dirs:
+                            scan_results = _scan_dir(basepath, subpath)
+                            expanded_dirs.add((basepath, subpath))
+                        root_nodes.extend(scan_results)
+                        _add_children_node(parts[0], subpath, root_nodes)
+                    # ends with a/b/c/
+                    else:
+                        filename = parts.pop(-1)
+                        path_nodes = root_nodes
+                        subpath = ''
+                        for idx in range(len(parts)):
+                            # sec protection: you can not list dir out of basepath
+                            if parts[idx] not in ('', '.', '..'):
+                                scan_results = []
+                                if (basepath, subpath) not in expanded_dirs:
+                                    scan_results = _scan_dir(basepath, subpath)
+                                    expanded_dirs.add((basepath, subpath))
+                                path_nodes.extend(scan_results)
+                                node = _add_children_node(parts[idx], subpath, path_nodes, True)
+                                path_nodes = node['children']
+                                subpath = os.path.join(subpath, parts[idx])
+                        scan_results = []
+                        if (basepath, subpath) not in expanded_dirs:
+                            scan_results = _scan_dir(basepath, subpath)
+                            expanded_dirs.add((basepath, subpath))
+                        path_nodes.extend(scan_results)
+                        if filename:
+                            _add_children_node(filename, subpath, path_nodes)
             return root_nodes
 
         def _get_file_list(baseline_path, package_path, file_list):
@@ -764,13 +822,13 @@ class UnitDesignPackages(WeCubeResource):
                                                              baseline_package['data']['deploy_package_url'])
         package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
                                                         deploy_package['data']['deploy_package_url'])
+        results = []
         if expand_all:
-            expand_tree = _generate_tree_from_list(package_cached_dir, files)
-            self.update_tree_status(baseline_cached_dir, package_cached_dir, expand_tree)
-            return expand_tree
+            results = _generate_tree_from_list(package_cached_dir, files)
+            self.update_tree_status(baseline_cached_dir, package_cached_dir, results)
         else:
-            expand_list = _get_file_list(baseline_cached_dir, package_cached_dir, files)
-            return expand_list
+            results = _get_file_list(baseline_cached_dir, package_cached_dir, files)
+        return results
 
     def update_file_status(self, baseline_cached_dir, package_cached_dir, files, file_key='filename'):
         '''
@@ -842,6 +900,8 @@ class UnitDesignPackages(WeCubeResource):
                 with open(filepath, errors='replace') as f:
                     content = f.read()
                     i['configKeyInfos'] = artifact_utils.variable_parse(content, spliters)
+            else:
+                i['configKeyInfos'] = []
 
     def update_diff_conf_variable(self, all_diff_configs, package_diff_configs, bounded_diff_configs):
         '''
@@ -856,7 +916,7 @@ class UnitDesignPackages(WeCubeResource):
         for conf in all_diff_configs:
             finder[conf['data']['variable_name']] = conf
         for pconf in package_diff_configs:
-            p_finder[pconf['name']] = pconf
+            p_finder[pconf['key']] = pconf
         for bconf in bounded_diff_configs:
             b_finder[bconf['variable_name']] = bconf
         for k, v in p_finder.items():
@@ -961,3 +1021,9 @@ class DiffConfig(WeCubeResource):
             format_datas.append({'guid': d['id'], 'variable_value': d['variable_value']})
         resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.diff_config, format_datas)
         return resp_json['data']
+
+    def list(self, params):
+        cmdb_client = self.get_cmdb_client()
+        query = {"dialect": {"showCiHistory": False}, "filters": [], "paging": False}
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, query)
+        return [i['data'] for i in resp_json['data']['contents']]

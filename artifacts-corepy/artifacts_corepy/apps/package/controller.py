@@ -190,3 +190,45 @@ class ItemUploadAndCreatePackage(base_controller.Controller):
 
     def upload_and_create(self, req, data, **kwargs):
         return self.resource().upload_and_create(data, **kwargs)
+
+
+class ItemCiReferences(Item):
+    allow_methods = ('GET', )
+    resource = package_api.CiTypes
+
+    def get(self, req, **kwargs):
+        return self.make_resource(req).get_references(**kwargs)
+
+
+class ItemCiAttributes(Item):
+    allow_methods = ('GET', )
+    resource = package_api.CiTypes
+
+    def get(self, req, **kwargs):
+        accept_types = req.params.get('accept-input-types', None)
+        accept_types = accept_types.split(',') if accept_types else None
+        return self.make_resource(req).get_attributes(accept_types, **kwargs)
+
+
+class CiStateAction(Item):
+    allow_methods = ('POST', )
+    resource = package_api.CiTypes
+
+    def update(self, req, data, **kwargs):
+        operation = req.params.get('operation', None)
+        if not operation:
+            raise exceptions.ValidationError(message=_('missing query: operation, eg. ?operation=confirm/discard'))
+        return self.make_resource(req).update_state(data, operation)
+
+
+class CiDelete(Item):
+    allow_methods = ('POST', )
+    resource = package_api.CiTypes
+
+    def update(self, req, data, **kwargs):
+        return self.make_resource(req).batch_delete(data, **kwargs)
+
+
+class CollectionDiffConfigs(Collection):
+    allow_methods = ('GET', )
+    resource = package_api.DiffConfig

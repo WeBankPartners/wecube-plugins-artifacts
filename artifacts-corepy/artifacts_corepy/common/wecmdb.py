@@ -36,8 +36,12 @@ class WeCMDBClient(object):
         return '/wecmdb/api/v2/ci/%s/update' % citype
 
     @staticmethod
+    def build_delete_url(citype):
+        return '/wecmdb/api/v2/ci/%s/delete' % citype
+
+    @staticmethod
     def build_version_tree_url(citype_from, citype_to, version):
-        return '/wecmdb/api/v2/ci/from/%d/to/%d/versions/%s/retrieve' % (citype_from, citype_to, version)
+        return '/wecmdb/api/v2/ci/from/%s/to/%s/versions/%s/retrieve' % (citype_from, citype_to, version)
 
     @staticmethod
     def build_connector_url():
@@ -46,6 +50,14 @@ class WeCMDBClient(object):
     @staticmethod
     def build_citype_url():
         return '/wecmdb/api/v2/ciTypes/retrieve'
+
+    @staticmethod
+    def build_citype_attrs_url():
+        return '/wecmdb/api/v2/ciTypeAttrs/retrieve'
+
+    @staticmethod
+    def build_state_operation_url():
+        return '/wecmdb/api/v2/ci/state/operate'
 
     @staticmethod
     def build_enumcode_url():
@@ -86,6 +98,14 @@ class WeCMDBClient(object):
         url = self.server + self.build_citype_url()
         return self.post(url, data)
 
+    def citype_attrs(self, data):
+        url = self.server + self.build_citype_attrs_url()
+        return self.post(url, data)
+
+    def state_operation(self, operation, data):
+        url = self.server + self.build_state_operation_url()
+        return self.post(url, data, param={'operation': operation})
+
     def enumcodes(self, data):
         url = self.server + self.build_enumcode_url()
         return self.post(url, data)
@@ -105,3 +125,7 @@ class WeCMDBClient(object):
     def retrieve(self, citype, query):
         url = self.server + self.build_retrieve_url(citype)
         return self.post(url, query)
+
+    def delete(self, citype, data):
+        url = self.server + self.build_delete_url(citype)
+        return self.post(url, data)

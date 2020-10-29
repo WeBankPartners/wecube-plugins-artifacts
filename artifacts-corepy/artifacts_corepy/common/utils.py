@@ -49,7 +49,7 @@ def variable_parse(content, spliters):
             result = rule.search(line, pos)
             if result:
                 pos = result.end()
-                variables.append({'lineno': lineno, 'type': result.group(1), 'name': result.group(2)})
+                variables.append({'lineno': lineno, 'type': result.group(1), 'key': result.group(2)})
             else:
                 pos = len(line)
         lineno += 1
@@ -99,37 +99,46 @@ def lock(name, block=True, timeout=5):
 
 
 class CaseInsensitiveDict(dict):
-    def __init__(self, data=None, **kwargs):
-        self._store = dict()
-        if data is None:
-            data = {}
-        self.update(data, **kwargs)
+    @classmethod
+    def _k(cls, key):
+        return key.lower() if isinstance(key, (str, bytes)) else key
 
-    def __setitem__(self, key, value):
-        # Use the lowercased key for lookups, but store the actual
-        # key alongside the value.
-        self._store[key.lower()] = (key, value)
+    def __init__(self, *args, **kwargs):
+        super(CaseInsensitiveDict, self).__init__(*args, **kwargs)
+        self._convert_keys()
 
     def __getitem__(self, key):
-        return self._store[key.lower()][1]
+        return super(CaseInsensitiveDict, self).__getitem__(self.__class__._k(key))
+
+    def __setitem__(self, key, value):
+        super(CaseInsensitiveDict, self).__setitem__(self.__class__._k(key), value)
 
     def __delitem__(self, key):
-        del self._store[key.lower()]
-
-    def __iter__(self):
-        return (casedkey for casedkey, mappedvalue in self._store.values())
-
-    def __len__(self):
-        return len(self._store)
+        return super(CaseInsensitiveDict, self).__delitem__(self.__class__._k(key))
 
     def __contains__(self, key):
-        return key.lower() in self._store
+        return super(CaseInsensitiveDict, self).__contains__(self.__class__._k(key))
 
     def has_key(self, key):
-        return key.lower() in self._store
+        return super(CaseInsensitiveDict, self).has_key(self.__class__._k(key))
 
-    def __repr__(self):
-        return str(dict(self.items()))
+    def pop(self, key, *args, **kwargs):
+        return super(CaseInsensitiveDict, self).pop(self.__class__._k(key), *args, **kwargs)
+
+    def get(self, key, *args, **kwargs):
+        return super(CaseInsensitiveDict, self).get(self.__class__._k(key), *args, **kwargs)
+
+    def setdefault(self, key, *args, **kwargs):
+        return super(CaseInsensitiveDict, self).setdefault(self.__class__._k(key), *args, **kwargs)
+
+    def update(self, E={}, **F):
+        super(CaseInsensitiveDict, self).update(self.__class__(E))
+        super(CaseInsensitiveDict, self).update(self.__class__(**F))
+
+    def _convert_keys(self):
+        for k in list(self.keys()):
+            v = super(CaseInsensitiveDict, self).pop(k)
+            self.__setitem__(k, v)
 
 
 def json_or_error(func):
