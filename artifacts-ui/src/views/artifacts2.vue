@@ -72,6 +72,7 @@
                     <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <Icon type="ios-move" size="18" style="cursor:move" />
                     <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'diff_conf_file')"></Button>
                   </div>
                 </div>
@@ -92,6 +93,7 @@
                     <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <Icon type="ios-move" size="18" style="cursor:move" />
                     <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
                   </div>
                 </div>
@@ -112,6 +114,7 @@
                     <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <Icon type="ios-move" size="18" style="cursor:move" />
                     <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
                   </div>
                 </div>
@@ -132,6 +135,7 @@
                     <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
                     <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
+                    <Icon type="ios-move" size="18" style="cursor:move" />
                     <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
                   </div>
                 </div>
@@ -207,18 +211,21 @@
         </Modal>
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
+      <Modal :z-index="9999" width="1200" v-model="showFileCompare" :title="$t('file_compare')">
+        <CompareFile ref="compareParams"></CompareFile>
+      </Modal>
     </Col>
   </Row>
 </template>
 
 <script>
-import { getSpecialConnector, getAllCITypesWithAttr, getAllSystemEnumCodes, deleteCiDatas, operateCiState, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, retrieveEntity, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact } from '@/api/server.js'
+import { getSpecialConnector, getAllCITypesWithAttr, getAllSystemEnumCodes, deleteCiDatas, operateCiState, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, retrieveEntity, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact, getCompareContent } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
 import axios from 'axios'
 import Sortable from 'sortablejs'
-
+import CompareFile from './compare-file'
 // 业务运行实例ciTypeId
 const defaultRootCiTypeId = 50
 // cmdb插件包名
@@ -227,11 +234,15 @@ const cmdbPackageName = 'wecmdb'
 const DIFF_CONFIGURATION = 'diff_configuration'
 // // 部署包key_name
 // const DEPLOY_PACKAGE = 'deploy_package'
-
 export default {
   name: 'artifacts',
   data () {
     return {
+      showFileCompare: false,
+      compareParams: {
+        originContent: '',
+        newContent: ''
+      },
       // ---------------
       // 系统设计树形数据
       // ---------------
@@ -461,7 +472,6 @@ export default {
           }
         }
       ],
-
       rootCI: [
         { value: 50, label: this.$t('applications') },
         { value: 51, label: this.$t('db_instance') }
@@ -768,14 +778,28 @@ export default {
         is_compress: null
       }
     },
+    getRootCI (diffExpr) {
+      let rootCI = defaultRootCiTypeId
+      if (!diffExpr) {
+        return rootCI
+      }
+      const de = JSON.parse(diffExpr)
+      const rootItem = de.find(item => item.type === 'rule')
+      if (rootItem) {
+        const val = JSON.parse(rootItem.value)
+        rootCI = val[0].ciTypeId || defaultRootCiTypeId
+      }
+      return rootCI
+    },
     formatPackageDetail (data) {
       let dataString = JSON.stringify(data)
       let copyData = JSON.parse(dataString)
       copyData.diff_conf_variable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        elVar.originRootCI = JSON.parse(JSON.parse(elVar.diffExpr)[0].value)[0].ciTypeId || defaultRootCiTypeId
-        elVar.tempRootCI = JSON.parse(JSON.parse(elVar.diffExpr)[0].value)[0].ciTypeId || defaultRootCiTypeId
+        const rootCI = this.getRootCI(elVar.diffExpr)
+        elVar.originRootCI = rootCI
+        elVar.tempRootCI = rootCI
         elVar.withinFiles = []
         elVar.withinFileIndexes = []
         let index = 0
@@ -951,6 +975,18 @@ export default {
       this.initPackageInput()
       this.isShowFilesModal = false
     },
+    async getCompareFile (file) {
+      const params = {
+        baselinePackage: this.packageInput.baseline_package || '',
+        content_length: 2000,
+        files: [{ path: file.path }]
+      }
+      const { status, data } = await getCompareContent(this.guid, this.packageId, params)
+      if (status === 'OK') {
+        this.showFileCompare = true
+        this.$refs.compareParams.compareFile(data[0].baseline_content, data[0].content)
+      }
+    },
     async saveConfigFiles () {
       let obj = {
         baseline_package: this.packageInput.baseline_package,
@@ -1046,6 +1082,7 @@ export default {
                   <span style="color: #19be6b;">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                   </span>
                 </span>
               )
@@ -1056,6 +1093,7 @@ export default {
                   <span style="color: #2d8cf0;">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                   </span>
                 </span>
               )
@@ -1066,6 +1104,7 @@ export default {
                   <span style="color: #cccccc;">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                   </span>
                 </span>
               )
@@ -1076,6 +1115,7 @@ export default {
                   <span>
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
+                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                   </span>
                 </span>
               )
@@ -1086,6 +1126,7 @@ export default {
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #19be6b;">{params.data.title}</span>
+                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
             } else if (params.data.comparisonResult === 'changed') {
@@ -1093,6 +1134,7 @@ export default {
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #2d8cf0;">{params.data.title}</span>
+                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
             } else if (params.data.comparisonResult === 'deleted') {
@@ -1100,6 +1142,7 @@ export default {
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #cccccc;">{params.data.title}</span>
+                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
             } else {
@@ -1107,6 +1150,7 @@ export default {
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span>{params.data.title}</span>
+                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
             }
@@ -1459,6 +1503,9 @@ export default {
     this.getSpecialConnector()
     this.getAllCITypesWithAttr()
     this.getAllSystemEnumCodes()
+  },
+  components: {
+    CompareFile
   }
 }
 </script>
@@ -1473,38 +1520,30 @@ export default {
 }
 .artifact-management {
   padding: 20px;
-
   &-top-card {
     padding-bottom: 40px;
   }
-
   &-bottom-card {
     margin-top: 30px;
   }
-
   &-tree-body {
     position: relative;
   }
-
   &-save-button {
     float: right;
     margin-top: 10px;
   }
-
   &-files-card {
     margin-top: 10px;
-
     &:first-of-type {
       margin-top: 0;
     }
   }
-
   &-icon {
     margin: 0 2px;
     position: relative;
   }
 }
-
 // .batchOperation {
 //   position: absolute;
 //   right: 60px;
@@ -1513,15 +1552,12 @@ export default {
   list-style: none;
   margin: 8px;
 }
-
 .baseline-cmp-new {
   color: #19be6b;
 }
-
 .baseline-cmp-changed {
   color: #2d8cf0;
 }
-
 .baseline-cmp-deleted {
   color: #cccccc;
 }
