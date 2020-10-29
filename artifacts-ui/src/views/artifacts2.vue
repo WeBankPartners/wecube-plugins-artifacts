@@ -218,7 +218,6 @@ import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
 import axios from 'axios'
 import Sortable from 'sortablejs'
-
 // 业务运行实例ciTypeId
 const defaultRootCiTypeId = 50
 // cmdb插件包名
@@ -227,7 +226,6 @@ const cmdbPackageName = 'wecmdb'
 const DIFF_CONFIGURATION = 'diff_configuration'
 // // 部署包key_name
 // const DEPLOY_PACKAGE = 'deploy_package'
-
 export default {
   name: 'artifacts',
   data () {
@@ -461,7 +459,6 @@ export default {
           }
         }
       ],
-
       rootCI: [
         { value: 50, label: this.$t('applications') },
         { value: 51, label: this.$t('db_instance') }
@@ -768,14 +765,28 @@ export default {
         is_compress: null
       }
     },
+    getRootCI (diffExpr) {
+      let rootCI = defaultRootCiTypeId
+      if (!diffExpr) {
+        return rootCI
+      }
+      const de = JSON.parse(diffExpr)
+      const rootItem = de.find(item => item.type === 'rule')
+      if (rootItem) {
+        const val = JSON.parse(rootItem.value)
+        rootCI = val[0].ciTypeId || defaultRootCiTypeId
+      }
+      return rootCI
+    },
     formatPackageDetail (data) {
       let dataString = JSON.stringify(data)
       let copyData = JSON.parse(dataString)
       copyData.diff_conf_variable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        elVar.originRootCI = JSON.parse(JSON.parse(elVar.diffExpr)[0].value)[0].ciTypeId || defaultRootCiTypeId
-        elVar.tempRootCI = JSON.parse(JSON.parse(elVar.diffExpr)[0].value)[0].ciTypeId || defaultRootCiTypeId
+        const rootCI = this.getRootCI(elVar.diffExpr)
+        elVar.originRootCI = rootCI
+        elVar.tempRootCI = rootCI
         elVar.withinFiles = []
         elVar.withinFileIndexes = []
         let index = 0
@@ -1473,38 +1484,30 @@ export default {
 }
 .artifact-management {
   padding: 20px;
-
   &-top-card {
     padding-bottom: 40px;
   }
-
   &-bottom-card {
     margin-top: 30px;
   }
-
   &-tree-body {
     position: relative;
   }
-
   &-save-button {
     float: right;
     margin-top: 10px;
   }
-
   &-files-card {
     margin-top: 10px;
-
     &:first-of-type {
       margin-top: 0;
     }
   }
-
   &-icon {
     margin: 0 2px;
     position: relative;
   }
 }
-
 // .batchOperation {
 //   position: absolute;
 //   right: 60px;
@@ -1513,15 +1516,12 @@ export default {
   list-style: none;
   margin: 8px;
 }
-
 .baseline-cmp-new {
   color: #19be6b;
 }
-
 .baseline-cmp-changed {
   color: #2d8cf0;
 }
-
 .baseline-cmp-deleted {
   color: #cccccc;
 }
