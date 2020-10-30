@@ -1532,7 +1532,7 @@ export default {
 }
 .textarea-input {
   display: inline-block;
-  width: 80%;
+  width: 75%;
 }
 .artifact-management-files-card {
   border-color: darkgrey;
