@@ -9,7 +9,6 @@ import urllib3
 import certifi
 
 import minio
-import minio.error
 from artifacts_corepy.common import exceptions
 from talos.core.i18n import _
 
@@ -45,8 +44,8 @@ class S3Downloader(object):
         client = minio.Minio(self.host, access_key, secret_key, secure=secure, http_client=http_client)
         try:
             return client.fget_object(self.bucket, self.object_key, filepath)
-        except minio.error.MinioError as e:
-            raise exceptions.PluginError(message=_('failed to download file[%(filepath)s]: %(reason)s') % {
+        except Exception as e:
+            raise exceptions.PluginError(message=_('failed to download file[%(filepath)s] from s3: %(reason)s') % {
                 'filepath': self.object_key,
                 'reason': str(e)
             })

@@ -116,6 +116,7 @@ setup(
     entry_points={
         'console_scripts': [
             'artifacts_corepy_server=artifacts_corepy.server.simple_server:main',
+            'artifacts_corepy_scheduler=artifacts_corepy.server.scheduler:main',
         ],
     },
 )

@@ -15,7 +15,7 @@ ADD artifacts-corepy/dist/* /tmp/
 RUN mkdir -p /etc/artifacts_corepy/
 RUN mkdir -p /var/log/artifacts_corepy/
 ADD artifacts-corepy/etc/* /etc/artifacts_corepy/
-ADD nexus-data.tar.gz /nexus-data
+ADD nexus-data.tar.gz /nexus-data-init
 # Install && Clean up
 RUN yum clean all && yum makecache && yum install -y python3 python3-devel gcc libev-devel make  && \
     pip3 install -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r /tmp/requirements.txt && \
