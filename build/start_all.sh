@@ -9,7 +9,7 @@ else
         echo 'nexus data is not ready, copy init data...'
         cp -rf /nexus-data-init/ /nexus-data/
     fi
-    nohup ${SONATYPE_DIR}/start-nexus-repository-manager.sh > /var/log/artifacts_corepy/nexus.log &
+    nohup ${SONATYPE_DIR}/start-nexus-repository-manager.sh > /dev/null 2>&1 &
 fi
-nohup artifacts_corepy_scheduler &
+nohup artifacts_corepy_scheduler > /dev/null 2>&1 &
 /usr/local/bin/gunicorn --config /etc/artifacts_corepy/gunicorn.py artifacts_corepy.server.wsgi_server:application
