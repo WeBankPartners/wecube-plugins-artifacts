@@ -938,7 +938,7 @@ export default {
         this.packageInput.start_file_path = found.start_file_path ? JSON.parse(JSON.stringify(found.start_file_path)) : []
         this.packageInput.stop_file_path = found.stop_file_path ? JSON.parse(JSON.stringify(found.stop_file_path)) : []
         this.packageInput.deploy_file_path = found.deploy_file_path ? JSON.parse(JSON.stringify(found.deploy_file_path)) : []
-        this.packageInput.is_decompression = found.is_decompression || 'false'
+        this.packageInput.is_decompression = found.is_decompression || 'true'
       }
       await this.syncBaselineFileStatus()
     },
@@ -953,7 +953,7 @@ export default {
       this.packageInput.start_file_path = JSON.parse(JSON.stringify(this.packageDetail.start_file_path))
       this.packageInput.stop_file_path = JSON.parse(JSON.stringify(this.packageDetail.stop_file_path))
       this.packageInput.deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.deploy_file_path))
-      this.packageInput.is_decompression = row.is_decompression || 'false'
+      this.packageInput.is_decompression = row.is_decompression || 'true'
       this.packageId = row.guid
       // await this.syncBaselineFileStatus()
       this.isShowFilesModal = true
@@ -1009,7 +1009,7 @@ export default {
         start_file_path: this.packageInput.start_file_path,
         stop_file_path: this.packageInput.stop_file_path,
         deploy_file_path: this.packageInput.deploy_file_path,
-        is_decompression: this.packageInput.is_decompression || 'false'
+        is_decompression: this.packageInput.is_decompression || 'true'
       }
       this.saveConfigLoading = true
       let { status } = await updatePackage(this.guid, this.packageId, obj)
