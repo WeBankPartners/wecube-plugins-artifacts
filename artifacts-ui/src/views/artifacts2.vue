@@ -211,8 +211,13 @@
         </Modal>
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
-      <Modal :z-index="9999" width="1200" v-model="showFileCompare" :title="$t('file_compare')">
-        <CompareFile ref="compareParams"></CompareFile>
+      <Modal :z-index="9999" width="1200" v-model="showFileCompare" :fullscreen="fullscreen" footer-hide>
+        <p slot="header">
+          <span>{{ $t('file_compare') }}</span>
+          <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
+          <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
+        </p>
+        <CompareFile ref="compareParams" :fileContentHeight="fileContentHeight"></CompareFile>
       </Modal>
     </Col>
   </Row>
@@ -238,6 +243,8 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      fullscreen: false,
+      fileContentHeight: window.screen.availHeight * 0.4 + 'px',
       showFileCompare: false,
       compareParams: {
         originContent: '',
@@ -500,6 +507,14 @@ export default {
     }
   },
   methods: {
+    zoomModalMax () {
+      this.fileContentHeight = window.screen.availHeight - 310 + 'px'
+      this.fullscreen = true
+    },
+    zoomModalMin () {
+      this.fileContentHeight = window.screen.availHeight * 0.4 + 'px'
+      this.fullscreen = false
+    },
     changeTab (tabName) {
       this.activeTab = tabName
       this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab).configKeyInfos
@@ -978,7 +993,7 @@ export default {
     async getCompareFile (file) {
       const params = {
         baselinePackage: this.packageInput.baseline_package || '',
-        content_length: 2000,
+        content_length: 1024 * 100,
         files: [{ path: file.path }]
       }
       const { status, data } = await getCompareContent(this.guid, this.packageId, params)
@@ -989,7 +1004,7 @@ export default {
     },
     async saveConfigFiles () {
       let obj = {
-        baseline_package: this.packageInput.baseline_package,
+        baseline_package: this.packageInput.baseline_package || null,
         diff_conf_file: this.packageInput.diff_conf_file,
         start_file_path: this.packageInput.start_file_path,
         stop_file_path: this.packageInput.stop_file_path,
@@ -1511,9 +1526,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.header-icon {
+  float: right;
+  margin: 3px 20px 0 0 !important;
+}
 .textarea-input {
   display: inline-block;
-  width: 80%;
+  width: 75%;
 }
 .artifact-management-files-card {
   border-color: darkgrey;
