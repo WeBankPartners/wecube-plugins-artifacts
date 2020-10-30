@@ -40,7 +40,7 @@ shutil.register_unpack_format('apk', ['.apk'], shutil._UNPACK_FORMATS['zip'][1])
 
 def variable_parse(content, spliters):
     variables = []
-    rule = re.compile(r'\[(' + '|'.join(spliters) + r')([-_0-9a-zA-Z]+)\]')
+    rule = re.compile(r'\[(' + '|'.join(spliters) + r')(.+?)\]')
     stream = io.StringIO(content)
     lineno = 1
     for line in stream:
