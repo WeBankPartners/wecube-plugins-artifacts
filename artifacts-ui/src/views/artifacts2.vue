@@ -993,7 +993,7 @@ export default {
     async getCompareFile (file) {
       const params = {
         baselinePackage: this.packageInput.baseline_package || '',
-        content_length: 2000,
+        content_length: 1024 * 100,
         files: [{ path: file.path }]
       }
       const { status, data } = await getCompareContent(this.guid, this.packageId, params)
