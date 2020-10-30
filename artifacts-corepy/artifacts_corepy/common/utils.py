@@ -49,7 +49,7 @@ def variable_parse(content, spliters):
             result = rule.search(line, pos)
             if result:
                 pos = result.end()
-                variables.append({'lineno': lineno, 'type': result.group(1), 'key': result.group(2)})
+                variables.append({'line': lineno, 'type': result.group(1), 'key': result.group(2)})
             else:
                 pos = len(line)
         lineno += 1
