@@ -1,21 +1,21 @@
 <template>
   <div class="compare-show-container">
-    <div class="container-item">
+    <div v-if="originContent" class="container-item">
       <Card>
         <p slot="title">{{ $t('original_content') }}：</p>
-        <p v-html="originContent" class="content-sty"></p>
+        <p v-html="originContent" :style="contentSty"></p>
       </Card>
     </div>
-    <div class="container-item">
+    <div v-if="newContent" class="container-item">
       <Card>
         <p slot="title">{{ $t('new_content') }}：</p>
-        <p v-html="newContent" class="content-sty"></p>
+        <p v-html="newContent" :style="contentSty"></p>
       </Card>
     </div>
-    <div class="container-item">
+    <div v-if="originContent && newContent" class="container-item">
       <Card>
         <p slot="title">{{ $t('comparison_result') }}：</p>
-        <p v-html="compareResult" class="content-sty"></p>
+        <p v-html="compareResult" :style="contentSty"></p>
       </Card>
     </div>
   </div>
@@ -29,9 +29,21 @@ export default {
     return {
       originContent: '',
       newContent: '',
-      compareResult: ''
+      compareResult: '',
+      contentSty: {
+        wordBreak: 'break-all',
+        height: this.fileContentHeight,
+        overflowY: 'auto'
+      }
     }
   },
+  watch: {
+    fileContentHeight: function (val) {
+      console.log(val)
+      this.contentSty.height = val
+    }
+  },
+  props: ['fileContentHeight'],
   methods: {
     compareFile (originContent, newContent) {
       this.compareResult = ''
@@ -60,10 +72,5 @@ export default {
 .container-item {
   flex: 1;
   margin: 2px;
-}
-.content-sty {
-  word-break: break-all;
-  height: 300px;
-  overflow-y: auto;
 }
 </style>
