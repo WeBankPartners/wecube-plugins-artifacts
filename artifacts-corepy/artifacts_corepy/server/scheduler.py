@@ -93,7 +93,7 @@ def main():
                                   executors=executors,
                                   job_defaults=job_defaults,
                                   timezone=get_localzone())
-    scheduler.add_job(cleanup_cached_dir, 'cron', hour=3, minute=0)
+    scheduler.add_job(cleanup_cached_dir, 'cron', hour='*')
     scheduler.add_job(rotate_log, 'cron', hour=3, minute=5)
     try:
         scheduler.start()
