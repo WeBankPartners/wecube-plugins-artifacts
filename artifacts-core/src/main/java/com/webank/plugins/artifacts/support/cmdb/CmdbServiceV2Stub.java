@@ -118,7 +118,7 @@ public class CmdbServiceV2Stub {
         return queryResult.getContents();
     }
 
-    public List<CiDataDto> createCiData(Integer ciTypeId, Object ciData) {
+    public List<Object> createCiData(Integer ciTypeId, Object ciData) {
         ArrayList<Object> ciDatas = new ArrayList<Object>();
         ciDatas.add(ciData);
         return create(formatString(CIDATA_CREATE, ciTypeId), ciDatas.toArray(), DefaultCmdbResponse.class);

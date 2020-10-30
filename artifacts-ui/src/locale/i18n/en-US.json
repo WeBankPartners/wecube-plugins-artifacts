@@ -69,5 +69,12 @@
   "artifacts_bind_success": "Bind Success",
   "multi_bind_config": "Binding Manage",
   "check_all": "Check All",
-  "variable_select_key_tooltip": "Choose a Key(variable) and use it's Value"
+  "variable_select_key_tooltip": "Choose a Key(variable) and use it's Value",
+  "root_ci": "Root CI",
+  "applications": "Applications",
+  "db_instance": "DB Instance",
+  "file_compare": "File Compare",
+  "original_content": "Original Content",
+  "new_content": "New Content",
+  "comparison_result": "Comparison Result"
 }

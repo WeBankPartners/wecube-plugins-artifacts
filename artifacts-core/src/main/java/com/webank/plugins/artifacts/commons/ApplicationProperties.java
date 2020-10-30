@@ -26,6 +26,15 @@ public class ApplicationProperties {
     private String jwtSigningKey = "Platform+Auth+Server+Secret";
     private boolean artifactsLocalEnabled = true;
     private boolean artifactsNexusEnabled = true;
+    private String propertyEncryptKeyPath;
+    
+    public String getPropertyEncryptKeyPath() {
+        return propertyEncryptKeyPath;
+    }
+
+    public void setPropertyEncryptKeyPath(String propertyEncryptKeyPath) {
+        this.propertyEncryptKeyPath = propertyEncryptKeyPath;
+    }
 
     public String getWecubeGatewayServerUrl() {
         return wecubeGatewayServerUrl;
