@@ -1,18 +1,18 @@
 <template>
   <div class="compare-show-container">
-    <div class="container-item">
+    <div v-if="originContent" class="container-item">
       <Card>
         <p slot="title">{{ $t('original_content') }}：</p>
         <p v-html="originContent" class="content-sty"></p>
       </Card>
     </div>
-    <div class="container-item">
+    <div v-if="newContent" class="container-item">
       <Card>
         <p slot="title">{{ $t('new_content') }}：</p>
         <p v-html="newContent" class="content-sty"></p>
       </Card>
     </div>
-    <div class="container-item">
+    <div v-if="originContent && newContent" class="container-item">
       <Card>
         <p slot="title">{{ $t('comparison_result') }}：</p>
         <p v-html="compareResult" class="content-sty"></p>
