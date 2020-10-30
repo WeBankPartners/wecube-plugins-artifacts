@@ -7,7 +7,8 @@ else
         echo 'nexus data already inited...'
     else
         echo 'nexus data is not ready, copy init data...'
-        cp -rf /nexus-data-init/ /nexus-data/
+        /usr/bin/cp -rf /nexus-data-init/* /nexus-data/
+        rm -f /nexus-data/nexus-data.tar.gz
     fi
     nohup ${SONATYPE_DIR}/start-nexus-repository-manager.sh > /dev/null 2>&1 &
 fi
