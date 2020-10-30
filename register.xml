@@ -7,7 +7,6 @@
     <packageDependencies>
         <packageDependency name="platform" version="v2.5.0"/>
         <packageDependency name="wecmdb" version="v1.5.1"/>
-        <packageDependency name="saltstack" version="1.10.2"/>
     </packageDependencies>
          
     <!-- 2.菜单注入 - 描述运行本插件包需要注入的菜单 -->
@@ -21,13 +20,25 @@
 
     <!-- 4.系统参数 - 描述运行本插件包需要的系统参数 -->
 	<systemParameters>
-        <systemParameter name="NEXUS_SERVER_URL" scopeType="global" defaultValue="http://127.0.0.1:18888"/>
-        <systemParameter name="NEXUS_USERNAME" scopeType="global" defaultValue="admin"/>
-        <systemParameter name="NEXUS_PASSWORD" scopeType="global" defaultValue="admin123"/>
-        <systemParameter name="NEXUS_REPOSITORY" scopeType="global" defaultValue="maven-releases"/>
-        <systemParameter name="CMDB_ARTIFACT_PATH" scopeType="global" defaultValue="artifact_path"/>
-		<systemParameter name="UPLOAD_ENABLED" scopeType="plugins" defaultValue="true"/>
-		<systemParameter name="UPLOAD_NEXUS_ENABLED" scopeType="plugins" defaultValue="true"/>
+        <systemParameter name="UPLOAD_ENABLED" scopeType="plugins" defaultValue="true"/>
+        <systemParameter name="UPLOAD_NEXUS_ENABLED" scopeType="plugins" defaultValue="true"/>
+        <systemParameter name="ARTIFACTS_CITYPE_SYSTEM_DESIGN" scopeType="plugins" defaultValue="37"/>
+        <systemParameter name="ARTIFACTS_CITYPE_UNIT_DESIGN" scopeType="plugins" defaultValue="39"/>
+        <systemParameter name="ARTIFACTS_CITYPE_DIFF_CONFIG" scopeType="plugins" defaultValue="44"/>
+        <systemParameter name="ARTIFACTS_CITYPE_DEPLOY_PACKAGE" scopeType="plugins" defaultValue="45"/>
+        <systemParameter name="ARTIFACTS_ENCRYPT_VARIBLE_PREFIX" scopeType="plugins" defaultValue="!,%"/>
+        <systemParameter name="ARTIFACTS_FILE_VARIBLE_PREFIX" scopeType="plugins" defaultValue="^"/>
+        <systemParameter name="ARTIFACTS_DEFAULT_SPECIAL_REPLACE" scopeType="plugins" defaultValue="@,#"/>
+        <systemParameter name="LOCAL_NEXUS_SERVER_URL" scopeType="plugins" defaultValue="http://127.0.0.1:8081"/>
+        <systemParameter name="LOCAL_NEXUS_USERNAME" scopeType="plugins" defaultValue="artifacts"/>
+        <systemParameter name="LOCAL_NEXUS_PASSWORD" scopeType="plugins" defaultValue="artifacts"/>
+        <systemParameter name="LOCAL_NEXUS_REPOSITORY" scopeType="plugins" defaultValue="artifacts"/>
+        <systemParameter name="USE_REMOTE_NEXUS_ONLY" scopeType="plugins" defaultValue="false"/>
+        <systemParameter name="CMDB_ARTIFACT_PATH" scopeType="plugins" defaultValue="artifact_path"/>
+        <systemParameter name="NEXUS_SERVER_URL" scopeType="plugins" defaultValue="http://127.0.0.1:18888"/>
+        <systemParameter name="NEXUS_USERNAME" scopeType="plugins" defaultValue="admin"/>
+        <systemParameter name="NEXUS_PASSWORD" scopeType="plugins" defaultValue="admin123"/>
+        <systemParameter name="NEXUS_REPOSITORY" scopeType="plugins" defaultValue="maven-releases"/>
 	</systemParameters>
 
     <!-- 5.权限设定 -->
@@ -39,10 +50,19 @@
 
     <!-- 6.运行资源 - 描述部署运行本插件包需要的基础资源(如主机、虚拟机、容器、数据库等) -->
     <resourceDependencies>
-        <docker imageName="{{REPOSITORY}}:{{VERSION}}" containerName="{{REPOSITORY}}-{{VERSION}}" portBindings="{{ALLOCATE_PORT}}:8081,{{MONITOR_PORT}}:18081" volumeBindings="{{BASE_MOUNT_PATH}}/artifacts/log:/log,/etc/localtime:/etc/localtime,{{BASE_MOUNT_PATH}}/certs:/data/certs"
-        envVariables="WECUBE_GATEWAY_SERVER_URL={{GATEWAY_URL}},ARTIFACTS_S3_SERVER_URL={{S3_SERVER_URL}},ARTIFACTS_S3_ACCESS_KEY={{S3_ACCESS_KEY}},ARTIFACTS_S3_SECRET_KEY={{S3_SECRET_KEY}},
-        ARTIFACTS_NEXUS_SERVER_URL={{NEXUS_SERVER_URL}},ARTIFACTS_NEXUS_USERNAME={{NEXUS_USERNAME}},ARTIFACTS_NEXUS_PASSWORD={{NEXUS_PASSWORD}},ARTIFACTS_NEXUS_REPOSITORY={{NEXUS_REPOSITORY}},
-        CMDB_ARTIFACT_PATH={{CMDB_ARTIFACT_PATH}},JWT_SIGNING_KEY={{JWT_SIGNING_KEY}},UPLOAD_ENABLED={{UPLOAD_ENABLED}},UPLOAD_NEXUS_ENABLED={{UPLOAD_NEXUS_ENABLED}}"/>
+        <docker imageName="{{REPOSITORY}}:{{VERSION}}" containerName="{{REPOSITORY}}-{{VERSION}}" portBindings="{{ALLOCATE_PORT}}:9000" volumeBindings="{{BASE_MOUNT_PATH}}/artifacts/log:/var/log/artifacts_corepy,{{BASE_MOUNT_PATH}}/certs:/certs,/etc/localtime:/etc/localtime"
+        envVariables="ARTIFACTS_UPLOAD_ENABLED={{UPLOAD_ENABLED}},ARTIFACTS_UPLOAD_NEXUS_ENABLED={{UPLOAD_NEXUS_ENABLED}},
+        ARTIFACTS_CITYPE_SYSTEM_DESIGN={{ARTIFACTS_CITYPE_SYSTEM_DESIGN}},ARTIFACTS_CITYPE_UNIT_DESIGN={{ARTIFACTS_CITYPE_UNIT_DESIGN}},
+        ARTIFACTS_CITYPE_DIFF_CONFIG={{ARTIFACTS_CITYPE_DIFF_CONFIG}},ARTIFACTS_CITYPE_DEPLOY_PACKAGE={{ARTIFACTS_CITYPE_DEPLOY_PACKAGE}},
+        ARTIFACTS_ENCRYPT_VARIBLE_PREFIX={{ARTIFACTS_ENCRYPT_VARIBLE_PREFIX}},ARTIFACTS_FILE_VARIBLE_PREFIX={{ARTIFACTS_FILE_VARIBLE_PREFIX}},
+        ARTIFACTS_DEFAULT_SPECIAL_REPLACE={{ARTIFACTS_DEFAULT_SPECIAL_REPLACE}},
+        ARTIFACTS_LOCAL_NEXUS_SERVER_URL={{LOCAL_NEXUS_SERVER_URL}},ARTIFACTS_LOCAL_NEXUS_USERNAME={{LOCAL_NEXUS_USERNAME}},
+        ARTIFACTS_LOCAL_NEXUS_PASSWORD={{LOCAL_NEXUS_PASSWORD}},ARTIFACTS_LOCAL_NEXUS_REPOSITORY={{LOCAL_NEXUS_REPOSITORY}},
+        ARTIFACTS_USE_REMOTE_NEXUS_ONLY={{USE_REMOTE_NEXUS_ONLY}},ARTIFACTS_CMDB_ARTIFACT_PATH={{CMDB_ARTIFACT_PATH}},
+        ARTIFACTS_NEXUS_SERVER_URL={{NEXUS_SERVER_URL}},ARTIFACTS_NEXUS_USERNAME={{NEXUS_USERNAME}},
+        ARTIFACTS_NEXUS_PASSWORD={{NEXUS_PASSWORD}},ARTIFACTS_NEXUS_REPOSITORY={{NEXUS_REPOSITORY}},
+        WECUBE_S3_ACCESS_KEY={{S3_ACCESS_KEY}},WECUBE_S3_SECRET_KEY={{S3_SECRET_KEY}},
+        WECUBE_GATEWAY_URL={{GATEWAY_URL}},WECUBE_JWT_SIGNING_KEY={{JWT_SIGNING_KEY}}"/>
         <s3 bucketName="wecube-artifacts"/>
     </resourceDependencies>
 

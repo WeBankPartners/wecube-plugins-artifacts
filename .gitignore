@@ -40,3 +40,11 @@ yarn-debug.log*
 yarn-error.log*
 /*/target/
 /*/dist/
+
+
+*.pyc
+artifacts-corepy/unit_test_report.html
+artifacts-corepy/assets
+artifacts-corepy/.vscode
+artifacts-corepy/server.log
+artifacts-core/.factorypath
