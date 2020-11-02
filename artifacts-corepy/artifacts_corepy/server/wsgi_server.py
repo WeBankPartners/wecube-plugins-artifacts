@@ -10,17 +10,17 @@ artifacts_corepy.server.wsgi_server
 from __future__ import absolute_import
 
 import base64
+import json
 import os
 import os.path
-import json
+
+from artifacts_corepy.common import utils
+from artifacts_corepy.middlewares import auth
 from Crypto import Random
 from Crypto.Cipher import PKCS1_v1_5 as Cipher_pkcs1_v1_5
 from Crypto.PublicKey import RSA
+from talos.core import config, utils
 from talos.server import base
-from talos.core import utils
-from talos.core import config
-
-from artifacts_corepy.middlewares import auth
 
 # @config.intercept('db_password', 'other_password')
 # def get_password(value, origin_value):
@@ -39,7 +39,7 @@ def decrypt_ras(secret_key, encrypt_text):
     rsakey = RSA.importKey(secret_key)
     cipher = Cipher_pkcs1_v1_5.new(rsakey)
     random_generator = Random.new().read
-    text = cipher.decrypt(base64.b64decode(encrypt_text), random_generator)
+    text = cipher.decrypt(utils.b64decode_key(encrypt_text), random_generator)
     return text.decode('utf-8')
 
 

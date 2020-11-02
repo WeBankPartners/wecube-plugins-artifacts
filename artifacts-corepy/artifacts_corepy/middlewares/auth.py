@@ -2,27 +2,13 @@
 
 from __future__ import absolute_import
 
-import base64
-import binascii
 import jwt
 import jwt.exceptions
+from artifacts_corepy.common import utils
 from talos.core import config
 from talos.core import exceptions as base_ex
 
 CONF = config.CONF
-
-
-def decode_key(key):
-    new_key = key
-    max_padding = 3
-    while max_padding > 0:
-        try:
-            return base64.b64decode(new_key)
-        except binascii.Error as e:
-            new_key += '='
-            max_padding -= 1
-            if max_padding <= 0:
-                raise e
 
 
 class JWTAuth(object):
@@ -37,7 +23,7 @@ class JWTAuth(object):
             if secret:
                 verify_token = True
             try:
-                token_info = jwt.decode(token, key=decode_key(secret), verify=verify_token)
+                token_info = jwt.decode(token, key=utils.b64decode_key(secret), verify=verify_token)
                 req.auth_user = token_info['sub']
             except jwt.exceptions.ExpiredSignatureError as e:
                 raise base_ex.AuthError()
