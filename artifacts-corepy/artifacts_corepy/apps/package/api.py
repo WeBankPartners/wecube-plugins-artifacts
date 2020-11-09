@@ -59,6 +59,11 @@ class FileNameConcater(converter.NullConverter):
         return '|'.join([i.get('filename') for i in value if i.get('filename')])
 
 
+class PathConcater(converter.NullConverter):
+    def convert(self, value):
+        return '|'.join([i.get('path') for i in value if i.get('path')])
+
+
 class BooleanNomalizedConverter(converter.NullConverter):
     def __init__(self, default=False):
         self.fallback_value = default
@@ -662,12 +667,12 @@ class UnitDesignPackages(WeCubeResource):
                     bind_variables.extend([c['guid'] for c in resp_json['data']])
                 if auto_bind:
                     clean_data['diff_conf_variable'] = bind_variables
-        if 'db_upgrade_file_path' not in clean_data and db_upgrade_detect:
-            clean_data['db_upgrade_file_path'] = FileNameConcater().convert(
+        if db_upgrade_detect:
+            clean_data['db_upgrade_file_path'] = PathConcater().convert(
                 self.find_files_by_status(clean_data['baseline_package'], deploy_package_id,
                                           clean_data['db_upgrade_directory'].split('|'), ['new', 'changed']))
-        if 'db_rollback_file_path' not in clean_data and db_rollback_detect:
-            clean_data['db_rollback_file_path'] = FileNameConcater().convert(
+        if db_rollback_detect:
+            clean_data['db_rollback_file_path'] = PathConcater().convert(
                 self.find_files_by_status(clean_data['baseline_package'], deploy_package_id,
                                           clean_data['db_rollback_directory'].split('|'), ['new', 'changed']))
         resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [clean_data])
