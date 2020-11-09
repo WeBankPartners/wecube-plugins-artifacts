@@ -53,12 +53,12 @@ build_py: clean_py
 
 image_py: build_py
 	wget -O nexus-data.tar.gz https://wecube-1259801214.cos.ap-guangzhou.myqcloud.com/nexus-data/nexus-data.tar.gz
-    @if [ $(with_nexus) == 'true' ]; \
+	@if [ $(with_nexus) == 'true' ]; \
 	then \
 		docker build -t $(project_name):$(version) .; \
 	else \
-		docker build -t $(project_name):$(version) .; \
-    fi
+		docker build -t $(project_name):$(version) -f Dockerfile_nonexus; \
+	fi
 
 package_py: image_py
 	rm -rf package
