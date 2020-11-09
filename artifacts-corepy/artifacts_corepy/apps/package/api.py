@@ -59,9 +59,12 @@ class FileNameConcater(converter.NullConverter):
         return '|'.join([i.get('filename') for i in value if i.get('filename')])
 
 
-class BooleanConverter(converter.NullConverter):
+class BooleanNomalizedConverter(converter.NullConverter):
+    def __init__(self, default=False):
+        self.fallback_value = default
+
     def convert(self, value):
-        return 'true' if utils.bool_from_string(value) else 'false'
+        return 'true' if utils.bool_from_string(value, default=self.fallback_value) else 'false'
 
 
 class WeCubeResource(object):
@@ -243,6 +246,12 @@ class UnitDesignPackages(WeCubeResource):
             i['data']['start_file_path'] = self.build_file_object(i['data']['start_file_path'])
             i['data']['stop_file_path'] = self.build_file_object(i['data']['stop_file_path'])
             i['data']['diff_conf_file'] = self.build_file_object(i['data']['diff_conf_file'])
+            # db部署支持
+            fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
+                      'db_deploy_file_path')
+            for field in fields:
+                if field in i['data']:
+                    i['data'][field] = self.build_file_object(i['data'][field])
         return resp_json['data']
 
     def build_file_object(self, filenames, spliter='|'):
@@ -432,7 +441,37 @@ class UnitDesignPackages(WeCubeResource):
                                  validate_on=['update:O'],
                                  rule='1, 36',
                                  rule_type='length',
-                                 converter=BooleanConverter(),
+                                 converter=BooleanNomalizedConverter(True),
+                                 nullable=True),
+            crud.ColumnValidator('dbUpgradeDirectory',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=True),
+            crud.ColumnValidator('dbRollbackDirectory',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=True),
+            crud.ColumnValidator('dbUpgradeFilePath',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=True),
+            crud.ColumnValidator('dbRollbackFilePath',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=True),
+            crud.ColumnValidator('dbDeployFilePath',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
                                  nullable=True),
         ]
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
@@ -448,24 +487,53 @@ class UnitDesignPackages(WeCubeResource):
             '/') + '/repository/' + CONF.wecube.nexus.repository + '/' + clean_data['nexusUrl'].lstrip('/')
         unit_design_id = baseline_package['data']['unit_design']['guid']
         new_pakcage = self.upload_from_nexus(url, unit_design_id)[0]
+        # db部署支持, 检查是否用户手动指定值
+        b_db_upgrade_detect = True
+        b_db_rollback_detect = True
         update_data = {}
         keys = [('startFilePath', 'start_file_path'), ('stopFilePath', 'stop_file_path'),
-                ('deployFilePath', 'deploy_file_path'), ('diffConfFile', 'diff_conf_file')]
+                ('deployFilePath', 'deploy_file_path'), ('diffConfFile', 'diff_conf_file'),
+                ('dbUpgradeDirectory', 'db_upgrade_directory'), ('dbRollbackDirectory', 'db_rollback_directory'),
+                ('dbUpgradeFilePath', 'db_upgrade_file_path'), ('dbRollbackFilePath', 'db_rollback_file_path'),
+                ('dbDeployFilePath', 'db_deploy_file_path')]
+        if 'db_upgrade_directory' not in baseline_package['data']:
+            b_db_upgrade_detect = False
+        if 'db_rollback_directory' not in baseline_package['data']:
+            b_db_upgrade_detect = False
         for s_key, d_key in keys:
             if s_key in clean_data and clean_data[s_key] is not None:
+                if d_key == 'db_upgrade_file_path':
+                    b_db_upgrade_detect = False
+                if d_key == 'db_rollback_file_path':
+                    b_db_rollback_detect = False
                 update_data[d_key] = self.build_file_object(clean_data[s_key])
             else:
-                update_data[d_key] = self.build_file_object(baseline_package['data'][d_key])
+                if d_key in baseline_package['data']:
+                    update_data[d_key] = self.build_file_object(baseline_package['data'][d_key])
         update_data['baseline_package'] = baseline_package_id
         update_data['is_decompression'] = baseline_package['data']['is_decompression']
-        self.update(update_data, unit_design_id, new_pakcage['guid'], with_detail=False)
+        # db部署支持
+        if 'package_type' in baseline_package['data']:
+            update_data['package_type'] = baseline_package['data']['package_type']
+        self.update(update_data,
+                    unit_design_id,
+                    new_pakcage['guid'],
+                    with_detail=False,
+                    db_upgrade_detect=b_db_upgrade_detect,
+                    db_rollback_detect=b_db_rollback_detect)
         return {'guid': new_pakcage['guid']}
 
     def create(self, data):
         cmdb_client = self.get_cmdb_client()
         return cmdb_client.create(CONF.wecube.wecmdb.citypes.deploy_package, data)
 
-    def update(self, data, unit_design_id, deploy_package_id, with_detail=True):
+    def update(self,
+               data,
+               unit_design_id,
+               deploy_package_id,
+               with_detail=True,
+               db_upgrade_detect=False,
+               db_rollback_detect=False):
         validates = [
             crud.ColumnValidator('guid', validate_on=['update:M'], rule='1, 36', rule_type='length', nullable=False),
             crud.ColumnValidator('baseline_package', validate_on=['update:O'], nullable=True),
@@ -500,8 +568,39 @@ class UnitDesignPackages(WeCubeResource):
                                  nullable=False),
             crud.ColumnValidator('is_decompression',
                                  validate_on=['update:O'],
-                                 converter=BooleanConverter(),
+                                 converter=BooleanNomalizedConverter(True),
                                  nullable=True),
+            crud.ColumnValidator('package_type', validate_on=['update:O'], nullable=True),
+            crud.ColumnValidator('db_upgrade_directory',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=False),
+            crud.ColumnValidator('db_rollback_directory',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=False),
+            crud.ColumnValidator('db_upgrade_file_path',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=False),
+            crud.ColumnValidator('db_rollback_file_path',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=False),
+            crud.ColumnValidator('db_deploy_file_path',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=False),
         ]
         cmdb_client = self.get_cmdb_client()
         query = {"filters": [{"name": "guid", "operator": "eq", "value": deploy_package_id}], "paging": False}
@@ -513,6 +612,7 @@ class UnitDesignPackages(WeCubeResource):
         data['guid'] = deploy_package_id
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
         if 'baseline_package' in clean_data:
+            # 兼容旧接口传{}/''/null代表清空的情况
             if isinstance(clean_data['baseline_package'], dict):
                 if not clean_data['baseline_package']:
                     clean_data['baseline_package'] = None
@@ -562,10 +662,26 @@ class UnitDesignPackages(WeCubeResource):
                     bind_variables.extend([c['guid'] for c in resp_json['data']])
                 if auto_bind:
                     clean_data['diff_conf_variable'] = bind_variables
+        if 'db_upgrade_file_path' not in clean_data and db_upgrade_detect:
+            clean_data['db_upgrade_file_path'] = FileNameConcater().convert(
+                self.find_files_by_status(clean_data['baseline_package'], deploy_package_id,
+                                          clean_data['db_upgrade_directory'].split('|'), ['new', 'changed']))
+        if 'db_rollback_file_path' not in clean_data and db_rollback_detect:
+            clean_data['db_rollback_file_path'] = FileNameConcater().convert(
+                self.find_files_by_status(clean_data['baseline_package'], deploy_package_id,
+                                          clean_data['db_rollback_directory'].split('|'), ['new', 'changed']))
         resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [clean_data])
         if with_detail:
             return self.get(unit_design_id, deploy_package_id)
         return resp_json['data']
+
+    def find_files_by_status(self, baseline_id, package_id, source_dirs, status):
+        results = []
+        files = self.filetree(None, package_id, baseline_id, False, source_dirs)
+        for f in files:
+            if f['exists'] and not f['isDir'] and f['comparisonResult'] in status:
+                results.append(f)
+        return results
 
     def get(self, unit_design_id, deploy_package_id):
         cmdb_client = self.get_cmdb_client()
@@ -583,7 +699,7 @@ class UnitDesignPackages(WeCubeResource):
         result['packageId'] = deploy_package_id
         result['baseline_package'] = baseline_package.get('guid', None)
 
-        result['is_decompression'] = utils.bool_from_string(deploy_package['data']['is_decompression'])
+        result['is_decompression'] = utils.bool_from_string(deploy_package['data']['is_decompression'], default=True)
         # |切割为列表
         result['deploy_file_path'] = self.build_file_object(deploy_package['data']['deploy_file_path'])
         result['start_file_path'] = self.build_file_object(deploy_package['data']['start_file_path'])
@@ -612,7 +728,16 @@ class UnitDesignPackages(WeCubeResource):
         # 更新差异化变量bound/diffConfigGuid/diffExpr/fixedDate/key/type
         result['diff_conf_variable'] = self.update_diff_conf_variable(all_diff_configs, package_diff_configs,
                                                                       result['diff_conf_variable'])
+        # db部署支持
+        if 'package_type' in deploy_package['data']:
+            result['package_type'] = deploy_package['data']['package_type']
 
+        fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
+                  'db_deploy_file_path')
+        for field in fields:
+            if field in deploy_package['data']:
+                result[field] = self.build_file_object(deploy_package['data'][field])
+                self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
         return result
 
     def baseline_compare(self, unit_design_id, deploy_package_id, baseline_package_id):
@@ -636,6 +761,13 @@ class UnitDesignPackages(WeCubeResource):
         result['start_file_path'] = self.build_file_object(baseline_package['data']['start_file_path'])
         result['stop_file_path'] = self.build_file_object(baseline_package['data']['stop_file_path'])
         result['diff_conf_file'] = self.build_file_object(baseline_package['data']['diff_conf_file'])
+        # DB部署支持
+        fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
+                  'db_deploy_file_path')
+        for field in fields:
+            if field in baseline_package['data']:
+                result[field] = self.build_file_object(baseline_package['data'][field])
+
         # 文件对比[same, changed, new, deleted]
         baseline_cached_dir = None
         package_cached_dir = None
@@ -649,6 +781,19 @@ class UnitDesignPackages(WeCubeResource):
         self.update_file_status(baseline_cached_dir, package_cached_dir, result['start_file_path'])
         self.update_file_status(baseline_cached_dir, package_cached_dir, result['stop_file_path'])
         self.update_file_status(baseline_cached_dir, package_cached_dir, result['diff_conf_file'])
+        # DB部署支持
+        if 'db_upgrade_directory' in result:
+            self.update_file_status(baseline_cached_dir, package_cached_dir, result['db_upgrade_directory'])
+            result['db_upgrade_file_path'] = self.find_files_by_status(
+                baseline_package_id, deploy_package_id, [i['filename'] for i in result['db_upgrade_directory']],
+                ['new', 'changed'])
+        if 'db_rollback_directory' in result:
+            self.update_file_status(baseline_cached_dir, package_cached_dir, result['db_rollback_directory'])
+            result['db_rollback_file_path'] = self.find_files_by_status(
+                baseline_package_id, deploy_package_id, [i['filename'] for i in result['db_rollback_directory']],
+                ['new', 'changed'])
+        if 'db_deploy_file_path' in result:
+            self.update_file_status(baseline_cached_dir, package_cached_dir, result['db_deploy_file_path'])
         return result
 
     def baseline_files_compare(self, data, unit_design_id, deploy_package_id, baseline_package_id):
@@ -849,7 +994,7 @@ class UnitDesignPackages(WeCubeResource):
             md5 = None
             if b_exists:
                 i['isDir'] = os.path.isdir(b_filepath)
-                if not os.path.isdir(b_filepath):
+                if not i['isDir']:
                     b_md5 = calculate_file_md5(b_filepath)
             if exists:
                 i['isDir'] = os.path.isdir(filepath)

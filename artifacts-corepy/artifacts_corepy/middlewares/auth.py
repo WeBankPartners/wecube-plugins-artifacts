@@ -29,7 +29,7 @@ class JWTAuth(object):
                 if verify_token:
                     # delay token
                     token_info['exp'] += 120
-                    req.auth_token = jwt.encode(token_info, decoded_secret, algorithm='HS512')
+                    req.auth_token = jwt.encode(token_info, decoded_secret, algorithm='HS512').decode()
             except jwt.exceptions.ExpiredSignatureError as e:
                 raise base_ex.AuthError()
             except jwt.exceptions.DecodeError as e:
