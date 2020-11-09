@@ -57,7 +57,7 @@ image_py: build_py
 	then \
 		docker build -t $(project_name):$(version) .; \
 	else \
-		docker build -t $(project_name):$(version) -f Dockerfile_nonexus; \
+		docker build -t $(project_name):$(version) -f Dockerfile_nonexus .; \
 	fi
 
 package_py: image_py
