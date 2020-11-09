@@ -765,7 +765,8 @@ class UnitDesignPackages(WeCubeResource):
                             scan_results = _scan_dir(basepath, subpath)
                             expanded_dirs.add((basepath, subpath))
                         root_nodes.extend(scan_results)
-                        _add_children_node(parts[0], subpath, root_nodes)
+                        if len(parts[0]) > 0:
+                            _add_children_node(parts[0], subpath, root_nodes)
                     # ends with a/b/c/
                     else:
                         filename = parts.pop(-1)
