@@ -625,7 +625,16 @@ export default {
         { value: 51, label: this.$t('db_instance') }
       ],
       activeTab: '',
-      activeTabData: null
+      activeTabData: null,
+      treeNodeSty: {
+        display: 'inline-block',
+        marginRight: '4px',
+        maxWidth: '120px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        verticalAlign: 'top'
+      }
     }
   },
   computed: {},
@@ -739,10 +748,10 @@ export default {
         _.render = (h, params) => {
           return (
             <div style="white-space: break-spaces;">
-              <div style="display:inline-block;margin-right:4px;max-width:60px;max-width:120px;overflow:hidden; text-overflow:ellipsis; white-space:nowrap;vertical-align: top;" title={_.data.code}>
+              <div style={this.treeNodeSty} title={_.data.code}>
                 {_.data.code}
               </div>
-              <div style="display:inline-block;margin-right:4px;font-size:12px;max-width:120px;overflow:hidden; text-overflow:ellipsis; white-space:nowrap;vertical-align: top;" title={_.data.name}>
+              <div style={this.treeNodeSty} title={_.data.name}>
                 [{_.data.name}]
               </div>
               <div style={`display:inline-block;max-width:60px;font-size:12px;vertical-align:top;color:${color[_.data.state_code]}`}>{_.data.state_code}</div>
@@ -1149,7 +1158,6 @@ export default {
       // await this.syncBaselineFileStatus()
       this.isShowFilesModal = true
       this.$nextTick(() => {
-        console.log(this.packageType)
         if (this.packageType !== 'db') {
           this.genSortable('diff_conf_file')
           this.genSortable('start_file_path')
@@ -1200,7 +1208,7 @@ export default {
       const { status, data } = await getCompareContent(this.guid, this.packageId, params)
       if (status === 'OK') {
         this.showFileCompare = true
-        this.$refs.compareParams.compareFile(data[0].baseline_content, data[0].content)
+        this.$refs.compareParams.compareFile(data[0].baseline_content, data[0].content, file.comparisonResult)
       }
     },
     async saveConfigFiles () {
@@ -1328,7 +1336,6 @@ export default {
                   <span style="color: #cccccc;">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
-                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                   </span>
                 </span>
               )
@@ -1366,7 +1373,6 @@ export default {
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
                   <span style="color: #cccccc;">{params.data.title}</span>
-                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
             } else {
