@@ -73,8 +73,15 @@
   "root_ci": "Root CI",
   "applications": "Applications",
   "db_instance": "DB Instance",
+  "mixed": "Mixed",
   "file_compare": "File Compare",
   "original_content": "Original Content",
   "new_content": "New Content",
-  "comparison_result": "Comparison Result"
+  "comparison_result": "Comparison Result",
+  "package_type": "Package Yype",
+  "db_upgrade_directory": "DB Upgrade Directory",
+  "db_rollback_directory": "DB Rollback Directory",
+  "db_upgrade_file_path": "DB Upgrade File Path",
+  "db_rollback_file_path": "DB Rollback File Path",
+  "db_deploy_file_path": "DB Deploy File Path"
 }
