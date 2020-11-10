@@ -25,6 +25,7 @@ from artifacts_corepy.common import nexus
 from artifacts_corepy.common import s3
 from artifacts_corepy.common import wecmdb
 from artifacts_corepy.common import utils as artifact_utils
+from artifacts_corepy.common import constant
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -242,16 +243,15 @@ class UnitDesignPackages(WeCubeResource):
         query['filters'].append({"name": "unit_design", "operator": "eq", "value": unit_design_id})
         resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
         for i in resp_json['data']['contents']:
-            i['data']['deploy_file_path'] = self.build_file_object(i['data']['deploy_file_path'])
-            i['data']['start_file_path'] = self.build_file_object(i['data']['start_file_path'])
-            i['data']['stop_file_path'] = self.build_file_object(i['data']['stop_file_path'])
-            i['data']['diff_conf_file'] = self.build_file_object(i['data']['diff_conf_file'])
+            fields = ('deploy_file_path', 'start_file_path', 'stop_file_path', 'diff_conf_file')
+            for field in fields:
+                i['data'][field] = self.build_file_object(i['data'].get(field, None))
             # db部署支持
+            i['data']['package_type'] = i['data'].get('package_type', constant.PackageType.mixed)
             fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
                       'db_deploy_file_path')
             for field in fields:
-                if field in i['data']:
-                    i['data'][field] = self.build_file_object(i['data'][field])
+                i['data'][field] = self.build_file_object(i['data'].get(field, None))
         return resp_json['data']
 
     def build_file_object(self, filenames, spliter='|'):
@@ -443,6 +443,11 @@ class UnitDesignPackages(WeCubeResource):
                                  rule_type='length',
                                  converter=BooleanNomalizedConverter(True),
                                  nullable=True),
+            crud.ColumnValidator('packageType',
+                                 validate_on=['update:O'],
+                                 rule='1, 36',
+                                 rule_type='length',
+                                 nullable=True),
             crud.ColumnValidator('dbUpgradeDirectory',
                                  validate_on=['update:O'],
                                  rule=(list, tuple),
@@ -491,6 +496,11 @@ class UnitDesignPackages(WeCubeResource):
         b_db_upgrade_detect = True
         b_db_rollback_detect = True
         update_data = {}
+        update_data['baseline_package'] = baseline_package_id
+        update_data['is_decompression'] = baseline_package['data']['is_decompression']
+        update_data['package_type'] = baseline_package['data'].get(
+            'package_type',
+            constant.PackageType.mixed) if clean_data.get('packageType', None) is None else clean_data['packageType']
         keys = [('startFilePath', 'start_file_path'), ('stopFilePath', 'stop_file_path'),
                 ('deployFilePath', 'deploy_file_path'), ('diffConfFile', 'diff_conf_file'),
                 ('dbUpgradeDirectory', 'db_upgrade_directory'), ('dbRollbackDirectory', 'db_rollback_directory'),
@@ -508,13 +518,7 @@ class UnitDesignPackages(WeCubeResource):
                     b_db_rollback_detect = False
                 update_data[d_key] = self.build_file_object(clean_data[s_key])
             else:
-                if d_key in baseline_package['data']:
-                    update_data[d_key] = self.build_file_object(baseline_package['data'][d_key])
-        update_data['baseline_package'] = baseline_package_id
-        update_data['is_decompression'] = baseline_package['data']['is_decompression']
-        # db部署支持
-        if 'package_type' in baseline_package['data']:
-            update_data['package_type'] = baseline_package['data']['package_type']
+                update_data[d_key] = self.build_file_object(baseline_package['data'].get(d_key, None))
         self.update(update_data,
                     unit_design_id,
                     new_pakcage['guid'],
@@ -677,13 +681,14 @@ class UnitDesignPackages(WeCubeResource):
 
     def find_files_by_status(self, baseline_id, package_id, source_dirs, status):
         results = []
-        files = self.filetree(None, package_id, baseline_id, False, source_dirs)
+        files = self.filetree(None, package_id, baseline_id, False, source_dirs, with_dir=False, recursive=True)
         for f in files:
             if f['exists'] and not f['isDir'] and f['comparisonResult'] in status:
                 # convert data field
                 f['filename'] = f.pop('path', None)
+                f.pop('name', None)
                 results.append(f)
-        results.sort(key=lambda x: x['name'], reverse=False)
+        results.sort(key=lambda x: x['filename'], reverse=False)
         return results
 
     def get(self, unit_design_id, deploy_package_id):
@@ -701,14 +706,8 @@ class UnitDesignPackages(WeCubeResource):
         result = {}
         result['packageId'] = deploy_package_id
         result['baseline_package'] = baseline_package.get('guid', None)
-
-        result['is_decompression'] = utils.bool_from_string(deploy_package['data']['is_decompression'], default=True)
-        # |切割为列表
-        result['deploy_file_path'] = self.build_file_object(deploy_package['data']['deploy_file_path'])
-        result['start_file_path'] = self.build_file_object(deploy_package['data']['start_file_path'])
-        result['stop_file_path'] = self.build_file_object(deploy_package['data']['stop_file_path'])
-        result['diff_conf_file'] = self.build_file_object(deploy_package['data']['diff_conf_file'])
-        result['diff_conf_variable'] = deploy_package['data']['diff_conf_variable']
+        # db部署支持
+        result['package_type'] = deploy_package['data'].get('package_type', constant.PackageType.mixed)
         # 文件对比[same, changed, new, deleted]
         baseline_cached_dir = None
         package_cached_dir = None
@@ -719,10 +718,14 @@ class UnitDesignPackages(WeCubeResource):
         package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
                                                         deploy_package['data']['deploy_package_url'])
         # 更新文件的md5,comparisonResult,isDir
-        self.update_file_status(baseline_cached_dir, package_cached_dir, result['deploy_file_path'])
-        self.update_file_status(baseline_cached_dir, package_cached_dir, result['start_file_path'])
-        self.update_file_status(baseline_cached_dir, package_cached_dir, result['stop_file_path'])
-        self.update_file_status(baseline_cached_dir, package_cached_dir, result['diff_conf_file'])
+        result['is_decompression'] = utils.bool_from_string(deploy_package['data']['is_decompression'], default=True)
+        result['diff_conf_variable'] = deploy_package['data']['diff_conf_variable']
+        # |切割为列表
+        fields = ('deploy_file_path', 'start_file_path', 'stop_file_path', 'diff_conf_file')
+        for field in fields:
+            result[field] = self.build_file_object(deploy_package['data'][field])
+            if result['package_type'] in (constant.PackageType.app, constant.PackageType.mixed):
+                self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
         # 更新差异化配置文件的变量列表
         self.update_file_variable(package_cached_dir, result['diff_conf_file'])
         package_diff_configs = []
@@ -732,14 +735,11 @@ class UnitDesignPackages(WeCubeResource):
         result['diff_conf_variable'] = self.update_diff_conf_variable(all_diff_configs, package_diff_configs,
                                                                       result['diff_conf_variable'])
         # db部署支持
-        if 'package_type' in deploy_package['data']:
-            result['package_type'] = deploy_package['data']['package_type']
-
         fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
                   'db_deploy_file_path')
         for field in fields:
-            if field in deploy_package['data']:
-                result[field] = self.build_file_object(deploy_package['data'][field])
+            result[field] = self.build_file_object(deploy_package['data'].get(field, None))
+            if result['package_type'] in (constant.PackageType.db, constant.PackageType.mixed):
                 self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
         return result
 
@@ -757,21 +757,6 @@ class UnitDesignPackages(WeCubeResource):
             raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
                                            {'rid': baseline_package_id})
         baseline_package = resp_json['data']['contents'][0]
-
-        result = {}
-        # |切割为列表
-        result['deploy_file_path'] = self.build_file_object(baseline_package['data']['deploy_file_path'])
-        result['start_file_path'] = self.build_file_object(baseline_package['data']['start_file_path'])
-        result['stop_file_path'] = self.build_file_object(baseline_package['data']['stop_file_path'])
-        result['diff_conf_file'] = self.build_file_object(baseline_package['data']['diff_conf_file'])
-        # DB部署支持
-        fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
-                  'db_deploy_file_path')
-        for field in fields:
-            if field in baseline_package['data']:
-                result[field] = self.build_file_object(baseline_package['data'][field])
-
-        # 文件对比[same, changed, new, deleted]
         baseline_cached_dir = None
         package_cached_dir = None
         # 确认baselin和package文件已下载并解压缓存在本地(加锁)
@@ -779,24 +764,31 @@ class UnitDesignPackages(WeCubeResource):
                                                          baseline_package['data']['deploy_package_url'])
         package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
                                                         deploy_package['data']['deploy_package_url'])
-        # 更新文件的md5,comparisonResult,isDir
-        self.update_file_status(baseline_cached_dir, package_cached_dir, result['deploy_file_path'])
-        self.update_file_status(baseline_cached_dir, package_cached_dir, result['start_file_path'])
-        self.update_file_status(baseline_cached_dir, package_cached_dir, result['stop_file_path'])
-        self.update_file_status(baseline_cached_dir, package_cached_dir, result['diff_conf_file'])
-        # DB部署支持
-        if 'db_upgrade_directory' in result:
+        package_type = baseline_package['data'].get('pakcage_type', constant.PackageType.mixed)
+
+        result = {}
+        # |切割为列表
+        fields = ('deploy_file_path', 'start_file_path', 'stop_file_path', 'diff_conf_file')
+        for field in fields:
+            result[field] = self.build_file_object(baseline_package['data'].get(field, None))
+            if package_type in (constant.PackageType.app, constant.PackageType.mix):
+                # 更新文件的md5,comparisonResult,isDir
+                self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
+        # db部署支持
+        fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
+                  'db_deploy_file_path')
+        for field in fields:
+            result[field] = self.build_file_object(baseline_package['data'].get(field, None))
+        if package_type in (constant.PackageType.db, constant.PackageType.mix):
             self.update_file_status(baseline_cached_dir, package_cached_dir, result['db_upgrade_directory'])
+            self.update_file_status(baseline_cached_dir, package_cached_dir, result['db_rollback_directory'])
+            self.update_file_status(baseline_cached_dir, package_cached_dir, result['db_deploy_file_path'])
             result['db_upgrade_file_path'] = self.find_files_by_status(
                 baseline_package_id, deploy_package_id, [i['filename'] for i in result['db_upgrade_directory']],
                 ['new', 'changed'])
-        if 'db_rollback_directory' in result:
-            self.update_file_status(baseline_cached_dir, package_cached_dir, result['db_rollback_directory'])
             result['db_rollback_file_path'] = self.find_files_by_status(
                 baseline_package_id, deploy_package_id, [i['filename'] for i in result['db_rollback_directory']],
                 ['new', 'changed'])
-        if 'db_deploy_file_path' in result:
-            self.update_file_status(baseline_cached_dir, package_cached_dir, result['db_deploy_file_path'])
         return result
 
     def baseline_files_compare(self, data, unit_design_id, deploy_package_id, baseline_package_id):
@@ -859,21 +851,52 @@ class UnitDesignPackages(WeCubeResource):
                 self.update_tree_status(None if not baseline_path else os.path.join(baseline_path, subpath),
                                         os.path.join(package_path, subpath), n['children'])
 
-    def filetree(self, unit_design_id, deploy_package_id, baseline_package_id, expand_all, files):
-        def _scan_dir(basepath, subpath):
+    def filetree(self,
+                 unit_design_id,
+                 deploy_package_id,
+                 baseline_package_id,
+                 expand_all,
+                 files,
+                 with_dir=True,
+                 recursive=False):
+        def _scan_dir(basepath, subpath, with_dir=True, recursive=False):
             results = []
             path = os.path.join(basepath, subpath)
             if os.path.exists(path):
-                for e in os.scandir(path):
-                    results.append({
-                        'children': [],
-                        'comparisonResult': None,
-                        'exists': None,
-                        'isDir': e.is_dir(),
-                        'md5': None,
-                        'name': e.name,
-                        'path': e.path[len(basepath) + 1:],
-                    })
+                if recursive:
+                    for _root, _dirs, _files in os.walk(path):
+                        if with_dir:
+                            for d in _dirs:
+                                results.append({
+                                    'children': [],
+                                    'comparisonResult': None,
+                                    'exists': True,
+                                    'isDir': True,
+                                    'md5': None,
+                                    'name': d,
+                                    'path': os.path.join(_root, d)[len(basepath) + 1:],
+                                })
+                        for f in _files:
+                            results.append({
+                                'children': [],
+                                'comparisonResult': None,
+                                'exists': True,
+                                'isDir': False,
+                                'md5': None,
+                                'name': f,
+                                'path': os.path.join(_root, f)[len(basepath) + 1:],
+                            })
+                else:
+                    for e in os.scandir(path):
+                        results.append({
+                            'children': [],
+                            'comparisonResult': None,
+                            'exists': True,
+                            'isDir': e.is_dir(),
+                            'md5': None,
+                            'name': e.name,
+                            'path': e.path[len(basepath) + 1:],
+                        })
             return results
 
         def _add_children_node(filename, subpath, file_list, is_dir=False):
@@ -940,13 +963,13 @@ class UnitDesignPackages(WeCubeResource):
                             _add_children_node(filename, subpath, path_nodes)
             return root_nodes
 
-        def _get_file_list(baseline_path, package_path, file_list):
+        def _get_file_list(baseline_path, package_path, file_list, with_dir, recursive):
             results = []
             for f in file_list:
                 new_f = f.lstrip('/')
                 parts = new_f.split('/')
                 subpath = os.path.join(*[p for p in parts if p not in ('', '.', '..')])
-                new_file_list = _scan_dir(package_path, subpath)
+                new_file_list = _scan_dir(package_path, subpath, with_dir=with_dir, recursive=recursive)
                 self.update_file_status(None if not baseline_path else os.path.join(baseline_path, subpath),
                                         os.path.join(package_path, subpath),
                                         new_file_list,
@@ -981,7 +1004,11 @@ class UnitDesignPackages(WeCubeResource):
             results = _generate_tree_from_list(package_cached_dir, files)
             self.update_tree_status(baseline_cached_dir, package_cached_dir, results)
         else:
-            results = _get_file_list(baseline_cached_dir, package_cached_dir, files)
+            results = _get_file_list(baseline_cached_dir,
+                                     package_cached_dir,
+                                     files,
+                                     with_dir=with_dir,
+                                     recursive=recursive)
         return results
 
     def update_file_status(self, baseline_cached_dir, package_cached_dir, files, file_key='filename'):
