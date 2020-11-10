@@ -3,7 +3,7 @@ version=$(shell bash ./build/version.sh)
 date=$(shell date +%Y%m%d%H%M%S)
 project_name=$(shell basename "${current_dir}")
 remote_docker_image_registry=ccr.ccs.tencentyun.com/webankpartners/wecube-plugins-artifacts
-
+with_nexus='true'
 
 clean:
 	rm -rf $(current_dir)/target
@@ -53,7 +53,12 @@ build_py: clean_py
 
 image_py: build_py
 	wget -O nexus-data.tar.gz https://wecube-1259801214.cos.ap-guangzhou.myqcloud.com/nexus-data/nexus-data.tar.gz
-	docker build -t $(project_name):$(version) .
+	@if [ $(with_nexus) == 'true' ]; \
+	then \
+		docker build -t $(project_name):$(version) .; \
+	else \
+		docker build -t $(project_name):$(version) -f Dockerfile_nonexus .; \
+	fi
 
 package_py: image_py
 	rm -rf package

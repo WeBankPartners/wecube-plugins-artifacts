@@ -17,7 +17,6 @@ class SinkAdapter(object):
         else:
             client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
         with client.download_stream(client.server + '/repository/' + repository) as stream:
-            print(stream.headers)
             resp.set_stream(stream.raw, int(stream.headers.get('Content-Length', 0)))
             resp.set_header('Content-Disposition', stream.headers.get('Content-Disposition'))
             resp.set_header('Content-Type', stream.headers.get('Content-Type'))
