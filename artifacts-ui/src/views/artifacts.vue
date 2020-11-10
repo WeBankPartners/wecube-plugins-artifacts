@@ -121,11 +121,7 @@
                   <div id="diff_conf_file">
                     <div style="margin-bottom:5px" v-for="(file, index) in packageInput.diff_conf_file" :key="index">
                       <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index].filename" />
-                      <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <Icon type="ios-move" size="18" style="cursor:move" />
+                      <DisplayPath :file="file"></DisplayPath>
                       <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'diff_conf_file')"></Button>
                     </div>
                   </div>
@@ -141,12 +137,8 @@
                 <Col span="18" offset="1">
                   <div id="start_file_path">
                     <div style="margin-bottom:5px" v-for="(file, index) in packageInput.start_file_path" :key="index">
-                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path[index].filename" />
-                      <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <Icon type="ios-move" size="18" style="cursor:move" />
+                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index].filename" />
+                      <DisplayPath :file="file"></DisplayPath>
                       <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
                     </div>
                   </div>
@@ -162,12 +154,8 @@
                 <Col span="18" offset="1">
                   <div id="stop_file_path">
                     <div style="margin-bottom:5px" v-for="(file, index) in packageInput.stop_file_path" :key="index">
-                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path[index].filename" />
-                      <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <Icon type="ios-move" size="18" style="cursor:move" />
+                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index].filename" />
+                      <DisplayPath :file="file"></DisplayPath>
                       <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
                     </div>
                   </div>
@@ -183,12 +171,8 @@
                 <Col span="18" offset="1">
                   <div id="deploy_file_path">
                     <div style="margin-bottom:5px" v-for="(file, index) in packageInput.deploy_file_path" :key="index">
-                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path[index].filename" />
-                      <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <Icon type="ios-move" size="18" style="cursor:move" />
+                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index].filename" />
+                      <DisplayPath :file="file"></DisplayPath>
                       <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
                     </div>
                   </div>
@@ -220,11 +204,7 @@
                   <div id="db_upgrade_directory">
                     <div style="margin-bottom:5px" v-for="(file, index) in packageInput.db_upgrade_directory" :key="index">
                       <Input class="textarea-input" :rows="1" :placeholder="$t('db_upgrade_directory')" type="textarea" v-model="packageInput.db_upgrade_directory[index].filename" />
-                      <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <Icon type="ios-move" size="18" style="cursor:move" />
+                      <DisplayPath :file="file"></DisplayPath>
                       <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_upgrade_directory')"></Button>
                     </div>
                   </div>
@@ -241,11 +221,7 @@
                   <div id="db_rollback_directory">
                     <div style="margin-bottom:5px" v-for="(file, index) in packageInput.db_rollback_directory" :key="index">
                       <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.db_rollback_directory[index].filename" />
-                      <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <Icon type="ios-move" size="18" style="cursor:move" />
+                      <DisplayPath :file="file"></DisplayPath>
                       <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_rollback_directory')"></Button>
                     </div>
                   </div>
@@ -262,11 +238,7 @@
                   <div id="db_upgrade_file_path">
                     <div style="margin-bottom:5px" v-for="(file, index) in packageInput.db_upgrade_file_path" :key="index">
                       <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.db_upgrade_file_path[index].filename" />
-                      <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <Icon type="ios-move" size="18" style="cursor:move" />
+                      <DisplayPath :file="file"></DisplayPath>
                       <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_upgrade_file_path')"></Button>
                     </div>
                   </div>
@@ -283,11 +255,7 @@
                   <div id="db_rollback_file_path">
                     <div style="margin-bottom:5px" v-for="(file, index) in packageInput.db_rollback_file_path" :key="index">
                       <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.db_rollback_file_path[index].filename" />
-                      <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <Icon type="ios-move" size="18" style="cursor:move" />
+                      <DisplayPath :file="file"></DisplayPath>
                       <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_rollback_file_path')"></Button>
                     </div>
                   </div>
@@ -304,11 +272,7 @@
                   <div id="db_deploy_file_path">
                     <div style="margin-bottom:5px" v-for="(file, index) in packageInput.db_deploy_file_path" :key="index">
                       <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.db_deploy_file_path[index].filename" />
-                      <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted" style="width:60px;margin: 0 8px;display: inline-block;">[{{ file.comparisonResult }}]</div>
-                      <Icon type="ios-move" size="18" style="cursor:move" />
+                      <DisplayPath :file="file"></DisplayPath>
                       <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_deploy_file_path')"></Button>
                     </div>
                   </div>
@@ -357,6 +321,7 @@ import iconFolder from '../assets/folder.png'
 import axios from 'axios'
 import Sortable from 'sortablejs'
 import CompareFile from './compare-file'
+import DisplayPath from './display-path'
 // 业务运行实例ciTypeId
 const defaultRootCiTypeId = 50
 // cmdb插件包名
@@ -1805,7 +1770,8 @@ export default {
     this.getAllSystemEnumCodes()
   },
   components: {
-    CompareFile
+    CompareFile,
+    DisplayPath
   }
 }
 </script>
@@ -1856,14 +1822,5 @@ export default {
 .bind-style {
   list-style: none;
   margin: 8px;
-}
-.baseline-cmp-new {
-  color: #19be6b;
-}
-.baseline-cmp-changed {
-  color: #2d8cf0;
-}
-.baseline-cmp-deleted {
-  color: #cccccc;
 }
 </style>
