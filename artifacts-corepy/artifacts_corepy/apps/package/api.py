@@ -59,11 +59,6 @@ class FileNameConcater(converter.NullConverter):
         return '|'.join([i.get('filename') for i in value if i.get('filename')])
 
 
-class PathConcater(converter.NullConverter):
-    def convert(self, value):
-        return '|'.join([i.get('path') for i in value if i.get('path')])
-
-
 class BooleanNomalizedConverter(converter.NullConverter):
     def __init__(self, default=False):
         self.fallback_value = default
@@ -668,11 +663,11 @@ class UnitDesignPackages(WeCubeResource):
                 if auto_bind:
                     clean_data['diff_conf_variable'] = bind_variables
         if db_upgrade_detect:
-            clean_data['db_upgrade_file_path'] = PathConcater().convert(
+            clean_data['db_upgrade_file_path'] = FileNameConcater().convert(
                 self.find_files_by_status(clean_data['baseline_package'], deploy_package_id,
                                           clean_data['db_upgrade_directory'].split('|'), ['new', 'changed']))
         if db_rollback_detect:
-            clean_data['db_rollback_file_path'] = PathConcater().convert(
+            clean_data['db_rollback_file_path'] = FileNameConcater().convert(
                 self.find_files_by_status(clean_data['baseline_package'], deploy_package_id,
                                           clean_data['db_rollback_directory'].split('|'), ['new', 'changed']))
         resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [clean_data])
@@ -685,6 +680,9 @@ class UnitDesignPackages(WeCubeResource):
         files = self.filetree(None, package_id, baseline_id, False, source_dirs)
         for f in files:
             if f['exists'] and not f['isDir'] and f['comparisonResult'] in status:
+                # convert data field
+                f['filename'] = f.pop('path', None)
+                f.pop('name', None)
                 results.append(f)
         return results
 
