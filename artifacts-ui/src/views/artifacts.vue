@@ -400,36 +400,6 @@ export default {
           }
         },
         {
-          title: this.$t('db_deploy_file_path'),
-          minWidth: 80,
-          key: 'db_deploy_file_path',
-          render: (h, params) => this.renderCell(params.row.db_deploy_file_path)
-        },
-        {
-          title: this.$t('db_rollback_directory'),
-          minWidth: 80,
-          key: 'db_rollback_directory',
-          render: (h, params) => this.renderCell(params.row.db_rollback_directory)
-        },
-        {
-          title: this.$t('db_rollback_file_path'),
-          minWidth: 80,
-          key: 'db_rollback_file_path',
-          render: (h, params) => this.renderCell(params.row.db_rollback_file_path)
-        },
-        {
-          title: this.$t('db_upgrade_directory'),
-          minWidth: 80,
-          key: 'db_upgrade_directory',
-          render: (h, params) => this.renderCell(params.row.db_upgrade_directory)
-        },
-        {
-          title: this.$t('db_upgrade_file_path'),
-          minWidth: 80,
-          key: 'db_upgrade_file_path',
-          render: (h, params) => this.renderCell(params.row.db_upgrade_file_path)
-        },
-        {
           title: this.$t('artifacts_uploaded_by'),
           minWidth: 80,
           key: 'upload_user',
@@ -464,6 +434,36 @@ export default {
           minWidth: 100,
           key: 'is_decompression',
           render: (h, params) => this.renderCell(params.row.is_decompression)
+        },
+        {
+          title: this.$t('db_deploy_file_path'),
+          minWidth: 80,
+          key: 'db_deploy_file_path',
+          render: (h, params) => this.renderCell(params.row.db_deploy_file_path)
+        },
+        {
+          title: this.$t('db_rollback_directory'),
+          minWidth: 80,
+          key: 'db_rollback_directory',
+          render: (h, params) => this.renderCell(params.row.db_rollback_directory)
+        },
+        {
+          title: this.$t('db_rollback_file_path'),
+          minWidth: 80,
+          key: 'db_rollback_file_path',
+          render: (h, params) => this.renderCell(params.row.db_rollback_file_path)
+        },
+        {
+          title: this.$t('db_upgrade_directory'),
+          minWidth: 80,
+          key: 'db_upgrade_directory',
+          render: (h, params) => this.renderCell(params.row.db_upgrade_directory)
+        },
+        {
+          title: this.$t('db_upgrade_file_path'),
+          minWidth: 80,
+          key: 'db_upgrade_file_path',
+          render: (h, params) => this.renderCell(params.row.db_upgrade_file_path)
         },
         {
           title: this.$t('artifacts_action'),
