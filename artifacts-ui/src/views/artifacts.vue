@@ -109,7 +109,7 @@
             </Col>
           </Row>
         </Card>
-        <Tabs :value="currentConfigTab">
+        <Tabs :value="currentConfigTab" class="config-tab">
           <TabPane :disabled="packageType === 'db'" :label="$t('applications')" name="app">
             <template>
               <Card :bordered="false" :padding="8">
@@ -1838,5 +1838,13 @@ export default {
 .bind-style {
   list-style: none;
   margin: 8px;
+}
+
+.config-tab /deep/ .ivu-tabs-nav {
+  width: 100%;
+}
+.config-tab /deep/ .ivu-tabs-tab {
+  width: 10%;
+  text-align: center;
 }
 </style>
