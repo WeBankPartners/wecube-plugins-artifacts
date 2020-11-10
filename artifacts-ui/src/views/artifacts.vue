@@ -1138,7 +1138,7 @@ export default {
       event.stopPropagation()
       this.packageId = row.guid
       await this.syncPackageDetail()
-      this.packageType = row.package_type || 'app'
+      this.packageType = row.package_type || 'mixed'
       // 以下4个变量类型为字符串
       // row从table数据中来，此时baseline_package为对象
       this.packageInput.baseline_package = this.packageDetail.baseline_package ? this.packageDetail.baseline_package : null
