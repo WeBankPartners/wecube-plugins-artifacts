@@ -409,31 +409,31 @@ export default {
       tableLoading: false,
       tableData: [],
       tableColumns: [
-        // {
-        //   title: 'GUID',
-        //   width: 100,
-        //   key: 'guid'
-        // },
-        // {
-        //   title: this.$t('artifacts_package_name'),
-        //   minWidth: 80,
-        //   key: 'name',
-        //   render: (h, params) => this.renderCell(params.row.name)
-        // },
-        // {
-        //   title: this.$t('artifacts_upload_time'),
-        //   width: 120,
-        //   key: 'upload_time'
-        // },
-        // {
-        //   title: this.$t('baseline_package'),
-        //   width: 100,
-        //   key: 'md5_value',
-        //   render: (h, params) => {
-        //     const baseLine = params.row.baseline_package.code || ''
-        //     return <span>{baseLine}</span>
-        //   }
-        // },
+        {
+          title: 'GUID',
+          width: 100,
+          key: 'guid'
+        },
+        {
+          title: this.$t('artifacts_package_name'),
+          minWidth: 80,
+          key: 'name',
+          render: (h, params) => this.renderCell(params.row.name)
+        },
+        {
+          title: this.$t('artifacts_upload_time'),
+          width: 120,
+          key: 'upload_time'
+        },
+        {
+          title: this.$t('baseline_package'),
+          width: 100,
+          key: 'md5_value',
+          render: (h, params) => {
+            const baseLine = params.row.baseline_package.code || ''
+            return <span>{baseLine}</span>
+          }
+        },
         {
           title: this.$t('db_deploy_file_path'),
           minWidth: 80,
@@ -504,6 +504,7 @@ export default {
           title: this.$t('artifacts_action'),
           key: 'state',
           width: 150,
+          fixed: 'right',
           render: (h, params) => {
             return <div style="padding-top:5px">{this.renderActionButton(params)}</div>
           }
