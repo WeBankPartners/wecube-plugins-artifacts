@@ -682,8 +682,8 @@ class UnitDesignPackages(WeCubeResource):
             if f['exists'] and not f['isDir'] and f['comparisonResult'] in status:
                 # convert data field
                 f['filename'] = f.pop('path', None)
-                f.pop('name', None)
                 results.append(f)
+        results.sort(key=lambda x: x['name'], reverse=False)
         return results
 
     def get(self, unit_design_id, deploy_package_id):
