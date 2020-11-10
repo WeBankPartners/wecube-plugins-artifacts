@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Artifacts from './views/artifacts2.vue'
+import Artifacts from './views/artifacts.vue'
 
 Vue.use(Router)
 
