@@ -110,7 +110,7 @@
           </Row>
         </Card>
         <Tabs :value="currentConfigTab">
-          <TabPane v-if="packageType !== 'db'" :label="$t('applications')" name="app">
+          <TabPane :disabled="packageType === 'db'" :label="$t('applications')" name="app">
             <template>
               <Card :bordered="false" :padding="8">
                 <Row>
@@ -195,7 +195,7 @@
               </Card>
             </template>
           </TabPane>
-          <TabPane v-if="packageType !== 'app'" :label="$t('db_instance')" name="db">
+          <TabPane :disabled="packageType === 'app'" :label="$t('db_instance')" name="db">
             <template>
               <Card :bordered="false" :padding="8">
                 <Row>
