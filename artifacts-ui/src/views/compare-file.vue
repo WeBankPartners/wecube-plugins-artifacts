@@ -39,7 +39,6 @@ export default {
   },
   watch: {
     fileContentHeight: function (val) {
-      console.log(val)
       this.contentSty.height = val
     }
   },
