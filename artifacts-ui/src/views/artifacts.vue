@@ -137,7 +137,7 @@
                 <Col span="18" offset="1">
                   <div id="start_file_path">
                     <div style="margin-bottom:5px" v-for="(file, index) in packageInput.start_file_path" :key="index">
-                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index].filename" />
+                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path[index].filename" />
                       <DisplayPath :file="file"></DisplayPath>
                       <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
                     </div>
@@ -154,7 +154,7 @@
                 <Col span="18" offset="1">
                   <div id="stop_file_path">
                     <div style="margin-bottom:5px" v-for="(file, index) in packageInput.stop_file_path" :key="index">
-                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index].filename" />
+                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path[index].filename" />
                       <DisplayPath :file="file"></DisplayPath>
                       <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
                     </div>
@@ -171,7 +171,7 @@
                 <Col span="18" offset="1">
                   <div id="deploy_file_path">
                     <div style="margin-bottom:5px" v-for="(file, index) in packageInput.deploy_file_path" :key="index">
-                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index].filename" />
+                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path[index].filename" />
                       <DisplayPath :file="file"></DisplayPath>
                       <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
                     </div>
@@ -1149,6 +1149,7 @@ export default {
       // await this.syncBaselineFileStatus()
       this.isShowFilesModal = true
       this.$nextTick(() => {
+        console.log(this.packageType)
         if (this.packageType !== 'db') {
           this.genSortable('diff_conf_file')
           this.genSortable('start_file_path')
