@@ -200,6 +200,23 @@
               <Card :bordered="false" :padding="8">
                 <Row>
                   <Col style="text-align: right" span="5">
+                    <span style="margin-right: 10px">{{ $t('artifacts_config_files') }}</span>
+                    <Button type="info" ghost @click="() => showTreeModal(106, packageInput.db_diff_conf_file || [])">{{ $t('artifacts_select_file') }}</Button>
+                  </Col>
+                  <Col span="18" offset="1">
+                    <div id="db_diff_conf_file">
+                      <div style="margin-bottom:5px" v-for="(file, index) in packageInput.db_diff_conf_file" :key="index">
+                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.db_diff_conf_file[index].filename" />
+                        <DisplayPath :file="file"></DisplayPath>
+                        <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_diff_conf_file')"></Button>
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+              </Card>
+              <Card :bordered="false" :padding="8">
+                <Row>
+                  <Col style="text-align: right" span="5">
                     <span style="margin-right: 10px">{{ $t('db_upgrade_directory') }}</span>
                     <Button type="info" ghost @click="() => showTreeModal(101, packageInput.db_upgrade_directory || [])">{{ $t('artifacts_select_file') }}</Button>
                   </Col>
@@ -492,6 +509,7 @@ export default {
         deploy_file_path: [],
         is_decompression: 'true',
 
+        db_diff_conf_file: [],
         db_upgrade_directory: [],
         db_rollback_directory: [],
         db_upgrade_file_path: [],
@@ -523,6 +541,7 @@ export default {
         deploy_file_path: [],
         is_compress: null,
 
+        db_diff_conf_file: [],
         db_upgrade_directory: [],
         db_rollback_directory: [],
         db_upgrade_file_path: [],
@@ -950,6 +969,7 @@ export default {
         deploy_file_path: [],
         is_compress: null,
 
+        db_diff_conf_file: [],
         db_upgrade_directory: [],
         db_rollback_directory: [],
         db_upgrade_file_path: [],
@@ -1058,6 +1078,7 @@ export default {
         deploy_file_path: [],
         is_decompression: 'true',
 
+        db_diff_conf_file: [],
         db_upgrade_directory: [],
         db_rollback_directory: [],
         db_upgrade_file_path: [],
@@ -1099,6 +1120,14 @@ export default {
             })
           })
 
+          this.packageInput.db_diff_conf_file.forEach(el => {
+            data.db_diff_conf_file.forEach(elRet => {
+              if (elRet.filename === el.filename) {
+                el.comparisonResult = elRet.comparisonResult
+              }
+            })
+          })
+
           this.packageInput.db_upgrade_directory.forEach(el => {
             data.db_upgrade_directory.forEach(elRet => {
               if (elRet.filename === el.filename) {
@@ -1134,6 +1163,7 @@ export default {
         this.packageInput.deploy_file_path = found.deploy_file_path ? JSON.parse(JSON.stringify(found.deploy_file_path)) : []
         this.packageInput.is_decompression = found.is_decompression || 'true'
 
+        this.packageInput.db_diff_conf_file = found.db_diff_conf_file ? JSON.parse(JSON.stringify(found.db_diff_conf_file)) : []
         this.packageInput.db_upgrade_directory = found.db_upgrade_directory ? JSON.parse(JSON.stringify(found.db_upgrade_directory)) : []
         this.packageInput.db_rollback_directory = found.db_rollback_directory ? JSON.parse(JSON.stringify(found.db_rollback_directory)) : []
         this.packageInput.db_upgrade_file_path = []
@@ -1157,6 +1187,7 @@ export default {
       this.packageInput.deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.deploy_file_path))
       this.packageInput.is_decompression = row.is_decompression || 'true'
 
+      this.packageInput.db_diff_conf_file = JSON.parse(JSON.stringify(this.packageDetail.db_diff_conf_file))
       this.packageInput.db_upgrade_directory = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_directory || []))
       this.packageInput.db_rollback_directory = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_directory || []))
       this.packageInput.db_upgrade_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_file_path || []))
@@ -1174,6 +1205,7 @@ export default {
           this.genSortable('deploy_file_path')
         }
         if (this.packageType !== 'app') {
+          this.genSortable('db_diff_conf_file')
           this.genSortable('db_upgrade_directory')
           this.genSortable('db_rollback_directory')
           this.genSortable('db_upgrade_file_path')
@@ -1230,6 +1262,7 @@ export default {
         deploy_file_path: this.packageInput.deploy_file_path,
         is_decompression: this.packageInput.is_decompression || 'true',
 
+        db_diff_conf_file: this.packageInput.db_diff_conf_file,
         db_upgrade_directory: this.packageInput.db_upgrade_directory,
         db_rollback_directory: this.packageInput.db_rollback_directory,
         db_upgrade_file_path: this.packageInput.db_upgrade_file_path,
@@ -1451,6 +1484,9 @@ export default {
       } else if (type === 105) {
         this.configFileTreeTitle = this.$t('db_deploy_file_path')
         queryFiles = this.packageInput.db_deploy_file_path.map(_ => _.filename)
+      } else if (type === 106) {
+        this.configFileTreeTitle = this.$t('artifacts_select_config_files')
+        queryFiles = this.packageInput.db_diff_conf_file.map(_ => _.filename)
       }
       const { data } = await getFiles(this.guid, this.packageId, {
         baselinePackage: this.packageInput.baseline_package,
@@ -1511,6 +1547,8 @@ export default {
         this.packageInput.db_rollback_file_path = saveData
       } else if (this.configFileTree.treeType === 105) {
         this.packageInput.db_deploy_file_path = saveData
+      } else if (this.configFileTree.treeType === 106) {
+        this.packageInput.db_diff_conf_file = saveData
       }
     },
     _travelConfigFileTreeNodes (node, status, checked) {
