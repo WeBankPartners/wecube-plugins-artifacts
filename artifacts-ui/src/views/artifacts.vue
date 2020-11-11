@@ -45,43 +45,68 @@
           </Select>
         </Modal>
       </Card>
+
       <!-- 差异化变量 -->
-      <Card v-if="packageDetail.diff_conf_file.length ? true : false" class="artifact-management-bottom-card artifact-management-top-card">
-        <div class="batchOperation" style="text-align: right;">
-          <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
-        </div>
-        <Spin size="large" fix v-if="tabTableLoading">
-          <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
-          <div>{{ $t('artifacts_loading') }}</div>
-        </Spin>
-        <Tabs @on-click="changeTab">
-          <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.shorFileName" :key="index">
-            <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
+      <div v-if="showDiffConfigTab" style="margin-top:16px">
+        <Tabs :value="currentDiffConfigTab" class="config-tab" @on-click="changeDiffConfigTab" type="card">
+          <TabPane :disabled="packageType === 'db'" :label="$t('applications')" name="app">
+            <!-- <Card v-if="packageDetail.diff_conf_file.length ? true : false" class="artifact-management-bottom-card artifact-management-top-card"> -->
+            <div class="batchOperation" style="text-align: right;">
+              <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+            </div>
+            <Spin size="large" fix v-if="tabTableLoading">
+              <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
+              <div>{{ $t('artifacts_loading') }}</div>
+            </Spin>
+            <Tabs @on-click="changeTab">
+              <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.shorFileName" :key="index">
+                <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
+              </TabPane>
+            </Tabs>
+            <!-- </Card> -->
+          </TabPane>
+          <TabPane :disabled="packageType === 'app'" :label="$t('db_instance')" name="db">
+            <!-- <Card v-if="packageDetail.db_diff_conf_file.length ? true : false" class="artifact-management-bottom-card artifact-management-top-card"> -->
+            <div class="batchOperation" style="text-align: right;">
+              <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+            </div>
+            <Spin size="large" fix v-if="tabTableLoading">
+              <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
+              <div>{{ $t('artifacts_loading') }}</div>
+            </Spin>
+            <Tabs @on-click="changeTab">
+              <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :label="item.shorFileName" :name="item.shorFileName" :key="index">
+                <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
+              </TabPane>
+            </Tabs>
+            <!-- </Card> -->
           </TabPane>
         </Tabs>
-        <Modal :mask-closable="false" v-model="isShowBatchBindModal" :title="$t('multi_bind_config')">
-          <Card>
-            <div slot="title">
-              <Checkbox border size="small" :indeterminate="isBatchBindIndeterminate" :value="isBatchBindAllChecked" @click.prevent.native="batchBindSelectAll">{{ $t('check_all') }}</Checkbox>
-            </div>
-            <ul style="height:300px;overflow-y:auto">
-              <li class="bind-style" v-for="(bindData, index) in batchBindData" :key="index">
-                <Checkbox v-model="bindData.bound">{{ bindData.key }}</Checkbox>
-                <div style="margin-left: 10px;color: #c4c3c3;display: inline-block;">[{{ bindData.fileNames }}]</div>
-              </li>
-            </ul>
-          </Card>
-          <div slot="footer">
-            <Button @click="cancelBatchBindOperation">{{ $t('artifacts_cancel') }}</Button>
-            <Button type="primary" @click="saveBatchBindOperation">{{ $t('artifacts_save') }}</Button>
+      </div>
+
+      <Modal :mask-closable="false" v-model="isShowBatchBindModal" :title="$t('multi_bind_config')">
+        <Card>
+          <div slot="title">
+            <Checkbox border size="small" :indeterminate="isBatchBindIndeterminate" :value="isBatchBindAllChecked" @click.prevent.native="batchBindSelectAll">{{ $t('check_all') }}</Checkbox>
           </div>
-        </Modal>
-        <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setConfigRowValue" @on-cancel="closeConfigSelectModal">
-          <Select filterable clearable v-model="currentConfigValue">
-            <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value && conf.code !== currentConfigRow.key)" :value="conf.variable_value" :key="conf.key_name">{{ conf.key_name }}</Option>
-          </Select>
-        </Modal>
-      </Card>
+          <ul style="height:300px;overflow-y:auto">
+            <li class="bind-style" v-for="(bindData, index) in batchBindData" :key="index">
+              <Checkbox v-model="bindData.bound">{{ bindData.key }}</Checkbox>
+              <div style="margin-left: 10px;color: #c4c3c3;display: inline-block;">[{{ bindData.fileNames }}]</div>
+            </li>
+          </ul>
+          {{ batchBindData }}
+        </Card>
+        <div slot="footer">
+          <Button @click="cancelBatchBindOperation">{{ $t('artifacts_cancel') }}</Button>
+          <Button type="primary" @click="saveBatchBindOperation">{{ $t('artifacts_save') }}</Button>
+        </div>
+      </Modal>
+      <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setConfigRowValue" @on-cancel="closeConfigSelectModal">
+        <Select filterable clearable v-model="currentConfigValue">
+          <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value && conf.code !== currentConfigRow.key)" :value="conf.variable_value" :key="conf.key_name">{{ conf.key_name }}</Option>
+        </Select>
+      </Modal>
 
       <!-- 包配置模态框 -->
       <Modal width="70" :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')">
@@ -609,7 +634,7 @@ export default {
               params.row.rootCI = params.row.conf_variable.tempRootCI || params.row.conf_variable.originRootCI
               return (
                 <div>
-                  <Select value={this.activeTabData[params.row._index].conf_variable.tempRootCI} onInput={v => this.changeRootCI(v, params)} style="width:100px">
+                  <Select disabled value={this.activeTabData[params.row._index].conf_variable.tempRootCI} onInput={v => this.changeRootCI(v, params)} style="width:100px">
                     {this.rootCI.map(item => {
                       return <Option value={item.value}>{item.label}</Option>
                     })}
@@ -658,7 +683,10 @@ export default {
         whiteSpace: 'nowrap',
         verticalAlign: 'top'
       },
-      currentConfigTab: '' // 配置当前tab
+      currentConfigTab: '', // 配置当前tab
+
+      showDiffConfigTab: false,
+      currentDiffConfigTab: '' // 差异化变量当前tab
     }
   },
   computed: {},
@@ -692,12 +720,27 @@ export default {
       this.fileContentHeight = window.screen.availHeight * 0.4 + 'px'
       this.fullscreen = false
     },
+    changeDiffConfigTab (tabName) {
+      this.currentDiffConfigTab = tabName
+      const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
+      if (this.packageDetail[tmp].length > 0) {
+        this.activeTab = this.packageDetail[tmp][0].shorFileName
+        this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
+      } else {
+        this.activeTab = ''
+        this.activeTabData = {}
+      }
+    },
     changeTab (tabName) {
       this.activeTab = tabName
-      this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab).configKeyInfos
+
+      const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
+      // this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab).configKeyInfos
+      this.activeTabData = this.packageDetail[tmp].find(item => item.shorFileName === this.activeTab).configKeyInfos
     },
     changeRootCI (rootCI, params) {
-      let activeTab = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab)
+      const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
+      let activeTab = this.packageDetail[tmp].find(item => item.shorFileName === this.activeTab)
       let confVariable = activeTab.configKeyInfos[params.index].conf_variable
       confVariable.tempRootCI = rootCI
       if (confVariable.tempRootCI === confVariable.originRootCI) {
@@ -956,7 +999,10 @@ export default {
       this.queryPackages()
     },
     async rowClick (row) {
+      this.packageType = row.package_type
+      this.currentDiffConfigTab = this.packageType === 'db' ? 'db' : 'app'
       this.packageId = row.guid
+      this.showDiffConfigTab = true
       // 获取包文件及差异化变量数据
       await this.syncPackageDetail()
     },
@@ -1021,6 +1067,39 @@ export default {
         elFile.configKeyInfos.forEach(elFileVar => {
           elFileVar.index = index
           const found = copyData.diff_conf_variable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase())
+          elFileVar.conf_variable = found
+          index += 1
+        })
+      })
+
+      copyData.db_diff_conf_variable.forEach(elVar => {
+        // 记录原始值
+        elVar.originDiffExpr = elVar.diffExpr
+        const rootCI = this.getRootCI(elVar.diffExpr)
+        elVar.originRootCI = rootCI
+        elVar.tempRootCI = rootCI
+        elVar.withinFiles = []
+        elVar.withinFileIndexes = []
+        let index = 0
+        copyData.db_diff_conf_file.forEach(elFile => {
+          elFile.configKeyInfos = elFile.configKeyInfos || []
+          elFile.configKeyInfos.forEach(elFileVar => {
+            if (elVar.key.toLowerCase() === elFileVar.key.toLowerCase()) {
+              let baseName = elFile.filename.split('/').slice(-1)[0]
+              elVar.withinFiles.push(baseName)
+              elVar.withinFileIndexes.push(index)
+            }
+          })
+          index += 1
+        })
+        elVar.fileNames = elVar.withinFiles.join(', ')
+      })
+      copyData.db_diff_conf_file.forEach(elFile => {
+        let index = 1
+        elFile.shorFileName = elFile.filename.split('/').slice(-1)[0]
+        elFile.configKeyInfos.forEach(elFileVar => {
+          elFileVar.index = index
+          const found = copyData.db_diff_conf_variable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase())
           elFileVar.conf_variable = found
           index += 1
         })
@@ -1716,7 +1795,8 @@ export default {
     showBatchBindModal () {
       // 复制一份数据用于临时使用bound勾选状态
       let tempBindData = this.formatPackageDetail(this.packageDetail)
-      this.batchBindData = tempBindData.diff_conf_variable
+      const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_variable' : 'diff_conf_variable'
+      this.batchBindData = tempBindData[tmp]
       this.isShowBatchBindModal = true
     },
     batchBindSelectAll () {
@@ -1728,9 +1808,10 @@ export default {
     async saveBatchBindOperation () {
       this.isShowBatchBindModal = false
       this.tabTableLoading = true
-      let tempData = this.formatPackageDetail(this.packageDetail)
-      tempData.diff_conf_variable = this.batchBindData
-      const { status, data } = await updatePackage(this.guid, this.packageId, tempData)
+      let params = {}
+      const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_variable' : 'diff_conf_variable'
+      params[tmp] = this.batchBindData
+      const { status, data } = await updatePackage(this.guid, this.packageId, params)
       if (status === 'OK') {
         let uData = this.formatPackageDetail(data)
         this.packageDetail = uData
@@ -1869,10 +1950,11 @@ export default {
     position: relative;
   }
 }
-// .batchOperation {
-//   position: absolute;
-//   right: 60px;
-// }
+.batchOperation {
+  // position: absolute;
+  // right: 10px;
+  // top: 5px;
+}
 .bind-style {
   list-style: none;
   margin: 8px;
@@ -1882,7 +1964,7 @@ export default {
   width: 100%;
 }
 .config-tab /deep/ .ivu-tabs-tab {
-  width: 10%;
+  width: 15%;
   text-align: center;
 }
 </style>
