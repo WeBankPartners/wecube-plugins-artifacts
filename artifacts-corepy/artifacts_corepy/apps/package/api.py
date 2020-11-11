@@ -4,16 +4,13 @@ from __future__ import absolute_import
 
 import datetime
 import hashlib
-from logging import root
 import os
 import logging
 import collections
-import re
 import shutil
 import tempfile
 import os.path
 from talos.core import config
-from talos.utils import http
 from talos.core import utils
 from talos.db import crud
 from talos.db import converter
@@ -249,7 +246,7 @@ class UnitDesignPackages(WeCubeResource):
             # db部署支持
             i['data']['package_type'] = i['data'].get('package_type', constant.PackageType.mixed)
             fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
-                      'db_deploy_file_path')
+                      'db_deploy_file_path', 'db_diff_conf_file')
             for field in fields:
                 i['data'][field] = self.build_file_object(i['data'].get(field, None))
         return resp_json['data']
@@ -478,6 +475,12 @@ class UnitDesignPackages(WeCubeResource):
                                  rule_type='type',
                                  converter=FileNameConcater(),
                                  nullable=True),
+            crud.ColumnValidator('dbDiffConfFile',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=True),
         ]
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
         baseline_package_id = clean_data.get('baselinePackage')
@@ -505,7 +508,7 @@ class UnitDesignPackages(WeCubeResource):
                 ('deployFilePath', 'deploy_file_path'), ('diffConfFile', 'diff_conf_file'),
                 ('dbUpgradeDirectory', 'db_upgrade_directory'), ('dbRollbackDirectory', 'db_rollback_directory'),
                 ('dbUpgradeFilePath', 'db_upgrade_file_path'), ('dbRollbackFilePath', 'db_rollback_file_path'),
-                ('dbDeployFilePath', 'db_deploy_file_path')]
+                ('dbDeployFilePath', 'db_deploy_file_path'), ('dbDiffConfFile', 'db_diff_conf_file')]
         if 'db_upgrade_directory' not in baseline_package['data']:
             b_db_upgrade_detect = False
         if 'db_rollback_directory' not in baseline_package['data']:
@@ -605,6 +608,17 @@ class UnitDesignPackages(WeCubeResource):
                                  rule_type='type',
                                  converter=FileNameConcater(),
                                  nullable=False),
+            crud.ColumnValidator('db_diff_conf_file',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(),
+                                 nullable=False),
+            crud.ColumnValidator('db_diff_conf_variable',
+                                 validate_on=['update:O'],
+                                 rule=(list, tuple),
+                                 rule_type='type',
+                                 nullable=False),
         ]
         cmdb_client = self.get_cmdb_client()
         query = {"filters": [{"name": "guid", "operator": "eq", "value": deploy_package_id}], "paging": False}
@@ -666,6 +680,51 @@ class UnitDesignPackages(WeCubeResource):
                     bind_variables.extend([c['guid'] for c in resp_json['data']])
                 if auto_bind:
                     clean_data['diff_conf_variable'] = bind_variables
+        # db部署支持
+        # 根据用户指定进行变量绑定
+        db_auto_bind = True
+        if 'db_diff_conf_variable' in data:
+            clean_data['db_diff_conf_variable'] = [
+                c['diffConfigGuid'] for c in data['db_diff_conf_variable'] if c['bound']
+            ]
+            db_auto_bind = False
+        # 根据diff_conf_file计算变量进行更新绑定
+        if 'db_diff_conf_file' in data:
+            new_diff_conf_file_list = set([f['filename'] for f in data['db_diff_conf_file']])
+            old_diff_conf_file_list = set(
+                [f['filename'] for f in self.build_file_object(deploy_package['data'].get('db_diff_conf_file', None))])
+            # diff_conf_file值并未发生改变，无需下载文件更新变量
+            if new_diff_conf_file_list != old_diff_conf_file_list:
+                package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
+                                                                deploy_package['data']['deploy_package_url'])
+                self.update_file_variable(package_cached_dir, data['db_diff_conf_file'])
+                # 获取所有差异化配置项
+                empty_query = {"filters": [], "paging": False}
+                resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, empty_query)
+                all_diff_configs = resp_json['data']['contents']
+                finder = artifact_utils.CaseInsensitiveDict()
+                for conf in all_diff_configs:
+                    finder[conf['data']['variable_name']] = conf
+                package_diff_configs = []
+                new_diff_configs = set()
+                exist_diff_configs = set()
+                for conf_file in data['db_diff_conf_file']:
+                    package_diff_configs.extend(conf_file['configKeyInfos'])
+                for diff_conf in package_diff_configs:
+                    if diff_conf['key'] not in finder:
+                        new_diff_configs.add(diff_conf['key'])
+                    else:
+                        exist_diff_configs.add(finder[diff_conf['key']]['data']['guid'])
+                # 创建新的差异化变量项
+                bind_variables = list(exist_diff_configs)
+                if len(new_diff_configs):
+                    resp_json = cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [{
+                        'variable_name': c,
+                        'description': c
+                    } for c in new_diff_configs])
+                    bind_variables.extend([c['guid'] for c in resp_json['data']])
+                if db_auto_bind:
+                    clean_data['db_diff_conf_variable'] = bind_variables
         if db_upgrade_detect:
             clean_data['db_upgrade_file_path'] = FileNameConcater().convert(
                 self.find_files_by_status(clean_data['baseline_package'], deploy_package_id,
@@ -720,27 +779,38 @@ class UnitDesignPackages(WeCubeResource):
         # 更新文件的md5,comparisonResult,isDir
         result['is_decompression'] = utils.bool_from_string(deploy_package['data']['is_decompression'], default=True)
         result['diff_conf_variable'] = deploy_package['data']['diff_conf_variable']
+        result['db_diff_conf_variable'] = deploy_package['data'].get('db_diff_conf_variable', [])
         # |切割为列表
         fields = ('deploy_file_path', 'start_file_path', 'stop_file_path', 'diff_conf_file')
         for field in fields:
             result[field] = self.build_file_object(deploy_package['data'][field])
             if result['package_type'] in (constant.PackageType.app, constant.PackageType.mixed):
                 self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
-        # 更新差异化配置文件的变量列表
-        self.update_file_variable(package_cached_dir, result['diff_conf_file'])
-        package_diff_configs = []
-        for conf_file in result['diff_conf_file']:
-            package_diff_configs.extend(conf_file['configKeyInfos'])
-        # 更新差异化变量bound/diffConfigGuid/diffExpr/fixedDate/key/type
-        result['diff_conf_variable'] = self.update_diff_conf_variable(all_diff_configs, package_diff_configs,
-                                                                      result['diff_conf_variable'])
+        if result['package_type'] in (constant.PackageType.app, constant.PackageType.mixed):
+            # 更新差异化配置文件的变量列表
+            self.update_file_variable(package_cached_dir, result['diff_conf_file'])
+            package_diff_configs = []
+            for conf_file in result['diff_conf_file']:
+                package_diff_configs.extend(conf_file['configKeyInfos'])
+            # 更新差异化变量bound/diffConfigGuid/diffExpr/fixedDate/key/type
+            result['diff_conf_variable'] = self.update_diff_conf_variable(all_diff_configs, package_diff_configs,
+                                                                          result['diff_conf_variable'])
         # db部署支持
         fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
-                  'db_deploy_file_path')
+                  'db_deploy_file_path', 'db_diff_conf_file')
         for field in fields:
             result[field] = self.build_file_object(deploy_package['data'].get(field, None))
             if result['package_type'] in (constant.PackageType.db, constant.PackageType.mixed):
                 self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
+        if result['package_type'] in (constant.PackageType.db, constant.PackageType.mixed):
+            # 更新差异化配置文件的变量列表
+            self.update_file_variable(package_cached_dir, result['db_diff_conf_file'])
+            package_diff_configs = []
+            for conf_file in result['db_diff_conf_file']:
+                package_diff_configs.extend(conf_file['configKeyInfos'])
+            # 更新差异化变量bound/diffConfigGuid/diffExpr/fixedDate/key/type
+            result['db_diff_conf_variable'] = self.update_diff_conf_variable(all_diff_configs, package_diff_configs,
+                                                                             result['db_diff_conf_variable'])
         return result
 
     def baseline_compare(self, unit_design_id, deploy_package_id, baseline_package_id):
@@ -771,18 +841,19 @@ class UnitDesignPackages(WeCubeResource):
         fields = ('deploy_file_path', 'start_file_path', 'stop_file_path', 'diff_conf_file')
         for field in fields:
             result[field] = self.build_file_object(baseline_package['data'].get(field, None))
-            if package_type in (constant.PackageType.app, constant.PackageType.mix):
+            if package_type in (constant.PackageType.app, constant.PackageType.mixed):
                 # 更新文件的md5,comparisonResult,isDir
                 self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
         # db部署支持
         fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
-                  'db_deploy_file_path')
+                  'db_deploy_file_path', 'db_diff_conf_file')
         for field in fields:
             result[field] = self.build_file_object(baseline_package['data'].get(field, None))
-        if package_type in (constant.PackageType.db, constant.PackageType.mix):
+        if package_type in (constant.PackageType.db, constant.PackageType.mixed):
             self.update_file_status(baseline_cached_dir, package_cached_dir, result['db_upgrade_directory'])
             self.update_file_status(baseline_cached_dir, package_cached_dir, result['db_rollback_directory'])
             self.update_file_status(baseline_cached_dir, package_cached_dir, result['db_deploy_file_path'])
+            self.update_file_status(baseline_cached_dir, package_cached_dir, result['db_diff_conf_file'])
             result['db_upgrade_file_path'] = self.find_files_by_status(
                 baseline_package_id, deploy_package_id, [i['filename'] for i in result['db_upgrade_directory']],
                 ['new', 'changed'])
