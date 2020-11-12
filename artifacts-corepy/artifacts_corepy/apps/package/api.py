@@ -509,9 +509,12 @@ class UnitDesignPackages(WeCubeResource):
                 ('dbUpgradeDirectory', 'db_upgrade_directory'), ('dbRollbackDirectory', 'db_rollback_directory'),
                 ('dbUpgradeFilePath', 'db_upgrade_file_path'), ('dbRollbackFilePath', 'db_rollback_file_path'),
                 ('dbDeployFilePath', 'db_deploy_file_path'), ('dbDiffConfFile', 'db_diff_conf_file')]
-        if 'db_upgrade_directory' not in baseline_package['data']:
+        # 没有指定目录，无法探测
+        if (not clean_data.get('db_upgrade_directory', None)) and (not baseline_package['data'].get(
+                'db_upgrade_directory', None)):
             b_db_upgrade_detect = False
-        if 'db_rollback_directory' not in baseline_package['data']:
+        if (not clean_data.get('db_rollback_directory', None)) and (not baseline_package['data'].get(
+                'db_rollback_directory', None)):
             b_db_upgrade_detect = False
         for s_key, d_key in keys:
             if s_key in clean_data and clean_data[s_key] is not None:
@@ -727,12 +730,16 @@ class UnitDesignPackages(WeCubeResource):
                     clean_data['db_diff_conf_variable'] = bind_variables
         if db_upgrade_detect:
             clean_data['db_upgrade_file_path'] = FileNameConcater().convert(
-                self.find_files_by_status(clean_data['baseline_package'], deploy_package_id,
-                                          clean_data['db_upgrade_directory'].split('|'), ['new', 'changed']))
+                self.find_files_by_status(
+                    clean_data['baseline_package'], deploy_package_id,
+                    clean_data['db_upgrade_directory'].split('|') if clean_data['db_upgrade_directory'] else [],
+                    ['new', 'changed']))
         if db_rollback_detect:
             clean_data['db_rollback_file_path'] = FileNameConcater().convert(
-                self.find_files_by_status(clean_data['baseline_package'], deploy_package_id,
-                                          clean_data['db_rollback_directory'].split('|'), ['new', 'changed']))
+                self.find_files_by_status(
+                    clean_data['baseline_package'], deploy_package_id,
+                    clean_data['db_rollback_directory'].split('|') if clean_data['db_rollback_directory'] else [],
+                    ['new', 'changed']))
         resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [clean_data])
         if with_detail:
             return self.get(unit_design_id, deploy_package_id)
@@ -834,7 +841,7 @@ class UnitDesignPackages(WeCubeResource):
                                                          baseline_package['data']['deploy_package_url'])
         package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
                                                         deploy_package['data']['deploy_package_url'])
-        package_type = baseline_package['data'].get('pakcage_type', constant.PackageType.default)
+        package_type = baseline_package['data'].get('package_type', constant.PackageType.default)
 
         result = {}
         # |切割为列表
@@ -933,7 +940,7 @@ class UnitDesignPackages(WeCubeResource):
         def _scan_dir(basepath, subpath, with_dir=True, recursive=False):
             results = []
             path = os.path.join(basepath, subpath)
-            if os.path.exists(path):
+            if os.path.exists(path) and os.path.isdir(path):
                 if recursive:
                     for _root, _dirs, _files in os.walk(path):
                         if with_dir:
@@ -1041,10 +1048,10 @@ class UnitDesignPackages(WeCubeResource):
                 parts = new_f.split('/')
                 subpath = os.path.join(*[p for p in parts if p not in ('', '.', '..')])
                 new_file_list = _scan_dir(package_path, subpath, with_dir=with_dir, recursive=recursive)
-                self.update_file_status(None if not baseline_path else os.path.join(baseline_path, subpath),
-                                        os.path.join(package_path, subpath),
+                self.update_file_status(None if not baseline_path else baseline_path,
+                                        package_path,
                                         new_file_list,
-                                        file_key='name')
+                                        file_key='path')
                 results.extend(new_file_list)
             return results
 
