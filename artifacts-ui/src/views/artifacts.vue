@@ -1108,10 +1108,11 @@ export default {
       this.initPackageDetail()
       let { status, data } = await getPackageDetail(this.guid, this.packageId)
       if (status === 'OK') {
+        const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
         this.packageDetail = this.formatPackageDetail(data)
-        if (this.packageDetail.diff_conf_file.length > 0) {
-          this.activeTab = this.packageDetail.diff_conf_file[0].filename
-          this.activeTabData = this.packageDetail.diff_conf_file[0].configKeyInfos
+        if (this.packageDetail[tmp].length > 0) {
+          this.activeTab = this.packageDetail[tmp][0].filename
+          this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
         } else {
           this.activeTab = ''
           this.activeTabData = {}
