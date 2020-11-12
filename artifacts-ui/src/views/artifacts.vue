@@ -95,7 +95,6 @@
               <div style="margin-left: 10px;color: #c4c3c3;display: inline-block;">[{{ bindData.fileNames }}]</div>
             </li>
           </ul>
-          {{ batchBindData }}
         </Card>
         <div slot="footer">
           <Button @click="cancelBatchBindOperation">{{ $t('artifacts_cancel') }}</Button>
@@ -134,7 +133,7 @@
             </Col>
           </Row>
         </Card>
-        <Tabs :value="currentConfigTab" class="config-tab">
+        <Tabs :value="currentConfigTab" class="config-tab" @on-click="changeCurrentConfigTab">
           <TabPane :disabled="packageType === 'db'" :label="$t('applications')" name="app">
             <template>
               <Card :bordered="false" :padding="8">
@@ -369,7 +368,8 @@ import Sortable from 'sortablejs'
 import CompareFile from './compare-file'
 import DisplayPath from './display-path'
 // 业务运行实例ciTypeId
-const defaultRootCiTypeId = 50
+const defaultAppRootCiTypeId = 50
+const defaultDBRootCiTypeId = 51
 // cmdb插件包名
 const cmdbPackageName = 'wecmdb'
 // 差异配置key_name
@@ -712,6 +712,9 @@ export default {
     }
   },
   methods: {
+    changeCurrentConfigTab (val) {
+      this.currentConfigTab = val
+    },
     zoomModalMax () {
       this.fileContentHeight = window.screen.availHeight - 310 + 'px'
       this.fullscreen = true
@@ -1023,7 +1026,7 @@ export default {
         db_deploy_file_path: []
       }
     },
-    getRootCI (diffExpr) {
+    getRootCI (diffExpr, defaultRootCiTypeId) {
       let rootCI = defaultRootCiTypeId
       if (!diffExpr) {
         return rootCI
@@ -1042,7 +1045,7 @@ export default {
       copyData.diff_conf_variable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        const rootCI = this.getRootCI(elVar.diffExpr)
+        const rootCI = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId)
         elVar.originRootCI = rootCI
         elVar.tempRootCI = rootCI
         elVar.withinFiles = []
@@ -1075,7 +1078,7 @@ export default {
       copyData.db_diff_conf_variable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        const rootCI = this.getRootCI(elVar.diffExpr)
+        const rootCI = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId)
         elVar.originRootCI = rootCI
         elVar.tempRootCI = rootCI
         elVar.withinFiles = []
