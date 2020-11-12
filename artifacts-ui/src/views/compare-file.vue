@@ -27,6 +27,7 @@ export default {
   name: '',
   data () {
     return {
+      fileStatus: '',
       originContent: '',
       newContent: '',
       compareResult: '',

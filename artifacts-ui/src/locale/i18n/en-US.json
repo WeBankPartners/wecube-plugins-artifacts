@@ -73,7 +73,7 @@
   "root_ci": "Root CI",
   "applications": "Applications",
   "db_instance": "DB Instance",
-  "mixed": "Mixed",
+  "mixed": "APP&DB",
   "file_compare": "File Compare",
   "original_content": "Original Content",
   "new_content": "New Content",
