@@ -1239,6 +1239,7 @@ export default {
     async baseLinePackageChanged (v) {
       if (v) {
         const found = JSON.parse(JSON.stringify(this.tableData.find(row => row.guid === v)))
+        this.packageType = found.package_type
         this.packageInput.diff_conf_file = found.diff_conf_file ? JSON.parse(JSON.stringify(found.diff_conf_file)) : []
         this.packageInput.start_file_path = found.start_file_path ? JSON.parse(JSON.stringify(found.start_file_path)) : []
         this.packageInput.stop_file_path = found.stop_file_path ? JSON.parse(JSON.stringify(found.stop_file_path)) : []
