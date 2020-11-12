@@ -244,7 +244,7 @@ class UnitDesignPackages(WeCubeResource):
             for field in fields:
                 i['data'][field] = self.build_file_object(i['data'].get(field, None))
             # db部署支持
-            i['data']['package_type'] = i['data'].get('package_type', constant.PackageType.mixed)
+            i['data']['package_type'] = i['data'].get('package_type', constant.PackageType.default)
             fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
                       'db_deploy_file_path', 'db_diff_conf_file')
             for field in fields:
@@ -503,7 +503,7 @@ class UnitDesignPackages(WeCubeResource):
         update_data['is_decompression'] = baseline_package['data']['is_decompression']
         update_data['package_type'] = baseline_package['data'].get(
             'package_type',
-            constant.PackageType.mixed) if clean_data.get('packageType', None) is None else clean_data['packageType']
+            constant.PackageType.default) if clean_data.get('packageType', None) is None else clean_data['packageType']
         keys = [('startFilePath', 'start_file_path'), ('stopFilePath', 'stop_file_path'),
                 ('deployFilePath', 'deploy_file_path'), ('diffConfFile', 'diff_conf_file'),
                 ('dbUpgradeDirectory', 'db_upgrade_directory'), ('dbRollbackDirectory', 'db_rollback_directory'),
@@ -766,7 +766,7 @@ class UnitDesignPackages(WeCubeResource):
         result['packageId'] = deploy_package_id
         result['baseline_package'] = baseline_package.get('guid', None)
         # db部署支持
-        result['package_type'] = deploy_package['data'].get('package_type', constant.PackageType.mixed)
+        result['package_type'] = deploy_package['data'].get('package_type', constant.PackageType.default)
         # 文件对比[same, changed, new, deleted]
         baseline_cached_dir = None
         package_cached_dir = None
@@ -834,7 +834,7 @@ class UnitDesignPackages(WeCubeResource):
                                                          baseline_package['data']['deploy_package_url'])
         package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
                                                         deploy_package['data']['deploy_package_url'])
-        package_type = baseline_package['data'].get('pakcage_type', constant.PackageType.mixed)
+        package_type = baseline_package['data'].get('pakcage_type', constant.PackageType.default)
 
         result = {}
         # |切割为列表

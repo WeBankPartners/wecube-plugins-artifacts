@@ -7,6 +7,7 @@ class PackageType(object):
     app = 'app'
     db = 'db'
     mixed = 'mixed'
+    default = 'mixed'
 
 
 class CompareResult(object):
