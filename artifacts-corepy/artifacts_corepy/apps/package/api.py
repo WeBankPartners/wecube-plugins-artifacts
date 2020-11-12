@@ -37,14 +37,14 @@ def is_upload_nexus_enabled():
 
 
 def calculate_md5(fileobj):
-    m = hashlib.md5()
+    hasher = hashlib.md5()
     chunk_size = 64 * 1024
     fileobj.seek(0)
     chunk = fileobj.read(chunk_size)
     while chunk:
-        m.update(chunk)
+        hasher.update(chunk)
         chunk = fileobj.read(chunk_size)
-    return m.hexdigest()
+    return hasher.hexdigest()
 
 
 def calculate_file_md5(filepath):
@@ -76,7 +76,7 @@ class WeCubeResource(object):
     def list(self, params):
         pass
 
-    def list_by_post(self, filters):
+    def list_by_post(self, query):
         pass
 
 
@@ -107,7 +107,7 @@ class SystemDesign(WeCubeResource):
         last_version = collections.OrderedDict()
         for content in resp_json['data']['contents']:
             r_guid = content['data']['r_guid']
-            if (r_guid not in last_version):
+            if r_guid not in last_version:
                 last_version[r_guid] = content
         return {
             'contents': list(last_version.values()),
@@ -672,7 +672,7 @@ class UnitDesignPackages(WeCubeResource):
                         exist_diff_configs.add(finder[diff_conf['key']]['data']['guid'])
                 # 创建新的差异化变量项
                 bind_variables = list(exist_diff_configs)
-                if len(new_diff_configs):
+                if new_diff_configs:
                     resp_json = cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [{
                         'variable_name': c,
                         'description': c
@@ -717,7 +717,7 @@ class UnitDesignPackages(WeCubeResource):
                         exist_diff_configs.add(finder[diff_conf['key']]['data']['guid'])
                 # 创建新的差异化变量项
                 bind_variables = list(exist_diff_configs)
-                if len(new_diff_configs):
+                if new_diff_configs:
                     resp_json = cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [{
                         'variable_name': c,
                         'description': c
@@ -1198,7 +1198,6 @@ class UnitDesignPackages(WeCubeResource):
                         LOG.info('download complete')
                         LOG.info('unpack package: %s to %s', guid, file_cache_dir)
                         try:
-                            # FIXME: exception for some files
                             artifact_utils.unpack_file(filepath, file_cache_dir)
                         except Exception as e:
                             shutil.rmtree(file_cache_dir, ignore_errors=True)
