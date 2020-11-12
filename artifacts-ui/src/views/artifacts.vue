@@ -48,9 +48,8 @@
 
       <!-- 差异化变量 -->
       <div v-if="showDiffConfigTab" style="margin-top:16px">
-        <Tabs :value="currentDiffConfigTab" class="config-tab" @on-click="changeDiffConfigTab" type="card">
-          <TabPane :disabled="packageType === 'db'" :label="$t('applications')" name="app">
-            <!-- <Card v-if="packageDetail.diff_conf_file.length ? true : false" class="artifact-management-bottom-card artifact-management-top-card"> -->
+        <Tabs :value="currentDiffConfigTab" class="config-tab" @on-click="changeDiffConfigTab" type="card" name="diffConfig">
+          <TabPane :disabled="packageType === 'db'" :label="$t('applications')" name="app" tab="diffConfig">
             <div class="batchOperation" style="text-align: right;">
               <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
@@ -58,15 +57,13 @@
               <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
               <div>{{ $t('artifacts_loading') }}</div>
             </Spin>
-            <Tabs @on-click="changeTab">
-              <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.shorFileName" :key="index">
+            <Tabs :value="activeTab" @on-click="changeTab" name="app">
+              <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="app">
                 <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
               </TabPane>
             </Tabs>
-            <!-- </Card> -->
           </TabPane>
-          <TabPane :disabled="packageType === 'app'" :label="$t('db_instance')" name="db">
-            <!-- <Card v-if="packageDetail.db_diff_conf_file.length ? true : false" class="artifact-management-bottom-card artifact-management-top-card"> -->
+          <TabPane :disabled="packageType === 'app'" :label="$t('db_instance')" name="db" tab="diffConfig">
             <div class="batchOperation" style="text-align: right;">
               <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
@@ -74,12 +71,11 @@
               <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
               <div>{{ $t('artifacts_loading') }}</div>
             </Spin>
-            <Tabs @on-click="changeTab">
-              <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :label="item.shorFileName" :name="item.shorFileName" :key="index">
+            <Tabs :value="activeTab" @on-click="changeTab" name="db">
+              <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="db">
                 <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
               </TabPane>
             </Tabs>
-            <!-- </Card> -->
           </TabPane>
         </Tabs>
       </div>
@@ -727,7 +723,7 @@ export default {
       this.currentDiffConfigTab = tabName
       const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
       if (this.packageDetail[tmp].length > 0) {
-        this.activeTab = this.packageDetail[tmp][0].shorFileName
+        this.activeTab = this.packageDetail[tmp][0].filename
         this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
       } else {
         this.activeTab = ''
@@ -736,14 +732,13 @@ export default {
     },
     changeTab (tabName) {
       this.activeTab = tabName
-
       const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
       // this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab).configKeyInfos
-      this.activeTabData = this.packageDetail[tmp].find(item => item.shorFileName === this.activeTab).configKeyInfos
+      this.activeTabData = this.packageDetail[tmp].find(item => item.filename === this.activeTab).configKeyInfos
     },
     changeRootCI (rootCI, params) {
       const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
-      let activeTab = this.packageDetail[tmp].find(item => item.shorFileName === this.activeTab)
+      let activeTab = this.packageDetail[tmp].find(item => item.filename === this.activeTab)
       let confVariable = activeTab.configKeyInfos[params.index].conf_variable
       confVariable.tempRootCI = rootCI
       if (confVariable.tempRootCI === confVariable.originRootCI) {
@@ -1115,7 +1110,7 @@ export default {
       if (status === 'OK') {
         this.packageDetail = this.formatPackageDetail(data)
         if (this.packageDetail.diff_conf_file.length > 0) {
-          this.activeTab = this.packageDetail.diff_conf_file[0].shorFileName
+          this.activeTab = this.packageDetail.diff_conf_file[0].filename
           this.activeTabData = this.packageDetail.diff_conf_file[0].configKeyInfos
         } else {
           this.activeTab = ''
