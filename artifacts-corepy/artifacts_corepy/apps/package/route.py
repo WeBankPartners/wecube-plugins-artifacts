@@ -37,10 +37,10 @@ class EntityAdapter(object):
         }
         if action_name == 'retrieve':
             data = client.retrieve(url)
-            resp.json = {'code': 200, 'status': 'OK', 'data': data, 'message': 'success'}
+            resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
         elif action_name == 'update':
             data = client.update(url, req.json)
-            resp.json = {'code': 200, 'status': 'OK', 'data': data, 'message': 'success'}
+            resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
         else:
             raise exceptions.NotFoundError(
                 _('%(action_name)s for %(package_name)s:%(entity_name)s not supported') % {
