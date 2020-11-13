@@ -1834,7 +1834,8 @@ export default {
     },
     setConfigRowValue () {
       if (this.currentConfigValue) {
-        this.packageDetail.diff_conf_file.forEach(elFile => {
+        const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
+        this.packageDetail[tmp].forEach(elFile => {
           elFile.configKeyInfos.forEach(elFileVar => {
             if (this.currentConfigRow.key.toLowerCase() === elFileVar.key.toLowerCase()) {
               elFileVar.conf_variable.diffExpr = this.currentConfigValue
@@ -1885,7 +1886,8 @@ export default {
           }
         ]
       })
-      this.packageDetail.diff_conf_file.forEach(elFile => {
+      const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
+      this.packageDetail[tmp].forEach(elFile => {
         elFile.configKeyInfos.forEach(elFileVar => {
           if (row.key.toLowerCase() === elFileVar.key.toLowerCase()) {
             elFileVar.conf_variable.originDiffExpr = row.conf_variable.diffExpr
