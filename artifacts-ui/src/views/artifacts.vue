@@ -48,7 +48,7 @@
 
       <!-- 差异化变量 -->
       <div v-if="showDiffConfigTab" style="margin-top:16px">
-        <Tabs :value="currentDiffConfigTab" class="config-tab" @on-click="changeDiffConfigTab" type="card" name="diffConfig">
+        <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig">
           <TabPane :disabled="packageType === 'db'" :label="$t('applications')" name="app" tab="diffConfig">
             <div class="batchOperation" style="text-align: right;">
               <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
