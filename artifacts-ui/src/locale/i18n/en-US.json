@@ -83,5 +83,6 @@
   "db_rollback_directory": "DB Rollback Directory",
   "db_upgrade_file_path": "DB Upgrade File Path",
   "db_rollback_file_path": "DB Rollback File Path",
-  "db_deploy_file_path": "DB Deploy File Path"
+  "db_deploy_file_path": "DB Deploy File Path",
+  "detail": "Detail"
 }
