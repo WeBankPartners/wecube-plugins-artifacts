@@ -104,7 +104,7 @@
       </Modal>
 
       <!-- 包配置模态框 -->
-      <Modal width="70" :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowFilesModal" :title="$t('artifacts_script_configuration')" :okText="$t('artifacts_save')">
+      <Modal width="70" :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowFilesModal" :footer-hide="hideFooter" :title="hideFooter ? $t('detail') : $t('artifacts_script_configuration')" :okText="$t('artifacts_save')">
         <Card :bordered="false" :padding="8">
           <Row>
             <Col style="text-align: right;line-height:32px" span="5">
@@ -418,23 +418,20 @@ export default {
       tableColumns: [
         {
           title: 'GUID',
-          width: 100,
+          width: 160,
           key: 'guid'
         },
         {
           title: this.$t('artifacts_package_name'),
-          minWidth: 80,
           key: 'name',
           render: (h, params) => this.renderCell(params.row.name)
         },
         {
           title: this.$t('artifacts_upload_time'),
-          width: 120,
           key: 'upload_time'
         },
         {
           title: this.$t('baseline_package'),
-          width: 100,
           key: 'md5_value',
           render: (h, params) => {
             const baseLine = params.row.baseline_package.code || ''
@@ -443,77 +440,22 @@ export default {
         },
         {
           title: this.$t('artifacts_uploaded_by'),
-          minWidth: 80,
           key: 'upload_user',
           render: (h, params) => this.renderCell(params.row.upload_user)
         },
         {
-          title: this.$t('artifacts_config_files'),
-          minWidth: 100,
-          key: 'diff_conf_file',
-          render: (h, params) => this.renderCell(params.row.diff_conf_file)
-        },
-        {
-          title: this.$t('artifacts_start_script'),
-          minWidth: 100,
-          key: 'start_file_path',
-          render: (h, params) => this.renderCell(params.row.start_file_path)
-        },
-        {
-          title: this.$t('artifacts_stop_script'),
-          minWidth: 100,
-          key: 'stop_file_path',
-          render: (h, params) => this.renderCell(params.row.stop_file_path)
-        },
-        {
-          title: this.$t('artifacts_deploy_script'),
-          minWidth: 100,
-          key: 'deploy_file_path',
-          render: (h, params) => this.renderCell(params.row.deploy_file_path)
-        },
-        {
-          title: this.$t('is_decompression'),
-          minWidth: 100,
-          key: 'is_decompression',
-          render: (h, params) => this.renderCell(params.row.is_decompression)
-        },
-        {
-          title: this.$t('db_deploy_file_path'),
-          minWidth: 80,
-          key: 'db_deploy_file_path',
-          render: (h, params) => this.renderCell(params.row.db_deploy_file_path)
-        },
-        {
-          title: this.$t('db_rollback_directory'),
-          minWidth: 80,
-          key: 'db_rollback_directory',
-          render: (h, params) => this.renderCell(params.row.db_rollback_directory)
-        },
-        {
-          title: this.$t('db_rollback_file_path'),
-          minWidth: 80,
-          key: 'db_rollback_file_path',
-          render: (h, params) => this.renderCell(params.row.db_rollback_file_path)
-        },
-        {
-          title: this.$t('db_upgrade_directory'),
-          minWidth: 80,
-          key: 'db_upgrade_directory',
-          render: (h, params) => this.renderCell(params.row.db_upgrade_directory)
-        },
-        {
-          title: this.$t('db_upgrade_file_path'),
-          minWidth: 80,
-          key: 'db_upgrade_file_path',
-          render: (h, params) => this.renderCell(params.row.db_upgrade_file_path)
-        },
-        {
           title: this.$t('artifacts_action'),
           key: 'state',
-          width: 150,
           fixed: 'right',
           render: (h, params) => {
-            return <div style="padding-top:5px">{this.renderActionButton(params)}</div>
+            return (
+              <div style="padding-top:5px">
+                {this.renderActionButton(params)}
+                <Button type="warning" onClick={() => this.showFilesModal(params.row, event, true)} size="small" style="margin-right: 5px;margin-bottom: 5px;">
+                  {this.$t('detail')}
+                </Button>
+              </div>
+            )
           }
         }
       ],
@@ -522,6 +464,7 @@ export default {
       // ----------------
       packageId: '',
       isShowFilesModal: false,
+      hideFooter: false,
       packageInput: {
         baseline_package: null,
         diff_conf_file: [],
@@ -1251,7 +1194,7 @@ export default {
       }
       await this.syncBaselineFileStatus()
     },
-    async showFilesModal (row, event) {
+    async showFilesModal (row, event, hideFooter = false) {
       event.stopPropagation()
       this.packageId = row.guid
       await this.syncPackageDetail()
@@ -1275,6 +1218,7 @@ export default {
 
       this.packageId = row.guid
       // await this.syncBaselineFileStatus()
+      this.hideFooter = hideFooter
       this.isShowFilesModal = true
       this.$nextTick(() => {
         if (this.packageType !== 'db') {
