@@ -517,7 +517,7 @@ class UnitDesignPackages(WeCubeResource):
             b_db_upgrade_detect = False
         if (not clean_data.get('db_rollback_directory', None)) and (not baseline_package['data'].get(
                 'db_rollback_directory', None)):
-            b_db_upgrade_detect = False
+            b_db_rollback_detect = False
         for s_key, d_key in keys:
             if s_key in clean_data and clean_data[s_key] is not None:
                 if d_key == 'db_upgrade_file_path':
