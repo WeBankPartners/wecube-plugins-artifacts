@@ -39,10 +39,14 @@ shutil.register_unpack_format('jar', ['.jar'], shutil._UNPACK_FORMATS['zip'][1])
 shutil.register_unpack_format('war', ['.war'], shutil._UNPACK_FORMATS['zip'][1])
 shutil.register_unpack_format('apk', ['.apk'], shutil._UNPACK_FORMATS['zip'][1])
 
+REGISTED_UNPACK_FORMATS = [
+    '.tar.bz2', '.tbz2', '.tar.gz', '.tgz', '.tar', '.tar.xz', '.txz', '.zip', '.jar', '.war', '.apk'
+]
+
 
 def variable_parse(content, spliters):
     variables = []
-    rule = re.compile(r'\[(' + '|'.join(spliters) + r')(.+?)\]')
+    rule = re.compile(r'\[(' + '|'.join(spliters) + r')(' + CONF.variable_expression + r')\]')
     stream = io.StringIO(content)
     lineno = 1
     for line in stream:

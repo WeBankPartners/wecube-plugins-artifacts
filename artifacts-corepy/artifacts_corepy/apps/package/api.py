@@ -4,9 +4,11 @@ from __future__ import absolute_import
 
 import datetime
 import hashlib
+import fnmatch
 import os
 import logging
 import collections
+import re
 import shutil
 import tempfile
 import os.path
@@ -632,6 +634,35 @@ class UnitDesignPackages(WeCubeResource):
         deploy_package = resp_json['data']['contents'][0]
         data['guid'] = deploy_package_id
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
+        available_extensions = CONF.diff_conf_extension.split(',')
+        if 'diff_conf_file' in data:
+            for item in data['diff_conf_file']:
+                matched = False
+                for ext in available_extensions:
+                    if fnmatch.fnmatch(item['filename'], '*' + ext):
+                        matched = True
+                        break
+                if not matched:
+                    raise exceptions.ValidationError(
+                        message=_('invalid filename extension: %(filename)s from %(field)s, must be %(options)s') % {
+                            'filename': item['filename'],
+                            'field': 'diff_conf_file',
+                            'options': available_extensions
+                        })
+        if 'db_diff_conf_file' in data:
+            for item in data['db_diff_conf_file']:
+                matched = False
+                for ext in available_extensions:
+                    if fnmatch.fnmatch(item['filename'], '*' + ext):
+                        matched = True
+                        break
+                if not matched:
+                    raise exceptions.ValidationError(
+                        message=_('invalid filename extension: %(filename)s from %(field)s, must be %(options)s') % {
+                            'filename': item['filename'],
+                            'field': 'db_diff_conf_file',
+                            'options': available_extensions
+                        })
         if 'baseline_package' in clean_data:
             # 兼容旧接口传{}/''/null代表清空的情况
             if isinstance(clean_data['baseline_package'], dict):
@@ -1266,9 +1297,18 @@ class UnitDesignNexusPackages(WeCubeResource):
         unit_design = resp_json['data']['contents'][0]
         nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
                                          CONF.wecube.nexus.password)
-        return nexus_client.list(CONF.wecube.nexus.repository,
-                                 self.get_unit_design_artifact_path(unit_design),
-                                 extensions=['.zip', '.tar', '.tar.gz', 'tgz', '.jar'])
+        results = nexus_client.list(CONF.wecube.nexus.repository,
+                                    self.get_unit_design_artifact_path(unit_design),
+                                    extensions=artifact_utils.REGISTED_UNPACK_FORMATS)
+        if not utils.bool_from_string(CONF.nexus_sort_as_string, default=False):
+            return self.version_sort(results)
+        return sorted(results, key=lambda x: x['name'], reverse=True)
+
+    def version_sort(self, datas):
+        def _extract_key(name):
+            return tuple([int(i) for i in re.findall('\d+', name)])
+
+        return sorted(datas, key=lambda x: _extract_key(x['name']), reverse=True)
 
 
 class DiffConfig(WeCubeResource):

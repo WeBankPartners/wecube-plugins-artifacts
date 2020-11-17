@@ -26,9 +26,11 @@
         <systemParameter name="ARTIFACTS_CITYPE_UNIT_DESIGN" scopeType="plugins" defaultValue="39"/>
         <systemParameter name="ARTIFACTS_CITYPE_DIFF_CONFIG" scopeType="plugins" defaultValue="44"/>
         <systemParameter name="ARTIFACTS_CITYPE_DEPLOY_PACKAGE" scopeType="plugins" defaultValue="45"/>
-        <systemParameter name="ARTIFACTS_ENCRYPT_VARIBLE_PREFIX" scopeType="plugins" defaultValue="!,%"/>
-        <systemParameter name="ARTIFACTS_FILE_VARIBLE_PREFIX" scopeType="plugins" defaultValue="^"/>
+        <systemParameter name="ARTIFACTS_ENCRYPT_VARIABLE_PREFIX" scopeType="plugins" defaultValue="!,%"/>
+        <systemParameter name="ARTIFACTS_FILE_VARIABLE_PREFIX" scopeType="plugins" defaultValue="^"/>
         <systemParameter name="ARTIFACTS_DEFAULT_SPECIAL_REPLACE" scopeType="plugins" defaultValue="@,#"/>
+        <systemParameter name="ARTIFACTS_DIFF_CONF_EXTENSION" scopeType="plugins" defaultValue=".*"/>
+        <systemParameter name="ARTIFACTS_VARIABLE_EXPRESSION" scopeType="plugins" defaultValue=".+?"/>
         <systemParameter name="LOCAL_NEXUS_SERVER_URL" scopeType="plugins" defaultValue="http://127.0.0.1:8081"/>
         <systemParameter name="LOCAL_NEXUS_USERNAME" scopeType="plugins" defaultValue="artifacts"/>
         <systemParameter name="LOCAL_NEXUS_PASSWORD" scopeType="plugins" defaultValue="artifacts"/>
@@ -39,6 +41,7 @@
         <systemParameter name="NEXUS_USERNAME" scopeType="plugins" defaultValue="admin"/>
         <systemParameter name="NEXUS_PASSWORD" scopeType="plugins" defaultValue="admin123"/>
         <systemParameter name="NEXUS_REPOSITORY" scopeType="plugins" defaultValue="maven-releases"/>
+        <systemParameter name="NEXUS_SORT_AS_STRING" scopeType="plugins" defaultValue="false"/>
 	</systemParameters>
 
     <!-- 5.权限设定 -->
@@ -54,7 +57,7 @@
         envVariables="ARTIFACTS_UPLOAD_ENABLED={{UPLOAD_ENABLED}},ARTIFACTS_UPLOAD_NEXUS_ENABLED={{UPLOAD_NEXUS_ENABLED}},
         ARTIFACTS_CITYPE_SYSTEM_DESIGN={{ARTIFACTS_CITYPE_SYSTEM_DESIGN}},ARTIFACTS_CITYPE_UNIT_DESIGN={{ARTIFACTS_CITYPE_UNIT_DESIGN}},
         ARTIFACTS_CITYPE_DIFF_CONFIG={{ARTIFACTS_CITYPE_DIFF_CONFIG}},ARTIFACTS_CITYPE_DEPLOY_PACKAGE={{ARTIFACTS_CITYPE_DEPLOY_PACKAGE}},
-        ARTIFACTS_ENCRYPT_VARIBLE_PREFIX={{ARTIFACTS_ENCRYPT_VARIBLE_PREFIX}},ARTIFACTS_FILE_VARIBLE_PREFIX={{ARTIFACTS_FILE_VARIBLE_PREFIX}},
+        ARTIFACTS_ENCRYPT_VARIABLE_PREFIX={{ARTIFACTS_ENCRYPT_VARIABLE_PREFIX}},ARTIFACTS_FILE_VARIABLE_PREFIX={{ARTIFACTS_FILE_VARIABLE_PREFIX}},
         ARTIFACTS_DEFAULT_SPECIAL_REPLACE={{ARTIFACTS_DEFAULT_SPECIAL_REPLACE}},
         ARTIFACTS_LOCAL_NEXUS_SERVER_URL={{LOCAL_NEXUS_SERVER_URL}},ARTIFACTS_LOCAL_NEXUS_USERNAME={{LOCAL_NEXUS_USERNAME}},
         ARTIFACTS_LOCAL_NEXUS_PASSWORD={{LOCAL_NEXUS_PASSWORD}},ARTIFACTS_LOCAL_NEXUS_REPOSITORY={{LOCAL_NEXUS_REPOSITORY}},
@@ -62,7 +65,8 @@
         ARTIFACTS_NEXUS_SERVER_URL={{NEXUS_SERVER_URL}},ARTIFACTS_NEXUS_USERNAME={{NEXUS_USERNAME}},
         ARTIFACTS_NEXUS_PASSWORD={{NEXUS_PASSWORD}},ARTIFACTS_NEXUS_REPOSITORY={{NEXUS_REPOSITORY}},
         WECUBE_S3_ACCESS_KEY={{S3_ACCESS_KEY}},WECUBE_S3_SECRET_KEY={{S3_SECRET_KEY}},
-        WECUBE_GATEWAY_URL={{GATEWAY_URL}},WECUBE_JWT_SIGNING_KEY={{JWT_SIGNING_KEY}}"/>
+        ARTIFACTS_DIFF_CONF_EXTENSION={{ARTIFACTS_DIFF_CONF_EXTENSION}},ARTIFACTS_VARIABLE_EXPRESSION={{ARTIFACTS_VARIABLE_EXPRESSION}},
+        WECUBE_GATEWAY_URL={{GATEWAY_URL}},WECUBE_JWT_SIGNING_KEY={{JWT_SIGNING_KEY}},ARTIFACTS_NEXUS_SORT_AS_STRING={{NEXUS_SORT_AS_STRING}}"/>
         <s3 bucketName="wecube-artifacts"/>
     </resourceDependencies>
 
