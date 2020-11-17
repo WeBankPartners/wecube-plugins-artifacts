@@ -49,7 +49,6 @@ class NeuxsClient(object):
                         filtered_items.append(i)
         else:
             filtered_items = resp_json['items']
-        print(filtered_items)
         results.extend([{
             'name': i['path'].split('/')[-1],
             'downloadUrl': i['downloadUrl'],

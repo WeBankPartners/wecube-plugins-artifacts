@@ -643,8 +643,9 @@ class UnitDesignPackages(WeCubeResource):
                         break
                 if not matched:
                     raise exceptions.ValidationError(
-                        message=_('invalid filename extension: %(filename)s, must be %(options)s') % {
+                        message=_('invalid filename extension: %(filename)s from %(field)s, must be %(options)s') % {
                             'filename': item['filename'],
+                            'field': 'diff_conf_file',
                             'options': available_extensions
                         })
         if 'db_diff_conf_file' in data:
@@ -656,8 +657,9 @@ class UnitDesignPackages(WeCubeResource):
                         break
                 if not matched:
                     raise exceptions.ValidationError(
-                        message=_('invalid filename extension: %(filename)s, must be %(options)s') % {
+                        message=_('invalid filename extension: %(filename)s from %(field)s, must be %(options)s') % {
                             'filename': item['filename'],
+                            'field': 'db_diff_conf_file',
                             'options': available_extensions
                         })
         if 'baseline_package' in clean_data:
