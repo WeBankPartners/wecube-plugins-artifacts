@@ -8,6 +8,7 @@ import fnmatch
 import os
 import logging
 import collections
+import re
 import shutil
 import tempfile
 import os.path
@@ -1296,9 +1297,18 @@ class UnitDesignNexusPackages(WeCubeResource):
         unit_design = resp_json['data']['contents'][0]
         nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
                                          CONF.wecube.nexus.password)
-        return nexus_client.list(CONF.wecube.nexus.repository,
-                                 self.get_unit_design_artifact_path(unit_design),
-                                 extensions=['.zip', '.tar', '.tar.gz', 'tgz', '.jar'])
+        results = nexus_client.list(CONF.wecube.nexus.repository,
+                                    self.get_unit_design_artifact_path(unit_design),
+                                    extensions=artifact_utils.REGISTED_UNPACK_FORMATS)
+        if not utils.bool_from_string(CONF.nexus_sort_as_string, default=False):
+            return self.version_sort(results)
+        return sorted(results, key=lambda x: x['name'], reverse=True)
+
+    def version_sort(self, datas):
+        def _extract_key(name):
+            return tuple([int(i) for i in re.findall('\d+', name)])
+
+        return sorted(datas, key=lambda x: _extract_key(x['name']), reverse=True)
 
 
 class DiffConfig(WeCubeResource):

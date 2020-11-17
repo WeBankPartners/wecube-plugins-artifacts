@@ -41,6 +41,7 @@
         <systemParameter name="NEXUS_USERNAME" scopeType="plugins" defaultValue="admin"/>
         <systemParameter name="NEXUS_PASSWORD" scopeType="plugins" defaultValue="admin123"/>
         <systemParameter name="NEXUS_REPOSITORY" scopeType="plugins" defaultValue="maven-releases"/>
+        <systemParameter name="NEXUS_SORT_AS_STRING" scopeType="plugins" defaultValue="false"/>
 	</systemParameters>
 
     <!-- 5.权限设定 -->
@@ -65,7 +66,7 @@
         ARTIFACTS_NEXUS_PASSWORD={{NEXUS_PASSWORD}},ARTIFACTS_NEXUS_REPOSITORY={{NEXUS_REPOSITORY}},
         WECUBE_S3_ACCESS_KEY={{S3_ACCESS_KEY}},WECUBE_S3_SECRET_KEY={{S3_SECRET_KEY}},
         ARTIFACTS_DIFF_CONF_EXTENSION={{ARTIFACTS_DIFF_CONF_EXTENSION}},ARTIFACTS_VARIABLE_EXPRESSION={{ARTIFACTS_VARIABLE_EXPRESSION}},
-        WECUBE_GATEWAY_URL={{GATEWAY_URL}},WECUBE_JWT_SIGNING_KEY={{JWT_SIGNING_KEY}}"/>
+        WECUBE_GATEWAY_URL={{GATEWAY_URL}},WECUBE_JWT_SIGNING_KEY={{JWT_SIGNING_KEY}},ARTIFACTS_NEXUS_SORT_AS_STRING={{NEXUS_SORT_AS_STRING}}"/>
         <s3 bucketName="wecube-artifacts"/>
     </resourceDependencies>
 
