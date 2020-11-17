@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 import datetime
 import hashlib
+import fnmatch
 import os
 import logging
 import collections
@@ -632,6 +633,33 @@ class UnitDesignPackages(WeCubeResource):
         deploy_package = resp_json['data']['contents'][0]
         data['guid'] = deploy_package_id
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
+        available_extensions = CONF.diff_conf_extension.split(',')
+        if 'diff_conf_file' in data:
+            for item in data['diff_conf_file']:
+                matched = False
+                for ext in available_extensions:
+                    if fnmatch.fnmatch(item['filename'], '*' + ext):
+                        matched = True
+                        break
+                if not matched:
+                    raise exceptions.ValidationError(
+                        message=_('invalid filename extension: %(filename)s, must be %(options)s') % {
+                            'filename': item['filename'],
+                            'options': available_extensions
+                        })
+        if 'db_diff_conf_file' in data:
+            for item in data['db_diff_conf_file']:
+                matched = False
+                for ext in available_extensions:
+                    if fnmatch.fnmatch(item['filename'], '*' + ext):
+                        matched = True
+                        break
+                if not matched:
+                    raise exceptions.ValidationError(
+                        message=_('invalid filename extension: %(filename)s, must be %(options)s') % {
+                            'filename': item['filename'],
+                            'options': available_extensions
+                        })
         if 'baseline_package' in clean_data:
             # 兼容旧接口传{}/''/null代表清空的情况
             if isinstance(clean_data['baseline_package'], dict):
