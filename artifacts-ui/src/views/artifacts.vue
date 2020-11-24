@@ -49,7 +49,7 @@
       <!-- 差异化变量 -->
       <div v-if="showDiffConfigTab" style="margin-top:16px">
         <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig">
-          <TabPane :disabled="packageType === 'db'" :label="$t('applications')" name="app" tab="diffConfig">
+          <TabPane :disabled="packageType === 'db'" :label="$t('app')" name="app" tab="diffConfig">
             <div class="batchOperation" style="text-align: right;">
               <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
@@ -63,7 +63,7 @@
               </TabPane>
             </Tabs>
           </TabPane>
-          <TabPane :disabled="packageType === 'app'" :label="$t('db_instance')" name="db" tab="diffConfig">
+          <TabPane :disabled="packageType === 'app'" :label="$t('db')" name="db" tab="diffConfig">
             <div class="batchOperation" style="text-align: right;">
               <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
@@ -130,7 +130,7 @@
           </Row>
         </Card>
         <Tabs :value="currentConfigTab" class="config-tab" @on-click="changeCurrentConfigTab">
-          <TabPane :disabled="packageType === 'db'" :label="$t('applications')" name="app">
+          <TabPane :disabled="packageType === 'db'" :label="$t('app')" name="app">
             <template>
               <Card :bordered="false" :padding="8">
                 <Row>
@@ -215,7 +215,7 @@
               </Card>
             </template>
           </TabPane>
-          <TabPane :disabled="packageType === 'app'" :label="$t('db_instance')" name="db">
+          <TabPane :disabled="packageType === 'app'" :label="$t('db')" name="db">
             <template>
               <Card :bordered="false" :padding="8">
                 <Row>
@@ -378,8 +378,8 @@ export default {
     return {
       packageType: '',
       packageTypeOptions: [
-        { label: 'applications', value: 'app' },
-        { label: 'db_instance', value: 'db' },
+        { label: 'app', value: 'app' },
+        { label: 'db', value: 'db' },
         { label: 'mixed', value: 'mixed' }
       ],
       isFileSelect: false,
@@ -427,6 +427,13 @@ export default {
           render: (h, params) => this.renderCell(params.row.name)
         },
         {
+          title: this.$t('package_type'),
+          key: 'package_type',
+          render: (h, params) => {
+            return <span>{this.$t(params.row.package_type)}</span>
+          }
+        },
+        {
           title: this.$t('artifacts_upload_time'),
           key: 'upload_time'
         },
@@ -451,9 +458,11 @@ export default {
             return (
               <div style="padding-top:5px">
                 {this.renderActionButton(params)}
-                <Button type="warning" onClick={() => this.showFilesModal(params.row, event, true)} size="small" style="margin-right: 5px;margin-bottom: 5px;">
-                  {this.$t('detail')}
-                </Button>
+                {!params.row.package_type && (
+                  <Button type="warning" onClick={() => this.showFilesModal(params.row, event, true)} size="small" style="margin-right: 5px;margin-bottom: 5px;">
+                    {this.$t('detail')}
+                  </Button>
+                )}
               </div>
             )
           }
@@ -608,8 +617,8 @@ export default {
         }
       ],
       rootCI: [
-        { value: 50, label: this.$t('applications') },
-        { value: 51, label: this.$t('db_instance') }
+        { value: 50, label: this.$t('app') },
+        { value: 51, label: this.$t('db') }
       ],
       activeTab: '',
       activeTabData: null,
@@ -940,6 +949,11 @@ export default {
       this.queryPackages()
     },
     async rowClick (row) {
+      if (row.package_type === 'image') {
+        this.showDiffConfigTab = false
+        this.packageDetail = []
+        return
+      }
       this.packageType = row.package_type
       this.currentDiffConfigTab = this.packageType === 'db' ? 'db' : 'app'
       this.packageId = row.guid
@@ -1064,15 +1078,19 @@ export default {
     },
     renderActionButton (params) {
       const row = params.row
-      return this.statusOperations
-        .filter(_ => row.nextOperations.indexOf(_.type) >= 0)
-        .map(_ => {
-          return (
-            <Button {...{ props: { ..._.props } }} style="margin-right:5px;margin-bottom:5px;" onClick={() => this.changeStatus(row, _.type, event)}>
-              {_.label}
-            </Button>
-          )
-        })
+      let opetions = []
+      if (row.package_type === 'image') {
+        opetions = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0 && !['update'].includes(_.type))
+      } else {
+        opetions = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0)
+      }
+      return opetions.map(_ => {
+        return (
+          <Button {...{ props: { ..._.props } }} style="margin-right:5px;margin-bottom:5px;" onClick={() => this.changeStatus(row, _.type, event)}>
+            {_.label}
+          </Button>
+        )
+      })
     },
     changeStatus (row, status, event) {
       switch (status) {
