@@ -42,8 +42,7 @@
         <systemParameter name="NEXUS_PASSWORD" scopeType="plugins" defaultValue="admin123"/>
         <systemParameter name="NEXUS_REPOSITORY" scopeType="plugins" defaultValue="maven-releases"/>
         <systemParameter name="NEXUS_SORT_AS_STRING" scopeType="plugins" defaultValue="false"/>
-        <systemParameter name="LOCAL_NEXUS_CONNECTOR_PORT" scopeType="plugins" defaultValue="8082"/>
-        <systemParameter name="NEXUS_CONNECTOR_PORT" scopeType="plugins" defaultValue="8082"/>
+        <systemParameter name="NEXUS_CONNECTOR_PORT" scopeType="plugins" defaultValue="5000"/>
 	</systemParameters>
 
     <!-- 5.权限设定 -->
@@ -55,7 +54,7 @@
 
     <!-- 6.运行资源 - 描述部署运行本插件包需要的基础资源(如主机、虚拟机、容器、数据库等) -->
     <resourceDependencies>
-        <docker imageName="{{REPOSITORY}}:{{VERSION}}" containerName="{{REPOSITORY}}-{{VERSION}}" portBindings="{{ALLOCATE_PORT}}:9000,{{MONITOR_PORT}}:8081,{{LOCAL_NEXUS_CONNECTOR_PORT}}:8082" volumeBindings="{{BASE_MOUNT_PATH}}/artifacts/log:/var/log/artifacts_corepy,{{BASE_MOUNT_PATH}}/certs:/certs,{{BASE_MOUNT_PATH}}/nexus-data:/nexus-data,/etc/localtime:/etc/localtime"
+        <docker imageName="{{REPOSITORY}}:{{VERSION}}" containerName="{{REPOSITORY}}-{{VERSION}}" portBindings="{{ALLOCATE_PORT}}:9000,{{MONITOR_PORT}}:8081,5000:8082" volumeBindings="{{BASE_MOUNT_PATH}}/artifacts/log:/var/log/artifacts_corepy,{{BASE_MOUNT_PATH}}/certs:/certs,{{BASE_MOUNT_PATH}}/nexus-data:/nexus-data,/etc/localtime:/etc/localtime"
         envVariables="ARTIFACTS_UPLOAD_ENABLED={{UPLOAD_ENABLED}},ARTIFACTS_UPLOAD_NEXUS_ENABLED={{UPLOAD_NEXUS_ENABLED}},
         ARTIFACTS_CITYPE_SYSTEM_DESIGN={{ARTIFACTS_CITYPE_SYSTEM_DESIGN}},ARTIFACTS_CITYPE_UNIT_DESIGN={{ARTIFACTS_CITYPE_UNIT_DESIGN}},
         ARTIFACTS_CITYPE_DIFF_CONFIG={{ARTIFACTS_CITYPE_DIFF_CONFIG}},ARTIFACTS_CITYPE_DEPLOY_PACKAGE={{ARTIFACTS_CITYPE_DEPLOY_PACKAGE}},
@@ -69,7 +68,7 @@
         WECUBE_S3_ACCESS_KEY={{S3_ACCESS_KEY}},WECUBE_S3_SECRET_KEY={{S3_SECRET_KEY}},
         ARTIFACTS_DIFF_CONF_EXTENSION={{ARTIFACTS_DIFF_CONF_EXTENSION}},ARTIFACTS_VARIABLE_EXPRESSION={{ARTIFACTS_VARIABLE_EXPRESSION}},
         WECUBE_GATEWAY_URL={{GATEWAY_URL}},WECUBE_JWT_SIGNING_KEY={{JWT_SIGNING_KEY}},ARTIFACTS_NEXUS_SORT_AS_STRING={{NEXUS_SORT_AS_STRING}},
-        ARTIFACTS_LOCAL_NEXUS_CONNECTOR_PORT={{LOCAL_NEXUS_CONNECTOR_PORT}},ARTIFACTS_NEXUS_CONNECTOR_PORT={{NEXUS_CONNECTOR_PORT}}"/>
+        ARTIFACTS_LOCAL_NEXUS_CONNECTOR_PORT=5000,ARTIFACTS_NEXUS_CONNECTOR_PORT={{NEXUS_CONNECTOR_PORT}}"/>
         <s3 bucketName="wecube-artifacts"/>
     </resourceDependencies>
 
