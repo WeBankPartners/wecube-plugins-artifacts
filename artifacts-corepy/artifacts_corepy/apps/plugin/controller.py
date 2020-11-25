@@ -105,7 +105,6 @@ class PackageFromImage(controller.Controller):
                     'callbackParameter': item.get('callbackParameter', None),
                     'errorCode': '0',
                     'errorMessage': 'success',
-                    'id': None,
                     'guid': None,
                     'deploy_package_url': None
                 }
