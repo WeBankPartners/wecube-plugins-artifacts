@@ -35,5 +35,5 @@ class Package(object):
             'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         }
         ret = client.create(CONF.wecube.wecmdb.citypes.deploy_package, [data])
-        package = {'id': ret['data'][0]['guid'], 'deploy_package_url': ret['data'][0]['deploy_package_url']}
+        package = {'guid': ret['data'][0]['guid'], 'deploy_package_url': ret['data'][0]['deploy_package_url']}
         return package
