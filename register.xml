@@ -42,6 +42,8 @@
         <systemParameter name="NEXUS_PASSWORD" scopeType="plugins" defaultValue="admin123"/>
         <systemParameter name="NEXUS_REPOSITORY" scopeType="plugins" defaultValue="maven-releases"/>
         <systemParameter name="NEXUS_SORT_AS_STRING" scopeType="plugins" defaultValue="false"/>
+        <systemParameter name="LOCAL_NEXUS_CONNECTOR_PORT" scopeType="plugins" defaultValue="8082"/>
+        <systemParameter name="NEXUS_CONNECTOR_PORT" scopeType="plugins" defaultValue="8082"/>
 	</systemParameters>
 
     <!-- 5.权限设定 -->
@@ -53,7 +55,7 @@
 
     <!-- 6.运行资源 - 描述部署运行本插件包需要的基础资源(如主机、虚拟机、容器、数据库等) -->
     <resourceDependencies>
-        <docker imageName="{{REPOSITORY}}:{{VERSION}}" containerName="{{REPOSITORY}}-{{VERSION}}" portBindings="{{ALLOCATE_PORT}}:9000,{{MONITOR_PORT}}:8081" volumeBindings="{{BASE_MOUNT_PATH}}/artifacts/log:/var/log/artifacts_corepy,{{BASE_MOUNT_PATH}}/certs:/certs,{{BASE_MOUNT_PATH}}/nexus-data:/nexus-data,/etc/localtime:/etc/localtime"
+        <docker imageName="{{REPOSITORY}}:{{VERSION}}" containerName="{{REPOSITORY}}-{{VERSION}}" portBindings="{{ALLOCATE_PORT}}:9000,{{MONITOR_PORT}}:8081,{{LOCAL_NEXUS_CONNECTOR_PORT}}:8082" volumeBindings="{{BASE_MOUNT_PATH}}/artifacts/log:/var/log/artifacts_corepy,{{BASE_MOUNT_PATH}}/certs:/certs,{{BASE_MOUNT_PATH}}/nexus-data:/nexus-data,/etc/localtime:/etc/localtime"
         envVariables="ARTIFACTS_UPLOAD_ENABLED={{UPLOAD_ENABLED}},ARTIFACTS_UPLOAD_NEXUS_ENABLED={{UPLOAD_NEXUS_ENABLED}},
         ARTIFACTS_CITYPE_SYSTEM_DESIGN={{ARTIFACTS_CITYPE_SYSTEM_DESIGN}},ARTIFACTS_CITYPE_UNIT_DESIGN={{ARTIFACTS_CITYPE_UNIT_DESIGN}},
         ARTIFACTS_CITYPE_DIFF_CONFIG={{ARTIFACTS_CITYPE_DIFF_CONFIG}},ARTIFACTS_CITYPE_DEPLOY_PACKAGE={{ARTIFACTS_CITYPE_DEPLOY_PACKAGE}},
@@ -66,11 +68,28 @@
         ARTIFACTS_NEXUS_PASSWORD={{NEXUS_PASSWORD}},ARTIFACTS_NEXUS_REPOSITORY={{NEXUS_REPOSITORY}},
         WECUBE_S3_ACCESS_KEY={{S3_ACCESS_KEY}},WECUBE_S3_SECRET_KEY={{S3_SECRET_KEY}},
         ARTIFACTS_DIFF_CONF_EXTENSION={{ARTIFACTS_DIFF_CONF_EXTENSION}},ARTIFACTS_VARIABLE_EXPRESSION={{ARTIFACTS_VARIABLE_EXPRESSION}},
-        WECUBE_GATEWAY_URL={{GATEWAY_URL}},WECUBE_JWT_SIGNING_KEY={{JWT_SIGNING_KEY}},ARTIFACTS_NEXUS_SORT_AS_STRING={{NEXUS_SORT_AS_STRING}}"/>
+        WECUBE_GATEWAY_URL={{GATEWAY_URL}},WECUBE_JWT_SIGNING_KEY={{JWT_SIGNING_KEY}},ARTIFACTS_NEXUS_SORT_AS_STRING={{NEXUS_SORT_AS_STRING}},
+        ARTIFACTS_LOCAL_NEXUS_CONNECTOR_PORT={{LOCAL_NEXUS_CONNECTOR_PORT}},ARTIFACTS_NEXUS_CONNECTOR_PORT={{NEXUS_CONNECTOR_PORT}}"/>
         <s3 bucketName="wecube-artifacts"/>
     </resourceDependencies>
 
     <!-- 7.插件列表 - 描述插件包中单个插件的输入和输出 -->
     <plugins>
+        <plugin name="package">
+            <interface action="upload-image" path="/artifacts/v1/packages/from-image" httpMethod="POST" isAsyncProcessing="N" type="EXECUTION">
+                <inputParameters>
+                    <parameter datatype="string" mappingType="constant" required="Y">unit_design</parameter>
+                    <parameter datatype="string" mappingType="constant" required="Y">image_name</parameter>
+                    <parameter datatype="string" mappingType="constant" required="Y">tag</parameter>
+                    <parameter datatype="string" mappingType="constant" required="N">md5</parameter>
+                    <parameter datatype="string" mappingType="system_variable" mappingSystemVariableName="NEXUS_SERVER_URL" required="N">nexus_url</parameter>
+                    <parameter datatype="string" mappingType="system_variable" mappingSystemVariableName="NEXUS_CONNECTOR_PORT" required="N">connector_port</parameter>
+                </inputParameters>
+                <outputParameters>
+                     <parameter datatype="string" mappingType="context">id</parameter>
+                     <parameter datatype="string" mappingType="context">deploy_package_url</parameter>
+                </outputParameters>
+            </interface>
+        </plugin>
     </plugins>
 </package>
