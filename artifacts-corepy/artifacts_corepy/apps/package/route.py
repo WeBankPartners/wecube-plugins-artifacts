@@ -51,6 +51,7 @@ class EntityAdapter(object):
 
 
 def add_routes(api):
+    # cmdb api forward
     api.add_route('/artifacts/system-design-versions', controller.CollectionSystemDesign())
     api.add_route('/artifacts/system-design-versions/{rid}', controller.ItemSystemDesign())
     api.add_route('/artifacts/getPackageCiTypeId', controller.ControllerDeployPackageCiTypeId())
@@ -58,37 +59,40 @@ def add_routes(api):
     api.add_route('/artifacts/ci-types', controller.CollectionCiTypes())
     api.add_route('/artifacts/enum/system/codes', controller.CollectionEnumCodes())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/query', controller.CollectionUnitDesignPackages())
-    # Nexus
-    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/queryNexusDirectiry',
-                  controller.CollectionUnitDesignNexusPackages())
-    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/uploadNexusPackage',
-                  controller.CollectionUnitDesignNexusPackageUpload())
-    # local upload
-    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/upload',
-                  controller.CollectionUnitDesignPackageUpload())
-    # artifact download
-    api.add_sink(DownloadAdapter(), r'/artifacts/repository/(?P<repository>.*)')
-    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/query',
-                  controller.ItemPackage())
-    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/comparison',
-                  controller.UnitDesignPackageBaselineCompare())
-    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/files/comparison',
-                  controller.UnitDesignPackageBaselineFilesCompare())
-    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/files/query',
-                  controller.UnitDesignPackageFileTree())
-    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/update',
-                  controller.ItemPackageUpdate())
-    api.add_route('/artifacts/packages/auto-create-deploy-package', controller.ItemUploadAndCreatePackage())
     api.add_route('/artifacts/ci-types/{ci_type_id}/references/by', controller.ItemCiReferences())
     api.add_route('/artifacts/ci-types/{ci_type_id}/attributes', controller.ItemCiAttributes())
-
-    api.add_route('/artifacts/ci/state/operate', controller.CiStateAction())
     api.add_route('/artifacts/ci-types/{ci_type_id}/ci-data/batch-delete', controller.CiDelete())
-    # api.add_route('/artifacts/platform/v1/packages/wecmdb/entities/diff_configuration/retrieve',
-    #               controller.CollectionDiffConfigs())
-    # api.add_route('/artifacts/platform/v1/packages/wecmdb/entities/diff_configuration/update',
-    #               controller.ItemDiffConfigUpdate())
+    api.add_route('/artifacts/ci/state/operate', controller.CiStateAction())
+    # platform api forward
     api.add_sink(
         EntityAdapter(),
         r'/artifacts/platform/v1/packages/(?P<package_name>[-_A-Za-z0-9]+)/entities/(?P<entity_name>[-_A-Za-z0-9]+)/(?P<action_name>[-_A-Za-z0-9]+)'
     )
+    # nexus query
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/queryNexusDirectiry',
+                  controller.CollectionUnitDesignNexusPackages())
+    # nexus upload
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/uploadNexusPackage',
+                  controller.CollectionUnitDesignNexusPackageUpload())
+    # local nexus upload
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/upload',
+                  controller.CollectionUnitDesignPackageUpload())
+    # artifact download
+    api.add_sink(DownloadAdapter(), r'/artifacts/repository/(?P<repository>.*)')
+    # package detail
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/query',
+                  controller.ItemPackage())
+    # package baseline full compare
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/comparison',
+                  controller.UnitDesignPackageBaselineCompare())
+    # package baseline files compare
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/files/comparison',
+                  controller.UnitDesignPackageBaselineFilesCompare())
+    # package files tree
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/files/query',
+                  controller.UnitDesignPackageFileTree())
+    # package update
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/update',
+                  controller.ItemPackageUpdate())
+    # package upload & create with baseline for automation
+    api.add_route('/artifacts/packages/auto-create-deploy-package', controller.ItemUploadAndCreatePackage())
