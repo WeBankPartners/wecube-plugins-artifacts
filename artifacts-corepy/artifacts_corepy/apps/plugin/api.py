@@ -15,7 +15,8 @@ CONF = config.CONF
 
 
 class Package(object):
-    def create_from_image_name(self, image_name, tag, md5, nexus_url, connector_port, unit_design_id, operator):
+    def create_from_image_name(self, image_name, tag, md5, nexus_url, connector_port, unit_design_id, baseline_package,
+                               operator):
         client = wecmdb.WeCMDBClient(CONF.wecube.server, scoped_globals.GLOBALS.request.auth_token)
         url_result = urlparse(nexus_url
                               or (CONF.wecube.nexus.server if CONF.use_remote_nexus_only else CONF.nexus.server))
@@ -24,6 +25,7 @@ class Package(object):
                                               (CONF.wecube.nexus.connector_port if CONF.use_remote_nexus_only else
                                                CONF.nexus.connector_port), image_name, tag)
         data = {
+            'baseline_package': baseline_package or '',
             'unit_design': unit_design_id,
             'name': '%s-%s' % (image_name, tag),
             'deploy_package_url': deploy_package_url,

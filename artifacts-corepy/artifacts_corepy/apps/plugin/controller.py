@@ -83,6 +83,10 @@ class PackageFromImage(controller.Controller):
                              rule=validator.LengthValidator(0, 255),
                              validate_on=['check:O'],
                              nullable=True),
+        crud.ColumnValidator(field='baseline_package',
+                             rule=validator.LengthValidator(0, 255),
+                             validate_on=['check:O'],
+                             nullable=True),
     ]
 
     def on_post(self, req, resp, **kwargs):
@@ -111,7 +115,9 @@ class PackageFromImage(controller.Controller):
                                                                           clean_item.get('md5', None),
                                                                           clean_item.get('nexus_url', None),
                                                                           clean_item.get('connector_port', None),
-                                                                          clean_item['unit_design'], operator)
+                                                                          clean_item['unit_design'],
+                                                                          clean_item.get('baseline_package',
+                                                                                         None), operator)
                     single_result.update(package)
                     result['results']['outputs'].append(single_result)
                 except Exception as e:
