@@ -1127,70 +1127,67 @@ export default {
     },
     async syncBaselineFileStatus () {
       if (this.packageInput.baseline_package) {
-        if (this.packageInput.diff_conf_file.length > 0 || this.packageInput.start_file_path.length > 0 || this.packageInput.stop_file_path.length > 0 || this.packageInput.deploy_file_path.length > 0) {
-          // 若有文件数据，则请求对比接口
-          const { data } = await compareBaseLineFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package })
-          this.packageInput.diff_conf_file.forEach(el => {
-            data.diff_conf_file.forEach(elRet => {
-              if (elRet.filename === el.filename) {
-                el.comparisonResult = elRet.comparisonResult
-              }
-            })
+        const { data } = await compareBaseLineFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package })
+        this.packageInput.diff_conf_file.forEach(el => {
+          data.diff_conf_file.forEach(elRet => {
+            if (elRet.filename === el.filename) {
+              el.comparisonResult = elRet.comparisonResult
+            }
           })
-          this.packageInput.start_file_path.forEach(el => {
-            data.start_file_path.forEach(elRet => {
-              if (elRet.filename === el.filename) {
-                el.comparisonResult = elRet.comparisonResult
-              }
-            })
+        })
+        this.packageInput.start_file_path.forEach(el => {
+          data.start_file_path.forEach(elRet => {
+            if (elRet.filename === el.filename) {
+              el.comparisonResult = elRet.comparisonResult
+            }
           })
-          this.packageInput.stop_file_path.forEach(el => {
-            data.stop_file_path.forEach(elRet => {
-              if (elRet.filename === el.filename) {
-                el.comparisonResult = elRet.comparisonResult
-              }
-            })
+        })
+        this.packageInput.stop_file_path.forEach(el => {
+          data.stop_file_path.forEach(elRet => {
+            if (elRet.filename === el.filename) {
+              el.comparisonResult = elRet.comparisonResult
+            }
           })
-          this.packageInput.deploy_file_path.forEach(el => {
-            data.deploy_file_path.forEach(elRet => {
-              if (elRet.filename === el.filename) {
-                el.comparisonResult = elRet.comparisonResult
-              }
-            })
+        })
+        this.packageInput.deploy_file_path.forEach(el => {
+          data.deploy_file_path.forEach(elRet => {
+            if (elRet.filename === el.filename) {
+              el.comparisonResult = elRet.comparisonResult
+            }
           })
+        })
 
-          this.packageInput.db_diff_conf_file.forEach(el => {
-            data.db_diff_conf_file.forEach(elRet => {
-              if (elRet.filename === el.filename) {
-                el.comparisonResult = elRet.comparisonResult
-              }
-            })
+        this.packageInput.db_diff_conf_file.forEach(el => {
+          data.db_diff_conf_file.forEach(elRet => {
+            if (elRet.filename === el.filename) {
+              el.comparisonResult = elRet.comparisonResult
+            }
           })
+        })
 
-          this.packageInput.db_upgrade_directory.forEach(el => {
-            data.db_upgrade_directory.forEach(elRet => {
-              if (elRet.filename === el.filename) {
-                el.comparisonResult = elRet.comparisonResult
-              }
-            })
+        this.packageInput.db_upgrade_directory.forEach(el => {
+          data.db_upgrade_directory.forEach(elRet => {
+            if (elRet.filename === el.filename) {
+              el.comparisonResult = elRet.comparisonResult
+            }
           })
-          this.packageInput.db_rollback_directory.forEach(el => {
-            data.db_rollback_directory.forEach(elRet => {
-              if (elRet.filename === el.filename) {
-                el.comparisonResult = elRet.comparisonResult
-              }
-            })
+        })
+        this.packageInput.db_rollback_directory.forEach(el => {
+          data.db_rollback_directory.forEach(elRet => {
+            if (elRet.filename === el.filename) {
+              el.comparisonResult = elRet.comparisonResult
+            }
           })
-          this.packageInput.db_deploy_file_path.forEach(el => {
-            data.db_deploy_file_path.forEach(elRet => {
-              if (elRet.filename === el.filename) {
-                el.comparisonResult = elRet.comparisonResult
-              }
-            })
+        })
+        this.packageInput.db_deploy_file_path.forEach(el => {
+          data.db_deploy_file_path.forEach(elRet => {
+            if (elRet.filename === el.filename) {
+              el.comparisonResult = elRet.comparisonResult
+            }
           })
-          this.packageInput.db_upgrade_file_path = data.db_upgrade_file_path || []
-          this.packageInput.db_rollback_file_path = data.db_rollback_file_path || []
-        }
+        })
+        this.packageInput.db_upgrade_file_path = data.db_upgrade_file_path || []
+        this.packageInput.db_rollback_file_path = data.db_rollback_file_path || []
       }
     },
     async baseLinePackageChanged (v) {
