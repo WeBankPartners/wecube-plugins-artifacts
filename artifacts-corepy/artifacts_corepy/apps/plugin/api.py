@@ -24,14 +24,14 @@ class Package(object):
                                               (CONF.wecube.nexus.connector_port if CONF.use_remote_nexus_only else
                                                CONF.nexus.connector_port), image_name, tag)
         data = {
-            'unit_design_id': unit_design_id,
+            'unit_design': unit_design_id,
             'name': '%s-%s' % (image_name, tag),
             'deploy_package_url': deploy_package_url,
-            'md5': md5 or 'N/A',
+            'md5_value': md5 or 'N/A',
             'package_type': 'image',
             'upload_user': operator,
             'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         }
-        ret = client.create(CONF.wecube.wecmdb.citypes.deploy_package, data)
-        package = {'id': ret['data']['guid'], 'deploy_package_url': ret['data']['deploy_package_url']}
+        ret = client.create(CONF.wecube.wecmdb.citypes.deploy_package, [data])
+        package = {'id': ret['data'][0]['guid'], 'deploy_package_url': ret['data'][0]['deploy_package_url']}
         return package

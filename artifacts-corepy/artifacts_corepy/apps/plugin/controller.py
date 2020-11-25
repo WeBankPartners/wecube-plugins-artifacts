@@ -42,11 +42,11 @@ class PackageFromImage(controller.Controller):
     allow_methods = ('POST', )
     param_rules = [
         crud.ColumnValidator(field='requestId',
-                             rule=validator.LengthValidator(1, 255),
+                             rule=validator.LengthValidator(0, 255),
                              validate_on=['check:O'],
                              nullable=True),
         crud.ColumnValidator(field='operator',
-                             rule=validator.LengthValidator(1, 255),
+                             rule=validator.LengthValidator(0, 255),
                              validate_on=['check:O'],
                              nullable=True),
         crud.ColumnValidator(field='inputs',
@@ -56,7 +56,7 @@ class PackageFromImage(controller.Controller):
     ]
     input_rules = [
         crud.ColumnValidator(field='callbackParameter',
-                             rule=validator.LengthValidator(1, 255),
+                             rule=validator.LengthValidator(0, 255),
                              validate_on=['check:O'],
                              nullable=True),
         crud.ColumnValidator(field='unit_design',
@@ -80,7 +80,7 @@ class PackageFromImage(controller.Controller):
                              validate_on=['check:O'],
                              nullable=True),
         crud.ColumnValidator(field='connector_port',
-                             rule=validator.LengthValidator(1, 255),
+                             rule=validator.LengthValidator(0, 255),
                              validate_on=['check:O'],
                              nullable=True),
     ]
@@ -106,16 +106,18 @@ class PackageFromImage(controller.Controller):
                     'deploy_package_url': None
                 }
                 try:
-                    clean_item = crud.ColumnValidator.get_clean_data(self.input_rules, data, 'check')
+                    clean_item = crud.ColumnValidator.get_clean_data(self.input_rules, item, 'check')
                     package = plugin_api.Package().create_from_image_name(clean_item['image_name'], clean_item['tag'],
                                                                           clean_item.get('md5', None),
                                                                           clean_item.get('nexus_url', None),
                                                                           clean_item.get('connector_port', None),
                                                                           clean_item['unit_design'], operator)
                     single_result.update(package)
-                    result['results'].append(single_result)
+                    result['results']['outputs'].append(single_result)
                 except Exception as e:
-                    result['results'].append(single_result)
+                    single_result['errorCode'] = '1'
+                    single_result['resultMessage'] = str(e)
+                    result['results']['outputs'].append(single_result)
         except Exception as e:
             result['resultCode'] = '1'
             result['resultMessage'] = str(e)
