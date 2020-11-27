@@ -86,8 +86,10 @@
                     <parameter datatype="string" mappingType="system_variable" mappingSystemVariableName="NEXUS_CONNECTOR_PORT" required="N">connector_port</parameter>
                 </inputParameters>
                 <outputParameters>
-                     <parameter datatype="string" mappingType="context">guid</parameter>
-                     <parameter datatype="string" mappingType="context">deploy_package_url</parameter>
+                    <parameter datatype="string">errorCode</parameter>
+                    <parameter datatype="string">errorMessage</parameter>
+                    <parameter datatype="string">guid</parameter>
+                    <parameter datatype="string">deploy_package_url</parameter>
                 </outputParameters>
             </interface>
         </plugin>

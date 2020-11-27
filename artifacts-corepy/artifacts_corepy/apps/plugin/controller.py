@@ -31,9 +31,9 @@ from __future__ import absolute_import
 
 import falcon
 from talos.db import crud
+from talos.core.i18n import _
 from talos.common import controller
 from talos.db import validator
-from talos.db import converter
 
 from artifacts_corepy.apps.plugin import api as plugin_api
 
@@ -97,10 +97,12 @@ class PackageFromImage(controller.Controller):
 
     def create(self, req, data):
         result = {'resultCode': '0', 'resultMessage': 'success', 'results': {'outputs': []}}
+        is_error = False
+        error_indexes = []
         try:
             clean_data = crud.ColumnValidator.get_clean_data(self.param_rules, data, 'check')
             operator = clean_data.get('operator', None) or 'N/A'
-            for item in clean_data['inputs']:
+            for idx, item in enumerate(clean_data['inputs']):
                 single_result = {
                     'callbackParameter': item.get('callbackParameter', None),
                     'errorCode': '0',
@@ -121,9 +123,15 @@ class PackageFromImage(controller.Controller):
                     result['results']['outputs'].append(single_result)
                 except Exception as e:
                     single_result['errorCode'] = '1'
-                    single_result['resultMessage'] = str(e)
+                    single_result['errorMessage'] = str(e)
                     result['results']['outputs'].append(single_result)
+                    is_error = True
+                    error_indexes.append(str(idx + 1))
         except Exception as e:
             result['resultCode'] = '1'
             result['resultMessage'] = str(e)
+        if is_error:
+            result['resultCode'] = '1'
+            result['resultMessage'] = _('Fail to %(action)s [%(num)s] record, detail error in the data block') % dict(
+                action='process', num=','.join(error_indexes))
         return result
