@@ -15,15 +15,16 @@ CONF = config.CONF
 
 
 class Package(object):
-    def create_from_image_name(self, image_name, tag, md5, nexus_url, connector_port, unit_design_id, baseline_package,
-                               operator):
+    def create_from_image_name(self, image_name, tag, namespace, md5, nexus_url, connector_port, unit_design_id,
+                               baseline_package, operator):
         client = wecmdb.WeCMDBClient(CONF.wecube.server, scoped_globals.GLOBALS.request.auth_token)
         url_result = urlparse(nexus_url
                               or (CONF.wecube.nexus.server if CONF.use_remote_nexus_only else CONF.nexus.server))
-
-        deploy_package_url = '%s:%s/%s:%s' % (url_result.hostname, connector_port or
-                                              (CONF.wecube.nexus.connector_port if CONF.use_remote_nexus_only else
-                                               CONF.nexus.connector_port), image_name, tag)
+        namespace = namespace or ''
+        deploy_package_url = '%s:%s/%s%s:%s' % (
+            url_result.hostname, connector_port or
+            (CONF.wecube.nexus.connector_port if CONF.use_remote_nexus_only else CONF.nexus.connector_port),
+            namespace + '/' if namespace else '', image_name, tag)
         package_name = '%s-%s' % (image_name, tag)
         query = {
             "filters": [{
