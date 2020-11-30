@@ -71,6 +71,10 @@ class PackageFromImage(controller.Controller):
                              rule=validator.LengthValidator(1, 255),
                              validate_on=['check:M'],
                              nullable=False),
+        crud.ColumnValidator(field='namespace',
+                             rule=validator.LengthValidator(0, 255),
+                             validate_on=['check:O'],
+                             nullable=True),
         crud.ColumnValidator(field='md5',
                              rule=validator.LengthValidator(0, 255),
                              validate_on=['check:O'],
@@ -113,6 +117,7 @@ class PackageFromImage(controller.Controller):
                 try:
                     clean_item = crud.ColumnValidator.get_clean_data(self.input_rules, item, 'check')
                     package = plugin_api.Package().create_from_image_name(clean_item['image_name'], clean_item['tag'],
+                                                                          clean_item.get('namespace', None),
                                                                           clean_item.get('md5', None),
                                                                           clean_item.get('nexus_url', None),
                                                                           clean_item.get('connector_port', None),

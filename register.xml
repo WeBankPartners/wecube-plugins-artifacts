@@ -80,6 +80,7 @@
                     <parameter datatype="string" mappingType="constant" required="Y">unit_design</parameter>
                     <parameter datatype="string" mappingType="constant" required="Y">image_name</parameter>
                     <parameter datatype="string" mappingType="constant" required="Y">tag</parameter>
+                    <parameter datatype="string" mappingType="constant" required="N">namespace</parameter>
                     <parameter datatype="string" mappingType="constant" required="N">md5</parameter>
                     <parameter datatype="string" mappingType="constant" required="N">baseline_package</parameter>
                     <parameter datatype="string" mappingType="system_variable" mappingSystemVariableName="NEXUS_SERVER_URL" required="N">nexus_url</parameter>
