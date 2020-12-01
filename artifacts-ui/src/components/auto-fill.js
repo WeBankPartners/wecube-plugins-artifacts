@@ -60,12 +60,6 @@ export default {
   },
   watch: {
     value () {
-      if (!this.value && this.rootCiTypeId === 50) {
-        this.autoFillArray = [{ type: 'rule', value: '[{"ciTypeId":50}]' }]
-      }
-      if (!this.value && this.rootCiTypeId === 51) {
-        this.autoFillArray = [{ type: 'rule', value: '[{"ciTypeId":51}]' }]
-      }
       this.initAutoFillArray()
     },
     allCiTypes () {

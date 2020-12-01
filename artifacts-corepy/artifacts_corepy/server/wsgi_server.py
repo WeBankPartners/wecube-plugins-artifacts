@@ -48,7 +48,8 @@ def decrypt_rsa(secret_key, encrypt_text):
                   'file_variable_prefix', 'default_special_replace', 'artifact_field', 's3_access_key', 's3_secret_key',
                   'nexus_server', 'nexus_repository', 'nexus_username', 'nexus_password', 'local_nexus_server',
                   'local_nexus_repository', 'local_nexus_username', 'local_nexus_password', 'gateway_url',
-                  'jwt_signing_key', 'use_remote_nexus_only')
+                  'diff_conf_extension', 'variable_expression', 'jwt_signing_key', 'use_remote_nexus_only',
+                  'nexus_sort_as_string', 'local_nexus_connector_port', 'nexus_connector_port')
 def get_env_value(value, origin_value):
     prefix = 'ENV@'
     encrypt_prefix = 'RSA@'

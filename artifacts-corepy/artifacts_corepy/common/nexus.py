@@ -12,8 +12,6 @@ from contextlib import contextmanager
 import requests
 import requests.auth
 from requests_toolbelt import MultipartEncoder
-from talos.core import exceptions as core_ex
-from talos.core.i18n import _
 from talos.utils import http
 
 LOG = logging.getLogger(__name__)
@@ -49,7 +47,6 @@ class NeuxsClient(object):
                         filtered_items.append(i)
         else:
             filtered_items = resp_json['items']
-        print(filtered_items)
         results.extend([{
             'name': i['path'].split('/')[-1],
             'downloadUrl': i['downloadUrl'],

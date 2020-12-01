@@ -71,10 +71,19 @@
   "check_all": "全选",
   "variable_select_key_tooltip": "选择已有的差异化变量使用其填充规则",
   "root_ci": "根CI",
-  "applications": "应用实例",
-  "db_instance": "数据库实例",
+  "app": "应用",
+  "db": "数据库",
+  "image": "镜像",
+  "mixed": "应用&数据库",
   "file_compare": "文件对比",
   "original_content": "原始内容",
   "new_content": "新内容",
-  "comparison_result": "比对结果"
+  "comparison_result": "比对结果",
+  "package_type": "部署包类型",
+  "db_upgrade_directory": "DB升级脚本目录",
+  "db_rollback_directory": "DB回滚脚本目录",
+  "db_upgrade_file_path": "DB升级脚本",
+  "db_rollback_file_path": "DB回滚脚本",
+  "db_deploy_file_path": "DB部署脚本",
+  "detail": "详情"
 }

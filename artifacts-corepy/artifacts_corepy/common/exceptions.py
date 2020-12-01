@@ -54,7 +54,7 @@ class ValidationError(PluginError):
 
     @property
     def message_format(self):
-        return _('detail: column %(attribute)s validate failed, because: %(msg)s')
+        return _('column %(attribute)s validate failed, because: %(msg)s')
 
 
 class FieldRequired(PluginError):
