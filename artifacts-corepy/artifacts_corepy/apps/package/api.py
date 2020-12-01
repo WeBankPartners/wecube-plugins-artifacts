@@ -246,7 +246,8 @@ class UnitDesignPackages(WeCubeResource):
             for field in fields:
                 i['data'][field] = self.build_file_object(i['data'].get(field, None))
             # db部署支持
-            i['data']['package_type'] = i['data'].get('package_type', constant.PackageType.default)
+            i['data']['package_type'] = i['data'].get('package_type',
+                                                      constant.PackageType.default) or constant.PackageType.default
             fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
                       'db_deploy_file_path', 'db_diff_conf_file')
             for field in fields:
@@ -804,7 +805,8 @@ class UnitDesignPackages(WeCubeResource):
         result['packageId'] = deploy_package_id
         result['baseline_package'] = baseline_package.get('guid', None)
         # db部署支持
-        result['package_type'] = deploy_package['data'].get('package_type', constant.PackageType.default)
+        result['package_type'] = deploy_package['data'].get(
+            'package_type', constant.PackageType.default) or constant.PackageType.default
         # 文件对比[same, changed, new, deleted]
         baseline_cached_dir = None
         package_cached_dir = None
@@ -867,12 +869,13 @@ class UnitDesignPackages(WeCubeResource):
         baseline_package = resp_json['data']['contents'][0]
         baseline_cached_dir = None
         package_cached_dir = None
-        # 确认baselin和package文件已下载并解压缓存在本地(加锁)
+        # 确认baseline和package文件已下载并解压缓存在本地(加锁)
         baseline_cached_dir = self.ensure_package_cached(baseline_package['data']['guid'],
                                                          baseline_package['data']['deploy_package_url'])
         package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
                                                         deploy_package['data']['deploy_package_url'])
-        package_type = baseline_package['data'].get('package_type', constant.PackageType.default)
+        package_type = baseline_package['data'].get('package_type',
+                                                    constant.PackageType.default) or constant.PackageType.default
 
         result = {}
         # |切割为列表

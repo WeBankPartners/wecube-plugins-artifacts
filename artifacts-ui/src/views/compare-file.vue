@@ -1,6 +1,6 @@
 <template>
   <div class="compare-show-container">
-    <div v-if="fileStatus !== 'new'" class="container-item">
+    <div v-if="fileStatus == 'changed'" class="container-item">
       <Card>
         <p slot="title">{{ $t('original_content') }}：</p>
         <p v-html="originContent" :style="contentSty"></p>
@@ -12,7 +12,7 @@
         <p v-html="newContent" :style="contentSty"></p>
       </Card>
     </div>
-    <div v-if="fileStatus !== 'new'" class="container-item">
+    <div v-if="fileStatus == 'changed'" class="container-item">
       <Card>
         <p slot="title">{{ $t('comparison_result') }}：</p>
         <p v-html="compareResult" :style="contentSty"></p>
