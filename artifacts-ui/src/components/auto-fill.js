@@ -733,6 +733,7 @@ export default {
     },
     initAutoFillArray () {
       if (!this.allCiTypes.length || !this.value) {
+        this.autoFillArray = []
         return
       }
       this.autoFillArray = JSON.parse(this.value)
