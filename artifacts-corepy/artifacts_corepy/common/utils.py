@@ -46,7 +46,7 @@ REGISTED_UNPACK_FORMATS = [
 
 def variable_parse(content, spliters):
     variables = []
-    rule = re.compile(r'\[(' + '|'.join(spliters) + r')(' + CONF.variable_expression + r')\]')
+    rule = re.compile(r'\[(' + '|'.join([re.escape(ch) for ch in spliters]) + r')(' + CONF.variable_expression + r')\]')
     stream = io.StringIO(content)
     lineno = 1
     for line in stream:
