@@ -978,18 +978,24 @@ export default {
         db_deploy_file_path: []
       }
     },
-    getRootCI (diffExpr, defaultRootCiTypeId) {
+    getRootCI (diffExpr, defaultRootCiTypeId, elVar) {
       let rootCI = defaultRootCiTypeId
       if (!diffExpr) {
         return rootCI
       }
-      const de = JSON.parse(diffExpr)
-      const rootItem = de.find(item => item.type === 'rule')
-      if (rootItem) {
-        const val = JSON.parse(rootItem.value)
-        rootCI = val[0].ciTypeId || defaultRootCiTypeId
+      try {
+        const de = JSON.parse(diffExpr)
+        const rootItem = de.find(item => item.type === 'rule')
+        if (rootItem) {
+          const val = JSON.parse(rootItem.value)
+          rootCI = val[0].ciTypeId || defaultRootCiTypeId
+        }
+        return rootCI
+      } catch (err) {
+        console.log('ERROR DATA:', elVar)
+        console.log(err)
+        throw err
       }
-      return rootCI
     },
     formatPackageDetail (data) {
       let dataString = JSON.stringify(data)
@@ -997,7 +1003,7 @@ export default {
       copyData.diff_conf_variable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        const rootCI = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId)
+        const rootCI = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
         elVar.originRootCI = rootCI
         elVar.tempRootCI = rootCI
         elVar.withinFiles = []
