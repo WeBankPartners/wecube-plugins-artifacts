@@ -40,6 +40,7 @@ from artifacts_corepy.apps.plugin import api as plugin_api
 
 class PackageFromImage(controller.Controller):
     allow_methods = ('POST', )
+    name = 'artifacts.plugins.fromimage'
     param_rules = [
         crud.ColumnValidator(field='requestId',
                              rule=validator.LengthValidator(0, 255),
