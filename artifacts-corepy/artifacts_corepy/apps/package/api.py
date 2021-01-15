@@ -1009,6 +1009,7 @@ class UnitDesignPackages(WeCubeResource):
                             'name': e.name,
                             'path': e.path[len(basepath) + 1:],
                         })
+            results.sort(key=lambda x: x['name'], reverse=False)
             return results
 
         def _add_children_node(filename, subpath, file_list, is_dir=False):
