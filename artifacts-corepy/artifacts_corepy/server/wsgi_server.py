@@ -16,6 +16,7 @@ import os.path
 
 from artifacts_corepy.common import utils as plugin_utils
 from artifacts_corepy.middlewares import auth
+from artifacts_corepy.middlewares import permission
 from Crypto import Random
 from Crypto.Cipher import PKCS1_v1_5 as Cipher_pkcs1_v1_5
 from Crypto.PublicKey import RSA
@@ -85,5 +86,5 @@ application = base.initialize_server('artifacts_corepy',
                                                     '/etc/artifacts_corepy/artifacts_corepy.conf'),
                                      conf_dir=os.environ.get('ARTIFACTS_COREPY_CONF_DIR',
                                                              '/etc/artifacts_corepy/artifacts_corepy.conf.d'),
-                                     middlewares=[auth.JWTAuth()])
+                                     middlewares=[auth.JWTAuth(), permission.Permission()])
 application.set_error_serializer(error_serializer)
