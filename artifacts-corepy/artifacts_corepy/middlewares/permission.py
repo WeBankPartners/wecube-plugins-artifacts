@@ -27,5 +27,5 @@ class Permission(object):
         plugin_permissions = base_utils.get_config(CONF, 'plugin_permissions', [])
         if controller_name is not None and controller_name in plugin_permissions:
             # plugin controller not allow USER access
-            if req.auth_client_type == 'USER':
+            if not (req.auth_user == 'SYS_PLATFORM' and 'SUB_SYSTEM' in req.auth_permissions):
                 raise base_ex.ForbiddenError()
