@@ -96,7 +96,12 @@ def main():
     tz_info = timezone(CONF.timezone)
     try:
         if CONF.platform_timezone:
-            tz_info = timezone(CONF.platform_timezone)
+            prefix = 'ENV@'
+            value = CONF.platform_timezone
+            if value.startswith(prefix):
+                env_name = value[len(prefix):]
+                value = os.getenv(env_name, default='')
+            tz_info = timezone(value)
     except Exception as e:
         LOG.exception(e)
     scheduler = BlockingScheduler(jobstores=jobstores,
