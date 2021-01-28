@@ -80,17 +80,17 @@
         </Tabs>
       </div>
 
-      <Modal :mask-closable="false" v-model="isShowBatchBindModal" :title="$t('multi_bind_config')">
+      <Modal :mask-closable="false" v-model="isShowBatchBindModal" :width="800" :title="$t('multi_bind_config')">
         <Card>
           <div slot="title">
             <Checkbox border size="small" :indeterminate="isBatchBindIndeterminate" :value="isBatchBindAllChecked" @click.prevent.native="batchBindSelectAll">{{ $t('check_all') }}</Checkbox>
           </div>
-          <ul style="height:300px;overflow-y:auto">
-            <li class="bind-style" v-for="(bindData, index) in batchBindData" :key="index">
+          <div style="height:300px;overflow-y:auto">
+            <div class="bind-style" v-for="(bindData, index) in batchBindData" :key="index">
               <Checkbox v-model="bindData.bound">{{ bindData.key }}</Checkbox>
-              <div style="margin-left: 10px;color: #c4c3c3;display: inline-block;">[{{ bindData.fileNames }}]</div>
-            </li>
-          </ul>
+              <span style="margin-left: 10px;color: #c4c3c3;word-break: break-all;">[{{ bindData.fileNames }}]</span>
+            </div>
+          </div>
         </Card>
         <div slot="footer">
           <Button @click="cancelBatchBindOperation">{{ $t('artifacts_cancel') }}</Button>
@@ -1955,7 +1955,6 @@ export default {
   // top: 5px;
 }
 .bind-style {
-  list-style: none;
   margin: 8px;
 }
 
