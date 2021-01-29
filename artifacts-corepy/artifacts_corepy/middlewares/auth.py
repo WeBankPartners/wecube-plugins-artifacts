@@ -26,6 +26,9 @@ class JWTAuth(object):
                 decoded_secret = utils.b64decode_key(secret)
                 token_info = jwt.decode(token, key=decoded_secret, verify=verify_token)
                 req.auth_user = token_info['sub']
+                authority = token_info.get('authority', None) or '[]'
+                req.auth_permissions = set(authority.strip('[]').split(','))
+                req.auth_client_type = token_info.get('clientType', None) or 'USER'
                 if verify_token:
                     # delay token
                     token_info['exp'] += 120

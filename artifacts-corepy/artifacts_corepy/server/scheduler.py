@@ -48,6 +48,10 @@ def cleanup_cached_dir():
 def rotate_log():
     try:
         logs = [CONF.log.gunicorn_access, CONF.log.gunicorn_error, CONF.log.path]
+        extend_logs = getattr(CONF.log, 'loggers', [])
+        for l in extend_logs:
+            if l.get('path'):
+                logs.append(l['path'])
         max_file_keep = 30
         for log_file in logs:
             results = []
@@ -89,10 +93,21 @@ def main():
     config.setup(os.environ.get('ARTIFACTS_COREPY_CONF', '/etc/artifacts_corepy/artifacts_corepy.conf'),
                  dir_path=os.environ.get('ARTIFACTS_COREPY_CONF_DIR', '/etc/artifacts_corepy/artifacts_corepy.conf.d'))
     mylogger.setup()
+    tz_info = timezone(CONF.timezone)
+    try:
+        if CONF.platform_timezone:
+            prefix = 'ENV@'
+            value = CONF.platform_timezone
+            if value.startswith(prefix):
+                env_name = value[len(prefix):]
+                value = os.getenv(env_name, default='')
+            tz_info = timezone(value)
+    except Exception as e:
+        LOG.exception(e)
     scheduler = BlockingScheduler(jobstores=jobstores,
                                   executors=executors,
                                   job_defaults=job_defaults,
-                                  timezone=timezone(CONF.timezone))
+                                  timezone=tz_info)
     scheduler.add_job(cleanup_cached_dir, 'cron', hour='*')
     scheduler.add_job(rotate_log, 'cron', hour=3, minute=5)
     try:

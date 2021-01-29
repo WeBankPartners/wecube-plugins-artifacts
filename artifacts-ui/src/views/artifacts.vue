@@ -80,17 +80,17 @@
         </Tabs>
       </div>
 
-      <Modal :mask-closable="false" v-model="isShowBatchBindModal" :title="$t('multi_bind_config')">
+      <Modal :mask-closable="false" v-model="isShowBatchBindModal" :width="800" :title="$t('multi_bind_config')">
         <Card>
           <div slot="title">
             <Checkbox border size="small" :indeterminate="isBatchBindIndeterminate" :value="isBatchBindAllChecked" @click.prevent.native="batchBindSelectAll">{{ $t('check_all') }}</Checkbox>
           </div>
-          <ul style="height:300px;overflow-y:auto">
-            <li class="bind-style" v-for="(bindData, index) in batchBindData" :key="index">
+          <div style="height:300px;overflow-y:auto">
+            <div class="bind-style" v-for="(bindData, index) in batchBindData" :key="index">
               <Checkbox v-model="bindData.bound">{{ bindData.key }}</Checkbox>
-              <div style="margin-left: 10px;color: #c4c3c3;display: inline-block;">[{{ bindData.fileNames }}]</div>
-            </li>
-          </ul>
+              <span style="margin-left: 10px;color: #c4c3c3;word-break: break-all;">[{{ bindData.fileNames }}]</span>
+            </div>
+          </div>
         </Card>
         <div slot="footer">
           <Button @click="cancelBatchBindOperation">{{ $t('artifacts_cancel') }}</Button>
@@ -123,8 +123,8 @@
               <span style="margin-right: 10px">{{ $t('baseline_package') }}</span>
             </Col>
             <Col span="18" offset="1">
-              <Select clearable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" v-model="packageInput.baseline_package">
-                <Option v-for="conf in tableData.filter(conf => conf.guid !== packageId)" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
+              <Select clearable filterable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" v-model="packageInput.baseline_package">
+                <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
               </Select>
             </Col>
           </Row>
@@ -376,6 +376,9 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      totalPkg: 0, // 供获取基线包使用
+      baselinePackageOptions: [],
+
       packageType: '',
       packageTypeOptions: [
         { label: 'app', value: 'app' },
@@ -660,6 +663,34 @@ export default {
     }
   },
   methods: {
+    async getAllpkg () {
+      this.baselinePackageOptions = []
+      let { status, data } = await queryPackages(this.guid, {
+        sorting: {
+          asc: false,
+          field: 'upload_time'
+        },
+        filters: [
+          {
+            name: 'guid',
+            operator: 'ne',
+            value: this.packageId
+          }
+        ],
+        paging: true,
+        pageable: {
+          pageSize: this.totalPkg,
+          startIndex: 0
+        }
+      })
+      if (status === 'OK') {
+        this.baselinePackageOptions = data.contents.map(item => {
+          return {
+            ...item.data
+          }
+        })
+      }
+    },
     changeCurrentConfigTab (val) {
       this.currentConfigTab = val
     },
@@ -828,6 +859,7 @@ export default {
           }
         })
         const { pageSize, totalRows: total } = data.pageInfo
+        this.totalPkg = total
         const currentPage = this.pageInfo.currentPage
         this.pageInfo = { currentPage, pageSize, total }
       }
@@ -992,8 +1024,7 @@ export default {
         }
         return rootCI
       } catch (err) {
-        console.log('ERROR DATA:', elVar)
-        console.log(err)
+        console.error('ERROR DATA:', elVar)
         throw err
       }
     },
@@ -1198,7 +1229,7 @@ export default {
     },
     async baseLinePackageChanged (v) {
       if (v) {
-        const found = JSON.parse(JSON.stringify(this.tableData.find(row => row.guid === v)))
+        const found = JSON.parse(JSON.stringify(this.baselinePackageOptions.find(row => row.guid === v)))
         this.packageType = found.package_type
         this.packageInput.diff_conf_file = found.diff_conf_file ? JSON.parse(JSON.stringify(found.diff_conf_file)) : []
         this.packageInput.start_file_path = found.start_file_path ? JSON.parse(JSON.stringify(found.start_file_path)) : []
@@ -1240,6 +1271,7 @@ export default {
       this.packageId = row.guid
       // await this.syncBaselineFileStatus()
       this.hideFooter = hideFooter
+      await this.getAllpkg()
       this.isShowFilesModal = true
       this.$nextTick(() => {
         if (this.packageType !== 'db') {
@@ -1923,7 +1955,6 @@ export default {
   // top: 5px;
 }
 .bind-style {
-  list-style: none;
   margin: 8px;
 }
 

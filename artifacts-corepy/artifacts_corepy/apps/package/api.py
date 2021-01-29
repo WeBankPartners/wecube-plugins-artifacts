@@ -300,11 +300,13 @@ class UnitDesignPackages(WeCubeResource):
             nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
                                              CONF.wecube.nexus.password)
             artifact_path = self.get_unit_design_artifact_path(unit_design)
+            artifact_repository = CONF.wecube.nexus.repository
         else:
             nexus_server = CONF.nexus.server.rstrip('/')
             nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
             artifact_path = self.build_local_nexus_path(unit_design)
-        upload_result = nexus_client.upload(CONF.nexus.repository, artifact_path, filename, filetype, fileobj)
+            artifact_repository = CONF.nexus.repository
+        upload_result = nexus_client.upload(artifact_repository, artifact_path, filename, filetype, fileobj)
         new_download_url = upload_result['downloadUrl'].replace(nexus_server,
                                                                 CONF.wecube.server.rstrip('/') + '/artifacts')
         package_rows = [{
@@ -1009,6 +1011,7 @@ class UnitDesignPackages(WeCubeResource):
                             'name': e.name,
                             'path': e.path[len(basepath) + 1:],
                         })
+            results.sort(key=lambda x: x['name'], reverse=False)
             return results
 
         def _add_children_node(filename, subpath, file_list, is_dir=False):

@@ -16,6 +16,7 @@ import os.path
 
 from artifacts_corepy.common import utils as plugin_utils
 from artifacts_corepy.middlewares import auth
+from artifacts_corepy.middlewares import permission
 from Crypto import Random
 from Crypto.Cipher import PKCS1_v1_5 as Cipher_pkcs1_v1_5
 from Crypto.PublicKey import RSA
@@ -49,7 +50,7 @@ def decrypt_rsa(secret_key, encrypt_text):
                   'nexus_server', 'nexus_repository', 'nexus_username', 'nexus_password', 'local_nexus_server',
                   'local_nexus_repository', 'local_nexus_username', 'local_nexus_password', 'gateway_url',
                   'diff_conf_extension', 'variable_expression', 'jwt_signing_key', 'use_remote_nexus_only',
-                  'nexus_sort_as_string', 'local_nexus_connector_port', 'nexus_connector_port')
+                  'nexus_sort_as_string', 'local_nexus_connector_port', 'nexus_connector_port', 'platform_timezone')
 def get_env_value(value, origin_value):
     prefix = 'ENV@'
     encrypt_prefix = 'RSA@'
@@ -85,5 +86,5 @@ application = base.initialize_server('artifacts_corepy',
                                                     '/etc/artifacts_corepy/artifacts_corepy.conf'),
                                      conf_dir=os.environ.get('ARTIFACTS_COREPY_CONF_DIR',
                                                              '/etc/artifacts_corepy/artifacts_corepy.conf.d'),
-                                     middlewares=[auth.JWTAuth()])
+                                     middlewares=[auth.JWTAuth(), permission.Permission()])
 application.set_error_serializer(error_serializer)

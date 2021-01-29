@@ -15,6 +15,8 @@ CONF = config.CONF
 
 
 class ControllerDeployPackageCiTypeId(object):
+    name = 'artifacts.deploy-package.citypeid'
+
     def on_get(self, req, resp, **kwargs):
         resp.json = {
             'code': 200,
@@ -194,6 +196,7 @@ class ItemUploadAndCreatePackage(base_controller.Controller):
 
 class ItemCiReferences(Item):
     allow_methods = ('GET', )
+    name = 'artifacts.cireferences'
     resource = package_api.CiTypes
 
     def get(self, req, **kwargs):
@@ -202,6 +205,7 @@ class ItemCiReferences(Item):
 
 class ItemCiAttributes(Item):
     allow_methods = ('GET', )
+    name = 'artifacts.ciattributes'
     resource = package_api.CiTypes
 
     def get(self, req, **kwargs):
@@ -212,6 +216,7 @@ class ItemCiAttributes(Item):
 
 class CiStateAction(Item):
     allow_methods = ('POST', )
+    name = 'artifacts.cistate.action'
     resource = package_api.CiTypes
 
     def update(self, req, data, **kwargs):
@@ -223,6 +228,7 @@ class CiStateAction(Item):
 
 class CiDelete(Item):
     allow_methods = ('POST', )
+    name = 'artifacts.cidelete'
     resource = package_api.CiTypes
 
     def update(self, req, data, **kwargs):
@@ -231,4 +237,5 @@ class CiDelete(Item):
 
 class CollectionDiffConfigs(Collection):
     allow_methods = ('GET', )
+    name = 'artifacts.diffconfigs'
     resource = package_api.DiffConfig
