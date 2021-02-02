@@ -690,18 +690,26 @@ class UnitDesignPackages(WeCubeResource):
                 package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
                                                                 deploy_package['data']['deploy_package_url'])
                 self.update_file_variable(package_cached_dir, data['diff_conf_file'])
-                # 获取所有差异化配置项
-                empty_query = {"filters": [], "paging": False}
-                resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, empty_query)
-                all_diff_configs = resp_json['data']['contents']
-                finder = artifact_utils.CaseInsensitiveDict()
-                for conf in all_diff_configs:
-                    finder[conf['data']['variable_name']] = conf
+                # 差异化配置项的差异
                 package_diff_configs = []
                 new_diff_configs = set()
                 exist_diff_configs = set()
                 for conf_file in data['diff_conf_file']:
                     package_diff_configs.extend(conf_file['configKeyInfos'])
+                query_diff_configs = [p['key'] for p in package_diff_configs]
+                diff_config_query = {
+                    "filters": [{
+                        "name": "variable_name",
+                        "operator": "in",
+                        "value": query_diff_configs
+                    }],
+                    "paging": False
+                }
+                resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
+                all_diff_configs = resp_json['data']['contents']
+                finder = artifact_utils.CaseInsensitiveDict()
+                for conf in all_diff_configs:
+                    finder[conf['data']['variable_name']] = conf
                 for diff_conf in package_diff_configs:
                     if diff_conf['key'] not in finder:
                         new_diff_configs.add(diff_conf['key'])
@@ -735,18 +743,26 @@ class UnitDesignPackages(WeCubeResource):
                 package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
                                                                 deploy_package['data']['deploy_package_url'])
                 self.update_file_variable(package_cached_dir, data['db_diff_conf_file'])
-                # 获取所有差异化配置项
-                empty_query = {"filters": [], "paging": False}
-                resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, empty_query)
-                all_diff_configs = resp_json['data']['contents']
-                finder = artifact_utils.CaseInsensitiveDict()
-                for conf in all_diff_configs:
-                    finder[conf['data']['variable_name']] = conf
+                # 差异化配置项的差异
                 package_diff_configs = []
                 new_diff_configs = set()
                 exist_diff_configs = set()
                 for conf_file in data['db_diff_conf_file']:
                     package_diff_configs.extend(conf_file['configKeyInfos'])
+                query_diff_configs = [p['key'] for p in package_diff_configs]
+                diff_config_query = {
+                    "filters": [{
+                        "name": "variable_name",
+                        "operator": "in",
+                        "value": query_diff_configs
+                    }],
+                    "paging": False
+                }
+                resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
+                all_diff_configs = resp_json['data']['contents']
+                finder = artifact_utils.CaseInsensitiveDict()
+                for conf in all_diff_configs:
+                    finder[conf['data']['variable_name']] = conf
                 for diff_conf in package_diff_configs:
                     if diff_conf['key'] not in finder:
                         new_diff_configs.add(diff_conf['key'])
@@ -831,7 +847,7 @@ class UnitDesignPackages(WeCubeResource):
             self.update_file_variable(package_cached_dir, result['diff_conf_file'])
             for conf_file in result['diff_conf_file']:
                 package_app_diff_configs.extend(conf_file['configKeyInfos'])
-            
+
         # db部署支持
         fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
                   'db_deploy_file_path', 'db_diff_conf_file')
@@ -845,9 +861,6 @@ class UnitDesignPackages(WeCubeResource):
             self.update_file_variable(package_cached_dir, result['db_diff_conf_file'])
             for conf_file in result['db_diff_conf_file']:
                 package_db_diff_configs.extend(conf_file['configKeyInfos'])
-            # 更新差异化变量bound/diffConfigGuid/diffExpr/fixedDate/key/type
-            result['db_diff_conf_variable'] = self.update_diff_conf_variable(all_diff_configs, package_db_diff_configs,
-                                                                             result['db_diff_conf_variable'])
         query_diff_configs = []
         query_diff_configs.extend([p['key'] for p in package_app_diff_configs])
         query_diff_configs.extend([p['key'] for p in package_db_diff_configs])
@@ -869,7 +882,7 @@ class UnitDesignPackages(WeCubeResource):
         if package_db_diff_configs:
             # 更新差异化变量bound/diffConfigGuid/diffExpr/fixedDate/key/type
             result['db_diff_conf_variable'] = self.update_diff_conf_variable(all_diff_configs, package_db_diff_configs,
-                                                                          result['db_diff_conf_variable'])
+                                                                             result['db_diff_conf_variable'])
         return result
 
     def baseline_compare(self, unit_design_id, deploy_package_id, baseline_package_id):
