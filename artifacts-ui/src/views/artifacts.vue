@@ -837,7 +837,10 @@ export default {
       this.systemDesignVersion = ''
       this.treeData = []
     },
-    async queryPackages () {
+    async queryPackages (resetCurrentPage = false) {
+      if (resetCurrentPage) {
+        this.pageInfo.currentPage = 1
+      }
       this.tableLoading = true
       let { status, data } = await queryPackages(this.guid, {
         sorting: {
@@ -867,7 +870,7 @@ export default {
     selectTreeNode (node) {
       if (node.length && node[0].level === 3) {
         this.guid = node[0].data.r_guid
-        this.queryPackages()
+        this.queryPackages(true)
         this.initPackageDetail()
       }
     },
