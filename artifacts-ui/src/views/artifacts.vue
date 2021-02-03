@@ -666,6 +666,7 @@ export default {
     async getAllpkg () {
       this.baselinePackageOptions = []
       let { status, data } = await queryPackages(this.guid, {
+        resultColumns: ['guid', 'name', 'package_type', 'diff_conf_file', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'is_decompression', 'db_diff_conf_file', 'db_upgrade_directory', 'db_rollback_directory', 'db_deploy_file_path', 'db_upgrade_file_path', 'db_rollback_file_path'],
         sorting: {
           asc: false,
           field: 'upload_time'
@@ -1243,8 +1244,8 @@ export default {
         this.packageInput.db_diff_conf_file = found.db_diff_conf_file ? JSON.parse(JSON.stringify(found.db_diff_conf_file)) : []
         this.packageInput.db_upgrade_directory = found.db_upgrade_directory ? JSON.parse(JSON.stringify(found.db_upgrade_directory)) : []
         this.packageInput.db_rollback_directory = found.db_rollback_directory ? JSON.parse(JSON.stringify(found.db_rollback_directory)) : []
-        this.packageInput.db_upgrade_file_path = []
-        this.packageInput.db_rollback_file_path = []
+        this.packageInput.db_upgrade_file_path = found.db_upgrade_file_path ? JSON.parse(JSON.stringify(found.db_upgrade_file_path)) : []
+        this.packageInput.db_rollback_file_path = found.db_rollback_file_path ? JSON.parse(JSON.stringify(found.db_rollback_file_path)) : []
         this.packageInput.db_deploy_file_path = found.db_deploy_file_path ? JSON.parse(JSON.stringify(found.db_deploy_file_path)) : []
       }
       await this.syncBaselineFileStatus()
