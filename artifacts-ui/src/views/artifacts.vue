@@ -690,7 +690,6 @@ export default {
             ...item.data
           }
         })
-        console.log(this.baselinePackageOptions)
       }
     },
     changeCurrentConfigTab (val) {
