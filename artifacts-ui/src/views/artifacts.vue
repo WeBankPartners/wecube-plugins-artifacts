@@ -376,7 +376,6 @@ export default {
   name: 'artifacts',
   data () {
     return {
-      totalPkg: 0, // 供获取基线包使用
       baselinePackageOptions: [],
 
       packageType: '',
@@ -680,7 +679,7 @@ export default {
         ],
         paging: true,
         pageable: {
-          pageSize: this.totalPkg,
+          pageSize: 100,
           startIndex: 0
         }
       })
@@ -863,7 +862,6 @@ export default {
           }
         })
         const { pageSize, totalRows: total } = data.pageInfo
-        this.totalPkg = total
         const currentPage = this.pageInfo.currentPage
         this.pageInfo = { currentPage, pageSize, total }
       }
@@ -1244,8 +1242,8 @@ export default {
         this.packageInput.db_diff_conf_file = found.db_diff_conf_file ? JSON.parse(JSON.stringify(found.db_diff_conf_file)) : []
         this.packageInput.db_upgrade_directory = found.db_upgrade_directory ? JSON.parse(JSON.stringify(found.db_upgrade_directory)) : []
         this.packageInput.db_rollback_directory = found.db_rollback_directory ? JSON.parse(JSON.stringify(found.db_rollback_directory)) : []
-        this.packageInput.db_upgrade_file_path = found.db_upgrade_file_path ? JSON.parse(JSON.stringify(found.db_upgrade_file_path)) : []
-        this.packageInput.db_rollback_file_path = found.db_rollback_file_path ? JSON.parse(JSON.stringify(found.db_rollback_file_path)) : []
+        this.packageInput.db_upgrade_file_path = []
+        this.packageInput.db_rollback_file_path = []
         this.packageInput.db_deploy_file_path = found.db_deploy_file_path ? JSON.parse(JSON.stringify(found.db_deploy_file_path)) : []
       }
       await this.syncBaselineFileStatus()
