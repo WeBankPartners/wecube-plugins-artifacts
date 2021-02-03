@@ -376,7 +376,6 @@ export default {
   name: 'artifacts',
   data () {
     return {
-      totalPkg: 0, // 供获取基线包使用
       baselinePackageOptions: [],
 
       packageType: '',
@@ -680,7 +679,7 @@ export default {
         ],
         paging: true,
         pageable: {
-          pageSize: this.totalPkg,
+          pageSize: 100,
           startIndex: 0
         }
       })
@@ -863,7 +862,6 @@ export default {
           }
         })
         const { pageSize, totalRows: total } = data.pageInfo
-        this.totalPkg = total
         const currentPage = this.pageInfo.currentPage
         this.pageInfo = { currentPage, pageSize, total }
       }
