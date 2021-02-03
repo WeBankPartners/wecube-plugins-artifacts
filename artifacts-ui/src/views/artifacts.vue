@@ -666,6 +666,7 @@ export default {
     async getAllpkg () {
       this.baselinePackageOptions = []
       let { status, data } = await queryPackages(this.guid, {
+        resultColumns: ['guid', 'name', 'package_type', 'diff_conf_file', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'is_decompression', 'db_diff_conf_file', 'db_upgrade_directory', 'db_rollback_directory', 'db_deploy_file_path'],
         sorting: {
           asc: false,
           field: 'upload_time'
@@ -689,6 +690,7 @@ export default {
             ...item.data
           }
         })
+        console.log(this.baselinePackageOptions)
       }
     },
     changeCurrentConfigTab (val) {
