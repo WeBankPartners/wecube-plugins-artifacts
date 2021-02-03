@@ -707,16 +707,18 @@ class UnitDesignPackages(WeCubeResource):
                 for conf_file in data['diff_conf_file']:
                     package_diff_configs.extend(conf_file['configKeyInfos'])
                 query_diff_configs = [p['key'] for p in package_diff_configs]
-                diff_config_query = {
-                    "filters": [{
-                        "name": "variable_name",
-                        "operator": "in",
-                        "value": query_diff_configs
-                    }],
-                    "paging": False
-                }
-                resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
-                all_diff_configs = resp_json['data']['contents']
+                all_diff_configs = []
+                if query_diff_configs:
+                    diff_config_query = {
+                        "filters": [{
+                            "name": "variable_name",
+                            "operator": "in",
+                            "value": query_diff_configs
+                        }],
+                        "paging": False
+                    }
+                    resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
+                    all_diff_configs = resp_json['data']['contents']
                 finder = artifact_utils.CaseInsensitiveDict()
                 for conf in all_diff_configs:
                     finder[conf['data']['variable_name']] = conf
@@ -760,16 +762,18 @@ class UnitDesignPackages(WeCubeResource):
                 for conf_file in data['db_diff_conf_file']:
                     package_diff_configs.extend(conf_file['configKeyInfos'])
                 query_diff_configs = [p['key'] for p in package_diff_configs]
-                diff_config_query = {
-                    "filters": [{
-                        "name": "variable_name",
-                        "operator": "in",
-                        "value": query_diff_configs
-                    }],
-                    "paging": False
-                }
-                resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
-                all_diff_configs = resp_json['data']['contents']
+                all_diff_configs = []
+                if query_diff_configs:
+                    diff_config_query = {
+                        "filters": [{
+                            "name": "variable_name",
+                            "operator": "in",
+                            "value": query_diff_configs
+                        }],
+                        "paging": False
+                    }
+                    resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
+                    all_diff_configs = resp_json['data']['contents']
                 finder = artifact_utils.CaseInsensitiveDict()
                 for conf in all_diff_configs:
                     finder[conf['data']['variable_name']] = conf
@@ -875,16 +879,18 @@ class UnitDesignPackages(WeCubeResource):
         query_diff_configs.extend([p['key'] for p in package_app_diff_configs])
         query_diff_configs.extend([p['key'] for p in package_db_diff_configs])
         query_diff_configs = list(set(query_diff_configs))
-        diff_config_query = {
-            "filters": [{
-                "name": "variable_name",
-                "operator": "in",
-                "value": query_diff_configs
-            }],
-            "paging": False
-        }
-        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
-        all_diff_configs = resp_json['data']['contents']
+        all_diff_configs = []
+        if query_diff_configs:
+            diff_config_query = {
+                "filters": [{
+                    "name": "variable_name",
+                    "operator": "in",
+                    "value": query_diff_configs
+                }],
+                "paging": False
+            }
+            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
+            all_diff_configs = resp_json['data']['contents']
         if package_app_diff_configs:
             # 更新差异化变量bound/diffConfigGuid/diffExpr/fixedDate/key/type
             result['diff_conf_variable'] = self.update_diff_conf_variable(all_diff_configs, package_app_diff_configs,
