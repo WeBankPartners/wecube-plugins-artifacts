@@ -235,10 +235,20 @@ class EnumCodes(WeCubeResource):
 
 
 class UnitDesignPackages(WeCubeResource):
+    def set_package_query_fields(self, query):
+        query.setdefault('resultColumns', [
+            "baseline_package", "code", "deploy_package_url", "db_upgrade_file_path", "db_rollback_file_path",
+            "description", "package_type", "stop_file_path", "start_file_path", "state", "fixed_date", "unit_design",
+            "is_decompression", "db_deploy_file_path", "created_by", "db_rollback_directory", "key_name",
+            "db_upgrade_directory", "upload_time", "upload_user", "deploy_file_path", "diff_conf_file",
+            "db_diff_conf_file", "name", "updated_by", "guid", "created_date", "updated_date", "md5_value", "state_code"
+        ])
+
     def list_by_post(self, query, unit_design_id):
         cmdb_client = self.get_cmdb_client()
         query.setdefault('filters', [])
         query.setdefault('paging', False)
+        self.set_package_query_fields(query)
         query['filters'].append({"name": "unit_design", "operator": "eq", "value": unit_design_id})
         resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
         for i in resp_json['data']['contents']:
@@ -690,18 +700,28 @@ class UnitDesignPackages(WeCubeResource):
                 package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
                                                                 deploy_package['data']['deploy_package_url'])
                 self.update_file_variable(package_cached_dir, data['diff_conf_file'])
-                # 获取所有差异化配置项
-                empty_query = {"filters": [], "paging": False}
-                resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, empty_query)
-                all_diff_configs = resp_json['data']['contents']
-                finder = artifact_utils.CaseInsensitiveDict()
-                for conf in all_diff_configs:
-                    finder[conf['data']['variable_name']] = conf
+                # 差异化配置项的差异
                 package_diff_configs = []
                 new_diff_configs = set()
                 exist_diff_configs = set()
                 for conf_file in data['diff_conf_file']:
                     package_diff_configs.extend(conf_file['configKeyInfos'])
+                query_diff_configs = [p['key'] for p in package_diff_configs]
+                all_diff_configs = []
+                if query_diff_configs:
+                    diff_config_query = {
+                        "filters": [{
+                            "name": "variable_name",
+                            "operator": "in",
+                            "value": query_diff_configs
+                        }],
+                        "paging": False
+                    }
+                    resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
+                    all_diff_configs = resp_json['data']['contents']
+                finder = artifact_utils.CaseInsensitiveDict()
+                for conf in all_diff_configs:
+                    finder[conf['data']['variable_name']] = conf
                 for diff_conf in package_diff_configs:
                     if diff_conf['key'] not in finder:
                         new_diff_configs.add(diff_conf['key'])
@@ -735,18 +755,28 @@ class UnitDesignPackages(WeCubeResource):
                 package_cached_dir = self.ensure_package_cached(deploy_package['data']['guid'],
                                                                 deploy_package['data']['deploy_package_url'])
                 self.update_file_variable(package_cached_dir, data['db_diff_conf_file'])
-                # 获取所有差异化配置项
-                empty_query = {"filters": [], "paging": False}
-                resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, empty_query)
-                all_diff_configs = resp_json['data']['contents']
-                finder = artifact_utils.CaseInsensitiveDict()
-                for conf in all_diff_configs:
-                    finder[conf['data']['variable_name']] = conf
+                # 差异化配置项的差异
                 package_diff_configs = []
                 new_diff_configs = set()
                 exist_diff_configs = set()
                 for conf_file in data['db_diff_conf_file']:
                     package_diff_configs.extend(conf_file['configKeyInfos'])
+                query_diff_configs = [p['key'] for p in package_diff_configs]
+                all_diff_configs = []
+                if query_diff_configs:
+                    diff_config_query = {
+                        "filters": [{
+                            "name": "variable_name",
+                            "operator": "in",
+                            "value": query_diff_configs
+                        }],
+                        "paging": False
+                    }
+                    resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
+                    all_diff_configs = resp_json['data']['contents']
+                finder = artifact_utils.CaseInsensitiveDict()
+                for conf in all_diff_configs:
+                    finder[conf['data']['variable_name']] = conf
                 for diff_conf in package_diff_configs:
                     if diff_conf['key'] not in finder:
                         new_diff_configs.add(diff_conf['key'])
@@ -800,9 +830,6 @@ class UnitDesignPackages(WeCubeResource):
                                            {'rid': deploy_package_id})
         deploy_package = resp_json['data']['contents'][0]
         baseline_package = (deploy_package['data'].get('baseline_package', None) or {})
-        empty_query = {"filters": [], "paging": False}
-        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, empty_query)
-        all_diff_configs = resp_json['data']['contents']
         result = {}
         result['packageId'] = deploy_package_id
         result['baseline_package'] = baseline_package.get('guid', None)
@@ -828,15 +855,13 @@ class UnitDesignPackages(WeCubeResource):
             result[field] = self.build_file_object(deploy_package['data'][field])
             if result['package_type'] in (constant.PackageType.app, constant.PackageType.mixed):
                 self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
+        package_app_diff_configs = []
         if result['package_type'] in (constant.PackageType.app, constant.PackageType.mixed):
             # 更新差异化配置文件的变量列表
             self.update_file_variable(package_cached_dir, result['diff_conf_file'])
-            package_diff_configs = []
             for conf_file in result['diff_conf_file']:
-                package_diff_configs.extend(conf_file['configKeyInfos'])
-            # 更新差异化变量bound/diffConfigGuid/diffExpr/fixedDate/key/type
-            result['diff_conf_variable'] = self.update_diff_conf_variable(all_diff_configs, package_diff_configs,
-                                                                          result['diff_conf_variable'])
+                package_app_diff_configs.extend(conf_file['configKeyInfos'])
+
         # db部署支持
         fields = ('db_upgrade_directory', 'db_rollback_directory', 'db_upgrade_file_path', 'db_rollback_file_path',
                   'db_deploy_file_path', 'db_diff_conf_file')
@@ -844,26 +869,49 @@ class UnitDesignPackages(WeCubeResource):
             result[field] = self.build_file_object(deploy_package['data'].get(field, None))
             if result['package_type'] in (constant.PackageType.db, constant.PackageType.mixed):
                 self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
+        package_db_diff_configs = []
         if result['package_type'] in (constant.PackageType.db, constant.PackageType.mixed):
             # 更新差异化配置文件的变量列表
             self.update_file_variable(package_cached_dir, result['db_diff_conf_file'])
-            package_diff_configs = []
             for conf_file in result['db_diff_conf_file']:
-                package_diff_configs.extend(conf_file['configKeyInfos'])
+                package_db_diff_configs.extend(conf_file['configKeyInfos'])
+        query_diff_configs = []
+        query_diff_configs.extend([p['key'] for p in package_app_diff_configs])
+        query_diff_configs.extend([p['key'] for p in package_db_diff_configs])
+        query_diff_configs = list(set(query_diff_configs))
+        all_diff_configs = []
+        if query_diff_configs:
+            diff_config_query = {
+                "filters": [{
+                    "name": "variable_name",
+                    "operator": "in",
+                    "value": query_diff_configs
+                }],
+                "paging": False
+            }
+            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
+            all_diff_configs = resp_json['data']['contents']
+        if package_app_diff_configs:
             # 更新差异化变量bound/diffConfigGuid/diffExpr/fixedDate/key/type
-            result['db_diff_conf_variable'] = self.update_diff_conf_variable(all_diff_configs, package_diff_configs,
+            result['diff_conf_variable'] = self.update_diff_conf_variable(all_diff_configs, package_app_diff_configs,
+                                                                          result['diff_conf_variable'])
+        if package_db_diff_configs:
+            # 更新差异化变量bound/diffConfigGuid/diffExpr/fixedDate/key/type
+            result['db_diff_conf_variable'] = self.update_diff_conf_variable(all_diff_configs, package_db_diff_configs,
                                                                              result['db_diff_conf_variable'])
         return result
 
     def baseline_compare(self, unit_design_id, deploy_package_id, baseline_package_id):
         cmdb_client = self.get_cmdb_client()
         query = {"filters": [{"name": "guid", "operator": "eq", "value": deploy_package_id}], "paging": False}
+        self.set_package_query_fields(query)
         resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
         if not resp_json.get('data', {}).get('contents', []):
             raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
                                            {'rid': deploy_package_id})
         deploy_package = resp_json['data']['contents'][0]
         query = {"filters": [{"name": "guid", "operator": "eq", "value": baseline_package_id}], "paging": False}
+        self.set_package_query_fields(query)
         resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
         if not resp_json.get('data', {}).get('contents', []):
             raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
@@ -908,6 +956,7 @@ class UnitDesignPackages(WeCubeResource):
     def baseline_files_compare(self, data, unit_design_id, deploy_package_id, baseline_package_id):
         cmdb_client = self.get_cmdb_client()
         query = {"filters": [{"name": "guid", "operator": "eq", "value": deploy_package_id}], "paging": False}
+        self.set_package_query_fields(query)
         resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
         if not resp_json.get('data', {}).get('contents', []):
             raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
@@ -916,6 +965,7 @@ class UnitDesignPackages(WeCubeResource):
         baseline_package = None
         if baseline_package_id:
             query = {"filters": [{"name": "guid", "operator": "eq", "value": baseline_package_id}], "paging": False}
+            self.set_package_query_fields(query)
             resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
             if not resp_json.get('data', {}).get('contents', []):
                 raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
@@ -1094,6 +1144,7 @@ class UnitDesignPackages(WeCubeResource):
 
         cmdb_client = self.get_cmdb_client()
         query = {"filters": [{"name": "guid", "operator": "eq", "value": deploy_package_id}], "paging": False}
+        self.set_package_query_fields(query)
         resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
         if not resp_json.get('data', {}).get('contents', []):
             raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
@@ -1102,6 +1153,7 @@ class UnitDesignPackages(WeCubeResource):
         baseline_package = None
         if baseline_package_id:
             query = {"filters": [{"name": "guid", "operator": "eq", "value": baseline_package_id}], "paging": False}
+            self.set_package_query_fields(query)
             resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
             if not resp_json.get('data', {}).get('contents', []):
                 raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %

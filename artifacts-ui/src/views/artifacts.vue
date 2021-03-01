@@ -376,7 +376,6 @@ export default {
   name: 'artifacts',
   data () {
     return {
-      totalPkg: 0, // 供获取基线包使用
       baselinePackageOptions: [],
 
       packageType: '',
@@ -666,6 +665,7 @@ export default {
     async getAllpkg () {
       this.baselinePackageOptions = []
       let { status, data } = await queryPackages(this.guid, {
+        resultColumns: ['guid', 'name', 'package_type', 'diff_conf_file', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'is_decompression', 'db_diff_conf_file', 'db_upgrade_directory', 'db_rollback_directory', 'db_deploy_file_path', 'db_upgrade_file_path', 'db_rollback_file_path'],
         sorting: {
           asc: false,
           field: 'upload_time'
@@ -679,7 +679,7 @@ export default {
         ],
         paging: true,
         pageable: {
-          pageSize: this.totalPkg,
+          pageSize: 100,
           startIndex: 0
         }
       })
@@ -837,7 +837,10 @@ export default {
       this.systemDesignVersion = ''
       this.treeData = []
     },
-    async queryPackages () {
+    async queryPackages (resetCurrentPage = false) {
+      if (resetCurrentPage) {
+        this.pageInfo.currentPage = 1
+      }
       this.tableLoading = true
       let { status, data } = await queryPackages(this.guid, {
         sorting: {
@@ -859,7 +862,6 @@ export default {
           }
         })
         const { pageSize, totalRows: total } = data.pageInfo
-        this.totalPkg = total
         const currentPage = this.pageInfo.currentPage
         this.pageInfo = { currentPage, pageSize, total }
       }
@@ -867,7 +869,7 @@ export default {
     selectTreeNode (node) {
       if (node.length && node[0].level === 3) {
         this.guid = node[0].data.r_guid
-        this.queryPackages()
+        this.queryPackages(true)
         this.initPackageDetail()
       }
     },
