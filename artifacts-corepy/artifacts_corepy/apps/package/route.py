@@ -57,7 +57,8 @@ def add_routes(api):
     api.add_route('/artifacts/getPackageCiTypeId', controller.ControllerDeployPackageCiTypeId())
     api.add_route('/artifacts/static-data/special-connector', controller.CollectionSpecialConnector())
     api.add_route('/artifacts/ci-types', controller.CollectionCiTypes())
-    api.add_route('/artifacts/enum/system/codes', controller.CollectionEnumCodes())
+    api.add_route('/artifacts/enum/system/codes', controller.ItemEnumCodes())
+    api.add_route('/artifacts/ci-types/{ci_type_id}/operations', controller.ItemCITypeOperations())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/query', controller.CollectionUnitDesignPackages())
     api.add_route('/artifacts/ci-types/{ci_type_id}/references/by', controller.ItemCiReferences())
     api.add_route('/artifacts/ci-types/{ci_type_id}/attributes', controller.ItemCiAttributes())
@@ -82,6 +83,8 @@ def add_routes(api):
     # package detail
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/query',
                   controller.ItemPackage())
+    api.add_route('/artifacts/packages/{deploy_package_id}/history', controller.ItemPackageHistory())
+
     # package baseline full compare
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/comparison',
                   controller.UnitDesignPackageBaselineCompare())

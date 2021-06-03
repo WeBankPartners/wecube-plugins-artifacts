@@ -50,7 +50,8 @@ def decrypt_rsa(secret_key, encrypt_text):
                   'nexus_server', 'nexus_repository', 'nexus_username', 'nexus_password', 'local_nexus_server',
                   'local_nexus_repository', 'local_nexus_username', 'local_nexus_password', 'gateway_url',
                   'diff_conf_extension', 'variable_expression', 'jwt_signing_key', 'use_remote_nexus_only',
-                  'nexus_sort_as_string', 'local_nexus_connector_port', 'nexus_connector_port', 'platform_timezone')
+                  'nexus_sort_as_string', 'local_nexus_connector_port', 'nexus_connector_port', 'platform_timezone',
+                  'system_design_view')
 def get_env_value(value, origin_value):
     prefix = 'ENV@'
     encrypt_prefix = 'RSA@'

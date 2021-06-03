@@ -6,7 +6,7 @@ import datetime
 import logging
 from urllib.parse import urlparse
 
-from artifacts_corepy.common import wecmdb
+from artifacts_corepy.common import wecmdbv2
 from talos.core import config
 from talos.utils import scoped_globals
 
@@ -27,6 +27,9 @@ class Package(object):
             namespace + '/' if namespace else '', image_name, tag)
         package_name = '%s-%s' % (image_name, tag)
         query = {
+            "dialect": {
+                "queryMode": "new"
+            },
             "filters": [{
                 "name": "name",
                 "operator": "eq",
