@@ -5,7 +5,7 @@
       <Card>
         <p slot="title">{{ $t('artifacts_system_design_version') }}</p>
         <Select @on-change="selectSystemDesignVersion" @on-clear="clearSelectSystemDesign" label-in-name v-model="systemDesignVersion" filterable clearable>
-          <Option v-for="version in systemDesignVersions" :value="version.guid || ''" :key="version.guid">{{ version.fixed_date ? `${version.name}[${version.fixed_date}]` : version.name }}</Option>
+          <Option v-for="version in systemDesignVersions" :value="version.guid || ''" :key="version.guid">{{ version.confirm_time ? `${version.name}[${version.confirm_time}]` : version.name }}</Option>
         </Select>
       </Card>
       <!-- 系统设计列表 -->
@@ -350,12 +350,22 @@
         </p>
         <CompareFile ref="compareParams" :fileContentHeight="fileContentHeight"></CompareFile>
       </Modal>
+
+      <Modal v-model="isShowHistoryModal" :title="$t('operation_data_rollback')" width="900">
+        <div v-if="isShowHistoryModal" style="max-height: 500px;overflow:auto">
+          <ArtifactsSimpleTable class="artifact-management-package-table" :loading="historyTableLoading" :columns="historyTableColumns" :data="historyTableData" :page="historyPageInfo" :pagable="false" @pageChange="historyPageChange" @pageSizeChange="historyPageSizeChange" @rowClick="onHistoryRowClick"> </ArtifactsSimpleTable>
+        </div>
+        <div slot="footer">
+          <Button type="text" @click="onHistoryCancel()" :loading="historyBtnLoading">{{ $t('cancel') }} </Button>
+          <Button type="primary" @click="onHistoryConfirm()" :loading="historyBtnLoading">{{ $t('save') }} </Button>
+        </div>
+      </Modal>
     </Col>
   </Row>
 </template>
 
 <script>
-import { getSpecialConnector, getAllCITypesWithAttr, getAllSystemEnumCodes, deleteCiDatas, operateCiState, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, retrieveEntity, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact, getCompareContent } from '@/api/server.js'
+import { getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, retrieveEntity, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact, getCompareContent, queryHistoryPackages, getCITypeOperations } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
@@ -364,12 +374,14 @@ import Sortable from 'sortablejs'
 import CompareFile from './compare-file'
 import DisplayPath from './display-path'
 // 业务运行实例ciTypeId
-const defaultAppRootCiTypeId = 50
-const defaultDBRootCiTypeId = 51
+const defaultAppRootCiTypeId = 'app_instance'
+const defaultDBRootCiTypeId = 'rdb_instance'
 // cmdb插件包名
 const cmdbPackageName = 'wecmdb'
 // 差异配置key_name
 const DIFF_CONFIGURATION = 'diff_configuration'
+// 单元设计
+const UNIT_DESIGN = 'unit_design'
 // // 部署包key_name
 // const DEPLOY_PACKAGE = 'deploy_package'
 export default {
@@ -441,9 +453,9 @@ export default {
         },
         {
           title: this.$t('baseline_package'),
-          key: 'md5_value',
+          key: 'baseline_package',
           render: (h, params) => {
-            const baseLine = params.row.baseline_package.code || ''
+            const baseLine = params.row.baseline_package ? params.row.baseline_package.code : ''
             return <span>{baseLine}</span>
           }
         },
@@ -470,6 +482,50 @@ export default {
           }
         }
       ],
+      // ----------------
+      // 单元设计回滚表格配置
+      // ----------------
+      isShowHistoryModal: false,
+      historyTableColumns: [
+        {
+          title: this.$t('artifacts_package_name'),
+          key: 'name',
+          render: (h, params) => this.renderCell(params.row.name)
+        },
+        {
+          title: this.$t('package_type'),
+          key: 'package_type',
+          render: (h, params) => {
+            return <span>{this.$t(params.row.package_type)}</span>
+          }
+        },
+        {
+          title: this.$t('artifacts_upload_time'),
+          key: 'upload_time'
+        },
+        {
+          title: this.$t('baseline_package'),
+          key: 'baseline_package',
+          render: (h, params) => {
+            const baseLine = params.row.baseline_package ? params.row.baseline_package.code : ''
+            return <span>{baseLine}</span>
+          }
+        },
+        {
+          title: this.$t('artifacts_uploaded_by'),
+          key: 'upload_user',
+          render: (h, params) => this.renderCell(params.row.upload_user)
+        }
+      ],
+      historyTableData: [],
+      historyTableLoading: false,
+      historyPageInfo: {
+        pageSize: 5,
+        currentPage: 1,
+        total: 0
+      },
+      tmpHistorySelected: null,
+      historyBtnLoading: false,
       // ----------------
       // 包配置文件模态数据
       // ----------------
@@ -619,8 +675,8 @@ export default {
         }
       ],
       rootCI: [
-        { value: 50, label: this.$t('app') },
-        { value: 51, label: this.$t('db') }
+        { value: defaultAppRootCiTypeId, label: this.$t('app') },
+        { value: defaultDBRootCiTypeId, label: this.$t('db') }
       ],
       activeTab: '',
       activeTabData: null,
@@ -686,7 +742,7 @@ export default {
       if (status === 'OK') {
         this.baselinePackageOptions = data.contents.map(item => {
           return {
-            ...item.data
+            ...item
           }
         })
       }
@@ -733,7 +789,7 @@ export default {
     async fetchData () {
       const [sysData, packageCiType] = await Promise.all([getSystemDesignVersions(), getPackageCiTypeId()])
       if (sysData.status === 'OK' && sysData.data.contents instanceof Array) {
-        this.systemDesignVersions = sysData.data.contents.map(_ => _.data)
+        this.systemDesignVersions = sysData.data.contents.map(_ => _)
       }
       if (packageCiType.status === 'OK') {
         this.packageCiType = packageCiType.data
@@ -746,66 +802,69 @@ export default {
       }
     },
     async getAllCITypesWithAttr () {
-      let { status, data } = await getAllCITypesWithAttr(['notCreated', 'created', 'dirty', 'decommissioned'])
+      let { status, data } = await getAllCITypesWithAttr(['notCreated', 'created', 'dirty', 'deleted'])
       if (status === 'OK') {
         this.ciTypes = JSON.parse(JSON.stringify(data))
       }
     },
-    async getAllSystemEnumCodes () {
-      const { status, data } = await getAllSystemEnumCodes({
-        filters: [
-          {
-            name: 'cat.catName',
-            operator: 'eq',
-            value: 'state_transition_operation'
-          }
-        ],
-        paging: false
-      })
-      if (status === 'OK' && data.contents instanceof Array) {
-        const buttonTypes = {
-          confirm: 'success',
-          delete: 'error',
-          discard: 'warning',
-          update: 'primary'
-        }
-        this.statusOperations = data.contents
-          .filter(_ => _.code === 'confirm' || _.code === 'delete' || _.code === 'discard' || _.code === 'update')
-          .map(_ => {
-            return {
-              type: _.code,
-              label: _.code !== 'update' ? _.value : this.$t('artifacts_configuration'),
-              props: {
-                type: buttonTypes[_.code] || 'error',
-                size: 'small'
-              },
-              actionType: _.code
-            }
-          })
+    async getCITypeOperations () {
+      // TODO: fixme
+      const buttonTypes = {
+        Confirm: 'success',
+        Rollback: 'warning',
+        Delete: 'error',
+        Discard: 'warning',
+        Update: 'primary'
       }
+      const resp = await getCITypeOperations(UNIT_DESIGN)
+      this.statusOperations = resp.data.map(el => {
+        if (el.operation_en === 'Update') {
+          return {
+            type: el.operation_en,
+            label: this.$t('artifacts_configuration'),
+            props: {
+              type: buttonTypes[el.operation_en] || 'error',
+              size: 'small'
+            },
+            actionType: el.operation_en
+          }
+        } else {
+          return {
+            type: el.operation_en,
+            label: el.operation,
+            props: {
+              type: buttonTypes[el.operation_en] || 'error',
+              size: 'small'
+            },
+            actionType: el.operation_en
+          }
+        }
+      })
     },
     formatTreeData (array, level) {
       const color = {
-        new: '#19be6b',
-        update: '#5cadff',
+        added_0: '#19be6b',
+        added_1: '#19be6b',
+        updated_0: '#5cadff',
+        updated_1: '#5cadff',
         delete: '#ed4014',
         created: '#2b85e4',
         changed: 'purple',
         destroyed: '#ff9900'
       }
       return array.map(_ => {
-        _.title = _.data.name
+        _.title = _.name
         _.level = level
         _.render = (h, params) => {
           return (
             <div style="white-space: break-spaces;">
-              <div style={this.treeNodeSty} title={_.data.code}>
-                {_.data.code}
+              <div style={this.treeNodeSty} title={_.code}>
+                {_.code}
               </div>
-              <div style={this.treeNodeSty} title={_.data.name}>
-                [{_.data.name}]
+              <div style={this.treeNodeSty} title={_.name}>
+                [{_.name}]
               </div>
-              <div style={`display:inline-block;max-width:60px;font-size:12px;vertical-align:top;color:${color[_.data.state_code]}`}>{_.data.state_code}</div>
+              <div style={`display:inline-block;max-width:60px;font-size:12px;vertical-align:top;color:${color[_.state]}`}>{_.state}</div>
             </div>
           )
         }
@@ -857,8 +916,7 @@ export default {
         this.tableLoading = false
         this.tableData = data.contents.map(_ => {
           return {
-            ..._.data,
-            nextOperations: _.meta.nextOperations || []
+            ..._
           }
         })
         const { pageSize, totalRows: total } = data.pageInfo
@@ -868,7 +926,7 @@ export default {
     },
     selectTreeNode (node) {
       if (node.length && node[0].level === 3) {
-        this.guid = node[0].data.r_guid
+        this.guid = node[0].guid
         this.queryPackages(true)
         this.initPackageDetail()
       }
@@ -995,6 +1053,44 @@ export default {
       // 获取包文件及差异化变量数据
       await this.syncPackageDetail()
     },
+    historyPageChange (currentPage) {
+      this.historyPageInfo.currentPage = currentPage
+    },
+    historyPageSizeChange (pageSize) {
+      this.historyPageInfo.pageSize = pageSize
+    },
+    onHistoryCancel () {
+      this.historyBtnLoading = false
+      this.isShowHistoryModal = false
+    },
+    onHistoryRowClick (row) {
+      this.tmpHistorySelected = row
+    },
+    async onHistoryConfirm () {
+      if (this.tmpHistorySelected) {
+        this.historyBtnLoading = true
+        let rollBackData = JSON.parse(JSON.stringify(this.tmpHistorySelected))
+        delete rollBackData.update_time
+        delete rollBackData.nextOperations
+        const { status } = await operateCiStateWithData(this.packageCiType, rollBackData, 'Rollback')
+        if (status === 'OK') {
+          this.isShowHistoryModal = false
+          this.tmpHistorySelected = null
+        }
+        this.historyBtnLoading = false
+      } else {
+        this.$Notice.error({
+          title: 'Error',
+          desc: this.$t('must_select_one_item')
+        })
+        return false
+      }
+    },
+    async showHistoryModal (row) {
+      this.isShowHistoryModal = true
+      const resp = await queryHistoryPackages(row.guid)
+      this.historyTableData = resp.data
+    },
     initPackageDetail () {
       this.packageDetail = {
         baseline_package: null,
@@ -1033,7 +1129,9 @@ export default {
     formatPackageDetail (data) {
       let dataString = JSON.stringify(data)
       let copyData = JSON.parse(dataString)
-      copyData.diff_conf_variable.forEach(elVar => {
+      let diffConfVariable = copyData.diff_conf_variable || []
+      let dbDiffConfVariable = copyData.db_diff_conf_variable || []
+      diffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
         const rootCI = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
@@ -1060,13 +1158,13 @@ export default {
         elFile.shorFileName = elFile.filename.split('/').slice(-1)[0]
         elFile.configKeyInfos.forEach(elFileVar => {
           elFileVar.index = index
-          const found = copyData.diff_conf_variable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase())
+          const found = diffConfVariable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase())
           elFileVar.conf_variable = found
           index += 1
         })
       })
 
-      copyData.db_diff_conf_variable.forEach(elVar => {
+      dbDiffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
         const rootCI = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId)
@@ -1093,7 +1191,7 @@ export default {
         elFile.shorFileName = elFile.filename.split('/').slice(-1)[0]
         elFile.configKeyInfos.forEach(elFileVar => {
           elFileVar.index = index
-          const found = copyData.db_diff_conf_variable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase())
+          const found = dbDiffConfVariable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase())
           elFileVar.conf_variable = found
           index += 1
         })
@@ -1119,7 +1217,7 @@ export default {
       const row = params.row
       let opetions = []
       if (row.package_type === 'image') {
-        opetions = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0 && !['update'].includes(_.type))
+        opetions = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0 && !['Update'].includes(_.type))
       } else {
         opetions = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0)
       }
@@ -1134,12 +1232,16 @@ export default {
     changeStatus (row, status, event) {
       switch (status) {
         // 配置
-        case 'update':
+        case 'Update':
           this.showFilesModal(row, event)
           break
         // 删除
-        case 'delete':
+        case 'Delete':
           this.handleDelete(row, status)
+          break
+        // 删除
+        case 'Rollback':
+          this.showHistoryModal(row)
           break
         // 确认
         default:
@@ -1903,7 +2005,7 @@ export default {
     this.fetchData()
     this.getSpecialConnector()
     this.getAllCITypesWithAttr()
-    this.getAllSystemEnumCodes()
+    this.getCITypeOperations()
   },
   components: {
     CompareFile,

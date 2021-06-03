@@ -1,7 +1,9 @@
 <template>
   <div>
     <Table :data="data" :columns="columns" highlight-row :loading="loading" @on-row-click="onRowClick"></Table>
-    <Page :current="page.currentPage" :page-size="page.pageSize" :page-size-opts="pageSizeOptions" :total="page.total" @on-change="onChange" @on-page-size-change="onPageSizeChange" show-elevator show-sizer show-total style="float: right; margin: 10px 0;" />
+    <div v-if="pagable">
+      <Page :current="page.currentPage" :page-size="page.pageSize" :page-size-opts="pageSizeOptions" :total="page.total" @on-change="onChange" @on-page-size-change="onPageSizeChange" show-elevator show-sizer show-total style="float: right; margin: 10px 0;" />
+    </div>
   </div>
 </template>
 
@@ -10,6 +12,10 @@ export default {
   props: {
     data: Array,
     columns: Array,
+    pagable: {
+      default: true,
+      required: false
+    },
     page: {
       type: Object,
       default: () => {
