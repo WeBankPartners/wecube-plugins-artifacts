@@ -356,8 +356,8 @@
           <ArtifactsSimpleTable class="artifact-management-package-table" :loading="historyTableLoading" :columns="historyTableColumns" :data="historyTableData" :page="historyPageInfo" :pagable="false" @pageChange="historyPageChange" @pageSizeChange="historyPageSizeChange" @rowClick="onHistoryRowClick"> </ArtifactsSimpleTable>
         </div>
         <div slot="footer">
-          <Button type="text" @click="onHistoryCancel()" :loading="historyBtnLoading">{{ $t('cancel') }} </Button>
-          <Button type="primary" @click="onHistoryConfirm()" :loading="historyBtnLoading">{{ $t('save') }} </Button>
+          <Button type="text" @click="onHistoryCancel()" :loading="historyBtnLoading">{{ $t('artifacts_cancel') }} </Button>
+          <Button type="primary" @click="onHistoryConfirm()" :loading="historyBtnLoading">{{ $t('artifacts_save') }} </Button>
         </div>
       </Modal>
     </Col>
@@ -1060,6 +1060,7 @@ export default {
       this.historyPageInfo.pageSize = pageSize
     },
     onHistoryCancel () {
+      this.tmpHistorySelected = null
       this.historyBtnLoading = false
       this.isShowHistoryModal = false
     },
@@ -1076,6 +1077,7 @@ export default {
         if (status === 'OK') {
           this.isShowHistoryModal = false
           this.tmpHistorySelected = null
+          this.queryPackages()
         }
         this.historyBtnLoading = false
       } else {
