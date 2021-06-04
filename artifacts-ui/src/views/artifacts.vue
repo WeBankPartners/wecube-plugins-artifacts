@@ -1091,7 +1091,7 @@ export default {
     async showHistoryModal (row) {
       this.isShowHistoryModal = true
       const resp = await queryHistoryPackages(row.guid)
-      this.historyTableData = resp.data
+      this.historyTableData = resp.data || []
     },
     initPackageDetail () {
       this.packageDetail = {
