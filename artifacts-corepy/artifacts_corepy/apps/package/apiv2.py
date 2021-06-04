@@ -866,6 +866,23 @@ class UnitDesignPackages(WeCubeResource):
                                            {'rid': deploy_package_id})
         deploy_package = resp_json['data']['contents'][0]
         baseline_package = (deploy_package.get('baseline_package', None) or {})
+        if baseline_package:
+            query = {
+                "dialect": {
+                    "queryMode": "new"
+                },
+                "filters": [{
+                    "name": "guid",
+                    "operator": "eq",
+                    "value": baseline_package['guid']
+                }],
+                "paging": False
+            }
+            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+            if not resp_json.get('data', {}).get('contents', []):
+                raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
+                                               {'rid': baseline_package['guid']})
+            baseline_package = resp_json['data']['contents'][0]
         result = {}
         result['nextOperations'] = list(set(deploy_package.get('nextOperations', [])))
         result['packageId'] = deploy_package_id

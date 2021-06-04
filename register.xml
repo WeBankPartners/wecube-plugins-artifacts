@@ -22,10 +22,10 @@
 	<systemParameters>
         <systemParameter name="UPLOAD_ENABLED" scopeType="plugins" defaultValue="true"/>
         <systemParameter name="UPLOAD_NEXUS_ENABLED" scopeType="plugins" defaultValue="true"/>
-        <systemParameter name="ARTIFACTS_CITYPE_SYSTEM_DESIGN" scopeType="plugins" defaultValue="37"/>
-        <systemParameter name="ARTIFACTS_CITYPE_UNIT_DESIGN" scopeType="plugins" defaultValue="39"/>
-        <systemParameter name="ARTIFACTS_CITYPE_DIFF_CONFIG" scopeType="plugins" defaultValue="44"/>
-        <systemParameter name="ARTIFACTS_CITYPE_DEPLOY_PACKAGE" scopeType="plugins" defaultValue="45"/>
+        <systemParameter name="ARTIFACTS_CITYPE_SYSTEM_DESIGN" scopeType="plugins" defaultValue="app_system_design"/>
+        <systemParameter name="ARTIFACTS_CITYPE_UNIT_DESIGN" scopeType="plugins" defaultValue="unit_design"/>
+        <systemParameter name="ARTIFACTS_CITYPE_DIFF_CONFIG" scopeType="plugins" defaultValue="diff_configuration"/>
+        <systemParameter name="ARTIFACTS_CITYPE_DEPLOY_PACKAGE" scopeType="plugins" defaultValue="deploy_package"/>
         <systemParameter name="ARTIFACTS_ENCRYPT_VARIABLE_PREFIX" scopeType="plugins" defaultValue="!,%"/>
         <systemParameter name="ARTIFACTS_FILE_VARIABLE_PREFIX" scopeType="plugins" defaultValue="^"/>
         <systemParameter name="ARTIFACTS_DEFAULT_SPECIAL_REPLACE" scopeType="plugins" defaultValue="@,#"/>
