@@ -473,7 +473,7 @@ export default {
           }
           _.options = []
           if (['ref', 'multiRef'].indexOf(_.inputType) >= 0) {
-            const entityName = this.ciTypesObj[found.referenceId].tableName
+            const entityName = this.ciTypesObj[found.referenceId].ciTypeId
             promiseArray.push(retrieveEntity(this.cmdbPackageName, entityName))
           } else if (['select', 'multiSelect'].indexOf(_.inputType) >= 0) {
             promiseArray.push(getAllSystemEnumCodes(found.selectList))
@@ -833,7 +833,7 @@ export default {
       switch (inputType) {
         case 'ref':
         case 'multiRef':
-          const entityName = this.ciTypesObj[found.referenceId].tableName
+          const entityName = this.ciTypesObj[found.referenceId].ciTypeId
           const { status, data } = await retrieveEntity(this.cmdbPackageName, entityName)
           if (status === 'OK') {
             this.filters[i].options = data.map(_ => {
