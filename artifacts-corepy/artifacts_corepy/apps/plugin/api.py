@@ -6,7 +6,8 @@ import datetime
 import logging
 from urllib.parse import urlparse
 
-from artifacts_corepy.common import wecmdbv2
+from artifacts_corepy.common import wecmdbv2 as wecmdb
+from artifacts_corepy.common import constant
 from talos.core import config
 from talos.utils import scoped_globals
 
@@ -52,7 +53,7 @@ class Package(object):
                 'name': package_name,
                 'deploy_package_url': deploy_package_url,
                 'md5_value': md5 or 'N/A',
-                'package_type': 'image',
+                'package_type': constant.PackageType.image,
                 'upload_user': operator,
                 'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             }
