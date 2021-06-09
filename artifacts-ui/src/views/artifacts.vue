@@ -49,7 +49,7 @@
       <!-- 差异化变量 -->
       <div v-if="showDiffConfigTab" style="margin-top:16px">
         <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig">
-          <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('app')" name="APP" tab="diffConfig">
+          <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('APP')" name="APP" tab="diffConfig">
             <div class="batchOperation" style="text-align: right;">
               <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
@@ -63,7 +63,7 @@
               </TabPane>
             </Tabs>
           </TabPane>
-          <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('db')" name="DB" tab="diffConfig">
+          <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('DB')" name="DB" tab="diffConfig">
             <div class="batchOperation" style="text-align: right;">
               <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
@@ -112,7 +112,7 @@
             </Col>
             <Col span="18" offset="1">
               <Select clearable :placeholder="$t('package_type')" v-model="packageType">
-                <Option v-for="pkt in packageTypeOptions" :value="pkt.value" :key="pkt.value">{{ $t(pkt.label) }}</Option>
+                <Option v-for="pkt in packageTypeOptions" :value="pkt.value" :key="pkt.value" :disabled="pkt.value === 'IMAGE'">{{ $t(pkt.label) }}</Option>
               </Select>
             </Col>
           </Row>
@@ -130,7 +130,7 @@
           </Row>
         </Card>
         <Tabs :value="currentConfigTab" class="config-tab" @on-click="changeCurrentConfigTab">
-          <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('app')" name="APP">
+          <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('APP')" name="APP">
             <template>
               <Card :bordered="false" :padding="8">
                 <Row>
@@ -215,7 +215,7 @@
               </Card>
             </template>
           </TabPane>
-          <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('db')" name="DB">
+          <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('DB')" name="DB">
             <template>
               <Card :bordered="false" :padding="8">
                 <Row>
@@ -394,7 +394,8 @@ export default {
       packageTypeOptions: [
         { label: 'APP', value: 'APP' },
         { label: 'DB', value: 'DB' },
-        { label: 'APP&DB', value: 'APP&DB' }
+        { label: 'APP&DB', value: 'APP&DB' },
+        { label: 'IMAGE', value: 'IMAGE' }
       ],
       constPackageOptions: {
         db: 'DB',
@@ -681,8 +682,8 @@ export default {
         }
       ],
       rootCI: [
-        { value: defaultAppRootCiTypeId, label: this.$t('app') },
-        { value: defaultDBRootCiTypeId, label: this.$t('db') }
+        { value: defaultAppRootCiTypeId, label: this.$t('APP') },
+        { value: defaultDBRootCiTypeId, label: this.$t('DB') }
       ],
       activeTab: '',
       activeTabData: null,
@@ -1047,7 +1048,7 @@ export default {
       this.queryPackages()
     },
     async rowClick (row) {
-      if (row.package_type === 'image') {
+      if (row.package_type === this.constPackageOptions.image) {
         this.showDiffConfigTab = false
         this.packageDetail = []
         return
@@ -1224,7 +1225,7 @@ export default {
     renderActionButton (params) {
       const row = params.row
       let opetions = []
-      if (row.package_type === 'image') {
+      if (row.package_type === this.constPackageOptions.image) {
         opetions = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0 && !['Update'].includes(_.type))
       } else {
         opetions = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0)
