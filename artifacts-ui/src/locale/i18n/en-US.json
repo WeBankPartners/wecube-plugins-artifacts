@@ -71,10 +71,10 @@
   "check_all": "Check All",
   "variable_select_key_tooltip": "Choose a Key(variable) and use it's Value",
   "root_ci": "Root CI",
-  "app": "Applications",
-  "db": "DB Instance",
-  "image": "image",
-  "mixed": "APP&DB",
+  "APP": "Application",
+  "DB": "DB Instance",
+  "IMAGE": "Docker Image",
+  "APP&DB": "APP&DB",
   "file_compare": "File Compare",
   "original_content": "Original Content",
   "new_content": "New Content",
@@ -85,5 +85,6 @@
   "db_upgrade_file_path": "DB Upgrade File Path",
   "db_rollback_file_path": "DB Rollback File Path",
   "db_deploy_file_path": "DB Deploy File Path",
-  "detail": "Detail"
+  "detail": "Detail",
+  "operation_data_rollback": "Data Rollback"
 }

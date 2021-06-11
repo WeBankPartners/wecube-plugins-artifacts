@@ -4,10 +4,11 @@ from __future__ import absolute_import
 
 
 class PackageType(object):
-    app = 'app'
-    db = 'db'
-    mixed = 'mixed'
-    default = 'mixed'
+    app = 'APP'
+    db = 'DB'
+    mixed = 'APP&DB'
+    image = 'IMAGE'
+    default = 'APP&DB'
 
 
 class CompareResult(object):

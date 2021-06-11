@@ -56,4 +56,4 @@ class WeCubeClient(object):
 
     def retrieve(self, url_path):
         url = self.server + url_path
-        return self.get(url)
+        return self.post(url, {})

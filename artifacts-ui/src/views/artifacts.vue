@@ -5,7 +5,7 @@
       <Card>
         <p slot="title">{{ $t('artifacts_system_design_version') }}</p>
         <Select @on-change="selectSystemDesignVersion" @on-clear="clearSelectSystemDesign" label-in-name v-model="systemDesignVersion" filterable clearable>
-          <Option v-for="version in systemDesignVersions" :value="version.guid || ''" :key="version.guid">{{ version.fixed_date ? `${version.name}[${version.fixed_date}]` : version.name }}</Option>
+          <Option v-for="version in systemDesignVersions" :value="version.guid || ''" :key="version.guid">{{ version.confirm_time ? `${version.name}[${version.confirm_time}]` : version.name }}</Option>
         </Select>
       </Card>
       <!-- 系统设计列表 -->
@@ -49,7 +49,7 @@
       <!-- 差异化变量 -->
       <div v-if="showDiffConfigTab" style="margin-top:16px">
         <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig">
-          <TabPane :disabled="packageType === 'db'" :label="$t('app')" name="app" tab="diffConfig">
+          <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('APP')" name="APP" tab="diffConfig">
             <div class="batchOperation" style="text-align: right;">
               <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
@@ -57,13 +57,13 @@
               <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
               <div>{{ $t('artifacts_loading') }}</div>
             </Spin>
-            <Tabs :value="activeTab" @on-click="changeTab" name="app">
-              <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="app">
+            <Tabs :value="activeTab" @on-click="changeTab" name="APP">
+              <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="APP">
                 <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
               </TabPane>
             </Tabs>
           </TabPane>
-          <TabPane :disabled="packageType === 'app'" :label="$t('db')" name="db" tab="diffConfig">
+          <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('DB')" name="DB" tab="diffConfig">
             <div class="batchOperation" style="text-align: right;">
               <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
@@ -71,8 +71,8 @@
               <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
               <div>{{ $t('artifacts_loading') }}</div>
             </Spin>
-            <Tabs :value="activeTab" @on-click="changeTab" name="db">
-              <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="db">
+            <Tabs :value="activeTab" @on-click="changeTab" name="DB">
+              <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="DB">
                 <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
               </TabPane>
             </Tabs>
@@ -112,7 +112,7 @@
             </Col>
             <Col span="18" offset="1">
               <Select clearable :placeholder="$t('package_type')" v-model="packageType">
-                <Option v-for="pkt in packageTypeOptions" :value="pkt.value" :key="pkt.value">{{ $t(pkt.label) }}</Option>
+                <Option v-for="pkt in packageTypeOptions" :value="pkt.value" :key="pkt.value" :disabled="pkt.value === 'IMAGE'">{{ $t(pkt.label) }}</Option>
               </Select>
             </Col>
           </Row>
@@ -130,7 +130,7 @@
           </Row>
         </Card>
         <Tabs :value="currentConfigTab" class="config-tab" @on-click="changeCurrentConfigTab">
-          <TabPane :disabled="packageType === 'db'" :label="$t('app')" name="app">
+          <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('APP')" name="APP">
             <template>
               <Card :bordered="false" :padding="8">
                 <Row>
@@ -215,7 +215,7 @@
               </Card>
             </template>
           </TabPane>
-          <TabPane :disabled="packageType === 'app'" :label="$t('db')" name="db">
+          <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('DB')" name="DB">
             <template>
               <Card :bordered="false" :padding="8">
                 <Row>
@@ -350,12 +350,22 @@
         </p>
         <CompareFile ref="compareParams" :fileContentHeight="fileContentHeight"></CompareFile>
       </Modal>
+
+      <Modal v-model="isShowHistoryModal" :title="$t('operation_data_rollback')" width="900">
+        <div v-if="isShowHistoryModal" style="max-height: 500px;overflow:auto">
+          <ArtifactsSimpleTable class="artifact-management-package-table" :loading="historyTableLoading" :columns="historyTableColumns" :data="historyTableData" :page="historyPageInfo" :pagable="false" @pageChange="historyPageChange" @pageSizeChange="historyPageSizeChange" @rowClick="onHistoryRowClick"> </ArtifactsSimpleTable>
+        </div>
+        <div slot="footer">
+          <Button type="text" @click="onHistoryCancel()" :loading="historyBtnLoading">{{ $t('artifacts_cancel') }} </Button>
+          <Button type="primary" @click="onHistoryConfirm()" :loading="historyBtnLoading">{{ $t('artifacts_save') }} </Button>
+        </div>
+      </Modal>
     </Col>
   </Row>
 </template>
 
 <script>
-import { getSpecialConnector, getAllCITypesWithAttr, getAllSystemEnumCodes, deleteCiDatas, operateCiState, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, retrieveEntity, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact, getCompareContent } from '@/api/server.js'
+import { getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, retrieveEntity, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact, getCompareContent, queryHistoryPackages, getCITypeOperations } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
@@ -364,12 +374,14 @@ import Sortable from 'sortablejs'
 import CompareFile from './compare-file'
 import DisplayPath from './display-path'
 // 业务运行实例ciTypeId
-const defaultAppRootCiTypeId = 50
-const defaultDBRootCiTypeId = 51
+const defaultAppRootCiTypeId = 'app_instance'
+const defaultDBRootCiTypeId = 'rdb_instance'
 // cmdb插件包名
 const cmdbPackageName = 'wecmdb'
 // 差异配置key_name
 const DIFF_CONFIGURATION = 'diff_configuration'
+// 单元设计
+const UNIT_DESIGN = 'unit_design'
 // // 部署包key_name
 // const DEPLOY_PACKAGE = 'deploy_package'
 export default {
@@ -380,10 +392,17 @@ export default {
 
       packageType: '',
       packageTypeOptions: [
-        { label: 'app', value: 'app' },
-        { label: 'db', value: 'db' },
-        { label: 'mixed', value: 'mixed' }
+        { label: 'APP', value: 'APP' },
+        { label: 'DB', value: 'DB' },
+        { label: 'APP&DB', value: 'APP&DB' },
+        { label: 'IMAGE', value: 'IMAGE' }
       ],
+      constPackageOptions: {
+        db: 'DB',
+        app: 'APP',
+        mixed: 'APP&DB',
+        image: 'IMAGE'
+      },
       isFileSelect: false,
       fullscreen: false,
       fileContentHeight: window.screen.availHeight * 0.4 + 'px',
@@ -441,9 +460,9 @@ export default {
         },
         {
           title: this.$t('baseline_package'),
-          key: 'md5_value',
+          key: 'baseline_package',
           render: (h, params) => {
-            const baseLine = params.row.baseline_package.code || ''
+            const baseLine = params.row.baseline_package ? params.row.baseline_package.code : ''
             return <span>{baseLine}</span>
           }
         },
@@ -470,6 +489,50 @@ export default {
           }
         }
       ],
+      // ----------------
+      // 单元设计回滚表格配置
+      // ----------------
+      isShowHistoryModal: false,
+      historyTableColumns: [
+        {
+          title: this.$t('artifacts_package_name'),
+          key: 'name',
+          render: (h, params) => this.renderCell(params.row.name)
+        },
+        {
+          title: this.$t('package_type'),
+          key: 'package_type',
+          render: (h, params) => {
+            return <span>{this.$t(params.row.package_type)}</span>
+          }
+        },
+        {
+          title: this.$t('artifacts_upload_time'),
+          key: 'upload_time'
+        },
+        {
+          title: this.$t('baseline_package'),
+          key: 'baseline_package',
+          render: (h, params) => {
+            const baseLine = params.row.baseline_package ? params.row.baseline_package.code : ''
+            return <span>{baseLine}</span>
+          }
+        },
+        {
+          title: this.$t('artifacts_uploaded_by'),
+          key: 'upload_user',
+          render: (h, params) => this.renderCell(params.row.upload_user)
+        }
+      ],
+      historyTableData: [],
+      historyTableLoading: false,
+      historyPageInfo: {
+        pageSize: 5,
+        currentPage: 1,
+        total: 0
+      },
+      tmpHistorySelected: null,
+      historyBtnLoading: false,
       // ----------------
       // 包配置文件模态数据
       // ----------------
@@ -619,8 +682,8 @@ export default {
         }
       ],
       rootCI: [
-        { value: 50, label: this.$t('app') },
-        { value: 51, label: this.$t('db') }
+        { value: defaultAppRootCiTypeId, label: this.$t('APP') },
+        { value: defaultDBRootCiTypeId, label: this.$t('DB') }
       ],
       activeTab: '',
       activeTabData: null,
@@ -658,7 +721,7 @@ export default {
       deep: true
     },
     packageType: function (val) {
-      this.currentConfigTab = val === 'db' ? 'db' : 'app'
+      this.currentConfigTab = val === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
     }
   },
   methods: {
@@ -686,7 +749,7 @@ export default {
       if (status === 'OK') {
         this.baselinePackageOptions = data.contents.map(item => {
           return {
-            ...item.data
+            ...item
           }
         })
       }
@@ -704,7 +767,7 @@ export default {
     },
     changeDiffConfigTab (tabName) {
       this.currentDiffConfigTab = tabName
-      const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
+      const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
       if (this.packageDetail[tmp].length > 0) {
         this.activeTab = this.packageDetail[tmp][0].filename
         this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
@@ -715,12 +778,12 @@ export default {
     },
     changeTab (tabName) {
       this.activeTab = tabName
-      const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
+      const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
       // this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab).configKeyInfos
       this.activeTabData = this.packageDetail[tmp].find(item => item.filename === this.activeTab).configKeyInfos
     },
     changeRootCI (rootCI, params) {
-      const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
+      const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
       let activeTab = this.packageDetail[tmp].find(item => item.filename === this.activeTab)
       let confVariable = activeTab.configKeyInfos[params.index].conf_variable
       confVariable.tempRootCI = rootCI
@@ -733,7 +796,7 @@ export default {
     async fetchData () {
       const [sysData, packageCiType] = await Promise.all([getSystemDesignVersions(), getPackageCiTypeId()])
       if (sysData.status === 'OK' && sysData.data.contents instanceof Array) {
-        this.systemDesignVersions = sysData.data.contents.map(_ => _.data)
+        this.systemDesignVersions = sysData.data.contents.map(_ => _)
       }
       if (packageCiType.status === 'OK') {
         this.packageCiType = packageCiType.data
@@ -746,66 +809,69 @@ export default {
       }
     },
     async getAllCITypesWithAttr () {
-      let { status, data } = await getAllCITypesWithAttr(['notCreated', 'created', 'dirty', 'decommissioned'])
+      let { status, data } = await getAllCITypesWithAttr(['notCreated', 'created', 'dirty', 'deleted'])
       if (status === 'OK') {
         this.ciTypes = JSON.parse(JSON.stringify(data))
       }
     },
-    async getAllSystemEnumCodes () {
-      const { status, data } = await getAllSystemEnumCodes({
-        filters: [
-          {
-            name: 'cat.catName',
-            operator: 'eq',
-            value: 'state_transition_operation'
-          }
-        ],
-        paging: false
-      })
-      if (status === 'OK' && data.contents instanceof Array) {
-        const buttonTypes = {
-          confirm: 'success',
-          delete: 'error',
-          discard: 'warning',
-          update: 'primary'
-        }
-        this.statusOperations = data.contents
-          .filter(_ => _.code === 'confirm' || _.code === 'delete' || _.code === 'discard' || _.code === 'update')
-          .map(_ => {
-            return {
-              type: _.code,
-              label: _.code !== 'update' ? _.value : this.$t('artifacts_configuration'),
-              props: {
-                type: buttonTypes[_.code] || 'error',
-                size: 'small'
-              },
-              actionType: _.code
-            }
-          })
+    async getCITypeOperations () {
+      // TODO: fixme
+      const buttonTypes = {
+        Confirm: 'success',
+        Rollback: 'warning',
+        Delete: 'error',
+        Discard: 'warning',
+        Update: 'primary'
       }
+      const resp = await getCITypeOperations(UNIT_DESIGN)
+      this.statusOperations = resp.data.map(el => {
+        if (el.operation_en === 'Update') {
+          return {
+            type: el.operation_en,
+            label: this.$t('artifacts_configuration'),
+            props: {
+              type: buttonTypes[el.operation_en] || 'error',
+              size: 'small'
+            },
+            actionType: el.operation_en
+          }
+        } else {
+          return {
+            type: el.operation_en,
+            label: el.operation,
+            props: {
+              type: buttonTypes[el.operation_en] || 'error',
+              size: 'small'
+            },
+            actionType: el.operation_en
+          }
+        }
+      })
     },
     formatTreeData (array, level) {
       const color = {
-        new: '#19be6b',
-        update: '#5cadff',
+        added_0: '#19be6b',
+        added_1: '#19be6b',
+        updated_0: '#5cadff',
+        updated_1: '#5cadff',
         delete: '#ed4014',
         created: '#2b85e4',
         changed: 'purple',
         destroyed: '#ff9900'
       }
       return array.map(_ => {
-        _.title = _.data.name
+        _.title = _.name
         _.level = level
         _.render = (h, params) => {
           return (
             <div style="white-space: break-spaces;">
-              <div style={this.treeNodeSty} title={_.data.code}>
-                {_.data.code}
+              <div style={this.treeNodeSty} title={_.code}>
+                {_.code}
               </div>
-              <div style={this.treeNodeSty} title={_.data.name}>
-                [{_.data.name}]
+              <div style={this.treeNodeSty} title={_.name}>
+                [{_.name}]
               </div>
-              <div style={`display:inline-block;max-width:60px;font-size:12px;vertical-align:top;color:${color[_.data.state_code]}`}>{_.data.state_code}</div>
+              <div style={`display:inline-block;max-width:60px;font-size:12px;vertical-align:top;color:${color[_.state]}`}>{_.state}</div>
             </div>
           )
         }
@@ -857,8 +923,7 @@ export default {
         this.tableLoading = false
         this.tableData = data.contents.map(_ => {
           return {
-            ..._.data,
-            nextOperations: _.meta.nextOperations || []
+            ..._
           }
         })
         const { pageSize, totalRows: total } = data.pageInfo
@@ -868,7 +933,7 @@ export default {
     },
     selectTreeNode (node) {
       if (node.length && node[0].level === 3) {
-        this.guid = node[0].data.r_guid
+        this.guid = node[0].guid
         this.queryPackages(true)
         this.initPackageDetail()
       }
@@ -983,17 +1048,57 @@ export default {
       this.queryPackages()
     },
     async rowClick (row) {
-      if (row.package_type === 'image') {
+      if (row.package_type === this.constPackageOptions.image) {
         this.showDiffConfigTab = false
         this.packageDetail = []
         return
       }
       this.packageType = row.package_type
-      this.currentDiffConfigTab = this.packageType === 'db' ? 'db' : 'app'
+      this.currentDiffConfigTab = this.packageType === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
       this.packageId = row.guid
       this.showDiffConfigTab = true
       // 获取包文件及差异化变量数据
       await this.syncPackageDetail()
+    },
+    historyPageChange (currentPage) {
+      this.historyPageInfo.currentPage = currentPage
+    },
+    historyPageSizeChange (pageSize) {
+      this.historyPageInfo.pageSize = pageSize
+    },
+    onHistoryCancel () {
+      this.tmpHistorySelected = null
+      this.historyBtnLoading = false
+      this.isShowHistoryModal = false
+    },
+    onHistoryRowClick (row) {
+      this.tmpHistorySelected = row
+    },
+    async onHistoryConfirm () {
+      if (this.tmpHistorySelected) {
+        this.historyBtnLoading = true
+        let rollBackData = JSON.parse(JSON.stringify(this.tmpHistorySelected))
+        delete rollBackData.update_time
+        delete rollBackData.nextOperations
+        const { status } = await operateCiStateWithData(this.packageCiType, rollBackData, 'Rollback')
+        if (status === 'OK') {
+          this.isShowHistoryModal = false
+          this.tmpHistorySelected = null
+          this.queryPackages()
+        }
+        this.historyBtnLoading = false
+      } else {
+        this.$Notice.error({
+          title: 'Error',
+          desc: this.$t('must_select_one_item')
+        })
+        return false
+      }
+    },
+    async showHistoryModal (row) {
+      this.isShowHistoryModal = true
+      const resp = await queryHistoryPackages(row.guid)
+      this.historyTableData = resp.data || []
     },
     initPackageDetail () {
       this.packageDetail = {
@@ -1033,7 +1138,9 @@ export default {
     formatPackageDetail (data) {
       let dataString = JSON.stringify(data)
       let copyData = JSON.parse(dataString)
-      copyData.diff_conf_variable.forEach(elVar => {
+      let diffConfVariable = copyData.diff_conf_variable || []
+      let dbDiffConfVariable = copyData.db_diff_conf_variable || []
+      diffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
         const rootCI = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
@@ -1060,13 +1167,13 @@ export default {
         elFile.shorFileName = elFile.filename.split('/').slice(-1)[0]
         elFile.configKeyInfos.forEach(elFileVar => {
           elFileVar.index = index
-          const found = copyData.diff_conf_variable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase())
+          const found = diffConfVariable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase())
           elFileVar.conf_variable = found
           index += 1
         })
       })
 
-      copyData.db_diff_conf_variable.forEach(elVar => {
+      dbDiffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
         const rootCI = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId)
@@ -1093,7 +1200,7 @@ export default {
         elFile.shorFileName = elFile.filename.split('/').slice(-1)[0]
         elFile.configKeyInfos.forEach(elFileVar => {
           elFileVar.index = index
-          const found = copyData.db_diff_conf_variable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase())
+          const found = dbDiffConfVariable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase())
           elFileVar.conf_variable = found
           index += 1
         })
@@ -1104,7 +1211,7 @@ export default {
       this.initPackageDetail()
       let { status, data } = await getPackageDetail(this.guid, this.packageId)
       if (status === 'OK') {
-        const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
+        const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
         this.packageDetail = this.formatPackageDetail(data)
         if (this.packageDetail[tmp].length > 0) {
           this.activeTab = this.packageDetail[tmp][0].filename
@@ -1118,8 +1225,8 @@ export default {
     renderActionButton (params) {
       const row = params.row
       let opetions = []
-      if (row.package_type === 'image') {
-        opetions = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0 && !['update'].includes(_.type))
+      if (row.package_type === this.constPackageOptions.image) {
+        opetions = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0 && !['Update'].includes(_.type))
       } else {
         opetions = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0)
       }
@@ -1134,12 +1241,16 @@ export default {
     changeStatus (row, status, event) {
       switch (status) {
         // 配置
-        case 'update':
+        case 'Update':
           this.showFilesModal(row, event)
           break
         // 删除
-        case 'delete':
+        case 'Delete':
           this.handleDelete(row, status)
+          break
+        // 删除
+        case 'Rollback':
+          this.showHistoryModal(row)
           break
         // 确认
         default:
@@ -1252,8 +1363,8 @@ export default {
       event.stopPropagation()
       this.packageId = row.guid
       await this.syncPackageDetail()
-      this.packageType = row.package_type || 'mixed'
-      this.currentConfigTab = this.packageType === 'db' ? 'db' : 'app'
+      this.packageType = row.package_type || this.constPackageOptions.mixed
+      this.currentConfigTab = this.packageType === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
       // 以下4个变量类型为字符串
       // row从table数据中来，此时baseline_package为对象
       this.packageInput.baseline_package = this.packageDetail.baseline_package ? this.packageDetail.baseline_package : null
@@ -1276,13 +1387,13 @@ export default {
       await this.getAllpkg()
       this.isShowFilesModal = true
       this.$nextTick(() => {
-        if (this.packageType !== 'db') {
+        if (this.packageType !== this.constPackageOptions.db) {
           this.genSortable('diff_conf_file')
           this.genSortable('start_file_path')
           this.genSortable('stop_file_path')
           this.genSortable('deploy_file_path')
         }
-        if (this.packageType !== 'app') {
+        if (this.packageType !== this.constPackageOptions.app) {
           this.genSortable('db_diff_conf_file')
           this.genSortable('db_upgrade_directory')
           this.genSortable('db_rollback_directory')
@@ -1794,7 +1905,7 @@ export default {
     showBatchBindModal () {
       // 复制一份数据用于临时使用bound勾选状态
       let tempBindData = this.formatPackageDetail(this.packageDetail)
-      const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_variable' : 'diff_conf_variable'
+      const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_variable' : 'diff_conf_variable'
       this.batchBindData = tempBindData[tmp]
       this.isShowBatchBindModal = true
     },
@@ -1808,7 +1919,7 @@ export default {
       this.isShowBatchBindModal = false
       this.tabTableLoading = true
       let params = {}
-      const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_variable' : 'diff_conf_variable'
+      const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_variable' : 'diff_conf_variable'
       params[tmp] = this.batchBindData
       const { status, data } = await updatePackage(this.guid, this.packageId, params)
       if (status === 'OK') {
@@ -1833,7 +1944,7 @@ export default {
     },
     setConfigRowValue () {
       if (this.currentConfigValue) {
-        const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
+        const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
         this.packageDetail[tmp].forEach(elFile => {
           elFile.configKeyInfos.forEach(elFileVar => {
             if (this.currentConfigRow.key.toLowerCase() === elFileVar.key.toLowerCase()) {
@@ -1885,7 +1996,7 @@ export default {
           }
         ]
       })
-      const tmp = this.currentDiffConfigTab === 'db' ? 'db_diff_conf_file' : 'diff_conf_file'
+      const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
       this.packageDetail[tmp].forEach(elFile => {
         elFile.configKeyInfos.forEach(elFileVar => {
           if (row.key.toLowerCase() === elFileVar.key.toLowerCase()) {
@@ -1903,7 +2014,7 @@ export default {
     this.fetchData()
     this.getSpecialConnector()
     this.getAllCITypesWithAttr()
-    this.getAllSystemEnumCodes()
+    this.getCITypeOperations()
   },
   components: {
     CompareFile,

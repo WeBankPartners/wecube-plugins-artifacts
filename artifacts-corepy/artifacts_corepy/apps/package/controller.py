@@ -9,7 +9,7 @@ from talos.common import controller as base_controller
 
 from artifacts_corepy.common.controller import Collection, Item, POSTCollection
 from artifacts_corepy.common import exceptions
-from artifacts_corepy.apps.package import api as package_api
+from artifacts_corepy.apps.package import apiv2 as package_api
 
 CONF = config.CONF
 
@@ -21,7 +21,7 @@ class ControllerDeployPackageCiTypeId(object):
         resp.json = {
             'code': 200,
             'status': 'OK',
-            'data': int(CONF.wecube.wecmdb.citypes.deploy_package),
+            'data': CONF.wecube.wecmdb.citypes.deploy_package,
             'message': 'success'
         }
 
@@ -50,10 +50,16 @@ class CollectionCiTypes(Collection):
     resource = package_api.CiTypes
 
 
-class CollectionEnumCodes(POSTCollection):
-    allow_methods = ('POST', )
+class ItemEnumCodes(Item):
+    allow_methods = ('GET', )
     name = 'artifacts.enum-codes'
     resource = package_api.EnumCodes
+
+
+class ItemCITypeOperations(Item):
+    allow_methods = ('GET', )
+    name = 'artifacts.ci-operations'
+    resource = package_api.CITypeOperations
 
 
 class CollectionUnitDesignPackages(POSTCollection):
@@ -109,6 +115,12 @@ class ItemPackage(Item):
     allow_methods = ('GET', )
     name = 'artifacts.deploy-package.item'
     resource = package_api.UnitDesignPackages
+
+
+class ItemPackageHistory(Item):
+    allow_methods = ('GET', )
+    name = 'artifacts.deploy-package.itemhistory'
+    resource = package_api.PackageHistory
 
 
 class ItemPackageUpdate(Item):

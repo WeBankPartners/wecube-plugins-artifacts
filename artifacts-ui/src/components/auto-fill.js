@@ -7,7 +7,7 @@ export default {
     allCiTypes: { default: () => [], required: true },
     isReadOnly: { default: () => false, required: false },
     value: { default: () => '', required: true },
-    rootCiTypeId: { type: Number, required: true },
+    rootCiTypeId: { type: String, required: true },
     specialDelimiters: { default: () => [], required: true },
     cmdbPackageName: { default: '', required: true }
   },
@@ -36,7 +36,7 @@ export default {
         { code: 'notNull', value: 'NotNull' },
         { code: 'null', value: 'Null' }
       ],
-      enumCodes: ['id', 'code', 'value', 'groupCodeId'],
+      enumCodes: [],
       spinShow: false
     }
   },
@@ -473,21 +473,10 @@ export default {
           }
           _.options = []
           if (['ref', 'multiRef'].indexOf(_.inputType) >= 0) {
-            const entityName = this.ciTypesObj[found.referenceId].tableName
+            const entityName = this.ciTypesObj[found.referenceId].ciTypeId
             promiseArray.push(retrieveEntity(this.cmdbPackageName, entityName))
           } else if (['select', 'multiSelect'].indexOf(_.inputType) >= 0) {
-            promiseArray.push(
-              getAllSystemEnumCodes({
-                filters: [
-                  {
-                    name: 'catId',
-                    operator: 'eq',
-                    value: found.referenceId
-                  }
-                ],
-                paging: false
-              })
-            )
+            promiseArray.push(getAllSystemEnumCodes(found.selectList))
           } else {
             promiseArray.push({ data: [] })
           }
@@ -508,7 +497,7 @@ export default {
               }
             })
           } else if (['select', 'multiSelect'].indexOf(this.filters[i].inputType) >= 0) {
-            this.filters[i].options = _.data.contents.map(item => {
+            this.filters[i].options = _.data.map(item => {
               return {
                 label: item.value,
                 id: item.code
@@ -565,6 +554,7 @@ export default {
           }
         ]
         this.showEnumOptions(ruleIndex, i + 1 + '')
+        this.optionsDisplay = false
       } else {
         this.optionsDisplay = false
       }
@@ -843,7 +833,7 @@ export default {
       switch (inputType) {
         case 'ref':
         case 'multiRef':
-          const entityName = this.ciTypesObj[found.referenceId].tableName
+          const entityName = this.ciTypesObj[found.referenceId].ciTypeId
           const { status, data } = await retrieveEntity(this.cmdbPackageName, entityName)
           if (status === 'OK') {
             this.filters[i].options = data.map(_ => {
@@ -856,19 +846,10 @@ export default {
           break
         case 'select':
         case 'multiSelect':
-          const params = {
-            filters: [
-              {
-                name: 'catId',
-                operator: 'eq',
-                value: found.referenceId
-              }
-            ],
-            paging: false
-          }
+          const params = found.selectList
           const res = await getAllSystemEnumCodes(params)
           if (res.status === 'OK') {
-            this.filters[i].options = res.data.contents.map(_ => {
+            this.filters[i].options = res.data.map(_ => {
               return {
                 label: _.value,
                 id: _.code
