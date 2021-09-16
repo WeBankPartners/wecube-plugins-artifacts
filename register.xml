@@ -44,6 +44,9 @@
         <systemParameter name="NEXUS_SORT_AS_STRING" scopeType="plugins" defaultValue="false"/>
         <systemParameter name="NEXUS_CONNECTOR_PORT" scopeType="plugins" defaultValue="5000"/>
         <systemParameter name="ARTIFACTS_SYSTEM_DESIGN_VIEW" scopeType="plugins" defaultValue="artifacts"/>
+        <systemParameter name="ARTIFACTS_CLEANUP_CRON" scopeType="plugins" defaultValue="24"/>
+        <systemParameter name="ARTIFACTS_CLEANUP_KEEP_TOPN" scopeType="plugins" defaultValue="10"/>
+        <systemParameter name="ARTIFACTS_CLEANUP_KEEP_UNIT_FIELD" scopeType="plugins" defaultValue="keep_unit_topn"/>
 	</systemParameters>
 
     <!-- 5.权限设定 -->

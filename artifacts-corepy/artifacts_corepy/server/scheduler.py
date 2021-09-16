@@ -17,10 +17,14 @@ import logging
 from pytz import timezone
 from talos.core import config
 from talos.core import logging as mylogger
+from talos.utils import scoped_globals
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.executors.pool import ThreadPoolExecutor
+
+from artifacts_corepy.common import nexus
+from artifacts_corepy.common import wecmdbv2 as wecmdb
 
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
@@ -89,6 +93,69 @@ def rotate_log():
         LOG.exception(e)
 
 
+def cleanup_deploy_package():
+    try:
+        cmdb_client = wecmdb.WeCMDBClient(CONF.wecube.server, scoped_globals.GLOBALS.request.auth_token)
+        query = {
+            "dialect": {
+                "queryMode": "new"
+            },
+            "filters": [],
+            "paging": False,
+            "sorting": {"asc": False, "field": "update_time"}
+        }
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.unit_design, query)
+        if not resp_json.get('data', {}).get('contents', []):
+            return
+        unit_design_list = resp_json['data']['contents']
+
+        nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
+        artifact_repository = CONF.nexus.repository
+
+        for unit_design in unit_design_list:
+            query = {
+                "dialect": {
+                    "queryMode": "new"
+                },
+                "filters": [{"name": "unit_design", "operator": "eq", "value": unit_design["guid"]}],
+                "paging": False,
+                "sorting": {"asc": False, "field": "update_time"}
+            }
+            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+            if not resp_json.get('data', {}).get('contents', []):
+                continue
+
+            keep_topn = unit_design.get(CONF.cleanup.keep_unit_field, CONF.cleanup.keep_topn)
+            keep_topn = int(keep_topn)
+            deploy_package_list = resp_json['data']['contents']
+            cnt = 1
+            for deploy_package in deploy_package_list:
+                if cnt > keep_topn:
+                    deploy_package_url = deploy_package.get("deploy_package_url", "")
+                    if deploy_package_url.startswith(CONF.wecube.server):
+                        prefix = CONF.wecube.server.rstrip('/') + '/artifacts/repository/' + artifact_repository
+                        suffix = deploy_package_url[len(prefix):]
+                        suffix_list = suffix.split("/")
+                        if len(suffix_list) >= 2:
+                            filename = suffix_list[len(suffix_list)-1]
+                            component_name = filename
+                            component_group = "/"
+                            if len(suffix_list) > 2:
+                                component_group = suffix[:len(suffix)-len("/"+filename)]
+                                component_name = suffix[1:]
+                            asset_info = nexus_client.get_asset(artifact_repository, component_group, component_name)
+                            if asset_info:
+                                asset_id = asset_info["id"]
+                                nexus_client.delete_assets(artifact_repository, '/service/rest/v1/assets/'+asset_id)
+
+                                data = [{'guid': deploy_package["guid"]}]
+                                cmdb_client.delete(CONF.wecube.wecmdb.citypes.deploy_package, data)
+                cnt += 1
+        return
+    except Exception as e:
+        LOG.exception(e)
+
+
 def main():
     config.setup(os.environ.get('ARTIFACTS_COREPY_CONF', '/etc/artifacts_corepy/artifacts_corepy.conf'),
                  dir_path=os.environ.get('ARTIFACTS_COREPY_CONF_DIR', '/etc/artifacts_corepy/artifacts_corepy.conf.d'))
@@ -110,6 +177,7 @@ def main():
                                   timezone=tz_info)
     scheduler.add_job(cleanup_cached_dir, 'cron', hour='*')
     scheduler.add_job(rotate_log, 'cron', hour=3, minute=5)
+    scheduler.add_job(cleanup_deploy_package, 'cron', hour=int(CONF.cleanup.cron))
     try:
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
