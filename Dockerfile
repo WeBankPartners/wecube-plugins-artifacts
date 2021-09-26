@@ -12,7 +12,7 @@ RUN rm -f /etc/yum.repos.d/redhat.repo /etc/yum.repos.d/ubi.repo
 # Install && Clean up
 RUN yum clean all && yum makecache && yum install -y python3 python3-devel swig openssl-devel gcc libev-devel make  && \
     pip3 install -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r /tmp/requirements.txt && \
-    pip3 install /tmp/*.whl
+    pip3 install /tmp/*.whl && yum remove python3-devel swig openssl-devel gcc libev-devel make && rm -rf /tmp/* && yum clean all
 ADD build/start_all.sh /scripts/start_all.sh
 RUN chmod +x /scripts/start_all.sh
 CMD ["/bin/sh","-c","/scripts/start_all.sh"]
