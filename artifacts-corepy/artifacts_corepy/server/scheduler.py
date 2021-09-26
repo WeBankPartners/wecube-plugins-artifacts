@@ -177,7 +177,10 @@ def main():
                                   timezone=tz_info)
     scheduler.add_job(cleanup_cached_dir, 'cron', hour='*')
     scheduler.add_job(rotate_log, 'cron', hour=3, minute=5)
-    scheduler.add_job(cleanup_deploy_package, 'cron', hour=int(CONF.cleanup.cron))
+
+    cron_values = CONF.cleanup.cron.split(" ")
+    scheduler.add_job(cleanup_deploy_package, 'cron', minute=cron_values[0], hour=cron_values[1],
+                      day=cron_values[2], month=cron_values[3], day_of_week=cron_values[4])
     try:
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
