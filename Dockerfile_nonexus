@@ -8,7 +8,7 @@ RUN mkdir -p /etc/artifacts_corepy/
 RUN mkdir -p /var/log/artifacts_corepy/
 ADD artifacts-corepy/etc/* /etc/artifacts_corepy/
 # Install && Clean up
-RUN apt update && apt-get -y install gcc swig python3-dev && \
+RUN apt update && apt-get -y install gcc swig libssl-dev python3-dev && \
     pip3 install -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r /tmp/requirements.txt && \
     pip3 install /tmp/*.whl && \
     rm -rf /root/.cache && apt autoclean && \
