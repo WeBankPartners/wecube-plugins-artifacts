@@ -39,4 +39,4 @@ application = base.initialize_server('artifacts_corepy',
                                                              '/etc/artifacts_corepy/artifacts_corepy.conf.d'),
                                      middlewares=[auth.JWTAuth(), permission.Permission()])
 application.set_error_serializer(error_serializer)
-application.req_options.auto_parse_qs_csv = True
+# application.req_options.auto_parse_qs_csv = True
