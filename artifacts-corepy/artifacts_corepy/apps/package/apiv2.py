@@ -672,7 +672,7 @@ class UnitDesignPackages(WeCubeResource):
         data['guid'] = deploy_package_id
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
         # FIXME: patch for wecmdb, error update without code
-        clean_data['code'] = deploy_package['code']
+        clean_data['code'] = deploy_package['name']
         available_extensions = CONF.diff_conf_extension.split(',')
         if 'diff_conf_file' in data:
             for item in data['diff_conf_file']:
