@@ -42,6 +42,10 @@ class WeCMDBClient(object):
         return URL_PREFIX + '/ci-data/do/Delete/%s' % citype
 
     @staticmethod
+    def build_confirm_url(citype):
+        return URL_PREFIX + '/ci-data/do/Confirm/%s' % citype
+
+    @staticmethod
     def build_view_data_url():
         return URL_PREFIX + '/view-data'
 
@@ -174,4 +178,8 @@ class WeCMDBClient(object):
 
     def delete(self, citype, data):
         url = self.server + self.build_delete_url(citype)
+        return self.post(url, data)
+
+    def confirm(self, citype, data):
+        url = self.server + self.build_confirm_url(citype)
         return self.post(url, data)

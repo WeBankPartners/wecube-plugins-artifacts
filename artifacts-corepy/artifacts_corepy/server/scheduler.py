@@ -16,7 +16,6 @@ import datetime
 import logging
 from pytz import timezone
 from talos.core import config
-from talos.utils import scoped_globals
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.jobstores.memory import MemoryJobStore
@@ -25,6 +24,7 @@ from apscheduler.executors.pool import ThreadPoolExecutor
 from artifacts_corepy.server.wsgi_server import application
 from artifacts_corepy.common import nexus
 from artifacts_corepy.common import wecmdbv2 as wecmdb
+from artifacts_corepy.common import wecube
 
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
@@ -95,7 +95,9 @@ def rotate_log():
 
 def cleanup_deploy_package():
     try:
-        cmdb_client = wecmdb.WeCMDBClient(CONF.wecube.server, scoped_globals.GLOBALS.request.auth_token)
+        wecube_client = wecube.WeCubeClient(CONF.wecube.server, "")
+        wecube_client.login_subsystem()
+        cmdb_client = wecmdb.WeCMDBClient(CONF.wecube.server, wecube_client.token)
         query = {
             "dialect": {
                 "queryMode": "new"
@@ -140,9 +142,12 @@ def cleanup_deploy_package():
             deploy_package_list = resp_json['data']['contents']
             cnt = 1
             for deploy_package in deploy_package_list:
+                if deploy_package['state'] == 'deleted_0':
+                    continue
                 if cnt > keep_topn:
                     deploy_package_url = deploy_package.get("deploy_package_url", "")
                     if deploy_package_url.startswith(CONF.wecube.server):
+                        # delete nexus package
                         prefix = CONF.wecube.server.rstrip('/') + '/artifacts/repository/' + artifact_repository
                         suffix = deploy_package_url[len(prefix):]
                         suffix_list = suffix.split("/")
@@ -157,9 +162,14 @@ def cleanup_deploy_package():
                             if asset_info:
                                 asset_id = asset_info["id"]
                                 nexus_client.delete_assets(artifact_repository, '/service/rest/v1/assets/' + asset_id)
+                                LOG.info('delete package[%s] from local nexus: %s', deploy_package["guid"], suffix)
 
-                                data = [{'guid': deploy_package["guid"]}]
-                                cmdb_client.delete(CONF.wecube.wecmdb.citypes.deploy_package, data)
+                    data = [{'guid': deploy_package["guid"]}]
+                    resp_json = cmdb_client.delete(CONF.wecube.wecmdb.citypes.deploy_package, data)
+                    if resp_json.get('statusCode', 'OK') == 'OK' and resp_json['data'][0].get('state',
+                                                                                              '') == 'deleted_0':
+                        LOG.info('delete package[%s] from ci data', deploy_package["guid"])
+                        resp_json = cmdb_client.confirm(CONF.wecube.wecmdb.citypes.deploy_package, data)
                 cnt += 1
         return
     except Exception as e:
