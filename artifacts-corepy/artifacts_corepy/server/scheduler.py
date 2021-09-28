@@ -16,13 +16,13 @@ import datetime
 import logging
 from pytz import timezone
 from talos.core import config
-from talos.core import logging as mylogger
 from talos.utils import scoped_globals
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.executors.pool import ThreadPoolExecutor
 
+from artifacts_corepy.server.wsgi_server import application
 from artifacts_corepy.common import nexus
 from artifacts_corepy.common import wecmdbv2 as wecmdb
 
@@ -102,7 +102,10 @@ def cleanup_deploy_package():
             },
             "filters": [],
             "paging": False,
-            "sorting": {"asc": False, "field": "update_time"}
+            "sorting": {
+                "asc": False,
+                "field": "update_time"
+            }
         }
         resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.unit_design, query)
         if not resp_json.get('data', {}).get('contents', []):
@@ -117,9 +120,16 @@ def cleanup_deploy_package():
                 "dialect": {
                     "queryMode": "new"
                 },
-                "filters": [{"name": "unit_design", "operator": "eq", "value": unit_design["guid"]}],
+                "filters": [{
+                    "name": "unit_design",
+                    "operator": "eq",
+                    "value": unit_design["guid"]
+                }],
                 "paging": False,
-                "sorting": {"asc": False, "field": "update_time"}
+                "sorting": {
+                    "asc": False,
+                    "field": "update_time"
+                }
             }
             resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
             if not resp_json.get('data', {}).get('contents', []):
@@ -137,16 +147,16 @@ def cleanup_deploy_package():
                         suffix = deploy_package_url[len(prefix):]
                         suffix_list = suffix.split("/")
                         if len(suffix_list) >= 2:
-                            filename = suffix_list[len(suffix_list)-1]
+                            filename = suffix_list[len(suffix_list) - 1]
                             component_name = filename
                             component_group = "/"
                             if len(suffix_list) > 2:
-                                component_group = suffix[:len(suffix)-len("/"+filename)]
+                                component_group = suffix[:len(suffix) - len("/" + filename)]
                                 component_name = suffix[1:]
                             asset_info = nexus_client.get_asset(artifact_repository, component_group, component_name)
                             if asset_info:
                                 asset_id = asset_info["id"]
-                                nexus_client.delete_assets(artifact_repository, '/service/rest/v1/assets/'+asset_id)
+                                nexus_client.delete_assets(artifact_repository, '/service/rest/v1/assets/' + asset_id)
 
                                 data = [{'guid': deploy_package["guid"]}]
                                 cmdb_client.delete(CONF.wecube.wecmdb.citypes.deploy_package, data)
@@ -157,30 +167,24 @@ def cleanup_deploy_package():
 
 
 def main():
-    config.setup(os.environ.get('ARTIFACTS_COREPY_CONF', '/etc/artifacts_corepy/artifacts_corepy.conf'),
-                 dir_path=os.environ.get('ARTIFACTS_COREPY_CONF_DIR', '/etc/artifacts_corepy/artifacts_corepy.conf.d'))
-    mylogger.setup()
     tz_info = timezone(CONF.timezone)
     try:
         if CONF.platform_timezone:
-            prefix = 'ENV@'
-            value = CONF.platform_timezone
-            if value.startswith(prefix):
-                env_name = value[len(prefix):]
-                value = os.getenv(env_name, default='')
-            tz_info = timezone(value)
+            tz_info = timezone(CONF.platform_timezone)
     except Exception as e:
         LOG.exception(e)
-    scheduler = BlockingScheduler(jobstores=jobstores,
-                                  executors=executors,
-                                  job_defaults=job_defaults,
-                                  timezone=tz_info)
+    scheduler = BlockingScheduler(jobstores=jobstores, executors=executors, job_defaults=job_defaults, timezone=tz_info)
     scheduler.add_job(cleanup_cached_dir, 'cron', hour='*')
     scheduler.add_job(rotate_log, 'cron', hour=3, minute=5)
 
-    cron_values = CONF.cleanup.cron.split(" ")
-    scheduler.add_job(cleanup_deploy_package, 'cron', minute=cron_values[0], hour=cron_values[1],
-                      day=cron_values[2], month=cron_values[3], day_of_week=cron_values[4])
+    cron_values = CONF.cleanup.cron.split()
+    scheduler.add_job(cleanup_deploy_package,
+                      'cron',
+                      minute=cron_values[0],
+                      hour=cron_values[1],
+                      day=cron_values[2],
+                      month=cron_values[3],
+                      day_of_week=cron_values[4])
     try:
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):

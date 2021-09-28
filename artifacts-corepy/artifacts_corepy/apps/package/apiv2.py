@@ -311,6 +311,7 @@ class UnitDesignPackages(WeCubeResource):
                                                                 CONF.wecube.server.rstrip('/') + '/artifacts')
         package_rows = [{
             'name': filename,
+            'code': filename,
             'deploy_package_url': new_download_url,
             'description': filename,
             'md5_value': calculate_md5(fileobj),
@@ -359,6 +360,7 @@ class UnitDesignPackages(WeCubeResource):
 
             package_rows = [{
                 'name': url_info['filename'],
+                'code': url_info['filename'],
                 'deploy_package_url': CONF.wecube.server.rstrip('/') + '/artifacts' + url_info['fullpath'],
                 'description': url_info['filename'],
                 'md5_value': nexus_md5,
@@ -391,6 +393,8 @@ class UnitDesignPackages(WeCubeResource):
                                                           fileobj)
                     package_rows = [{
                         'name':
+                        filename,
+                        'code':
                         filename,
                         'deploy_package_url':
                         upload_result['downloadUrl'].replace(CONF.nexus.server.rstrip('/'),
@@ -667,6 +671,8 @@ class UnitDesignPackages(WeCubeResource):
         deploy_package = resp_json['data']['contents'][0]
         data['guid'] = deploy_package_id
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
+        # FIXME: patch for wecmdb, error update without code
+        clean_data['code'] = deploy_package['code']
         available_extensions = CONF.diff_conf_extension.split(',')
         if 'diff_conf_file' in data:
             for item in data['diff_conf_file']:
