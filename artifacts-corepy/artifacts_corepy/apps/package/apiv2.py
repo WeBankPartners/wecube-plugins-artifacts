@@ -159,6 +159,8 @@ class CiTypes(WeCubeResource):
         cmdb_client = self.get_cmdb_client()
         with_attributes = params.get('with-attributes', 'no')
         status = params.get('status', 'created,dirty')
+        if isinstance(status, list):
+            status = ','.join(status)
         query = {"with-attributes": with_attributes, "status": status, "attr-type-status": status}
         resp_json = cmdb_client.citypes(query)
         return resp_json['data']
