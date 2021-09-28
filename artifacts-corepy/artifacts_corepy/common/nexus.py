@@ -83,6 +83,30 @@ class NeuxsClient(object):
             }
         }
 
+    def get_asset(self, repository, group, name, search_url='/service/rest/v1/search/assets'):
+        url = self.server + search_url
+        # group必须以/开头且结尾不包含/
+        group = group.lstrip('/')
+        group = '/' + group.rstrip('/')
+        query = {'repository': repository, 'group': group, 'name': name}
+        LOG.info('GET %s', url)
+        LOG.debug('Request: %s', str(query))
+        resp_json = http.RestfulJson.get(url,
+                                         params=query,
+                                         auth=requests.auth.HTTPBasicAuth(self.username, self.password))
+        LOG.debug('Response: %s', str(resp_json))
+        result = resp_json.get("items", [])
+        if not result:
+            return {}
+        return result[0]
+
+    def delete_assets(self, repository, delete_url):
+        url = self.server + delete_url
+        LOG.info('DELETE %s', url)
+        resp_json = http.RestfulJson.delete(url,
+                                            auth=requests.auth.HTTPBasicAuth(self.username, self.password))
+        LOG.debug('Response: %s', str(resp_json))
+
     @contextmanager
     def download_stream(self, url=None, repository=None, path=None):
         new_url = ''
