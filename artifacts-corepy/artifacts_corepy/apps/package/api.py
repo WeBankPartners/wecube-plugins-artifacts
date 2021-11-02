@@ -1242,6 +1242,7 @@ class UnitDesignPackages(WeCubeResource):
         spliters = [s.strip() for s in CONF.encrypt_variable_prefix.split(',')]
         spliters.extend([s.strip() for s in CONF.file_variable_prefix.split(',')])
         spliters.extend([s.strip() for s in CONF.default_special_replace.split(',')])
+        spliters = [s for s in spliters if s]
         for i in files:
             filepath = os.path.join(package_cached_dir, i['filename'])
             if os.path.exists(filepath):
