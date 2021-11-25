@@ -1530,7 +1530,7 @@ class OnlyInRemoteNexusPackages(WeCubeResource):
         unit_design_id = None
         for item in filters:
             if item["attrName"] == "unit_design_id":
-                unit_design_id = item["unit_design_id"]
+                unit_design_id = item["condition"]
                 break
         if not unit_design_id:
             raise exceptions.NotFoundError(message=_("Unit_design_id can not empty"))
@@ -1587,6 +1587,6 @@ class OnlyInRemoteNexusPackages(WeCubeResource):
         result_package_name = remote_nexus_package_name - cmdb_package_name
         result = []
         for item in result_package_name:
-            result = result.append({"id": item, "displayName": item, "unit_design_id": unit_design_id})
+            result.append({"id": item, "displayName": item, "unit_design_id": unit_design_id})
 
         return result
