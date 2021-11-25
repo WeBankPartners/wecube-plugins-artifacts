@@ -16,6 +16,11 @@
 
     <!-- 3.数据模型 - 描述本插件包的数据模型,并且描述和Framework数据模型的关系 -->
     <dataModel>
+        <entity name="packages" displayName="物料包" description="物料包模型">
+            <attribute name="id" datatype="str" description="物料包名"/>
+            <attribute name="displayName" datatype="str" description="物料包显示名"/>
+            <attribute name="unit_design_id" datatype="str" description="单元设计id"/>
+        </entity>
     </dataModel>
 
     <!-- 4.系统参数 - 描述运行本插件包需要的系统参数 -->

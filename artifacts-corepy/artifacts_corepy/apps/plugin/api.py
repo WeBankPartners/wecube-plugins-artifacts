@@ -76,7 +76,7 @@ class Package(object):
         artifact_path = artifact_path or '/'
         return artifact_path
 
-    def calculate_md5(fileobj):
+    def calculate_md5(self, fileobj):
         hasher = hashlib.md5()
         chunk_size = 64 * 1024
         fileobj.seek(0)
@@ -168,11 +168,13 @@ class Package(object):
                     # package = {'guid': ret['data'][0]['guid'],
                     #           'deploy_package_url': ret['data'][0]['deploy_package_url']}
                 else:
-                    update_data = exists[0]["data"]
-                    update_data['deploy_package_url'] = deploy_package_url
-                    update_data['md5_value'] = md5 or 'N/A'
-                    update_data['upload_user'] = operator
-                    update_data['upload_time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    update_data = {
+                        'guid': exists[0]['guid'],
+                        'deploy_package_url': deploy_package_url,
+                        'md5_value': md5 or 'N/A',
+                        'upload_user': operator,
+                        'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    }
                     ret = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [update_data])
                     # package = {'guid': exists[0]['data']['guid'],
                     #           'deploy_package_url': exists[0]['data']['deploy_package_url']}
