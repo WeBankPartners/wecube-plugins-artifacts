@@ -84,6 +84,16 @@
                     <parameter datatype="string">deploy_package_url</parameter>
                 </outputParameters>
             </interface>
+            <interface action="upload-package" path="/artifacts/v1/packages/from-remote" httpMethod="POST" isAsyncProcessing="N" type="EXECUTION">
+                <inputParameters>
+                    <parameter datatype="string" mappingType="constant" required="Y">unit_design</parameter>
+                    <parameter datatype="string" mappingType="constant" required="Y">package_name</parameter>
+                </inputParameters>
+                <outputParameters>
+                    <parameter datatype="string">errorCode</parameter>
+                    <parameter datatype="string">errorMessage</parameter>
+                </outputParameters>
+            </interface>
         </plugin>
     </plugins>
 </package>

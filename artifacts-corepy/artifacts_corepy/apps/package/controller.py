@@ -251,3 +251,9 @@ class CollectionDiffConfigs(Collection):
     allow_methods = ('GET', )
     name = 'artifacts.diffconfigs'
     resource = package_api.DiffConfig
+
+
+class CollectionOnlyInRemoteNexusPackages(POSTCollection):
+    allow_methods = ('POST', )
+    name = 'artifacts.only-in-remote-nexus.packages'
+    resource = package_api.OnlyInRemoteNexusPackages

@@ -1515,3 +1515,78 @@ class DiffConfig(WeCubeResource):
         query = {"dialect": {"queryMode": "new"}, "filters": [], "paging": False}
         resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, query)
         return [i for i in resp_json['data']['contents']]
+
+
+class OnlyInRemoteNexusPackages(WeCubeResource):
+
+    def get_unit_design_artifact_path(self, unit_design):
+        artifact_path = unit_design.get(CONF.wecube.wecmdb.artifact_field, None)
+        artifact_path = artifact_path or '/'
+        return artifact_path
+
+    def list_by_post(self, query):
+        cmdb_client = self.get_cmdb_client()
+        filters = query["additionalFilters"]
+        unit_design_id = None
+        for item in filters:
+            if item["attrName"] == "unit_design_id":
+                unit_design_id = item["unit_design_id"]
+                break
+        if not unit_design_id:
+            raise exceptions.NotFoundError(message=_("Unit_design_id can not empty"))
+
+        # get unit_design info
+        query = {
+            "dialect": {
+                "queryMode": "new"
+            },
+            "filters": [{
+                "name": "guid",
+                "operator": "eq",
+                "value": unit_design_id
+            }],
+            "paging": False
+        }
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.unit_design, query)
+        if not resp_json.get('data', {}).get('contents', []):
+            raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
+                                                   {'rid': unit_design_id})
+
+        unit_design = resp_json['data']['contents'][0]
+
+        # get cmdb package name
+        query = {
+            "dialect": {
+                "queryMode": "new"
+            },
+            "filters": [{
+                "name": "unit_design",
+                "operator": "eq",
+                "value": unit_design_id
+            }],
+            "paging": False
+        }
+
+        cmdb_package_name = set()
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+        cmdb_package_list = resp_json.get('data', {}).get('contents', [])
+        for item in cmdb_package_list:
+            cmdb_package_name.add(item["key_name"])
+
+        # get remote nexus package name
+        remote_nexus_package_name = set()
+        nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server,
+                                         CONF.wecube.nexus.username,
+                                         CONF.wecube.nexus.password)
+        remote_nexus_package_list = nexus_client.list(CONF.wecube.nexus.repository,
+                                                      self.get_unit_design_artifact_path(unit_design))
+
+        for item in remote_nexus_package_list:
+            remote_nexus_package_name.add(item["name"])
+
+        result_package_name = remote_nexus_package_name - cmdb_package_name
+        result = []
+        for item in result_package_name:
+            result = result.append({"id": item, "displayName": item, "unit_design_id": unit_design_id})
+
+        return result

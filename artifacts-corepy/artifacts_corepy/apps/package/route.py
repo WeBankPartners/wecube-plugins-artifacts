@@ -103,3 +103,6 @@ def add_routes(api):
                   controller.ItemPackageUpdate())
     # package upload & create with baseline for automation
     api.add_route('/artifacts/packages/auto-create-deploy-package', controller.ItemUploadAndCreatePackage())
+
+    # packages exist in remote nexus but not in cmdb
+    api.add_route('/artifacts/entities/packages/query', controller.CollectionOnlyInRemoteNexusPackages())
