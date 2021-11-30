@@ -86,7 +86,7 @@ class Package(object):
             chunk = fileobj.read(chunk_size)
         return hasher.hexdigest()
 
-    def create_from_remote(self, package_name, unit_design_id, operator):
+    def create_from_remote(self, package_name, package_guid, unit_design_id, operator):
         cmdb_client = wecmdb.WeCMDBClient(CONF.wecube.server, scoped_globals.GLOBALS.request.auth_token)
         query = {
             "dialect": {
@@ -133,7 +133,7 @@ class Package(object):
                 filename = download_url.split('/')[-1]
                 upload_result = l_nexus_client.upload(CONF.nexus.repository, l_artifact_path, filename, filetype,
                                                       fileobj)
-
+                # 用 guid 判断包记录是否存在, 若 guid 为空, 则创建新的记录，否则更新记录
                 query = {
                     "dialect": {
                         "queryMode": "new"
@@ -150,12 +150,12 @@ class Package(object):
                     "paging":
                         False
                 }
-                resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
-                exists = resp_json.get('data', {}).get('contents', [])
+                # resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+                # exists = resp_json.get('data', {}).get('contents', [])
                 deploy_package_url = upload_result['downloadUrl'].replace(CONF.nexus.server.rstrip('/'),
                                                                         CONF.wecube.server.rstrip('/') + '/artifacts')
                 md5 = self.calculate_md5(fileobj)
-                if not exists:
+                if not package_guid:
                     data = {
                         'unit_design': unit_design_id,
                         'name': package_name,
@@ -169,7 +169,9 @@ class Package(object):
                     #           'deploy_package_url': ret['data'][0]['deploy_package_url']}
                 else:
                     update_data = {
-                        'guid': exists[0]['guid'],
+                        'guid': package_guid,
+                        'unit_design': unit_design_id,
+                        'name': package_name,
                         'deploy_package_url': deploy_package_url,
                         'md5_value': md5 or 'N/A',
                         'upload_user': operator,

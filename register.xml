@@ -93,6 +93,7 @@
                 <inputParameters>
                     <parameter datatype="string" mappingType="constant" required="Y">unit_design</parameter>
                     <parameter datatype="string" mappingType="constant" required="Y">package_name</parameter>
+                    <parameter datatype="string" mappingType="constant" required="Y">package_guid</parameter>
                 </inputParameters>
                 <outputParameters>
                     <parameter datatype="string">errorCode</parameter>

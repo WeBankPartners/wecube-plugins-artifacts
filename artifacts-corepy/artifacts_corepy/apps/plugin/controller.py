@@ -173,6 +173,10 @@ class PackageFromRemote(controller.Controller):
                              rule=validator.LengthValidator(1, 255),
                              validate_on=['check:M'],
                              nullable=False),
+        crud.ColumnValidator(field='package_guid',
+                             rule=validator.LengthValidator(0, 255),
+                             validate_on=['check:M'],
+                             nullable=False),
     ]
 
     def on_post(self, req, resp, **kwargs):
@@ -199,6 +203,7 @@ class PackageFromRemote(controller.Controller):
                 try:
                     clean_item = crud.ColumnValidator.get_clean_data(self.input_rules, item, 'check')
                     plugin_api.Package().create_from_remote(clean_item['package_name'],
+                                                            clean_item['package_guid'],
                                                             clean_item['unit_design'],
                                                             operator)
                     result['results']['outputs'].append(single_result)
