@@ -16,6 +16,7 @@ from talos.core import config
 from talos.core import utils
 from talos.db import crud
 from talos.db import converter
+from talos.db import validator
 from talos.core.i18n import _
 from talos.utils import scoped_globals
 
@@ -563,6 +564,252 @@ class UnitDesignPackages(WeCubeResource):
                     db_upgrade_detect=b_db_upgrade_detect,
                     db_rollback_detect=b_db_rollback_detect)
         return {'guid': new_pakcage['guid']}
+
+    def create_from_remote(self, package_name, package_guid, unit_design_id, operator):
+        # cmdb_client = wecmdb.WeCMDBClient(CONF.wecube.server, scoped_globals.GLOBALS.request.auth_token)
+        cmdb_client = self.get_cmdb_client()
+        query = {
+            "dialect": {
+                "queryMode": "new"
+            },
+            "filters": [{
+                "name": "guid",
+                "operator": "eq",
+                "value": unit_design_id
+            }],
+            "paging": False
+        }
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.unit_design, query)
+        if not resp_json.get('data', {}).get('contents', []):
+            raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
+                                                   {'rid': unit_design_id})
+        unit_design = resp_json['data']['contents'][0]
+
+        # download package from remote nexus and upload to local nexus
+        r_artifact_path = self.get_unit_design_artifact_path(unit_design)
+        if r_artifact_path != '/':
+            group = r_artifact_path.lstrip('/')
+            group = '/' + group.rstrip('/') + '/'
+            r_artifact_path = group
+
+        download_url = CONF.wecube.nexus.server.rstrip(
+            '/') + '/repository/' + CONF.wecube.nexus.repository + r_artifact_path + package_name
+        l_nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
+        l_artifact_path = self.build_local_nexus_path(unit_design)
+        r_nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
+                                           CONF.wecube.nexus.password)
+        with r_nexus_client.download_stream(url=download_url) as resp:
+            stream = resp.raw
+            chunk_size = 1024 * 1024
+            with tempfile.TemporaryFile() as tmp_file:
+                chunk = stream.read(chunk_size)
+                while chunk:
+                    tmp_file.write(chunk)
+                    chunk = stream.read(chunk_size)
+                tmp_file.seek(0)
+
+                filetype = resp.headers.get('Content-Type', 'application/octet-stream')
+                fileobj = tmp_file
+                filename = download_url.split('/')[-1]
+                upload_result = l_nexus_client.upload(CONF.nexus.repository, l_artifact_path, filename, filetype,
+                                                      fileobj)
+                # 用 guid 判断包记录是否存在, 若 guid 为空, 则创建新的记录，否则更新记录
+                query = {
+                    "dialect": {
+                        "queryMode": "new"
+                    },
+                    "filters": [{
+                        "name": "key_name",
+                        "operator": "eq",
+                        "value": package_name
+                    }, {
+                        "name": "unit_design",
+                        "operator": "eq",
+                        "value": unit_design_id
+                    }],
+                    "paging":
+                        False
+                }
+                # resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+                # exists = resp_json.get('data', {}).get('contents', [])
+                deploy_package_url = upload_result['downloadUrl'].replace(CONF.nexus.server.rstrip('/'),
+                                                                        CONF.wecube.server.rstrip('/') + '/artifacts')
+                md5 = calculate_md5(fileobj)
+                if not package_guid:
+                    data = {
+                        'unit_design': unit_design_id,
+                        'name': package_name,
+                        'deploy_package_url': deploy_package_url,
+                        'md5_value': md5 or 'N/A',
+                        'upload_user': operator,
+                        'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    }
+                    ret = cmdb_client.create(CONF.wecube.wecmdb.citypes.deploy_package, [data])
+                    package = {'guid': ret['data'][0]['guid']}
+                    # package = {'guid': ret['data'][0]['guid'],
+                    #           'deploy_package_url': ret['data'][0]['deploy_package_url']}
+                else:
+                    update_data = {
+                        'guid': package_guid,
+                        'unit_design': unit_design_id,
+                        'name': package_name,
+                        'deploy_package_url': deploy_package_url,
+                        'md5_value': md5 or 'N/A',
+                        'upload_user': operator,
+                        'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    }
+                    ret = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [update_data])
+                    # package = {'guid': exists[0]['data']['guid'],
+                    #           'deploy_package_url': exists[0]['data']['deploy_package_url']}
+                    package = {'guid': package_guid}
+                return package
+
+    def upload_and_create2(self, data):
+        def _pop_none(d, k):
+            if k in d and d[k] is None:
+                d.pop(k)
+
+        param_rules = [
+            crud.ColumnValidator(field='requestId',
+                                 rule=validator.LengthValidator(0, 255),
+                                 validate_on=['check:O'],
+                                 nullable=True),
+            crud.ColumnValidator(field='operator',
+                                 rule=validator.LengthValidator(0, 255),
+                                 validate_on=['check:O'],
+                                 nullable=True),
+            crud.ColumnValidator(field='inputs',
+                                 rule=validator.TypeValidator(list),
+                                 validate_on=['check:M'],
+                                 nullable=False),
+        ]
+        input_rules = [
+            crud.ColumnValidator(field='callbackParameter',
+                                 rule=validator.LengthValidator(0, 255),
+                                 validate_on=['check:O'],
+                                 nullable=True),
+            crud.ColumnValidator(field='unit_design',
+                                 rule=validator.LengthValidator(1, 255),
+                                 validate_on=['check:M'],
+                                 nullable=False),
+            crud.ColumnValidator(field='package_name',
+                                 rule=validator.LengthValidator(1, 255),
+                                 validate_on=['check:M'],
+                                 nullable=False),
+            crud.ColumnValidator(field='package_guid',
+                                 rule=validator.LengthValidator(0, 255),
+                                 validate_on=['check:M'],
+                                 nullable=False),
+            crud.ColumnValidator(field='baseline_package_guid',
+                                 rule=validator.LengthValidator(1, 255),
+                                 validate_on=['check:M'],
+                                 nullable=False),
+        ]
+
+        result = {'resultCode': '0', 'resultMessage': 'success', 'results': {'outputs': []}}
+        is_error = False
+        error_indexes = []
+        try:
+            clean_data_outer = crud.ColumnValidator.get_clean_data(param_rules, data, 'check')
+            operator = clean_data_outer.get('operator', None) or 'N/A'
+            for idx, item in enumerate(clean_data_outer['inputs']):
+                single_result = {
+                    'callbackParameter': item.get('callbackParameter', None),
+                    'errorCode': '0',
+                    'errorMessage': 'success',
+                    # 'guid': None,
+                    # 'deploy_package_url': None
+                }
+                try:
+                    clean_data = crud.ColumnValidator.get_clean_data(input_rules, item, 'check')
+                    baseline_package_id = clean_data.get('baseline_package_guid')
+                    cmdb_client = self.get_cmdb_client()
+                    query = {
+                        "dialect": {
+                            "queryMode": "new"
+                        },
+                        "filters": [{
+                            "name": "guid",
+                            "operator": "eq",
+                            "value": baseline_package_id
+                        }],
+                        "paging": False
+                    }
+                    resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+                    if not resp_json.get('data', {}).get('contents', []):
+                        raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
+                                                               {'rid': baseline_package_id})
+                    baseline_package = resp_json['data']['contents'][0]
+
+
+                    '''
+                    url = CONF.wecube.nexus.server.rstrip(
+                        '/') + '/repository/' + CONF.wecube.nexus.repository + '/' + clean_data['nexusUrl'].lstrip('/')
+                    unit_design_id = baseline_package['unit_design']['guid']
+                    new_pakcage = self.upload_from_nexus(url, unit_design_id)[0]
+                    '''
+                    unit_design_id = clean_data.get('unit_design')
+                    new_pakcage = self.create_from_remote(clean_data['package_name'],
+                                                          clean_data['package_guid'],
+                                                          clean_data['unit_design'],
+                                                          operator)
+
+                    # db部署支持, 检查是否用户手动指定值
+                    b_db_upgrade_detect = True
+                    b_db_rollback_detect = True
+                    update_data = {}
+                    update_data['baseline_package'] = baseline_package_id
+                    update_data['is_decompression'] = baseline_package['is_decompression']
+                    update_data['package_type'] = baseline_package.get(
+                        'package_type',
+                        constant.PackageType.default) if clean_data.get('packageType', None) is None else clean_data[
+                        'packageType']
+                    keys = [('startFilePath', 'start_file_path'), ('stopFilePath', 'stop_file_path'),
+                            ('deployFilePath', 'deploy_file_path'), ('diffConfFile', 'diff_conf_file'),
+                            ('dbUpgradeDirectory', 'db_upgrade_directory'),
+                            ('dbRollbackDirectory', 'db_rollback_directory'),
+                            ('dbUpgradeFilePath', 'db_upgrade_file_path'),
+                            ('dbRollbackFilePath', 'db_rollback_file_path'),
+                            ('dbDeployFilePath', 'db_deploy_file_path'), ('dbDiffConfFile', 'db_diff_conf_file')]
+                    # 没有指定目录，无法探测
+                    if (not clean_data.get('db_upgrade_directory', None)) and (not baseline_package.get(
+                            'db_upgrade_directory', None)):
+                        b_db_upgrade_detect = False
+                    if (not clean_data.get('db_rollback_directory', None)) and (not baseline_package.get(
+                            'db_rollback_directory', None)):
+                        b_db_rollback_detect = False
+                    for s_key, d_key in keys:
+                        if s_key in clean_data and clean_data[s_key] is not None:
+                            if d_key == 'db_upgrade_file_path':
+                                b_db_upgrade_detect = False
+                            if d_key == 'db_rollback_file_path':
+                                b_db_rollback_detect = False
+                            update_data[d_key] = self.build_file_object(clean_data[s_key])
+                        else:
+                            update_data[d_key] = self.build_file_object(baseline_package.get(d_key, None))
+                    self.update(update_data,
+                                unit_design_id,
+                                new_pakcage['guid'],
+                                with_detail=False,
+                                db_upgrade_detect=b_db_upgrade_detect,
+                                db_rollback_detect=b_db_rollback_detect)
+
+                    # return {'guid': new_pakcage['guid']}
+                    result['results']['outputs'].append(single_result)
+                except Exception as e:
+                    single_result['errorCode'] = '1'
+                    single_result['errorMessage'] = str(e)
+                    result['results']['outputs'].append(single_result)
+                    is_error = True
+                    error_indexes.append(str(idx + 1))
+        except Exception as e:
+            result['resultCode'] = '1'
+            result['resultMessage'] = str(e)
+        if is_error:
+            result['resultCode'] = '1'
+            result['resultMessage'] = _('Fail to %(action)s [%(num)s] record, detail error in the data block') % dict(
+                action='process', num=','.join(error_indexes))
+        return result
 
     def create(self, data):
         cmdb_client = self.get_cmdb_client()

@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 import cgi
+import falcon
 from talos.core import config
 from talos.core.i18n import _
 from talos.common import controller as base_controller
@@ -257,3 +258,13 @@ class CollectionOnlyInRemoteNexusPackages(POSTCollection):
     allow_methods = ('POST', )
     name = 'artifacts.only-in-remote-nexus.packages'
     resource = package_api.OnlyInRemoteNexusPackages
+
+
+class PackageFromRemote(base_controller.Controller):
+    allow_methods = ('POST',)
+    name = 'artifacts.fromremote'
+    resource = package_api.UnitDesignPackages
+
+    def on_post(self, req, resp, **kwargs):
+        resp.json = self.resource().upload_and_create2(req.json, **kwargs)
+        resp.status = falcon.HTTP_200
