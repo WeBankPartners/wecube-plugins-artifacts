@@ -316,7 +316,6 @@ class UnitDesignPackages(WeCubeResource):
             'name': filename,
             'code': filename,
             'deploy_package_url': new_download_url,
-            'description': filename,
             'md5_value': calculate_md5(fileobj),
             'upload_user': scoped_globals.GLOBALS.request.auth_user,
             'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -365,7 +364,6 @@ class UnitDesignPackages(WeCubeResource):
                 'name': url_info['filename'],
                 'code': url_info['filename'],
                 'deploy_package_url': CONF.wecube.server.rstrip('/') + '/artifacts' + url_info['fullpath'],
-                'description': url_info['filename'],
                 'md5_value': nexus_md5,
                 'upload_user': scoped_globals.GLOBALS.request.auth_user,
                 'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -402,8 +400,6 @@ class UnitDesignPackages(WeCubeResource):
                         'deploy_package_url':
                         upload_result['downloadUrl'].replace(CONF.nexus.server.rstrip('/'),
                                                              CONF.wecube.server.rstrip('/') + '/artifacts'),
-                        'description':
-                        filename,
                         'md5_value':
                         calculate_md5(fileobj),
                         'upload_user':
@@ -565,7 +561,7 @@ class UnitDesignPackages(WeCubeResource):
                     db_rollback_detect=b_db_rollback_detect)
         return {'guid': new_pakcage['guid']}
 
-    def create_from_remote(self, package_name, package_guid, unit_design_id, operator):
+    def create_from_remote(self, package_name, package_guid, unit_design_id, operator, baseline_package_guid):
         # cmdb_client = wecmdb.WeCMDBClient(CONF.wecube.server, scoped_globals.GLOBALS.request.auth_token)
         cmdb_client = self.get_cmdb_client()
         query = {
@@ -639,10 +635,12 @@ class UnitDesignPackages(WeCubeResource):
                     data = {
                         'unit_design': unit_design_id,
                         'name': package_name,
+                        'code': package_name,
                         'deploy_package_url': deploy_package_url,
                         'md5_value': md5 or 'N/A',
                         'upload_user': operator,
                         'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'baseline_package': baseline_package_guid
                     }
                     ret = cmdb_client.create(CONF.wecube.wecmdb.citypes.deploy_package, [data])
                     package = {'guid': ret['data'][0]['guid']}
@@ -653,10 +651,12 @@ class UnitDesignPackages(WeCubeResource):
                         'guid': package_guid,
                         'unit_design': unit_design_id,
                         'name': package_name,
+                        'code': package_name,
                         'deploy_package_url': deploy_package_url,
                         'md5_value': md5 or 'N/A',
                         'upload_user': operator,
                         'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'baseline_package': baseline_package_guid
                     }
                     ret = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [update_data])
                     # package = {'guid': exists[0]['data']['guid'],
@@ -752,7 +752,8 @@ class UnitDesignPackages(WeCubeResource):
                     new_pakcage = self.create_from_remote(clean_data['package_name'],
                                                           clean_data['package_guid'],
                                                           clean_data['unit_design'],
-                                                          operator)
+                                                          operator,
+                                                          clean_data['baseline_package_guid'])
 
                     # db部署支持, 检查是否用户手动指定值
                     b_db_upgrade_detect = True
