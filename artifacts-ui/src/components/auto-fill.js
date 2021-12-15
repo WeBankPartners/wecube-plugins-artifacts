@@ -573,7 +573,6 @@ export default {
     renderExpression (val, i, props) {
       // type === rule 时，链式属性表达式
       let result = []
-      console.log(JSON.parse(val))
       JSON.parse(val).forEach((_, attrIndex) => {
         let isLegal = true
         if (attrIndex === JSON.parse(val).length - 1) {
