@@ -573,6 +573,7 @@ export default {
     renderExpression (val, i, props) {
       // type === rule 时，链式属性表达式
       let result = []
+      console.log(JSON.parse(val))
       JSON.parse(val).forEach((_, attrIndex) => {
         let isLegal = true
         if (attrIndex === JSON.parse(val).length - 1) {
@@ -615,7 +616,8 @@ export default {
               const attrFound = attrs.find(attr => attr.propertyName === filter.name)
               const filterName = attrFound ? attrFound.name : filter.name
               if (filter.type && filter.type === 'autoFill') {
-                filterValue = this.formaFillRule(JSON.parse(filter.value), defaultProps)
+                let filterInfo = Array.isArray(filter.value) ? filter.value : JSON.parse(filter.value)
+                filterValue = this.formaFillRule(filterInfo, defaultProps)
               } else {
                 const _filterValue = Array.isArray(filter.value) ? `[${filter.value.join(',')}]` : filter.value
                 filterValue = [this.renderSpan(_filterValue, _props)]
