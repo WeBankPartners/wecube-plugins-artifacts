@@ -462,7 +462,7 @@ export default {
           title: this.$t('baseline_package'),
           key: 'baseline_package',
           render: (h, params) => {
-            const baseLine = params.row.baseline_package ? params.row.baseline_package.code : ''
+            const baseLine = params.row.baseline_package ? params.row.baseline_package.key_name : ''
             return <span>{baseLine}</span>
           }
         },

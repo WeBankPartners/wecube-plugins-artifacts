@@ -141,3 +141,4 @@ class PackageFromImage(controller.Controller):
             result['resultMessage'] = _('Fail to %(action)s [%(num)s] record, detail error in the data block') % dict(
                 action='process', num=','.join(error_indexes))
         return result
+
