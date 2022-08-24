@@ -1,4 +1,4 @@
-from sonatype/nexus3:3.35.0
+from sonatype/nexus3:3.41.1
 LABEL maintainer = "Webank CTB Team"
 USER root
 ADD build/Centos-8.repo /etc/yum.repos.d/
