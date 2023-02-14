@@ -86,5 +86,8 @@
   "db_rollback_file_path": "DB Rollback File Path",
   "db_deploy_file_path": "DB Deploy File Path",
   "detail": "Detail",
-  "operation_data_rollback": "Data Rollback"
+  "operation_data_rollback": "Data Rollback",
+  "import": "Import",
+  "export": "Export",
+  "replaceTip": "The replacement is successful, please save it!"
 }

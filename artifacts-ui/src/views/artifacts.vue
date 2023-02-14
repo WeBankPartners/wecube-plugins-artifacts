@@ -47,7 +47,15 @@
       </Card>
 
       <!-- 差异化变量 -->
-      <div v-if="showDiffConfigTab" style="margin-top:16px">
+      <div v-if="showDiffConfigTab" style="text-align: end;margin-top: 32px;">
+        <span>
+          <Button style="display:inline-block" @click="exportData" size="small" icon="ios-cloud-download-outline">{{ $t('export') }}</Button>
+          <Upload :before-upload="handleUpload" action="">
+            <Button style="display:inline-block" icon="ios-cloud-upload-outline" size="small">{{ $t('import') }}</Button>
+          </Upload>
+        </span>
+      </div>
+      <div v-if="showDiffConfigTab">
         <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig">
           <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('APP')" name="APP" tab="diffConfig">
             <div class="batchOperation" style="text-align: right;">
@@ -373,6 +381,7 @@ import axios from 'axios'
 import Sortable from 'sortablejs'
 import CompareFile from './compare-file'
 import DisplayPath from './display-path'
+import { decode } from 'js-base64'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -699,7 +708,8 @@ export default {
       currentConfigTab: '', // 配置当前tab
 
       showDiffConfigTab: false,
-      currentDiffConfigTab: '' // 差异化变量当前tab
+      currentDiffConfigTab: '', // 差异化变量当前tab
+      packageName: ''
     }
   },
   computed: {},
@@ -725,6 +735,73 @@ export default {
     }
   },
   methods: {
+    handleUpload (file) {
+      var FR = new FileReader()
+      FR.onload = ev => {
+        if (ev.target && typeof ev.target.result === 'string') {
+          const fileData = ev.target.result.split(',')
+          const jsonObj = JSON.parse(decode(fileData[1]))
+          const packageDetail = this.formatPackageDetail(jsonObj)
+          this.packageDetail.diff_conf_file.forEach(p => {
+            const findDiffFile = packageDetail.diff_conf_file.find(d => d.filename === p.filename)
+            if (findDiffFile) {
+              p.configKeyInfos.forEach(c => {
+                const findConfVariable = findDiffFile.configKeyInfos.find(config => config.key === c.key)
+                if (findConfVariable) {
+                  c.conf_variable.diffExpr = findConfVariable.conf_variable.diffExpr
+                }
+              })
+            }
+          })
+
+          this.packageDetail.db_diff_conf_file.forEach(p => {
+            const findDiffFile = packageDetail.db_diff_conf_file.find(d => d.filename === p.filename)
+            if (findDiffFile) {
+              p.configKeyInfos.forEach(c => {
+                const findConfVariable = findDiffFile.configKeyInfos.find(config => config.key === c.key)
+                if (findConfVariable) {
+                  c.conf_variable.diffExpr = findConfVariable.conf_variable.diffExpr
+                }
+              })
+            }
+          })
+        }
+      }
+      FR.readAsDataURL(file)
+
+      this.$Notice.success({
+        title: 'Success',
+        desc: this.$t('replaceTip')
+      })
+
+      return false
+    },
+    async exportData () {
+      let { status, data } = await getPackageDetail(this.guid, this.packageId)
+      if (status === 'OK') {
+        let content = JSON.stringify(data)
+        let fileName = `${this.packageName}-${new Date().getTime()}.json`
+        let blob = new Blob([content])
+        if ('msSaveOrOpenBlob' in navigator) {
+          window.navigator.msSaveOrOpenBlob(blob, fileName)
+        } else {
+          if ('download' in document.createElement('a')) {
+            // 非IE下载
+            let elink = document.createElement('a')
+            elink.download = fileName
+            elink.style.display = 'none'
+            elink.href = URL.createObjectURL(blob)
+            document.body.appendChild(elink)
+            elink.click()
+            URL.revokeObjectURL(elink.href) // 释放URL 对象
+            document.body.removeChild(elink)
+          } else {
+            // IE10+下载
+            navigator.msSaveOrOpenBlob(blob, fileName)
+          }
+        }
+      }
+    },
     async getAllpkg () {
       this.baselinePackageOptions = []
       let { status, data } = await queryPackages(this.guid, {
@@ -1048,6 +1125,7 @@ export default {
       this.queryPackages()
     },
     async rowClick (row) {
+      this.packageName = row.code
       if (row.package_type === this.constPackageOptions.image) {
         this.showDiffConfigTab = false
         this.packageDetail = []
@@ -2024,6 +2102,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.ivu-upload {
+  display: inline-block;
+}
+
 .header-icon {
   float: right;
   margin: 3px 20px 0 0 !important;

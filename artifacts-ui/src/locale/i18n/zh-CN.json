@@ -86,5 +86,8 @@
   "db_rollback_file_path": "DB回滚脚本",
   "db_deploy_file_path": "DB部署脚本",
   "detail": "详情",
-  "operation_data_rollback": "数据回退"
+  "operation_data_rollback": "数据回退",
+  "import": "导入",
+  "export": "导出",
+  "replaceTip": "替换成功，请注意保存！"
 }
