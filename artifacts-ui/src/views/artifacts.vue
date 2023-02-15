@@ -1209,7 +1209,6 @@ export default {
         }
         return rootCI
       } catch (err) {
-        console.error('ERROR DATA:', elVar)
         throw err
       }
     },
