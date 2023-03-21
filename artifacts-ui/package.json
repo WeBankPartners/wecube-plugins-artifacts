@@ -26,7 +26,7 @@
     "core-js": "^2.6.11",
     "diff": "^4.0.2",
     "js-base64": "^3.7.5",
-    "view-design": "^4.0.2",
+    "view-design": "4.4.0",
     "vue": "^2.6.10",
     "vue-i18n": "^5.0.3",
     "vue-router": "^3.0.3"
