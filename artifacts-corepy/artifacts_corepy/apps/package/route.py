@@ -59,6 +59,7 @@ def add_routes(api):
     api.add_route('/artifacts/system-design-versions', controller.CollectionSystemDesign())
     api.add_route('/artifacts/system-design-versions/{rid}', controller.ItemSystemDesign())
     api.add_route('/artifacts/getPackageCiTypeId', controller.ControllerDeployPackageCiTypeId())
+    api.add_route('/artifacts/getVariableRootCiTypeId', controller.ControllerVariableRootCiTypeId())
     api.add_route('/artifacts/static-data/special-connector', controller.CollectionSpecialConnector())
     api.add_route('/artifacts/ci-types', controller.CollectionCiTypes())
     api.add_route('/artifacts/enum/system/codes/{cat_id}', controller.ItemEnumCodes())

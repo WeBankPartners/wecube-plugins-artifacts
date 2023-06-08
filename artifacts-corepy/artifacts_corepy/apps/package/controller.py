@@ -27,6 +27,20 @@ class ControllerDeployPackageCiTypeId(object):
         }
 
 
+class ControllerVariableRootCiTypeId(object):
+    name = 'artifacts.deploy-package.varrootcitypeid'
+
+    def on_get(self, req, resp, **kwargs):
+        resp.json = {
+            'code': 200,
+            'status': 'OK',
+            'data': {
+                'app': CONF.wecube.wecmdb.citypes.app_root_ci,
+                'db': CONF.wecube.wecmdb.citypes.db_root_ci
+            },
+            'message': 'success'
+        }
+
 class CollectionSystemDesign(Collection):
     allow_methods = ('GET', )
     name = 'artifacts.system-designs'
