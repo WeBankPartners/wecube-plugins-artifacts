@@ -36,7 +36,8 @@ def decrypt_rsa(secret_key, encrypt_text):
                   'diff_conf_extension', 'variable_expression', 'jwt_signing_key', 'use_remote_nexus_only',
                   'nexus_sort_as_string', 'local_nexus_connector_port', 'nexus_connector_port', 'platform_timezone',
                   'system_design_view', 'sub_system_code', 'sub_system_key', 'cleanup_corn', 'cleanup_keep_topn',
-                  'cleanup_keep_unit_field', 'delete_op', 'log_level','ci_typeid_app_root_ci', 'ci_typeid_db_root_ci')
+                  'cleanup_keep_unit_field', 'delete_op', 'log_level','ci_typeid_app_root_ci', 'ci_typeid_db_root_ci',
+                  'ci_typeid_app_template_ci', 'ci_typeid_db_template_ci')
 def get_env_value(value, origin_value):
     prefix = 'ENV@'
     encrypt_prefix = 'RSA@'

@@ -36,7 +36,9 @@ class ControllerVariableRootCiTypeId(object):
             'status': 'OK',
             'data': {
                 'app': CONF.wecube.wecmdb.citypes.app_root_ci,
-                'db': CONF.wecube.wecmdb.citypes.db_root_ci
+                'db': CONF.wecube.wecmdb.citypes.db_root_ci,
+                'app_template': CONF.wecube.wecmdb.citypes.app_template_ci,
+                'db_template': CONF.wecube.wecmdb.citypes.db_template_ci
             },
             'message': 'success'
         }

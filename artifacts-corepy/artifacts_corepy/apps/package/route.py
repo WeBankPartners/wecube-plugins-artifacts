@@ -36,11 +36,11 @@ class EntityAdapter(object):
             'action_name': action_name,
         }
         if action_name == 'retrieve':
-            url = '/%(package_name)s/entities/%(entity_name)s/query' % {
+            url = '/platform/v1/packages/%(package_name)s/entities/%(entity_name)s/query' % {
                 'package_name': package_name,
-                'entity_name': entity_name
+                'entity_name': entity_name,
             }
-            data = client.retrieve(url)
+            data = client.retrieve(url, req.json)
             resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
         elif action_name == 'update':
             data = client.update(url, req.json)

@@ -62,6 +62,22 @@ class WeCubeClient(utils.ClientMixin):
         url = self.server + url_path
         return self.post(url, data)
 
-    def retrieve(self, url_path):
+    def retrieve(self, url_path, data=None):
+        # op：eq-等于；neq-不等于；in-范围过滤；like-模糊过滤；gt-大于；lt-小于；is - NULL ； isnot - NULL；  
+        # {
+        #     "criteria": {
+        #             "attrName": "id",
+        #             "condition": "0001_274321635"
+        #     },
+        #     "additionalFilters": [{
+        #             "attrName": "att1",
+        #             "op": "eq",
+        #             "condition": "eee dddd"
+        #     }, {
+        #             "attrName": "att2",
+        #             "op": "in",
+        #             "condition": ["asfdd", "bsf"]
+        #     }]
+        # }
         url = self.server + url_path
-        return self.post(url, {})
+        return self.post(url, data or {})
