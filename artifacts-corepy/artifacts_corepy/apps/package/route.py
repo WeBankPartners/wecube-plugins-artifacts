@@ -42,6 +42,9 @@ class EntityAdapter(object):
             }
             data = client.retrieve(url, req.json)
             resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
+        elif action_name == 'query':
+            data = client.retrieve(url, req.json)
+            resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
         elif action_name == 'update':
             data = client.update(url, req.json)
             resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
