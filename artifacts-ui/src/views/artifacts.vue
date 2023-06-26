@@ -2089,6 +2089,7 @@ export default {
       this.currentConfigValue = ''
       this.isShowConfigKeyModal = false
       this.currentConfigRow = {}
+      this.customSearch = ''
     },
     closeCIConfigSelectModal () {
       this.currentConfigValue = ''
