@@ -71,6 +71,7 @@
   "check_all": "Check All",
   "variable_select_key_tooltip": "Choose a Key(variable) and use it's Value",
   "root_ci": "Root CI",
+  "search": "Search",
   "APP": "Application",
   "DB": "DB Instance",
   "IMAGE": "Docker Image",

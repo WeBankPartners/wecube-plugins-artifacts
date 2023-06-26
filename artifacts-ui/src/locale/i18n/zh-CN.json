@@ -71,6 +71,7 @@
   "check_all": "全选",
   "variable_select_key_tooltip": "选择已有的差异化变量使用其填充规则",
   "root_ci": "根CI",
+  "search": "搜索",
   "APP": "应用",
   "DB": "数据库",
   "IMAGE": "镜像",
