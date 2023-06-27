@@ -110,7 +110,7 @@
           <Input type="text" :placeholder="$t('artifacts_unselected')" v-model="customSearch"> </Input>
           <Button type="primary" @click="remoteConfigSearch" :loading="remoteLoading">{{ $t('search') }}</Button>
         </div>
-        <Select v-show="allDiffConfigs && allDiffConfigs.length > 0" filterable clearable v-model="currentConfigValue" style="margin-top: 10px">
+        <Select ref="ddrop" :disabled="!allDiffConfigs || allDiffConfigs.length === 0" filterable clearable v-model="currentConfigValue" style="margin-top: 10px">
           <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value && conf.code !== currentConfigRow.key)" :value="conf.variable_value" :key="conf.key_name">{{ conf.key_name }}</Option>
         </Select>
       </Modal>
@@ -2039,6 +2039,9 @@ export default {
         const diffConfigs = await getEntitiesByCiType(cmdbPackageName, DIFF_CONFIGURATION, { criteria: {}, additionalFilters: [{ attrName: 'code', op: 'like', condition: query.trim() }] })
         if (diffConfigs) {
           this.allDiffConfigs = diffConfigs.data
+          this.$nextTick(() => {
+            this.$refs['ddrop'].toggleMenu(null, true)
+          })
         }
         this.remoteLoading = false
       }
@@ -2090,6 +2093,7 @@ export default {
       this.isShowConfigKeyModal = false
       this.currentConfigRow = {}
       this.customSearch = ''
+      this.allDiffConfigs = []
     },
     closeCIConfigSelectModal () {
       this.currentConfigValue = ''
