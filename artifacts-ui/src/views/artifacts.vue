@@ -1548,6 +1548,16 @@ export default {
         db_rollback_file_path: this.packageInput.db_rollback_file_path,
         db_deploy_file_path: this.packageInput.db_deploy_file_path
       }
+      for (const p in obj) {
+        if (Array.isArray(obj[p]) && obj[p].length > 0) {
+          obj[p] = obj[p].reduce((result, current) => {
+            if (current.comparisonResult !== 'deleted') {
+              result.push(current)
+            }
+            return result
+          }, [])
+        }
+      }
       this.saveConfigLoading = true
       let { status } = await updatePackage(this.guid, this.packageId, obj)
       this.saveConfigLoading = false
