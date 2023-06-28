@@ -115,10 +115,16 @@
         </Select>
       </Modal>
       <Modal :mask-closable="false" v-model="isShowCiConfigModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setCIConfigRowValue" @on-cancel="closeCIConfigSelectModal">
-        <Select filterable clearable v-model="currentConfigValue">
-          <Option v-for="conf in allCIConfigs" :value="conf.value" :key="conf.code">{{ conf.code }}</Option>
-        </Select>
-        <Input v-show="currentConfigValue" :placeholder="$t('artifacts_unselected')" type="text" v-model="customInput" style="margin-top: 10px" />
+        <Form :label-width="80">
+          <FormItem :label="$t('root_ci')">
+            <Select filterable clearable v-model="currentConfigValue" @on-change="handleCIConfgChange">
+              <Option v-for="conf in allCIConfigs" :value="conf.value" :key="conf.code">{{ conf.code }}</Option>
+            </Select>
+          </FormItem>
+          <FormItem v-show="currentConfigValue" v-for="input in customInputs" :key="input.key" :label="input.key">
+            <Input type="text" v-model="input.value" />
+          </FormItem>
+        </Form>
       </Modal>
 
       <!-- 包配置模态框 -->
@@ -559,7 +565,7 @@ export default {
       packageId: '',
       isShowFilesModal: false,
       hideFooter: false,
-      customInput: '',
+      customInputs: [],
       customSearch: '',
       packageInput: {
         baseline_package: null,
@@ -2056,6 +2062,20 @@ export default {
         this.remoteLoading = false
       }
     },
+    handleCIConfgChange (value) {
+      const customRegex = /\$\^(\w*)\$\^/g
+      if (typeof value === 'string') {
+        const temps = []
+        for (const matched of value.matchAll(customRegex)) {
+          temps.push({
+            origin: matched[0],
+            key: matched[1],
+            value: ''
+          })
+        }
+        this.customInputs = temps
+      }
+    },
     async showCIConfigModal (row) {
       const res = await getVariableRootCiTypeId()
       if (res.status === 'OK') {
@@ -2091,7 +2111,11 @@ export default {
         this.packageDetail[tmp].forEach(elFile => {
           elFile.configKeyInfos.forEach(elFileVar => {
             if (this.currentConfigRow.key.toLowerCase() === elFileVar.key.toLowerCase()) {
-              elFileVar.conf_variable.diffExpr = this.currentConfigValue.replaceAll('$^bb$^', this.customInput).replaceAll('$&cc$&', elFileVar.key)
+              let resultStr = this.currentConfigValue.replaceAll(/\$&(\w)*\$&/g, elFileVar.key)
+              this.customInputs.forEach(item => {
+                resultStr = resultStr.replaceAll(item.origin, item.value)
+              })
+              elFileVar.conf_variable.diffExpr = resultStr
             }
           })
         })
@@ -2109,7 +2133,7 @@ export default {
       this.currentConfigValue = ''
       this.isShowCiConfigModal = false
       this.currentConfigRow = {}
-      this.customInput = ''
+      this.customInputs = []
     },
     async updateEntity (params) {
       const { packageName, entityName } = params
