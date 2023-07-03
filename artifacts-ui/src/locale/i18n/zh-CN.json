@@ -70,7 +70,7 @@
   "multi_bind_config": "绑定管理",
   "check_all": "全选",
   "variable_select_key_tooltip": "选择已有的差异化变量使用其填充规则",
-  "root_ci": "根CI",
+  "root_ci": "自定义表达式",
   "search": "搜索",
   "APP": "应用",
   "DB": "数据库",

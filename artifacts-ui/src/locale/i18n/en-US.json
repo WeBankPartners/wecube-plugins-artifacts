@@ -70,7 +70,7 @@
   "multi_bind_config": "Binding Manage",
   "check_all": "Check All",
   "variable_select_key_tooltip": "Choose a Key(variable) and use it's Value",
-  "root_ci": "Root CI",
+  "root_ci": "Custom Expressions",
   "search": "Search",
   "APP": "Application",
   "DB": "DB Instance",
