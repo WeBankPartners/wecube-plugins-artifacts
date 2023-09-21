@@ -115,7 +115,7 @@
         </Select>
       </Modal>
       <Modal :mask-closable="false" v-model="isShowCiConfigModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setCIConfigRowValue" @on-cancel="closeCIConfigSelectModal">
-        <Form :label-width="80">
+        <Form :label-width="120">
           <FormItem :label="$t('root_ci')">
             <Select filterable clearable v-model="currentConfigValue" @on-change="handleCIConfgChange">
               <Option v-for="conf in allCIConfigs" :value="conf.value" :key="conf.code">{{ conf.code }}</Option>
@@ -2056,12 +2056,16 @@ export default {
       const customRegex = /\$\^(\w*)\$\^/g
       if (typeof value === 'string') {
         const temps = []
+        let newSet = new Set()
         for (const matched of value.matchAll(customRegex)) {
-          temps.push({
-            origin: matched[0],
-            key: matched[1],
-            value: ''
-          })
+          if (!newSet.has(matched[1])) {
+            newSet.add(matched[1])
+            temps.push({
+              origin: matched[0],
+              key: matched[1],
+              value: ''
+            })
+          }
         }
         this.customInputs = temps
       }
@@ -2074,7 +2078,11 @@ export default {
         const resp = await getEntitiesByCiType(cmdbPackageName, _template, {})
         if (resp.status === 'OK') {
           if (Array.isArray(resp.data)) {
-            this.allCIConfigs = resp.data
+            this.allCIConfigs = resp.data.sort((first, second) => {
+              const firstCode = first.code.toLowerCase()
+              const secondCode = second.code.toLowerCase()
+              return firstCode.localeCompare(secondCode)
+            })
             this.isShowCiConfigModal = true
             this.currentConfigRow = row
           }
@@ -2239,10 +2247,10 @@ export default {
   margin: 8px;
 }
 
-.config-tab /deep/ .ivu-tabs-nav {
+.config-tab :deep(.ivu-tabs-nav) {
   width: 100%;
 }
-.config-tab /deep/ .ivu-tabs-tab {
+.config-tab :deep(.ivu-tabs-tab) {
   width: 15%;
   text-align: center;
 }
