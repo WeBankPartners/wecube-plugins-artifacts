@@ -1,5 +1,5 @@
 import './auto-fill.scss'
-import { getRefCiTypeFrom, getCiTypeAttr, retrieveEntity, getAllSystemEnumCodes } from '@/api/server.js'
+import { getRefCiTypeFrom, getCiTypeAttr, getEntitiesByCiType, getAllSystemEnumCodes } from '@/api/server.js'
 
 export default {
   name: 'AutoFill',
@@ -474,7 +474,7 @@ export default {
           _.options = []
           if (['ref', 'multiRef'].indexOf(_.inputType) >= 0) {
             const entityName = this.ciTypesObj[found.referenceId].ciTypeId
-            promiseArray.push(retrieveEntity(this.cmdbPackageName, entityName))
+            promiseArray.push(getEntitiesByCiType(this.cmdbPackageName, entityName, {}))
           } else if (['select', 'multiSelect'].indexOf(_.inputType) >= 0) {
             promiseArray.push(getAllSystemEnumCodes(found.selectList))
           } else {
@@ -508,7 +508,7 @@ export default {
       }
     },
     async getOptions (propertyName) {
-      const { status, data } = await retrieveEntity(this.cmdbPackageName, propertyName)
+      const { status, data } = await getEntitiesByCiType(this.cmdbPackageName, propertyName, {})
       if (status === 'OK') {
         return data
       } else {
@@ -835,7 +835,7 @@ export default {
         case 'ref':
         case 'multiRef':
           const entityName = this.ciTypesObj[found.referenceId].ciTypeId
-          const { status, data } = await retrieveEntity(this.cmdbPackageName, entityName)
+          const { status, data } = await getEntitiesByCiType(this.cmdbPackageName, entityName, {})
           if (status === 'OK') {
             this.filters[i].options = data.map(_ => {
               return {

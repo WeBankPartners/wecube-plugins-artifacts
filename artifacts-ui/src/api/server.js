@@ -35,7 +35,7 @@ export const compareBaseLineFiles = (guid, packageId, data) => req.post(`/unit-d
 export const updatePackage = (guid, packageId, data) => req.post(`/unit-designs/${guid}/packages/${packageId}/update`, data)
 export const getKeys = (guid, packageId, data) => req.post(`/unit-designs/${guid}/packages/${packageId}/property-keys/query`, data)
 export const saveConfigFiles = (guid, packageId, data) => req.post(`/unit-designs/${guid}/packages/${packageId}/save`, data)
-export const retrieveEntity = (packageName, entityName) => req.get(`/platform/v1/packages/${packageName}/entities/${entityName}/retrieve`)
+// export const retrieveEntity = (packageName, entityName) => req.get(`/platform/v1/packages/${packageName}/entities/${entityName}/retrieve`)
 export const createEntity = (packageName, entityName, data) => req.post(`/platform/v1/packages/${packageName}/entities/${entityName}/create`, data)
 export const updateEntity = (packageName, entityName, data) => req.post(`/platform/v1/packages/${packageName}/entities/${entityName}/update`, data)
 export const getAllSystemEnumCodes = catId => req.get(`/enum/system/codes/${catId}`)
