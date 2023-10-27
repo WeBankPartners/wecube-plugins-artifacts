@@ -117,8 +117,8 @@
       <Modal :mask-closable="false" v-model="isShowCiConfigModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setCIConfigRowValue" @on-cancel="closeCIConfigSelectModal">
         <Form :label-width="120">
           <FormItem :label="$t('root_ci')">
-            <Select filterable clearable v-model="currentConfigValue" @on-change="handleCIConfgChange">
-              <Option v-for="conf in allCIConfigs" :value="conf.value" :key="conf.code">{{ conf.code }}</Option>
+            <Select filterable clearable v-model="currentConfigValue" @on-change="handleCIConfigChange">
+              <Option v-for="conf in allCIConfigs" :value="conf.code" :key="conf.code">{{ conf.code }}</Option>
             </Select>
           </FormItem>
           <FormItem v-show="currentConfigValue" v-for="input in customInputs" :key="input.key" :label="input.key">
@@ -2052,7 +2052,9 @@ export default {
         this.remoteLoading = false
       }
     },
-    handleCIConfgChange (value) {
+    handleCIConfigChange (code) {
+      if (code === undefined) return
+      const value = this.allCIConfigs.find(ci => ci.code === code).value
       const customRegex = /\$\^(\w*)\$\^/g
       if (typeof value === 'string') {
         const temps = []
@@ -2104,12 +2106,13 @@ export default {
       this.closeConfigSelectModal()
     },
     setCIConfigRowValue () {
-      if (this.currentConfigValue) {
+      const currentConfigValueCodeTovalue = this.allCIConfigs.find(ci => ci.code === this.currentConfigValue).value
+      if (currentConfigValueCodeTovalue) {
         const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
         this.packageDetail[tmp].forEach(elFile => {
           elFile.configKeyInfos.forEach(elFileVar => {
             if (this.currentConfigRow.key.toLowerCase() === elFileVar.key.toLowerCase()) {
-              let resultStr = this.currentConfigValue.replaceAll(/\$&(\w)*\$&/g, elFileVar.key)
+              let resultStr = currentConfigValueCodeTovalue.replaceAll(/\$&(\w)*\$&/g, elFileVar.key)
               this.customInputs.forEach(item => {
                 resultStr = resultStr.replaceAll(item.origin, item.value)
               })
