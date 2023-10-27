@@ -317,6 +317,7 @@ class UnitDesignPackages(WeCubeResource):
             'code': filename,
             'deploy_package_url': new_download_url,
             'md5_value': calculate_md5(fileobj),
+            'is_decompression': 'true',
             'upload_user': scoped_globals.GLOBALS.request.auth_user,
             'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'unit_design': unit_design_id
@@ -365,6 +366,7 @@ class UnitDesignPackages(WeCubeResource):
                 'code': url_info['filename'],
                 'deploy_package_url': CONF.wecube.server.rstrip('/') + '/artifacts' + url_info['fullpath'],
                 'md5_value': nexus_md5,
+                'is_decompression': 'true',
                 'upload_user': scoped_globals.GLOBALS.request.auth_user,
                 'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'unit_design': unit_design_id
@@ -402,6 +404,7 @@ class UnitDesignPackages(WeCubeResource):
                                                              CONF.wecube.server.rstrip('/') + '/artifacts'),
                         'md5_value':
                         calculate_md5(fileobj),
+                        'is_decompression': 'true',
                         'upload_user':
                         scoped_globals.GLOBALS.request.auth_user,
                         'upload_time':
@@ -638,6 +641,7 @@ class UnitDesignPackages(WeCubeResource):
                         'code': package_name,
                         'deploy_package_url': deploy_package_url,
                         'md5_value': md5 or 'N/A',
+                        'is_decompression': 'true',
                         'upload_user': operator,
                         'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         'baseline_package': baseline_package_guid
