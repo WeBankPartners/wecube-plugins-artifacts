@@ -2169,19 +2169,21 @@ export default {
             id: row.conf_variable.diffConfigGuid,
             variable_value: row.conf_variable.diffExpr
           }
-        ]
-      })
-      const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-      this.packageDetail[tmp].forEach(elFile => {
-        elFile.configKeyInfos.forEach(elFileVar => {
-          if (row.key.toLowerCase() === elFileVar.key.toLowerCase()) {
-            elFileVar.conf_variable.originDiffExpr = row.conf_variable.diffExpr
-            elFileVar.conf_variable.diffExpr = row.conf_variable.diffExpr
-          }
-        })
-      })
-      this.$Notice.success({
-        title: this.$t('artifacts_successed')
+        ],
+        callback: () => {
+          const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
+          this.packageDetail[tmp].forEach(elFile => {
+            elFile.configKeyInfos.forEach(elFileVar => {
+              if (row.key.toLowerCase() === elFileVar.key.toLowerCase()) {
+                elFileVar.conf_variable.originDiffExpr = row.conf_variable.diffExpr
+                elFileVar.conf_variable.diffExpr = row.conf_variable.diffExpr
+              }
+            })
+          })
+          this.$Notice.success({
+            title: this.$t('artifacts_successed')
+          })
+        }
       })
     }
   },
