@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import cgi
 import falcon
 import os
+import urllib.parse
 from talos.core import config
 from talos.core.i18n import _
 from talos.common import controller as base_controller
@@ -294,8 +295,8 @@ class DownloadComposePackage(base_controller.Controller):
     def on_get(self, req, resp, **kwargs):
         filename,fileobj,filesize = self.resource().download_compose_package(**kwargs)
         resp.set_stream(fileobj, filesize)
-        resp.set_header('Content-Disposition', os.path.basename(filename))
-        resp.set_header('Content-Type', 'application/x-gzip')
+        resp.set_header('Content-Disposition', 'attachment;filename="%s"' % urllib.parse.quote(os.path.basename(filename)))
+        resp.set_header('Content-Type', 'application/octet-stream')
         resp.status = falcon.HTTP_200
         
 class PushComposePackage(base_controller.Controller):
