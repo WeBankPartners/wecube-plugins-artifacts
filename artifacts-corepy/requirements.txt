@@ -2,15 +2,15 @@
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
 greenlet==1.1.2
-talos-api
-requests
-requests_toolbelt
+talos-api==1.3.6
+requests==2.27.1
+requests_toolbelt==1.0.0
 pyjwt<2.0.0
 minio==7.1.13
-pycrypto
+pycrypto==2.6.1
 gevent==21.12.0
-gunicorn
-apscheduler
-pytz
+gunicorn==21.2.0
+apscheduler==3.10.4
+pytz==2023.3.post1
 # for platform login encryption, apt install swig
-M2Crypto
+M2Crypto==0.40.1

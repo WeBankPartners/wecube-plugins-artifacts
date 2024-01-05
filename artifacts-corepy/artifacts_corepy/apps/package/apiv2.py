@@ -11,6 +11,8 @@ import collections
 import re
 import shutil
 import tempfile
+import json
+import tarfile
 import os.path
 from talos.core import config
 from talos.core import utils
@@ -276,10 +278,193 @@ class UnitDesignPackages(WeCubeResource):
         ret['filename'] = results[1].split('/')[-1]
         ret['group'] = '/' + results[1].rsplit('/', 1)[0]
         return ret
+    
+    def _is_compose_package(self, filename:str) -> bool:
+        if filename.startswith('[W]') and filename.endswith('_weart.tar.gz'):
+            return True
+        return False
+    
+    """上传组合物料包[含差异化变量，包配置，包文件]
+    """    
+    def upload_compose_package(self, compose_filename:str, compose_fileobj, unit_design_id:str, force_operator=None):
+        # 组合包上传需要解压并且提取真正包上传到nexus中
+        chunk_size = 1024 * 1024
+        with tempfile.NamedTemporaryFile('w+b') as upload_stream_file:
+            chunk = compose_fileobj.read(chunk_size)
+            while chunk:
+                upload_stream_file.write(chunk)
+                chunk = compose_fileobj.read(chunk_size)
+            upload_stream_file.flush()
+            deploy_package = None
+            pacakge_app_diffconfigs = None
+            pacakge_db_diffconfigs = None
+            new_download_url = ''
+            with tempfile.TemporaryDirectory() as file_cache_dir:
+                # 解压组合包
+                LOG.info('unpack package: %s to %s', compose_filename, file_cache_dir)
+                try:
+                    artifact_utils.unpack_file(upload_stream_file.name, file_cache_dir)
+                except Exception as e:
+                    LOG.error('unpack failed')
+                    if str(e).find('bad subsequent header') >= 0:
+                        raise exceptions.PluginError(message=_(
+                            'unpack file error: %(detail)s, is file contains paxheader(mac archive) and modify with 7zip? (cause paxheader corruption)'
+                            % {'detail': str(e)}))
+                    raise exceptions.PluginError(message=_('unpack file error: %(detail)s' %
+                                                            {'detail': str(e)}))
+                LOG.info('unpack complete')
+                
+                filenames = os.listdir(file_cache_dir)
+                # 提取包配置
+                filename = 'package.json'
+                if filename in filenames:
+                    filenames.remove(filename)
+                    with open(os.path.join(file_cache_dir, filename), 'r') as f:
+                        deploy_package = json.loads(f.read())
+                # 提取app差异化变量
+                filename = 'pacakge_app_diffconfigs.json'
+                if filename in filenames:
+                    filenames.remove(filename)
+                    with open(os.path.join(file_cache_dir, filename), 'r') as f:
+                        pacakge_app_diffconfigs = json.loads(f.read())
+                # 提取db差异化变量
+                filename = 'pacakge_db_diffconfigs.json'
+                if filename in filenames:
+                    filenames.remove(filename)
+                    with open(os.path.join(file_cache_dir, filename), 'r') as f:
+                        pacakge_db_diffconfigs = json.loads(f.read())
+                # 剩下的即是原始物料包
+                if len(filenames) ==1:
+                    filename = filenames[0]
+                    filename = os.path.join(file_cache_dir, filename)
+                    unit_design = self._get_unit_design_by_id(unit_design_id)
+                    nexus_server = None
+                    if utils.bool_from_string(CONF.use_remote_nexus_only):
+                        nexus_server = CONF.wecube.nexus.server.rstrip('/')
+                        nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
+                                                         CONF.wecube.nexus.password)
+                        artifact_path = self.get_unit_design_artifact_path(unit_design)
+                        artifact_repository = CONF.wecube.nexus.repository
+                    else:
+                        nexus_server = CONF.nexus.server.rstrip('/')
+                        nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
+                        artifact_path = self.build_local_nexus_path(unit_design)
+                        artifact_repository = CONF.nexus.repository
+                    with open(filename, 'r') as fileobj:
+                        upload_result = nexus_client.upload(artifact_repository, artifact_path, filename, 'application/octet-stream', fileobj)
+                    new_download_url = upload_result['downloadUrl'].replace(nexus_server,
+                                                                            CONF.wecube.server.rstrip('/') + '/artifacts')
+            if deploy_package is None :
+                raise exceptions.PluginError(message=_("invalid deploy package!"))
+            # 创建差异化变量，并更新包的绑定字段
+            # bound': true, 'key': name, 'diffExpr': 'expr'
+            query_keynames = []
+            for diff_config in pacakge_app_diffconfigs:
+                query_keynames.extend(diff_config['key'])
+            for diff_config in pacakge_db_diffconfigs:
+                query_keynames.extend(diff_config['key'])
+            all_diff_configs = self._get_diff_configs_by_keyname(list(set(query_keynames)))
+            finder = artifact_utils.CaseInsensitiveDict()
+            new_diff_configs = {}
+            update_diff_configs = {}
+            bind_app_diff_configs = set()
+            bind_db_diff_configs = set()
+            for conf in all_diff_configs:
+                finder[conf['key_name']] = conf
+            for diff_conf in pacakge_app_diffconfigs:
+                if diff_conf['key'] not in finder:
+                    new_diff_configs[diff_conf['key']] = diff_conf
+                else:
+                    if diff_conf['bound']:
+                        bind_app_diff_configs.add(finder[diff_conf['key']]['guid'])
+                    update_diff_configs[finder[diff_conf['key']]['guid']] = diff_conf
+            for diff_conf in pacakge_db_diffconfigs:
+                if diff_conf['key'] not in finder:
+                    new_diff_configs[diff_conf['key']] = diff_conf
+                else:
+                    if diff_conf['bound']:
+                        bind_db_diff_configs.add(finder[diff_conf['key']]['guid'])
+                    update_diff_configs[finder[diff_conf['key']]['guid']] = diff_conf
+            # 创建新的差异化变量项
+            if new_diff_configs:
+                cmdb_client = self.get_cmdb_client()
+                cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [{
+                    'variable_name': key,
+                    'description': key,
+                    'variable_value': value['diffExpr']
+                } for key,value in new_diff_configs])
+                # 新创建的差异化变量也需要检测是否需要绑定
+                all_diff_configs = self._get_diff_configs_by_keyname(list(new_diff_configs.keys()))
+                for conf in all_diff_configs:
+                    finder[conf['key_name']] = conf
+                for diff_conf in pacakge_app_diffconfigs:
+                    if diff_conf['key'] in finder and diff_conf['bound']:
+                        bind_app_diff_configs.add(finder[diff_conf['key']]['guid'])
+                for diff_conf in pacakge_db_diffconfigs:
+                    if diff_conf['key'] in finder and diff_conf['bound']:
+                        bind_db_diff_configs.add(finder[diff_conf['key']]['guid'])
+            if update_diff_configs:
+                cmdb_client = self.get_cmdb_client()
+                cmdb_client.update(CONF.wecube.wecmdb.citypes.diff_config, [{
+                    'guid': key,
+                    'variable_value': value['diffExpr']
+                } for key,value in update_diff_configs])
+            # 创建CMDB 包记录
+            deploy_package['unit_design'] = unit_design_id
+            deploy_package['upload_user'] = force_operator or scoped_globals.GLOBALS.request.auth_user
+            deploy_package['upload_time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            deploy_package['deploy_package_url'] = new_download_url
+            # 更新差异化变量配置
+            deploy_package['diff_conf_variable'] = list(bind_app_diff_configs)
+            deploy_package['db_diff_conf_variable'] = list(bind_db_diff_configs)
+            package_result = self.create([deploy_package])
+            return package_result['data']
+    
+    """推送组合物料包[含差异化变量，包配置，包文件] 到nexus
+    """    
+    def push_compose_package(self, unit_design_id:str, deploy_package_id:str):
+        filename,fileobj,filesize = self.download_compose_package(deploy_package_id)
+        # FIXME: 新增nexus配置
+        nexus_server = CONF.pushnexus.server.rstrip('/')
+        nexus_client = nexus.NeuxsClient(CONF.pushnexus.server, CONF.pushnexus.username,
+                                            CONF.pushnexus.password)
+        unit_design = self._get_unit_design_by_id(unit_design_id)
+        artifact_path = self.get_unit_design_artifact_path(unit_design)
+        artifact_repository = CONF.pushnexus.repository
+        upload_result = nexus_client.upload(artifact_repository, artifact_path, filename, 'application/x-gzip', fileobj)
+        return upload_result
+    
+    """导出组合物料包[含差异化变量，包配置，包文件]
+    """    
+    def download_compose_package(self, deploy_package_id:str):
+        pack_fileobj = tempfile.NamedTemporaryFile()
+        pack_filename = self._pack_compose_package(pack_fileobj.name, deploy_package_id)
+        pack_fileobj.seek(0, os.SEEK_END)  # 从当前位置（2）移动到文件末尾
+        # 获取文件指针当前位置，即文件的大小
+        pack_filesize = pack_fileobj.tell()
+        pack_fileobj.seek(0, os.SEEK_SET)
+        return pack_filename,pack_fileobj,pack_filesize
+    
+    def _get_deploy_package_by_id(self, deploy_package_id: str):
+        cmdb_client = self.get_cmdb_client()
+        query = {
+            "dialect": {
+                "queryMode": "new"
+            },
+            "filters": [{
+                "name": "guid",
+                "operator": "eq",
+                "value": deploy_package_id
+            }],
+            "paging": False
+        }
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+        if not resp_json.get('data', {}).get('contents', []):
+            raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
+                                           {'rid': deploy_package_id})
+        return resp_json['data']['contents'][0]
 
-    def upload(self, filename, filetype, fileobj, unit_design_id):
-        if not is_upload_local_enabled():
-            raise exceptions.NotFoundError(message=_("Package uploading is disabled!"))
+    def _get_unit_design_by_id(self, unit_design_id: str):
         cmdb_client = self.get_cmdb_client()
         query = {
             "dialect": {
@@ -296,7 +481,89 @@ class UnitDesignPackages(WeCubeResource):
         if not resp_json.get('data', {}).get('contents', []):
             raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
                                            {'rid': unit_design_id})
-        unit_design = resp_json['data']['contents'][0]
+        return resp_json['data']['contents'][0]
+
+    def _get_diff_configs_by_keyname(self, key_names):
+        cmdb_client = self.get_cmdb_client()
+        if key_names:
+            diff_config_query = {
+                "dialect": {
+                    "queryMode": "new"
+                },
+                "filters": [{
+                    "name": "key_name",
+                    "operator": "in",
+                    "value": key_names
+                }],
+                "paging": False
+            }
+            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
+            if not resp_json.get('data', {}).get('contents', []):
+                raise exceptions.NotFoundError(message=_("Can not find ci data for key_names [%(names)s]") %
+                                           {'names': key_names})
+            return resp_json['data']['contents']
+        return []
+    
+    def _pack_compose_package(self, pack_filepath, deploy_package_id:str):
+        deploy_package = self._get_deploy_package_by_id(deploy_package_id)
+        deploy_package_url = deploy_package['deploy_package_url']
+
+        # 整理部署包数据
+        # 上传时需要替换的值：unit_design，deploy_package_url，upload_user，upload_time
+        del deploy_package['guid']
+        del deploy_package['key_name']
+        del deploy_package['nextOperations']
+        del deploy_package['baseline_package']
+        del deploy_package['create_time']
+        del deploy_package['create_user']
+        del deploy_package['update_time']
+        del deploy_package['update_user']
+        del deploy_package['upload_user']
+        del deploy_package['upload_time']
+        del deploy_package['unit_design']
+        del deploy_package['confirm_time']
+        del deploy_package['deploy_package_url']
+        del deploy_package['diff_conf_variable']
+        del deploy_package['db_diff_conf_variable']
+        # 整理差异化变量
+        # 处理diff_conf_variable && db_diff_conf_variable
+        deploy_package_detail = self.get(None, deploy_package_id)
+        package_app_diff_configs = deploy_package_detail.get('diff_conf_variable', []) or []
+        package_db_diff_configs = deploy_package_detail.get('db_diff_conf_variable', []) or []
+        package_app_diff_configs = [{'bound': d['bound'], 'key':d['key'], 'diffExpr':d['diffExpr']} for d in package_app_diff_configs]
+        package_db_diff_configs = [{'bound': d['bound'], 'key':d['key'], 'diffExpr':d['diffExpr']} for d in package_db_diff_configs]
+        # 下载原包文件
+        with tempfile.TemporaryDirectory() as tmp_path:
+            package_path_file = self.download_from_url(tmp_path, deploy_package_url)
+            package_path_data = os.path.join(tmp_path, 'pacakge.json')
+            with open(package_path_data, 'w') as f:
+                content = json.dumps(deploy_package)
+                f.write(content)
+            package_path_app_diffconfigs = os.path.join(tmp_path, 'pacakge_app_diffconfigs.json')
+            with open(package_path_app_diffconfigs, 'w') as f:
+                content = json.dumps(package_app_diff_configs)
+                f.write(content)
+            package_path_db_diffconfigs = os.path.join(tmp_path, 'pacakge_db_diffconfigs.json')
+            with open(package_path_db_diffconfigs, 'w') as f:
+                content = json.dumps(package_db_diff_configs)
+                f.write(content)
+            # 指定输出的 tar.gz 文件名
+            clean_filename = os.path.splitext(os.path.splitext(os.path.basename(package_path_file))[0])[0]
+            output_filename = os.path.join(tmp_path, '[W]'+clean_filename + '_weart.tar.gz')
+            # 创建压缩文件
+            with tarfile.open(pack_filepath, "w:gz") as tar:
+                tar.add(package_path_file, arcname=os.path.basename(package_path_file))
+                tar.add(package_path_data, arcname=os.path.basename(package_path_data))
+                tar.add(package_path_app_diffconfigs, arcname=os.path.basename(package_path_app_diffconfigs))
+                tar.add(package_path_db_diffconfigs, arcname=os.path.basename(package_path_db_diffconfigs))
+        return output_filename
+
+    def upload(self, filename, filetype, fileobj, unit_design_id):
+        if not is_upload_local_enabled():
+            raise exceptions.PluginError(message=_("Package uploading is disabled!"))
+        if self._is_compose_package(filename):
+            return self.upload_compose_package(filename, fileobj, unit_design_id)
+        unit_design = self._get_unit_design_by_id(unit_design_id)
         nexus_server = None
         if utils.bool_from_string(CONF.use_remote_nexus_only):
             nexus_server = CONF.wecube.nexus.server.rstrip('/')
@@ -328,6 +595,20 @@ class UnitDesignPackages(WeCubeResource):
     def upload_from_nexus(self, download_url, unit_design_id):
         if not is_upload_nexus_enabled():
             raise exceptions.PluginError(message=_("Package uploading is disabled!"))
+        url_info = self.download_url_parse(download_url)
+        if self._is_compose_package(url_info['filename']):
+                r_nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
+                                               CONF.wecube.nexus.password)
+                with r_nexus_client.download_stream(url=download_url) as resp:
+                    stream = resp.raw
+                    chunk_size = 1024 * 1024
+                    with tempfile.TemporaryFile() as tmp_file:
+                        chunk = stream.read(chunk_size)
+                        while chunk:
+                            tmp_file.write(chunk)
+                            chunk = stream.read(chunk_size)
+                        tmp_file.seek(0)
+                        return self.upload_compose_package(url_info['filename'], tmp_file, unit_design_id)
         cmdb_client = self.get_cmdb_client()
         query = {
             "dialect": {
@@ -347,7 +628,7 @@ class UnitDesignPackages(WeCubeResource):
         unit_design = resp_json['data']['contents'][0]
         if utils.bool_from_string(CONF.use_remote_nexus_only):
             # 更新unit_design.artifact_path && package.create 即上传成功
-            url_info = self.download_url_parse(download_url)
+            
             r_nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
                                                CONF.wecube.nexus.password)
             nexus_files = r_nexus_client.list(url_info['repository'], url_info['group'])
@@ -360,7 +641,6 @@ class UnitDesignPackages(WeCubeResource):
             # update_unit_design['guid'] = unit_design['data']['guid']
             # update_unit_design[CONF.wecube.wecmdb.artifact_field] = url_info['group']
             # cmdb_client.update(CONF.wecube.wecmdb.citypes.unit_design, [update_unit_design])
-
             package_rows = [{
                 'name': url_info['filename'],
                 'code': url_info['filename'],
@@ -388,7 +668,6 @@ class UnitDesignPackages(WeCubeResource):
                         tmp_file.write(chunk)
                         chunk = stream.read(chunk_size)
                     tmp_file.seek(0)
-
                     filetype = resp.headers.get('Content-Type', 'application/octet-stream')
                     fileobj = tmp_file
                     filename = download_url.split('/')[-1]
@@ -505,6 +784,7 @@ class UnitDesignPackages(WeCubeResource):
         ]
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
         baseline_package_id = clean_data.get('baselinePackage')
+        nexus_path_filename = os.path.basename(clean_data['nexusUrl'])
         cmdb_client = self.get_cmdb_client()
         query = {
             "dialect": {
@@ -526,6 +806,16 @@ class UnitDesignPackages(WeCubeResource):
             '/') + '/repository/' + CONF.wecube.nexus.repository + '/' + clean_data['nexusUrl'].lstrip('/')
         unit_design_id = baseline_package['unit_design']['guid']
         new_pakcage = self.upload_from_nexus(url, unit_design_id)[0]
+        if self._is_compose_package(nexus_path_filename):
+            update_data = {}
+            update_data['baseline_package'] = baseline_package_id
+            self.update(update_data,
+                    unit_design_id,
+                    new_pakcage['guid'],
+                    with_detail=False,
+                    db_upgrade_detect=False,
+                    db_rollback_detect=False)
+            return {'guid': new_pakcage['guid']}
         # db部署支持, 检查是否用户手动指定值
         b_db_upgrade_detect = True
         b_db_rollback_detect = True
@@ -564,7 +854,7 @@ class UnitDesignPackages(WeCubeResource):
                     db_rollback_detect=b_db_rollback_detect)
         return {'guid': new_pakcage['guid']}
 
-    def create_from_remote(self, package_name, package_guid, unit_design_id, operator, baseline_package_guid):
+    def _create_from_remote(self, package_name, package_guid, unit_design_id, operator, baseline_package_guid):
         # cmdb_client = wecmdb.WeCMDBClient(CONF.wecube.server, scoped_globals.GLOBALS.request.auth_token)
         cmdb_client = self.get_cmdb_client()
         query = {
@@ -590,13 +880,32 @@ class UnitDesignPackages(WeCubeResource):
             group = r_artifact_path.lstrip('/')
             group = '/' + group.rstrip('/') + '/'
             r_artifact_path = group
-
         download_url = CONF.wecube.nexus.server.rstrip(
             '/') + '/repository/' + CONF.wecube.nexus.repository + r_artifact_path + package_name
         l_nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
         l_artifact_path = self.build_local_nexus_path(unit_design)
         r_nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
                                            CONF.wecube.nexus.password)
+        if self._is_compose_package(os.path.basename(package_name)):
+            with r_nexus_client.download_stream(url=download_url) as resp:
+                stream = resp.raw
+                chunk_size = 1024 * 1024
+                with tempfile.TemporaryFile() as tmp_file:
+                    chunk = stream.read(chunk_size)
+                    while chunk:
+                        tmp_file.write(chunk)
+                        chunk = stream.read(chunk_size)
+                    tmp_file.seek(0)
+                    new_package = self.upload_compose_package(os.path.basename(package_name), tmp_file, unit_design_id, force_operator=operator)
+                    update_data = {}
+                    update_data['baseline_package'] = baseline_package_guid
+                    self.update(update_data,
+                            unit_design_id,
+                            new_package[0]['guid'],
+                            with_detail=False,
+                            db_upgrade_detect=False,
+                            db_rollback_detect=False)
+                    return {'guid': new_package[0]['guid']}
         with r_nexus_client.download_stream(url=download_url) as resp:
             stream = resp.raw
             chunk_size = 1024 * 1024
@@ -606,10 +915,10 @@ class UnitDesignPackages(WeCubeResource):
                     tmp_file.write(chunk)
                     chunk = stream.read(chunk_size)
                 tmp_file.seek(0)
-
                 filetype = resp.headers.get('Content-Type', 'application/octet-stream')
                 fileobj = tmp_file
                 filename = download_url.split('/')[-1]
+                
                 upload_result = l_nexus_client.upload(CONF.nexus.repository, l_artifact_path, filename, filetype,
                                                       fileobj)
                 # 用 guid 判断包记录是否存在, 若 guid 为空, 则创建新的记录，否则更新记录
@@ -753,12 +1062,13 @@ class UnitDesignPackages(WeCubeResource):
                     new_pakcage = self.upload_from_nexus(url, unit_design_id)[0]
                     '''
                     unit_design_id = clean_data.get('unit_design')
-                    new_pakcage = self.create_from_remote(clean_data['package_name'],
+                    new_pakcage = self._create_from_remote(clean_data['package_name'],
                                                           clean_data['package_guid'],
                                                           clean_data['unit_design'],
                                                           operator,
                                                           clean_data['baseline_package_guid'])
-
+                    if self._is_compose_package(os.path.basename(clean_data['package_name'])):
+                        return new_pakcage
                     # db部署支持, 检查是否用户手动指定值
                     b_db_upgrade_detect = True
                     b_db_rollback_detect = True
