@@ -392,7 +392,7 @@ class UnitDesignPackages(WeCubeResource):
                     'variable_name': key,
                     'description': key,
                     'variable_value': value['diffExpr']
-                } for key,value in new_diff_configs])
+                } for key,value in new_diff_configs.items()])
                 # 新创建的差异化变量也需要检测是否需要绑定
                 all_diff_configs = self._get_diff_configs_by_keyname(list(new_diff_configs.keys()))
                 for conf in all_diff_configs:
@@ -408,7 +408,7 @@ class UnitDesignPackages(WeCubeResource):
                 cmdb_client.update(CONF.wecube.wecmdb.citypes.diff_config, [{
                     'guid': key,
                     'variable_value': value['diffExpr']
-                } for key,value in update_diff_configs])
+                } for key,value in update_diff_configs.items()])
             # 创建CMDB 包记录
             deploy_package['unit_design'] = unit_design_id
             deploy_package['upload_user'] = force_operator or scoped_globals.GLOBALS.request.auth_user
