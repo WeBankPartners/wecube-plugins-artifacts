@@ -360,9 +360,9 @@ class UnitDesignPackages(WeCubeResource):
             # bound': true, 'key': name, 'diffExpr': 'expr'
             query_keynames = []
             for diff_config in pacakge_app_diffconfigs:
-                query_keynames.extend(diff_config['key'])
+                query_keynames.append(diff_config['key'])
             for diff_config in pacakge_db_diffconfigs:
-                query_keynames.extend(diff_config['key'])
+                query_keynames.append(diff_config['key'])
             all_diff_configs = self._get_diff_configs_by_keyname(list(set(query_keynames)))
             finder = artifact_utils.CaseInsensitiveDict()
             new_diff_configs = {}
