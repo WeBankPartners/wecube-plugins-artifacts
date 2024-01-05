@@ -350,7 +350,7 @@ class UnitDesignPackages(WeCubeResource):
                         nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
                         artifact_path = self.build_local_nexus_path(unit_design)
                         artifact_repository = CONF.nexus.repository
-                    with open(filename, 'r') as fileobj:
+                    with open(filename, 'rb') as fileobj:
                         upload_result = nexus_client.upload(artifact_repository, artifact_path, filename, 'application/octet-stream', fileobj)
                     new_download_url = upload_result['downloadUrl'].replace(nexus_server,
                                                                             CONF.wecube.server.rstrip('/') + '/artifacts')
