@@ -289,7 +289,7 @@ class UnitDesignPackages(WeCubeResource):
     def upload_compose_package(self, compose_filename:str, compose_fileobj, unit_design_id:str, force_operator=None):
         # 组合包上传需要解压并且提取真正包上传到nexus中
         chunk_size = 1024 * 1024
-        with tempfile.NamedTemporaryFile('w+b') as upload_stream_file:
+        with tempfile.NamedTemporaryFile('w+b',suffix='.tar.gz') as upload_stream_file:
             chunk = compose_fileobj.read(chunk_size)
             while chunk:
                 upload_stream_file.write(chunk)
