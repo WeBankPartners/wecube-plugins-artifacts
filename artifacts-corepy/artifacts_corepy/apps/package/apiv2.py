@@ -322,13 +322,13 @@ class UnitDesignPackages(WeCubeResource):
                     with open(os.path.join(file_cache_dir, filename), 'r') as f:
                         deploy_package = json.loads(f.read())
                 # 提取app差异化变量
-                filename = 'pacakge_app_diffconfigs.json'
+                filename = 'package_app_diffconfigs.json'
                 if filename in filenames:
                     filenames.remove(filename)
                     with open(os.path.join(file_cache_dir, filename), 'r') as f:
                         pacakge_app_diffconfigs = json.loads(f.read())
                 # 提取db差异化变量
-                filename = 'pacakge_db_diffconfigs.json'
+                filename = 'package_db_diffconfigs.json'
                 if filename in filenames:
                     filenames.remove(filename)
                     with open(os.path.join(file_cache_dir, filename), 'r') as f:
@@ -535,15 +535,15 @@ class UnitDesignPackages(WeCubeResource):
         # 下载原包文件
         with tempfile.TemporaryDirectory() as tmp_path:
             package_path_file = self.download_from_url(tmp_path, deploy_package_url)
-            package_path_data = os.path.join(tmp_path, 'pacakge.json')
+            package_path_data = os.path.join(tmp_path, 'package.json')
             with open(package_path_data, 'w') as f:
                 content = json.dumps(deploy_package)
                 f.write(content)
-            package_path_app_diffconfigs = os.path.join(tmp_path, 'pacakge_app_diffconfigs.json')
+            package_path_app_diffconfigs = os.path.join(tmp_path, 'package_app_diffconfigs.json')
             with open(package_path_app_diffconfigs, 'w') as f:
                 content = json.dumps(package_app_diff_configs)
                 f.write(content)
-            package_path_db_diffconfigs = os.path.join(tmp_path, 'pacakge_db_diffconfigs.json')
+            package_path_db_diffconfigs = os.path.join(tmp_path, 'package_db_diffconfigs.json')
             with open(package_path_db_diffconfigs, 'w') as f:
                 content = json.dumps(package_db_diff_configs)
                 f.write(content)
