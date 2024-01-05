@@ -304,5 +304,10 @@ class PushComposePackage(base_controller.Controller):
     resource = package_api.UnitDesignPackages
 
     def on_post(self, req, resp, **kwargs):
-        resp.json = self.resource().push_compose_package(**kwargs)
+        resp.json = {
+            'code': 200,
+            'status': 'OK',
+            'data': self.resource().push_compose_package(**kwargs),
+            'message': 'success'
+        }
         resp.status = falcon.HTTP_200
