@@ -24,7 +24,6 @@ class DownloadAdapter(object):
             resp.set_header('Content-Disposition', stream.headers.get('Content-Disposition'))
             resp.set_header('Content-Type', stream.headers.get('Content-Type'))
 
-
 class EntityAdapter(object):
     def __call__(self, req, resp, package_name, entity_name, action_name):
         server = CONF.wecube.server
@@ -117,3 +116,9 @@ def add_routes(api):
 
     # packages exist in remote nexus but not in cmdb
     api.add_route('/artifacts/entities/packages/query', controller.CollectionOnlyInRemoteNexusPackages())
+    
+    # compose package
+    api.add_route('/artifacts/packages/{deploy_package_id}/download',
+                  controller.DownloadComposePackage())
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/push',
+                  controller.PushComposePackage())

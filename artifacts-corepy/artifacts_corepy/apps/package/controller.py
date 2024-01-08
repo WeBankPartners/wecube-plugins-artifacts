@@ -4,6 +4,8 @@ from __future__ import absolute_import
 
 import cgi
 import falcon
+import os
+import urllib.parse
 from talos.core import config
 from talos.core.i18n import _
 from talos.common import controller as base_controller
@@ -283,4 +285,30 @@ class PackageFromRemote(base_controller.Controller):
 
     def on_post(self, req, resp, **kwargs):
         resp.json = self.resource().upload_and_create2(req.json, **kwargs)
+        resp.status = falcon.HTTP_200
+        
+class DownloadComposePackage(base_controller.Controller):
+    allow_methods = ('GET',)
+    name = 'artifacts.downloadcomposepackage'
+    resource = package_api.UnitDesignPackages
+
+    def on_get(self, req, resp, **kwargs):
+        filename,fileobj,filesize = self.resource().download_compose_package(**kwargs)
+        resp.set_stream(fileobj, filesize)
+        resp.set_header('Content-Disposition', 'attachment;filename="%s"' % urllib.parse.quote(os.path.basename(filename)))
+        resp.set_header('Content-Type', 'application/octet-stream')
+        resp.status = falcon.HTTP_200
+        
+class PushComposePackage(base_controller.Controller):
+    allow_methods = ('POST',)
+    name = 'artifacts.pushcomposepackage'
+    resource = package_api.UnitDesignPackages
+
+    def on_post(self, req, resp, **kwargs):
+        resp.json = {
+            'code': 200,
+            'status': 'OK',
+            'data': self.resource().push_compose_package(**kwargs),
+            'message': 'success'
+        }
         resp.status = falcon.HTTP_200
