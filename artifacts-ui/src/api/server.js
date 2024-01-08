@@ -48,3 +48,5 @@ export const getEntitiesByCiType = (packageName, ci, data) => req.post(`/platfor
 export const queryArtifactsList = (guid, data) => req.post(`/unit-designs/${guid}/packages/queryNexusDirectiry`, data)
 export const uploadArtifact = (guid, url) => req.post(`/unit-designs/${guid}/packages/uploadNexusPackage?downloadUrl=${url}`)
 export const getCompareContent = (unitDesignId, deployPackageId, data) => req.post(`/unit-designs/${unitDesignId}/packages/${deployPackageId}/files/comparison`, data)
+
+export const pushPkg = (unitDesignId, deployPackageId) => req.post(`/unit-designs/${unitDesignId}/packages/${deployPackageId}/push`)

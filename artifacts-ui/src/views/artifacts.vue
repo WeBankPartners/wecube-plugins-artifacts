@@ -389,7 +389,7 @@
 </template>
 
 <script>
-import { getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType } from '@/api/server.js'
+import { pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
@@ -510,6 +510,12 @@ export default {
                     {this.$t('detail')}
                   </Button>
                 )}
+                <Button onClick={() => this.toExportPkg(params.row)} size="small" style="margin-right: 5px;margin-bottom: 5px;background-color: rgb(153 206 233); color: white;">
+                  {this.$t('export')}
+                </Button>
+                <Button type="info" onClick={() => this.toPushPkg(params.row)} size="small" style="margin-right: 5px;margin-bottom: 5px;">
+                  {this.$t('push')}
+                </Button>
               </div>
             )
           }
@@ -2185,6 +2191,62 @@ export default {
           })
         }
       })
+    },
+    async toExportPkg (row) {
+      this.$Notice.info({
+        title: `${this.$t('export')}`,
+        desc: `${row.code} ${this.$t('export')} ${this.$t('senting')}`
+      })
+      await this.updateHeaders()
+      const a = document.createElement('a')
+      a.href = `/artifacts/packages/${row.guid}/download?token=${'Bearer ' + getCookie('accessToken')}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    },
+
+    async toPushPkg (row) {
+      const res = await pushPkg(this.guid, row.guid)
+      this.$Notice.info({
+        title: `${this.$t('push')}`,
+        desc: `${row.code} ${this.$t('push')} ${this.$t('senting')}`
+      })
+      if (res.status === 'OK') {
+        this.$Notice.success({
+          title: `${this.$t('push')}`,
+          desc: `${res.data.name} ${this.$t('push')} ${this.$t('executionSuccessful')}`
+        })
+      }
+    },
+    async updateHeaders () {
+      let refreshRequest = null
+      const currentTime = new Date().getTime()
+      const accessToken = getCookie('accessToken')
+      if (accessToken) {
+        const expiration = getCookie('accessTokenExpirationTime') * 1 - currentTime
+        if (expiration < 1 * 60 * 1000 && !refreshRequest) {
+          refreshRequest = axios.get('/auth/v1/api/token', {
+            headers: {
+              Authorization: 'Bearer ' + getCookie('refreshToken')
+            }
+          })
+          refreshRequest.then(
+            res => {
+              setCookie(res.data.data)
+              this.setUploadActionHeader()
+            },
+            // eslint-disable-next-line handle-callback-err
+            err => {
+              refreshRequest = null
+              window.location.href = window.location.origin + '/#/login'
+            }
+          )
+        } else {
+          this.setUploadActionHeader()
+        }
+      } else {
+        window.location.href = window.location.origin + '/#/login'
+      }
     }
   },
   created () {
