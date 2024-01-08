@@ -2206,11 +2206,11 @@ export default {
     },
 
     async toPushPkg (row) {
-      const res = await pushPkg(this.guid, row.guid)
       this.$Notice.info({
         title: `${this.$t('push')}`,
         desc: `${row.code} ${this.$t('push')} ${this.$t('senting')}`
       })
+      const res = await pushPkg(this.guid, row.guid)
       if (res.status === 'OK') {
         this.$Notice.success({
           title: `${this.$t('push')}`,
