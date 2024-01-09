@@ -90,5 +90,9 @@
   "operation_data_rollback": "数据回退",
   "import": "导入",
   "export": "导出",
-  "replaceTip": "替换成功，请注意保存！"
+  "replaceTip": "替换成功，请注意保存！",
+  "push": "推送",
+  "downloading": "正在下载，请稍后……",
+  "senting": "请求已发出，请稍后……",
+  "executionSuccessful": "执行成功！"
 }

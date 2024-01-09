@@ -90,5 +90,9 @@
   "operation_data_rollback": "Data Rollback",
   "import": "Import",
   "export": "Export",
-  "replaceTip": "The replacement is successful, please save it!"
+  "replaceTip": "The replacement is successful, please save it!",
+  "push": "Push",
+  "downloading": "Downloading, please wait...",
+  "senting": "Request sent, please wait...",
+  "executionSuccessful": "Execution Successful !"
 }
