@@ -280,7 +280,7 @@ class UnitDesignPackages(WeCubeResource):
         return ret
     
     def _is_compose_package(self, filename:str) -> bool:
-        if filename.startswith('[W]') and filename.endswith('_weart.tar.gz'):
+        if filename.startswith('[W]') and '_weart' in filename:
             return True
         return False
     
@@ -431,7 +431,7 @@ class UnitDesignPackages(WeCubeResource):
         unit_design = self._get_unit_design_by_id(unit_design_id)
         artifact_path = self.get_unit_design_artifact_path(unit_design)
         artifact_repository = CONF.pushnexus.repository
-        upload_result = nexus_client.upload(artifact_repository, artifact_path, os.path.basename(filename), 'application/x-gzip', fileobj)
+        upload_result = nexus_client.upload(artifact_repository, artifact_path, os.path.basename(filename), 'application/octet-stream', fileobj)
         return upload_result
     
     """导出组合物料包[含差异化变量，包配置，包文件]
