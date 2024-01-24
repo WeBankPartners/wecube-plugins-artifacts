@@ -1,5 +1,5 @@
 import './auto-fill.scss'
-import { getRefCiTypeFrom, getCiTypeAttr, retrieveEntity, getAllSystemEnumCodes } from '@/api/server.js'
+import { getRefCiTypeFrom, getCiTypeAttr, getEntitiesByCiType, getAllSystemEnumCodes } from '@/api/server.js'
 
 export default {
   name: 'AutoFill',
@@ -474,7 +474,7 @@ export default {
           _.options = []
           if (['ref', 'multiRef'].indexOf(_.inputType) >= 0) {
             const entityName = this.ciTypesObj[found.referenceId].ciTypeId
-            promiseArray.push(retrieveEntity(this.cmdbPackageName, entityName))
+            promiseArray.push(getEntitiesByCiType(this.cmdbPackageName, entityName, {}))
           } else if (['select', 'multiSelect'].indexOf(_.inputType) >= 0) {
             promiseArray.push(getAllSystemEnumCodes(found.selectList))
           } else {
@@ -508,7 +508,7 @@ export default {
       }
     },
     async getOptions (propertyName) {
-      const { status, data } = await retrieveEntity(this.cmdbPackageName, propertyName)
+      const { status, data } = await getEntitiesByCiType(this.cmdbPackageName, propertyName, {})
       if (status === 'OK') {
         return data
       } else {
@@ -762,7 +762,7 @@ export default {
           {this.filters.map((_, i) => (
             <div class="auto-fill-filter-li">
               <Icon type="md-remove-circle" color="red" onClick={() => this.filters.splice(i, 1)} class="auto-fill-filter-li-icon" />
-              <Select value={_.name} onInput={v => this.changeAttr(v, i)} class="auto-fill-filter-li-select title">
+              <Select value={_.name} filterable onInput={v => this.changeAttr(v, i)} class="auto-fill-filter-li-select title">
                 {this.filterCiAttrs.map(attr => (
                   <Option key={attr.ciTypeAttrId} value={attr.propertyName}>
                     {attr.name}
@@ -778,6 +778,7 @@ export default {
               </Select>
               <Select
                 value={_.type}
+                filterable
                 onInput={v => {
                   this.filters[i].value = ''
                   this.filters[i].type = v
@@ -809,6 +810,7 @@ export default {
               class="auto-fill-filter-li-input"
               multiple={item.operator === 'in'}
               value={item.value}
+              filterable
               onInput={v => {
                 this.filters[index].value = v
               }}
@@ -835,7 +837,7 @@ export default {
         case 'ref':
         case 'multiRef':
           const entityName = this.ciTypesObj[found.referenceId].ciTypeId
-          const { status, data } = await retrieveEntity(this.cmdbPackageName, entityName)
+          const { status, data } = await getEntitiesByCiType(this.cmdbPackageName, entityName, {})
           if (status === 'OK') {
             this.filters[i].options = data.map(_ => {
               return {

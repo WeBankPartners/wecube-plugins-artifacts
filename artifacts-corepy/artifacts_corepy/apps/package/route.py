@@ -24,7 +24,6 @@ class DownloadAdapter(object):
             resp.set_header('Content-Disposition', stream.headers.get('Content-Disposition'))
             resp.set_header('Content-Type', stream.headers.get('Content-Type'))
 
-
 class EntityAdapter(object):
     def __call__(self, req, resp, package_name, entity_name, action_name):
         server = CONF.wecube.server
@@ -36,15 +35,25 @@ class EntityAdapter(object):
             'action_name': action_name,
         }
         if action_name == 'retrieve':
-            url = '/%(package_name)s/entities/%(entity_name)s/query' % {
+            url = '/platform/v1/packages/%(package_name)s/entities/%(entity_name)s/query' % {
                 'package_name': package_name,
-                'entity_name': entity_name
+                'entity_name': entity_name,
             }
-            data = client.retrieve(url)
+            data = client.retrieve(url, req.json)
+            resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
+        elif action_name == 'query':
+            data = client.retrieve(url, req.json)
             resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
         elif action_name == 'update':
-            data = client.update(url, req.json)
-            resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
+            if package_name == 'wecmdb' and entity_name == CONF.wecube.wecmdb.citypes.diff_config:
+                # 拦截差异化变量的更新，使用cmdbclient直接调用校验用户token权限
+                diff_config_controller = controller.ItemDiffConfigUpdate()
+                resp_data = diff_config_controller.make_resource(req).update(req.json)
+                resp.json = {'code': 200, 'status': 'OK', 'data': resp_data, 'message': 'success'}
+            else:
+                # 其他类型的更新，使用platform的模型更新，即使用subsys权限
+                data = client.update(url, req.json)
+                resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
         else:
             raise exceptions.NotFoundError(
                 _('%(action_name)s for %(package_name)s:%(entity_name)s not supported') % {
@@ -59,6 +68,7 @@ def add_routes(api):
     api.add_route('/artifacts/system-design-versions', controller.CollectionSystemDesign())
     api.add_route('/artifacts/system-design-versions/{rid}', controller.ItemSystemDesign())
     api.add_route('/artifacts/getPackageCiTypeId', controller.ControllerDeployPackageCiTypeId())
+    api.add_route('/artifacts/getVariableRootCiTypeId', controller.ControllerVariableRootCiTypeId())
     api.add_route('/artifacts/static-data/special-connector', controller.CollectionSpecialConnector())
     api.add_route('/artifacts/ci-types', controller.CollectionCiTypes())
     api.add_route('/artifacts/enum/system/codes/{cat_id}', controller.ItemEnumCodes())
@@ -106,3 +116,9 @@ def add_routes(api):
 
     # packages exist in remote nexus but not in cmdb
     api.add_route('/artifacts/entities/packages/query', controller.CollectionOnlyInRemoteNexusPackages())
+    
+    # compose package
+    api.add_route('/artifacts/packages/{deploy_package_id}/download',
+                  controller.DownloadComposePackage())
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/push',
+                  controller.PushComposePackage())

@@ -70,7 +70,8 @@
   "multi_bind_config": "Binding Manage",
   "check_all": "Check All",
   "variable_select_key_tooltip": "Choose a Key(variable) and use it's Value",
-  "root_ci": "Root CI",
+  "root_ci": "Custom Expressions",
+  "search": "Search",
   "APP": "Application",
   "DB": "DB Instance",
   "IMAGE": "Docker Image",
@@ -86,5 +87,12 @@
   "db_rollback_file_path": "DB Rollback File Path",
   "db_deploy_file_path": "DB Deploy File Path",
   "detail": "Detail",
-  "operation_data_rollback": "Data Rollback"
+  "operation_data_rollback": "Data Rollback",
+  "import": "Import",
+  "export": "Export",
+  "replaceTip": "The replacement is successful, please save it!",
+  "push": "Push",
+  "downloading": "Downloading, please wait...",
+  "senting": "Request sent, please wait...",
+  "executionSuccessful": "Execution Successful !"
 }

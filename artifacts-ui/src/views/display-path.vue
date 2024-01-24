@@ -4,7 +4,7 @@
     <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same">[{{ file.comparisonResult }}]</div>
     <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed">[{{ file.comparisonResult }}]</div>
     <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted">[{{ file.comparisonResult }}]</div>
-    <Icon type="ios-move" size="18" style="cursor:move" />
+    <Icon type="ios-move" size="18" style="cursor: move" />
   </span>
 </template>
 
@@ -38,7 +38,7 @@ export default {
   @extend .common-position;
 }
 .baseline-cmp-deleted {
-  color: #cccccc;
+  color: #ed4014;
   @extend .common-position;
 }
 </style>

@@ -70,7 +70,8 @@
   "multi_bind_config": "绑定管理",
   "check_all": "全选",
   "variable_select_key_tooltip": "选择已有的差异化变量使用其填充规则",
-  "root_ci": "根CI",
+  "root_ci": "自定义表达式",
+  "search": "搜索",
   "APP": "应用",
   "DB": "数据库",
   "IMAGE": "镜像",
@@ -86,5 +87,12 @@
   "db_rollback_file_path": "DB回滚脚本",
   "db_deploy_file_path": "DB部署脚本",
   "detail": "详情",
-  "operation_data_rollback": "数据回退"
+  "operation_data_rollback": "数据回退",
+  "import": "导入",
+  "export": "导出",
+  "replaceTip": "替换成功，请注意保存！",
+  "push": "推送",
+  "downloading": "正在下载，请稍后……",
+  "senting": "请求已发出，请稍后……",
+  "executionSuccessful": "执行成功！"
 }

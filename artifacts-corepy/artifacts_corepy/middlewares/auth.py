@@ -15,9 +15,13 @@ class JWTAuth(object):
     """中间件，提供JWT Token信息解析"""
     def process_request(self, req, resp):
         token_header = req.headers.get('Authorization'.upper(), None)
+        if not token_header:
+            token_header = req.get_param('token')
         secret = CONF.jwt_signing_key
         if token_header:
-            token = token_header[len('Bearer '):]
+            token = token_header
+            if token.startswith('Bearer '):
+                token = token_header[len('Bearer '):]
             req.auth_token = token
             verify_token = False
             if secret:

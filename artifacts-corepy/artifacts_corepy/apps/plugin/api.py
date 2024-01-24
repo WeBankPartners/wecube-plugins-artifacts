@@ -86,7 +86,7 @@ class Package(object):
             chunk = fileobj.read(chunk_size)
         return hasher.hexdigest()
 
-    def create_from_remote(self, package_name, package_guid, unit_design_id, operator):
+    def _create_from_remote(self, package_name, package_guid, unit_design_id, operator):
         cmdb_client = wecmdb.WeCMDBClient(CONF.wecube.server, scoped_globals.GLOBALS.request.auth_token)
         query = {
             "dialect": {

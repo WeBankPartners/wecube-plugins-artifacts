@@ -11,7 +11,6 @@ clean_py:
 build_py: clean_py
 	pip3 install wheel
 	cd artifacts-corepy && python3 setup.py bdist_wheel
-	cd artifacts-ui && npm --registry https://registry.npm.taobao.org  install --unsafe-perm
 	cd artifacts-ui && npm rebuild node-sass
 	cd artifacts-ui && npm install --save core-js@2
 	cd artifacts-ui && npm run plugin
