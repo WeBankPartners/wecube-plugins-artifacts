@@ -1326,16 +1326,17 @@ export default {
     },
     renderActionButton (params) {
       const row = params.row
-      let opetions = []
+      let operations = []
       if (row.package_type === this.constPackageOptions.image) {
-        opetions = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0 && !['Update'].includes(_.type))
+        operations = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0 && !['Update'].includes(_.type))
       } else {
-        opetions = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0)
+        operations = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0)
       }
-      return opetions.map(_ => {
+      const lang = localStorage.getItem('lang') || 'zh-CN'
+      return operations.map(_ => {
         return (
           <Button {...{ props: { ..._.props } }} style="margin-right:5px;margin-bottom:5px;" onClick={() => this.changeStatus(row, _.type, event)}>
-            {_.label}
+            {lang === 'zh-CN' ? _.label : _.actionType}
           </Button>
         )
       })
