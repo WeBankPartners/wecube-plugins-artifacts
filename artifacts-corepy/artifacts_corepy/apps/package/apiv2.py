@@ -2088,14 +2088,15 @@ class OnlyInRemoteNexusPackages(WeCubeResource):
 
     def list_by_post(self, query):
         cmdb_client = self.get_cmdb_client()
-        filters = query["additionalFilters"]
+        filters = query.get("additionalFilters", None)
         unit_design_id = None
         for item in filters:
             if item["attrName"] == "unit_design_id":
                 unit_design_id = item["condition"]
                 break
         if not unit_design_id:
-            raise exceptions.NotFoundError(message=_("Unit_design_id can not empty"))
+            return []
+            # raise exceptions.NotFoundError(message=_("Unit_design_id can not empty"))
 
         # get unit_design info
         query = {
