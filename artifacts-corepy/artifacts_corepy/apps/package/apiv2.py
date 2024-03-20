@@ -2088,7 +2088,7 @@ class OnlyInRemoteNexusPackages(WeCubeResource):
 
     def list_by_post(self, query):
         cmdb_client = self.get_cmdb_client()
-        filters = query.get("additionalFilters", None)
+        filters = query.get("additionalFilters", None) or []
         unit_design_id = None
         for item in filters:
             if item["attrName"] == "unit_design_id":
