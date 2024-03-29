@@ -14,6 +14,7 @@ import tempfile
 import json
 import tarfile
 import os.path
+import urllib.parse
 from talos.core import config
 from talos.core import utils
 from talos.db import crud
@@ -1998,7 +1999,7 @@ class UnitDesignPackages(WeCubeResource):
         if random_name:
             filename = '%s_%s' % (utils.generate_uuid(), filename)
         filepath = os.path.join(dir_path, filename)
-        if url.startswith(CONF.wecube.server):
+        if not url.startswith(CONF.wecube.s3.server_url):
             # nexus url
             nexus_server = None
             nexus_username = None
@@ -2012,7 +2013,10 @@ class UnitDesignPackages(WeCubeResource):
                 nexus_username = CONF.nexus.username
                 nexus_password = CONF.nexus.password
             # 替换外部下载地址为Nexus内部地址
-            new_url = url.replace(CONF.wecube.server.rstrip('/') + '/artifacts', nexus_server)
+            urlinfo = urllib.parse.urlparse(url)
+            nexusurlinfo = urllib.parse.urlparse(nexus_server)
+            new_url = urlinfo._replace(scheme=nexusurlinfo.scheme, netloc=nexusurlinfo.netloc,path=urlinfo.path.removeprefix('/artifacts')).geturl()
+            # new_url = url.replace(CONF.wecube.server.rstrip('/') + '/artifacts', nexus_server)
             client = nexus.NeuxsClient(nexus_server, nexus_username, nexus_password)
             client.download_file(filepath, url=new_url)
         else:
