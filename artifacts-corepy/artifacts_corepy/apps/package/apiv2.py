@@ -14,6 +14,7 @@ import tempfile
 import json
 import tarfile
 import os.path
+import urllib.parse
 from talos.core import config
 from talos.core import utils
 from talos.db import crud
@@ -40,6 +41,10 @@ def is_upload_local_enabled():
 def is_upload_nexus_enabled():
     return utils.bool_from_string(CONF.wecube.upload_nexus_enabled)
 
+def remove_prefix(text, prefix):
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text
 
 def calculate_md5(fileobj):
     hasher = hashlib.md5()
@@ -1998,7 +2003,7 @@ class UnitDesignPackages(WeCubeResource):
         if random_name:
             filename = '%s_%s' % (utils.generate_uuid(), filename)
         filepath = os.path.join(dir_path, filename)
-        if url.startswith(CONF.wecube.server):
+        if not url.startswith(CONF.wecube.s3.server_url):
             # nexus url
             nexus_server = None
             nexus_username = None
@@ -2012,7 +2017,11 @@ class UnitDesignPackages(WeCubeResource):
                 nexus_username = CONF.nexus.username
                 nexus_password = CONF.nexus.password
             # 替换外部下载地址为Nexus内部地址
-            new_url = url.replace(CONF.wecube.server.rstrip('/') + '/artifacts', nexus_server)
+            urlinfo = urllib.parse.urlparse(url)
+            nexusurlinfo = urllib.parse.urlparse(nexus_server)
+            
+            new_url = urlinfo._replace(scheme=nexusurlinfo.scheme, netloc=nexusurlinfo.netloc,path=remove_prefix(urlinfo.path,'/artifacts')).geturl()
+            # new_url = url.replace(CONF.wecube.server.rstrip('/') + '/artifacts', nexus_server)
             client = nexus.NeuxsClient(nexus_server, nexus_username, nexus_password)
             client.download_file(filepath, url=new_url)
         else:
@@ -2088,14 +2097,15 @@ class OnlyInRemoteNexusPackages(WeCubeResource):
 
     def list_by_post(self, query):
         cmdb_client = self.get_cmdb_client()
-        filters = query["additionalFilters"]
+        filters = query.get("additionalFilters", None) or []
         unit_design_id = None
         for item in filters:
             if item["attrName"] == "unit_design_id":
                 unit_design_id = item["condition"]
                 break
         if not unit_design_id:
-            raise exceptions.NotFoundError(message=_("Unit_design_id can not empty"))
+            return []
+            # raise exceptions.NotFoundError(message=_("Unit_design_id can not empty"))
 
         # get unit_design info
         query = {
