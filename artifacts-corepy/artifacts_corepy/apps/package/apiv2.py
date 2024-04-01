@@ -41,6 +41,10 @@ def is_upload_local_enabled():
 def is_upload_nexus_enabled():
     return utils.bool_from_string(CONF.wecube.upload_nexus_enabled)
 
+def remove_prefix(text, prefix):
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text
 
 def calculate_md5(fileobj):
     hasher = hashlib.md5()
@@ -2015,7 +2019,8 @@ class UnitDesignPackages(WeCubeResource):
             # 替换外部下载地址为Nexus内部地址
             urlinfo = urllib.parse.urlparse(url)
             nexusurlinfo = urllib.parse.urlparse(nexus_server)
-            new_url = urlinfo._replace(scheme=nexusurlinfo.scheme, netloc=nexusurlinfo.netloc,path=urlinfo.path.removeprefix('/artifacts')).geturl()
+            
+            new_url = urlinfo._replace(scheme=nexusurlinfo.scheme, netloc=nexusurlinfo.netloc,path=remove_prefix(urlinfo.path,'/artifacts')).geturl()
             # new_url = url.replace(CONF.wecube.server.rstrip('/') + '/artifacts', nexus_server)
             client = nexus.NeuxsClient(nexus_server, nexus_username, nexus_password)
             client.download_file(filepath, url=new_url)
