@@ -398,6 +398,7 @@ import Sortable from 'sortablejs'
 import CompareFile from './compare-file'
 import DisplayPath from './display-path'
 import { decode } from 'js-base64'
+
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
