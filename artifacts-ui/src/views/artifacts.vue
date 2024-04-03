@@ -390,7 +390,6 @@
 
 <script>
 import { pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType } from '@/api/server.js'
-import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
 import axios from 'axios'
@@ -1044,18 +1043,18 @@ export default {
     getHeaders () {
       let refreshRequest = null
       const currentTime = new Date().getTime()
-      const accessToken = getCookie('accessToken')
+      const accessToken = localStorage.getItem('wecube-accessToken')
       if (accessToken) {
-        const expiration = getCookie('accessTokenExpirationTime') * 1 - currentTime
+        const expiration = localStorage.getItem('wecube-accessTokenExpirationTime') * 1 - currentTime
         if (expiration < 1 * 60 * 1000 && !refreshRequest) {
           refreshRequest = axios.get('/auth/v1/api/token', {
             headers: {
-              Authorization: 'Bearer ' + getCookie('refreshToken')
+              Authorization: 'Bearer ' + localStorage.getItem('wecube-refreshToken')
             }
           })
           refreshRequest.then(
             res => {
-              setCookie(res.data.data)
+              this.setLocalstorage(res.data.data)
               this.setUploadActionHeader()
               this.$refs.uploadButton.handleClick()
             },
@@ -1072,6 +1071,14 @@ export default {
       } else {
         window.location.href = window.location.origin + '/#/login'
       }
+    },
+    setLocalstorage (data) {
+      const accessTokenObj = data.find(d => d.tokenType === 'accessToken')
+      const refreshTokenObj = data.find(d => d.tokenType === 'refreshToken')
+      localStorage.setItem('wecube-accessToken', accessTokenObj.token)
+      localStorage.setItem('wecube-accessTokenExpirationTime', refreshTokenObj.expiration)
+      localStorage.setItem('wecube-refreshToken', refreshTokenObj.token)
+      localStorage.setItem('wecube-refreshTokenExpirationTime', refreshTokenObj.expiration)
     },
     onSuccess (response, file, fileList) {
       if (response.status === 'ERROR') {
@@ -1098,7 +1105,7 @@ export default {
     },
     setUploadActionHeader () {
       this.headers = {
-        Authorization: 'Bearer ' + getCookie('accessToken')
+        Authorization: 'Bearer ' + localStorage.getItem('wecube-accessToken')
       }
     },
     async onUploadHandler () {
@@ -2201,7 +2208,7 @@ export default {
       })
       await this.updateHeaders()
       const a = document.createElement('a')
-      a.href = `/artifacts/packages/${row.guid}/download?token=${'Bearer ' + getCookie('accessToken')}`
+      a.href = `/artifacts/packages/${row.guid}/download?token=${'Bearer ' + localStorage.getItem('wecube-accessToken')}`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -2223,18 +2230,18 @@ export default {
     async updateHeaders () {
       let refreshRequest = null
       const currentTime = new Date().getTime()
-      const accessToken = getCookie('accessToken')
+      const accessToken = localStorage.getItem('wecube-accessToken')
       if (accessToken) {
-        const expiration = getCookie('accessTokenExpirationTime') * 1 - currentTime
+        const expiration = localStorage.getItem('wecube-accessTokenExpirationTime') * 1 - currentTime
         if (expiration < 1 * 60 * 1000 && !refreshRequest) {
           refreshRequest = axios.get('/auth/v1/api/token', {
             headers: {
-              Authorization: 'Bearer ' + getCookie('refreshToken')
+              Authorization: 'Bearer ' + localStorage.getItem('wecube-refreshToken')
             }
           })
           refreshRequest.then(
             res => {
-              setCookie(res.data.data)
+              this.setLocalstorage(res.data.data)
               this.setUploadActionHeader()
             },
             // eslint-disable-next-line handle-callback-err
