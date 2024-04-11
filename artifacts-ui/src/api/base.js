@@ -10,7 +10,6 @@ export const req = axios.create({
 })
 
 const throwError = res => new Error(res.message || 'error')
-
 let refreshRequest = null
 
 req.interceptors.request.use(
