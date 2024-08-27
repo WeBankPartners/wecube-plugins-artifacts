@@ -9,10 +9,10 @@
         </Select>
       </Card>
       <!-- 系统设计列表 -->
-      <Card class="artifact-management-bottom-card">
+      <Card>
         <p slot="title">{{ $t('artifacts_system_design_list') }}</p>
-        <div class="artifact-management-tree-body">
-          <Tree :data="treeData" @on-select-change="selectTreeNode"></Tree>
+        <div>
+          <Tree :data="treeData" @on-select-change="selectTreeNode" class="tree-size"> </Tree>
           <Spin size="large" fix v-if="treeLoading">
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
             <div>{{ $t('artifacts_loading') }}</div>
@@ -67,7 +67,7 @@
             </Spin>
             <Tabs :value="activeTab" @on-click="changeTab" name="APP">
               <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="APP">
-                <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
+                <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions" size="small"></Table>
               </TabPane>
             </Tabs>
           </TabPane>
@@ -81,7 +81,7 @@
             </Spin>
             <Tabs :value="activeTab" @on-click="changeTab" name="DB">
               <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="DB">
-                <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions"></Table>
+                <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions" size="small"></Table>
               </TabPane>
             </Tabs>
           </TabPane>
@@ -2264,6 +2264,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.tree-size ::v-deep .ivu-tree-title {
+  font-size: 12px !important;
+}
+
 .ivu-upload {
   display: inline-block;
 }
