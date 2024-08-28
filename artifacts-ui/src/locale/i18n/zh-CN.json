@@ -94,5 +94,12 @@
   "push": "推送",
   "downloading": "正在下载，请稍后……",
   "senting": "请求已发出，请稍后……",
-  "executionSuccessful": "执行成功！"
+  "executionSuccessful": "执行成功！",
+  "filterPath": "筛选路径",
+  "art_package": "物料包",
+  "art_upload": "上传",
+  "art_cannot_be_empty": "不能为空",
+  "art_success": "成功",
+  "art_need_time": "这可能需要一段时间，请稍后查看。",
+  "art_upload_artifact_package": "上传物料包"
 }

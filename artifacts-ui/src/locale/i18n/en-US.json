@@ -94,5 +94,12 @@
   "push": "Push",
   "downloading": "Downloading, please wait...",
   "senting": "Request sent, please wait...",
-  "executionSuccessful": "Execution Successful !"
+  "executionSuccessful": "Execution Successful !",
+  "filterPath": "Filter Path",
+  "art_package": "Artifact Package",
+  "art_upload": "Upload",
+  "art_cannot_be_empty": " Cannot Be Empty",
+  "art_success": "Sucess",
+  "art_need_time": "This may take a while, please check later",
+  "art_upload_artifact_package": "Upload Artifact Package"
 }

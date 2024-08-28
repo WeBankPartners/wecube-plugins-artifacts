@@ -25,25 +25,15 @@
       <!-- 包管理 -->
       <Card v-if="guid" class="artifact-management-top-card">
         <!-- 本地上传 -->
-        <Button type="info" ghost icon="ios-cloud-upload-outline" @click="getHeaders">
+        <Button type="info" ghost icon="ios-cloud-upload-outline" @click="pkgUpload('local')">
           {{ $t('artifacts_upload_new_package') }}
         </Button>
         <!-- 在线选择 -->
-        <Button style="margin-left: 10px" type="info" ghost icon="ios-cloud-outline" @click="queryOnlinePackages">
+        <Button style="margin-left: 10px" type="info" ghost icon="ios-cloud-outline" @click="pkgUpload('online')">
           {{ $t('select_online') }}
         </Button>
-        <Upload ref="uploadButton" :action="`/artifacts/unit-designs/${guid}/packages/upload`" :headers="headers" :on-success="onSuccess" :on-error="onError">
-          <Button style="display: none" icon="ios-cloud-upload-outline">{{ $t('artifacts_upload_new_package') }}</Button>
-        </Upload>
-        <!-- <div v-if="uploaded" style="width: 100%;height:26px"></div> -->
         <!-- 包列表table -->
         <ArtifactsSimpleTable class="artifact-management-package-table" :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
-        <!-- 包在线上传选择 -->
-        <Modal :mask-closable="false" v-model="isShowOnlineModal" :title="$t('select_online')" @on-ok="onUploadHandler" @on-cancel="closeOnlineModal">
-          <Select filterable clearable v-model="selectedOnlinePackage">
-            <Option v-for="conf in onlinePackages" :value="conf.downloadUrl" :key="conf.downloadUrl">{{ conf.name }}</Option>
-          </Select>
-        </Modal>
       </Card>
 
       <!-- 差异化变量 -->
@@ -384,12 +374,14 @@
           <Button type="primary" @click="onHistoryConfirm()" :loading="historyBtnLoading">{{ $t('artifacts_save') }} </Button>
         </div>
       </Modal>
+      <!-- 部署包上传组件 -->
+      <PkgUpload ref="pkgUploadRef" @refreshTable="queryPackages"></PkgUpload>
     </Col>
   </Row>
 </template>
 
 <script>
-import { pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, queryArtifactsList, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, uploadArtifact, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType } from '@/api/server.js'
+import { pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
@@ -397,6 +389,7 @@ import axios from 'axios'
 import Sortable from 'sortablejs'
 import CompareFile from './compare-file'
 import DisplayPath from './display-path'
+import PkgUpload from '../components/pkg-upload.vue'
 import { decode } from 'js-base64'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
@@ -449,7 +442,6 @@ export default {
       // 系统设计物料包数据
       // ----------------
       isShowOnlineModal: false,
-      selectedOnlinePackage: '',
       onlinePackages: [],
       // 上传认证头
       headers: {},
@@ -760,6 +752,11 @@ export default {
     }
   },
   methods: {
+    // #region 部署包上传
+    pkgUpload (type) {
+      this.$refs.pkgUploadRef.openUploadDialog(type, this.guid)
+    },
+    // #endregion
     handleUpload (file) {
       var FR = new FileReader()
       FR.onload = ev => {
@@ -1072,54 +1069,9 @@ export default {
         window.location.href = window.location.origin + '/#/login'
       }
     },
-    onSuccess (response, file, fileList) {
-      if (response.status === 'ERROR') {
-        this.$Notice.error({
-          title: 'Error',
-          desc: response.message || ''
-        })
-        this.$refs.uploadButton.clearFiles()
-      } else {
-        this.$refs.uploadButton.clearFiles()
-        this.$Notice.success({
-          title: 'Success',
-          desc: response.message || ''
-        })
-        this.queryPackages()
-      }
-    },
-    onError (file, filelist) {
-      this.$Notice.error({
-        title: 'Error',
-        desc: file.message || ''
-      })
-      this.$refs.uploadButton.clearFiles()
-    },
     setUploadActionHeader () {
       this.headers = {
         Authorization: 'Bearer ' + getCookie('accessToken')
-      }
-    },
-    async onUploadHandler () {
-      const { status } = await uploadArtifact(this.guid, this.selectedOnlinePackage)
-      if (status === 'OK') {
-        this.$Notice.success({
-          title: 'Success',
-          desc: 'This may take a while, please check later'
-        })
-      }
-      this.closeOnlineModal()
-    },
-    closeOnlineModal () {
-      this.selectedOnlinePackage = ''
-      this.isShowOnlineModal = false
-    },
-    async queryOnlinePackages () {
-      this.onlinePackages = []
-      const { status, data } = await queryArtifactsList(this.guid, { filters: [], paging: false })
-      if (status === 'OK') {
-        this.onlinePackages = data
-        this.isShowOnlineModal = true
       }
     },
     renderCell (content) {
@@ -2258,13 +2210,17 @@ export default {
   },
   components: {
     CompareFile,
-    DisplayPath
+    DisplayPath,
+    PkgUpload
   }
 }
 </script>
 
 <style lang="scss" scoped>
 .tree-size ::v-deep .ivu-tree-title {
+  font-size: 12px !important;
+}
+.tree-size ::v-deep .ivu-tree-empty {
   font-size: 12px !important;
 }
 
