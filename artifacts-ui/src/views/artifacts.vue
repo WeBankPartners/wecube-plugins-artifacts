@@ -376,6 +376,8 @@
       </Modal>
       <!-- 部署包上传组件 -->
       <PkgUpload ref="pkgUploadRef" @refreshTable="queryPackages"></PkgUpload>
+      <!-- 脚本配置组件 -->
+      <PkgConfig ref="pkgConfigRef"></PkgConfig>
     </Col>
   </Row>
 </template>
@@ -390,6 +392,7 @@ import Sortable from 'sortablejs'
 import CompareFile from './compare-file'
 import DisplayPath from './display-path'
 import PkgUpload from '../components/pkg-upload.vue'
+import PkgConfig from '../components/pkg-config.vue'
 import { decode } from 'js-base64'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
@@ -1416,6 +1419,7 @@ export default {
     },
     async showFilesModal (row, event, hideFooter = false) {
       event.stopPropagation()
+      this.$refs.pkgConfigRef.open(this.guid, row, hideFooter)
       this.packageId = row.guid
       await this.syncPackageDetail()
       this.packageType = row.package_type || this.constPackageOptions.mixed
@@ -1440,7 +1444,8 @@ export default {
       // await this.syncBaselineFileStatus()
       this.hideFooter = hideFooter
       await this.getAllpkg()
-      this.isShowFilesModal = true
+      // this.isShowFilesModal = true
+
       this.$nextTick(() => {
         if (this.packageType !== this.constPackageOptions.db) {
           this.genSortable('diff_conf_file')
@@ -2211,7 +2216,8 @@ export default {
   components: {
     CompareFile,
     DisplayPath,
-    PkgUpload
+    PkgUpload,
+    PkgConfig
   }
 }
 </script>
@@ -2265,11 +2271,6 @@ export default {
     margin: 0 2px;
     position: relative;
   }
-}
-.batchOperation {
-  // position: absolute;
-  // right: 10px;
-  // top: 5px;
 }
 .bind-style {
   margin: 8px;
