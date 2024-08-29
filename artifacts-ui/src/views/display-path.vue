@@ -22,8 +22,8 @@ export default {
 
 <style scoped lang="scss">
 .common-position {
-  width: 60px;
-  margin: 0 8px;
+  // width: 60px;
+  margin: 0 4px;
   display: inline-block;
 }
 .baseline-cmp-new {
