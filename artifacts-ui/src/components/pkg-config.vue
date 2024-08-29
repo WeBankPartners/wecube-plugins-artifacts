@@ -88,53 +88,47 @@
               </div>
               <div class="grid-cell">
                 <!-- 启动脚本 -->
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span style="margin-right: 10px">{{ $t('artifacts_start_script') }}</span>
-                    <Button type="info" size="small" ghost @click="() => showTreeModal(1, packageInput.start_file_path || [])">{{ $t('artifacts_select_file') }}</Button>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <div id="start_file_path_test">
-                      <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.start_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.start_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
-                        <Button style="float: right" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
-                      </div>
+                <div>
+                  <span style="margin-right: 10px">{{ $t('artifacts_start_script') }}</span>
+                  <Tooltip :content="$t('artifacts_select_file')" placement="top">
+                    <Icon type="md-cloud-upload" size="18" style="margin-right: 4px;" @click="() => showTreeModal(1, packageInput.start_file_path || [])" />
+                  </Tooltip>
+                  <div id="start_file_path_test" style="display: inline-block;">
+                    <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.start_file_path" :key="index">
+                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.start_file_path[index].filename" />
+                      <DisplayPath :file="file"></DisplayPath>
+                      <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
                     </div>
-                  </Col>
-                </Row>
+                  </div>
+                </div>
                 <!-- 停止脚本 -->
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span style="margin-right: 10px">{{ $t('artifacts_stop_script') }}</span>
-                    <Button type="info" size="small" ghost @click="() => showTreeModal(2, packageInput.stop_file_path || [])">{{ $t('artifacts_select_file') }}</Button>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <div id="stop_file_path_test">
-                      <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.stop_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.stop_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
-                        <Button style="float: right" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
-                      </div>
+                <div>
+                  <span style="margin-right: 10px">{{ $t('artifacts_stop_script') }}</span>
+                  <Tooltip :content="$t('artifacts_select_file')" placement="top">
+                    <Icon type="md-cloud-upload" size="18" style="margin-right: 4px;" @click="() => showTreeModal(2, packageInput.stop_file_path || [])" />
+                  </Tooltip>
+                  <div id="stop_file_path_test" style="display: inline-block;">
+                    <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.stop_file_path" :key="index">
+                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.stop_file_path[index].filename" />
+                      <DisplayPath :file="file"></DisplayPath>
+                      <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
                     </div>
-                  </Col>
-                </Row>
+                  </div>
+                </div>
                 <!-- 部署脚本 -->
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span style="margin-right: 10px">{{ $t('artifacts_deploy_script') }}</span>
-                    <Button type="info" size="small" ghost @click="() => showTreeModal(3, packageInput.deploy_file_path || [])">{{ $t('artifacts_select_file') }}</Button>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <div id="deploy_file_path_test">
-                      <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.deploy_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.deploy_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
-                        <Button style="float: right" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
-                      </div>
+                <div>
+                  <span style="margin-right: 10px">{{ $t('artifacts_deploy_script') }}</span>
+                  <Tooltip :content="$t('artifacts_select_file')" placement="top">
+                    <Icon type="md-cloud-upload" size="18" style="margin-right: 4px;" @click="() => showTreeModal(3, packageInput.deploy_file_path || [])" />
+                  </Tooltip>
+                  <div id="deploy_file_path_test" style="display: inline-block;">
+                    <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.deploy_file_path" :key="index">
+                      <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.deploy_file_path[index].filename" />
+                      <DisplayPath :file="file"></DisplayPath>
+                      <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
                     </div>
-                  </Col>
-                </Row>
+                  </div>
+                </div>
               </div>
             </div>
             <!-- 日志 -->
