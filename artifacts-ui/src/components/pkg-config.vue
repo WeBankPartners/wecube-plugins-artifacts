@@ -40,9 +40,11 @@
               </div>
               <div class="grid-cell">
                 <div>
-                  <Tooltip :content="$t('art_select_directory')" placement="top">
-                    <Icon type="md-cloud-upload" size="18" style="margin-right: 4px;" @click="() => showTreeModal(0.1, packageInput.diff_conf_directory || [])" />
-                  </Tooltip>
+                  <div>
+                    <Tooltip :content="$t('art_select_directory')" placement="top">
+                      <Icon type="md-cloud-upload" size="18" style="margin-right: 4px;" @click="() => showTreeModal(0.1, packageInput.diff_conf_directory || [])" />
+                    </Tooltip>
+                  </div>
                   <div id="diff_conf_directory_test" style="display: inline-block;">
                     <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.diff_conf_directory" :key="index">
                       <Input class="textarea-dir" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.diff_conf_directory[index].filename" />
@@ -53,7 +55,7 @@
                 </div>
               </div>
               <div class="grid-cell">
-                <div>
+                <div style="display: flex;align-items: flex-start;">
                   <Tooltip :content="$t('artifacts_select_file')" placement="top">
                     <Icon type="md-cloud-upload" size="18" style="margin-right: 4px;" @click="() => showTreeModal(0, packageInput.diff_conf_file || [])" />
                   </Tooltip>
@@ -88,7 +90,7 @@
               </div>
               <div class="grid-cell">
                 <!-- 启动脚本 -->
-                <div>
+                <div style="display: flex;align-items: flex-start;">
                   <span style="margin-right: 10px">{{ $t('artifacts_start_script') }}</span>
                   <Tooltip :content="$t('artifacts_select_file')" placement="top">
                     <Icon type="md-cloud-upload" size="18" style="margin-right: 4px;" @click="() => showTreeModal(1, packageInput.start_file_path || [])" />
@@ -102,7 +104,7 @@
                   </div>
                 </div>
                 <!-- 停止脚本 -->
-                <div>
+                <div style="display: flex;align-items: flex-start;">
                   <span style="margin-right: 10px">{{ $t('artifacts_stop_script') }}</span>
                   <Tooltip :content="$t('artifacts_select_file')" placement="top">
                     <Icon type="md-cloud-upload" size="18" style="margin-right: 4px;" @click="() => showTreeModal(2, packageInput.stop_file_path || [])" />
@@ -116,7 +118,7 @@
                   </div>
                 </div>
                 <!-- 部署脚本 -->
-                <div>
+                <div style="display: flex;align-items: flex-start;">
                   <span style="margin-right: 10px">{{ $t('artifacts_deploy_script') }}</span>
                   <Tooltip :content="$t('artifacts_select_file')" placement="top">
                     <Icon type="md-cloud-upload" size="18" style="margin-right: 4px;" @click="() => showTreeModal(3, packageInput.deploy_file_path || [])" />
@@ -151,7 +153,50 @@
                 </div>
               </div>
               <div class="grid-cell">
-                文件列表
+                <div style="display: flex;align-items: flex-start;margin: 2px">
+                  <div style="display: inline-block; width: 100px; margin-right: 10px">{{ $t('业务指标日志') }}</div>
+                  <div id="log_file_trade_test" style="display: inline-block;">
+                    <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_trade" :key="index">
+                      <Input class="textarea-input" :rows="1" :placeholder="$t('art_enter_log_path')" type="textarea" v-model="packageInput.log_file_trade[index].filename" />
+                      <DisplayPath :file="file"></DisplayPath>
+                      <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_trade')"></Button>
+                    </div>
+                  </div>
+                  <Button style="margin: 4px" size="small" type="info" icon="md-add" ghost @click="addFilePath('log_file_trade')"></Button>
+                </div>
+                <div style="display: flex;align-items: flex-start;margin: 2px">
+                  <div style="display: inline-block; width: 100px; margin-right: 10px">{{ $t('关键字日志') }}</div>
+                  <div id="log_file_keyword_test" style="display: inline-block;">
+                    <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_keyword" :key="index">
+                      <Input class="textarea-input" :rows="1" :placeholder="$t('art_enter_log_path')" type="textarea" v-model="packageInput.log_file_keyword[index].filename" />
+                      <DisplayPath :file="file"></DisplayPath>
+                      <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_keyword')"></Button>
+                    </div>
+                  </div>
+                  <Button style="margin: 4px" size="small" type="info" icon="md-add" ghost @click="addFilePath('log_file_keyword')"></Button>
+                </div>
+                <div style="display: flex;align-items: flex-start;margin: 2px">
+                  <div style="display: inline-block; width: 100px; margin-right: 10px">{{ $t('Metric日志') }}</div>
+                  <div id="log_file_metric_test" style="display: inline-block;">
+                    <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_metric" :key="index">
+                      <Input class="textarea-input" :rows="1" :placeholder="$t('art_enter_log_path')" type="textarea" v-model="packageInput.log_file_metric[index].filename" />
+                      <DisplayPath :file="file"></DisplayPath>
+                      <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_metric')"></Button>
+                    </div>
+                  </div>
+                  <Button style="margin: 4px" size="small" type="info" icon="md-add" ghost @click="addFilePath('log_file_metric')"></Button>
+                </div>
+                <div style="display: flex;align-items: flex-start;margin: 2px">
+                  <div style="display: inline-block; width: 100px; margin-right: 10px">{{ $t('Trace日志') }}</div>
+                  <div id="log_file_trace_test" style="display: inline-block;">
+                    <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_trace" :key="index">
+                      <Input class="textarea-input" :rows="1" :placeholder="$t('art_enter_log_path')" type="textarea" v-model="packageInput.log_file_metric[index].filename" />
+                      <DisplayPath :file="file"></DisplayPath>
+                      <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_trace')"></Button>
+                    </div>
+                  </div>
+                  <Button style="margin: 4px" size="small" type="info" icon="md-add" ghost @click="addFilePath('log_file_trace')"></Button>
+                </div>
               </div>
             </div>
           </div>
@@ -447,9 +492,15 @@ export default {
       this.$nextTick(() => {
         if (this.packageType !== this.constPackageOptions.db) {
           this.genSortable1('diff_conf_file')
+          // 脚本
           this.genSortable1('start_file_path')
           this.genSortable1('stop_file_path')
           this.genSortable1('deploy_file_path')
+          // 日志
+          this.genSortable1('log_file_trade')
+          this.genSortable1('log_file_keyword')
+          this.genSortable1('log_file_metric')
+          this.genSortable1('log_file_trace')
         }
         if (this.packageType !== this.constPackageOptions.app) {
           this.genSortable1('db_diff_conf_file')
@@ -1029,6 +1080,16 @@ export default {
     deleteFilePath (index, key) {
       this.packageInput[key].splice(index, 1)
     },
+    addFilePath (key) {
+      this.packageInput[key].push({
+        comparisonResult: '',
+        configKeyInfos: [],
+        filename: '',
+        isDir: false,
+        md5: '',
+        exists: false
+      })
+    },
     initTreeConfig (type) {
       this.configFileTree.treeType = type
       this.configFileTree.treeData = []
@@ -1065,7 +1126,7 @@ export default {
 }
 .textarea-input {
   display: inline-block;
-  width: 500px;
+  width: 480px;
 }
 
 .config-tab :deep(.ivu-tabs-nav) {

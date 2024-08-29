@@ -106,5 +106,6 @@
   "art_file": "File",
   "art_select_directory": "Select Directory",
   "art_script": "Script",
-  "art_log": "Log"
+  "art_log": "Log",
+  "art_enter_log_path": "Please enter the log path"
 }

@@ -1,5 +1,5 @@
 <template>
-  <span class=" ">
+  <span>
     <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new">[{{ file.comparisonResult }}]</div>
     <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same">[{{ file.comparisonResult }}]</div>
     <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed">[{{ file.comparisonResult }}]</div>

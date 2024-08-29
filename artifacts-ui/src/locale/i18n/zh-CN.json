@@ -106,5 +106,6 @@
   "art_file": "文件",
   "art_select_directory": "选择目录",
   "art_script": "脚本",
-  "art_log": "日志"
+  "art_log": "日志",
+  "art_enter_log_path": "请输入日志路径"
 }
