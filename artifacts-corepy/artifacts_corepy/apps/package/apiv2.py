@@ -85,7 +85,8 @@ field_pkg_db_upgrade_file_path_name = 'db_upgrade_file_path'
 fields_pkg_db = [field_pkg_db_deploy_file_directory_name, field_pkg_db_deploy_file_path_name, field_pkg_db_diff_conf_directory_name, 
                   field_pkg_db_diff_conf_file_name, field_pkg_db_rollback_directory_name, field_pkg_db_rollback_file_path_name,
                   field_pkg_db_upgrade_directory_name, field_pkg_db_upgrade_file_path_name]
-fields_pkg_all = [].extend(fields_pkg_common)
+fields_pkg_all = []
+fields_pkg_all.extend(fields_pkg_common)
 fields_pkg_all.extend(fields_pkg_app)
 fields_pkg_all.extend(fields_pkg_db)
 field_pkg_db_deploy_file_directory_default_value = 'db/install'
@@ -498,6 +499,7 @@ class UnitDesignPackages(WeCubeResource):
                     'variable_value': value['diffExpr']
                 } for key,value in update_diff_configs.items()])
             # 创建CMDB 包记录
+            deploy_package['baseline_package'] =  baseline_package or None,
             deploy_package['unit_design'] = unit_design_id
             deploy_package['upload_user'] = force_operator or scoped_globals.GLOBALS.request.auth_user
             deploy_package['upload_time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -700,6 +702,7 @@ class UnitDesignPackages(WeCubeResource):
         new_download_url = upload_result['downloadUrl'].replace(nexus_server,
                                                                 CONF.wecube.server.rstrip('/') + '/artifacts')
         package_rows = [{
+            'baseline_package': baseline_package or None,
             'name': filename,
             'code': filename,
             'deploy_package_url': new_download_url,
@@ -767,6 +770,7 @@ class UnitDesignPackages(WeCubeResource):
             # update_unit_design[CONF.wecube.wecmdb.artifact_field] = url_info['group']
             # cmdb_client.update(CONF.wecube.wecmdb.citypes.unit_design, [update_unit_design])
             package_rows = [{
+                'baseline_package': baseline_package or None,
                 'name': url_info['filename'],
                 'code': url_info['filename'],
                 'deploy_package_url': CONF.wecube.server.rstrip('/') + '/artifacts' + url_info['fullpath'],
@@ -804,6 +808,7 @@ class UnitDesignPackages(WeCubeResource):
                     upload_result = l_nexus_client.upload(CONF.nexus.repository, l_artifact_path, filename, filetype,
                                                           fileobj)
                     package_rows = [{
+                        'baseline_package': baseline_package or None,
                         'name':
                         filename,
                         'code':
@@ -2139,7 +2144,7 @@ class UnitDesignPackages(WeCubeResource):
             client.download_file(filepath, CONF.wecube.s3.access_key, CONF.wecube.s3.secret_key)
         return filepath
 
-    def _analyze_package_attrs(self, package_id:str, baseline_package_id:str|None, input_attrs:map, do_bind_vars=True) -> map:
+    def _analyze_package_attrs(self, package_id:str, baseline_package_id:str, input_attrs:map, do_bind_vars=True) -> map:
         # input_attrs都是以CMDB字段值方式传递，比如列表实际上是A|B|C格式
         ret_data = {}
         deploy_package = self._get_deploy_package_by_id(package_id)

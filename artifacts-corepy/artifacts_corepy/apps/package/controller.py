@@ -128,7 +128,7 @@ class CollectionUnitDesignPackageUpload(object):
         form = cgi.FieldStorage(fp=req.stream, environ=req.env)
         baseline_package = None
         if 'baseline_package' in form:
-            baseline_package = form.getvalue(baseline_package, None)
+            baseline_package = form.getvalue('baseline_package', None)
         resp.json = {
             'code': 200,
             'status': 'OK',
