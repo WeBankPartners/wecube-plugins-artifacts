@@ -2163,6 +2163,11 @@ class UnitDesignPackages(WeCubeResource):
                         if fnmatch.fnmatch(f['name'], '*' + ext):
                             filtered_file_objs.append(f)
                 ret_data[field_pkg_diff_conf_file_name] = FilePathConcater().convert(filtered_file_objs)
+                conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
+                bind_variables, new_create_variables = self._analyze_diff_var(package_id, deploy_package['deploy_package_url'], 
+                                    [], conf_files)
+                if bind_variables is not None:
+                    ret_data[field_pkg_diff_conf_var_name] = bind_variables
             else:
                 # 差异化文件清单继承删除+继承追加(扩展名限制，去重，保持原顺序)
                 baseline_file_value = baseline_package[field_pkg_diff_conf_file_name]
@@ -2183,6 +2188,13 @@ class UnitDesignPackages(WeCubeResource):
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
                             filtered_file_objs.append(f)
                 ret_data[field_pkg_diff_conf_file_name] = FileNameConcater().convert(filtered_file_objs)
+                conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
+                bind_variables, new_create_variables = self._analyze_diff_var(package_id, deploy_package['deploy_package_url'], 
+                                    [], conf_files)
+                if new_create_variables is not None:
+                    bind_variables = [c['guid'] for c in deploy_package[field_pkg_diff_conf_var_name]]
+                    bind_variables.extend(new_create_variables)
+                    ret_data[field_pkg_diff_conf_var_name] = bind_variables
         else:
             if not baseline_package:
                 ret_data[fset.name] = fset.default_value
@@ -2195,6 +2207,11 @@ class UnitDesignPackages(WeCubeResource):
                         if fnmatch.fnmatch(f['name'], '*' + ext):
                             filtered_file_objs.append(f)
                 ret_data[field_pkg_diff_conf_file_name] = FilePathConcater().convert(filtered_file_objs)
+                conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
+                bind_variables, new_create_variables = self._analyze_diff_var(package_id, deploy_package['deploy_package_url'], 
+                                    [], conf_files)
+                if bind_variables is not None:
+                    ret_data[field_pkg_diff_conf_var_name] = bind_variables
             else:
                 base_value = baseline_package[fset.name]
                 if not base_value:
@@ -2222,6 +2239,13 @@ class UnitDesignPackages(WeCubeResource):
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
                             filtered_file_objs.append(f)
                 ret_data[field_pkg_diff_conf_file_name] = FileNameConcater().convert(filtered_file_objs)
+                conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
+                bind_variables, new_create_variables = self._analyze_diff_var(package_id, deploy_package['deploy_package_url'], 
+                                    [], conf_files)
+                if new_create_variables is not None:
+                    bind_variables = [c['guid'] for c in deploy_package[field_pkg_diff_conf_var_name]]
+                    bind_variables.extend(new_create_variables)
+                    ret_data[field_pkg_diff_conf_var_name] = bind_variables
         # app bin script
         fset = FieldSetting(name=field_pkg_script_file_directory_name, default_value=field_pkg_script_file_directory_default_value)
         if input_attrs.get(fset.name, None):
