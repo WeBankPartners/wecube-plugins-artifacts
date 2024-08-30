@@ -82,8 +82,8 @@
   "comparison_result": "比对结果",
   "package_type": "部署包类型",
   "db_upgrade_directory": "DB升级脚本目录",
-  "db_rollback_directory": "DB回滚脚本目录",
-  "db_upgrade_file_path": "DB升级脚本",
+  "db_rollback_directory": "回滚脚本",
+  "db_upgrade_file_path": "升级脚本",
   "db_rollback_file_path": "DB回滚脚本",
   "db_deploy_file_path": "DB部署脚本",
   "detail": "详情",
@@ -107,5 +107,13 @@
   "art_select_directory": "选择目录",
   "art_script": "脚本",
   "art_log": "日志",
-  "art_enter_log_path": "请输入日志路径"
+  "art_enter_log_path": "请输入日志路径",
+  "art_service_code": "关键交易服务码",
+  "art_match_type": "匹配类型",
+  "art_source_value": "源值",
+  "art_match_value": "映射值(字符、数字)",
+  "art_regular_match": "正则匹配",
+  "art_irregular_matching": "非正则匹配",
+  "art_multi_dir_warn": "仅允许选择一个目录",
+  "art_initial_deployment_script": "首次部署脚本"
 }

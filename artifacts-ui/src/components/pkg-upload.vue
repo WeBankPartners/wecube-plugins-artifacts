@@ -180,7 +180,7 @@ export default {
     },
     // 本地上传
     async confirmLocalUpload () {
-      this.formData.append('baseline', this.localUploadParams.baseline_package)
+      this.formData.append('baseline_package', this.localUploadParams.baseline_package)
       const { status } = await uploadLocalArtifact(this.guid, this.formData)
       if (status === 'OK') {
         this.$Notice.success({
