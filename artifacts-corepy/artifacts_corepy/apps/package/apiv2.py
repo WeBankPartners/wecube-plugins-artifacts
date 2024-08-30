@@ -364,7 +364,10 @@ class UnitDesignPackages(WeCubeResource):
         results = results[1].split('/', 1)
         ret['repository'] = results[0]
         ret['filename'] = results[1].split('/')[-1]
-        ret['group'] = '/' + results[1].rsplit('/', 1)[0]
+        if ''.count('/') >= 1:
+            ret['group'] = '/' + results[1].rsplit('/', 1)[0]
+        else:
+            ret['group'] = '/'
         return ret
     
     def _is_compose_package(self, filename:str) -> bool:
