@@ -1,5 +1,5 @@
 <template>
-  <span class=" ">
+  <span>
     <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new">[{{ file.comparisonResult }}]</div>
     <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same">[{{ file.comparisonResult }}]</div>
     <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed">[{{ file.comparisonResult }}]</div>
@@ -22,8 +22,8 @@ export default {
 
 <style scoped lang="scss">
 .common-position {
-  width: 60px;
-  margin: 0 8px;
+  // width: 60px;
+  margin: 0 4px;
   display: inline-block;
 }
 .baseline-cmp-new {

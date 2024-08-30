@@ -14,8 +14,8 @@
   "artifacts_config_files": "差异化配置文件",
   "artifacts_select_file": "选择文件",
   "artifacts_unselected": "未选择",
-  "artifacts_start_script": "启动脚本/升级脚本",
-  "artifacts_stop_script": "停止脚本/回滚脚本",
+  "artifacts_start_script": "启动脚本",
+  "artifacts_stop_script": "停止脚本",
   "artifacts_deploy_script": "部署脚本",
   "artifacts_select_config_files": "选择配置文件",
   "artifacts_select_start_script": "选择启动脚本",
@@ -101,5 +101,11 @@
   "art_cannot_be_empty": "不能为空",
   "art_success": "成功",
   "art_need_time": "这可能需要一段时间，请稍后查看。",
-  "art_upload_artifact_package": "上传物料包"
+  "art_upload_artifact_package": "上传物料包",
+  "art_directory": "目录",
+  "art_file": "文件",
+  "art_select_directory": "选择目录",
+  "art_script": "脚本",
+  "art_log": "日志",
+  "art_enter_log_path": "请输入日志路径"
 }
