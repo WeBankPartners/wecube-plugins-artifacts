@@ -141,14 +141,18 @@ def calculate_file_md5(filepath):
     with open(filepath, 'rb') as fileobj:
         return calculate_md5(fileobj)
 
+def split_to_list(value, spliter=None):
+    if spliter is None:
+        spliter = r'[|,]'
+    return re.split(spliter, value)
 
 class FileNameConcater(converter.NullConverter):
     def convert(self, value):
-        return '|'.join([i.get('filename') for i in value if i.get('filename')])
+        return ','.join([i.get('filename') for i in value if i.get('filename')])
 
 class FilePathConcater(converter.NullConverter):
     def convert(self, value):
-        return '|'.join([i.get('path') for i in value if i.get('path')])
+        return ','.join([i.get('path') for i in value if i.get('path')])
     
 class BooleanNomalizedConverter(converter.NullConverter):
     def __init__(self, default=False):
@@ -337,7 +341,9 @@ class UnitDesignPackages(WeCubeResource):
                 i[field] = self.build_file_object(i.get(field, None))
         return resp_json['data']
 
-    def build_file_object(self, filenames, spliter='|'):
+    def build_file_object(self, filenames, spliter=None):
+        if spliter is None:
+            spliter = r'[|,]' 
         if not filenames:
             return []
         return [{
@@ -346,7 +352,7 @@ class UnitDesignPackages(WeCubeResource):
             'filename': f,
             'isDir': None,
             'md5': None
-        } for f in filenames.split(spliter)]
+        } for f in re.split(spliter, filenames)]
 
     def build_local_nexus_path(self, unit_design):
         return unit_design['key_name']
@@ -517,11 +523,11 @@ class UnitDesignPackages(WeCubeResource):
                 # upgrade 文件清单仅追加
                 file_objs = self.find_files_by_status(
                     baseline_package, new_package_guid,
-                    deploy_package[field_pkg_db_upgrade_directory_name].split('|') if deploy_package[field_pkg_db_upgrade_directory_name] else [],
+                    split_to_list(deploy_package[field_pkg_db_upgrade_directory_name]) if deploy_package[field_pkg_db_upgrade_directory_name] else [],
                     ['new', 'changed'])
                 filtered_file_objs = []
                 # append new files
-                available_extensions = CONF.db_script_extension.split(',')
+                available_extensions = split_to_list(CONF.db_script_extension)
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
@@ -530,11 +536,11 @@ class UnitDesignPackages(WeCubeResource):
                 # rollback 文件清单仅追加
                 file_objs = self.find_files_by_status(
                     baseline_package, new_package_guid,
-                    deploy_package[field_pkg_db_rollback_directory_name].split('|') if deploy_package[field_pkg_db_rollback_directory_name] else [],
+                    split_to_list(deploy_package[field_pkg_db_rollback_directory_name]) if deploy_package[field_pkg_db_rollback_directory_name] else [],
                     ['new', 'changed'])
                 filtered_file_objs = []
                 # append new files
-                available_extensions = CONF.db_script_extension.split(',')
+                available_extensions = split_to_list(CONF.db_script_extension)
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
@@ -853,148 +859,15 @@ class UnitDesignPackages(WeCubeResource):
                                  rule='1, 36',
                                  rule_type='length',
                                  nullable=False),
-            crud.ColumnValidator('startFilePath',
-                                 validate_on=['update:O'],
-                                 rule=(list, tuple),
-                                 rule_type='type',
-                                 converter=FileNameConcater(),
-                                 nullable=True),
-            crud.ColumnValidator('stopFilePath',
-                                 validate_on=['update:O'],
-                                 rule=(list, tuple),
-                                 rule_type='type',
-                                 converter=FileNameConcater(),
-                                 nullable=True),
-            crud.ColumnValidator('deployFilePath',
-                                 validate_on=['update:O'],
-                                 rule=(list, tuple),
-                                 rule_type='type',
-                                 converter=FileNameConcater(),
-                                 nullable=True),
-            crud.ColumnValidator('diffConfFile',
-                                 validate_on=['update:O'],
-                                 rule=(list, tuple),
-                                 rule_type='type',
-                                 converter=FileNameConcater(),
-                                 nullable=True),
-            crud.ColumnValidator('isDecompression',
-                                 validate_on=['update:O'],
-                                 rule='1, 36',
-                                 rule_type='length',
-                                 converter=BooleanNomalizedConverter(True),
-                                 nullable=True),
-            crud.ColumnValidator('packageType',
-                                 validate_on=['update:O'],
-                                 rule='1, 36',
-                                 rule_type='length',
-                                 nullable=True),
-            crud.ColumnValidator('dbUpgradeDirectory',
-                                 validate_on=['update:O'],
-                                 rule=(list, tuple),
-                                 rule_type='type',
-                                 converter=FileNameConcater(),
-                                 nullable=True),
-            crud.ColumnValidator('dbRollbackDirectory',
-                                 validate_on=['update:O'],
-                                 rule=(list, tuple),
-                                 rule_type='type',
-                                 converter=FileNameConcater(),
-                                 nullable=True),
-            crud.ColumnValidator('dbUpgradeFilePath',
-                                 validate_on=['update:O'],
-                                 rule=(list, tuple),
-                                 rule_type='type',
-                                 converter=FileNameConcater(),
-                                 nullable=True),
-            crud.ColumnValidator('dbRollbackFilePath',
-                                 validate_on=['update:O'],
-                                 rule=(list, tuple),
-                                 rule_type='type',
-                                 converter=FileNameConcater(),
-                                 nullable=True),
-            crud.ColumnValidator('dbDeployFilePath',
-                                 validate_on=['update:O'],
-                                 rule=(list, tuple),
-                                 rule_type='type',
-                                 converter=FileNameConcater(),
-                                 nullable=True),
-            crud.ColumnValidator('dbDiffConfFile',
-                                 validate_on=['update:O'],
-                                 rule=(list, tuple),
-                                 rule_type='type',
-                                 converter=FileNameConcater(),
-                                 nullable=True),
         ]
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
         baseline_package_id = clean_data.get('baselinePackage')
         nexus_path_filename = os.path.basename(clean_data['nexusUrl'])
-        cmdb_client = self.get_cmdb_client()
-        query = {
-            "dialect": {
-                "queryMode": "new"
-            },
-            "filters": [{
-                "name": "guid",
-                "operator": "eq",
-                "value": baseline_package_id
-            }],
-            "paging": False
-        }
-        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
-        if not resp_json.get('data', {}).get('contents', []):
-            raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
-                                           {'rid': baseline_package_id})
-        baseline_package = resp_json['data']['contents'][0]
+        baseline_package = self._get_deploy_package_by_id(baseline_package_id)
         url = CONF.wecube.nexus.server.rstrip(
             '/') + '/repository/' + CONF.wecube.nexus.repository + '/' + clean_data['nexusUrl'].lstrip('/')
         unit_design_id = baseline_package['unit_design']['guid']
         new_pakcage = self.upload_from_nexus(url, baseline_package_id, unit_design_id)[0]
-        if self._is_compose_package(nexus_path_filename):
-            update_data = {}
-            update_data['baseline_package'] = baseline_package_id
-            self.update(update_data,
-                    unit_design_id,
-                    new_pakcage['guid'],
-                    with_detail=False,
-                    db_upgrade_detect=False,
-                    db_rollback_detect=False)
-            return {'guid': new_pakcage['guid']}
-        # db部署支持, 检查是否用户手动指定值
-        b_db_upgrade_detect = True
-        b_db_rollback_detect = True
-        update_data = {}
-        update_data['baseline_package'] = baseline_package_id
-        update_data[field_pkg_is_decompression_name] = baseline_package[field_pkg_is_decompression_name]
-        update_data[field_pkg_package_type_name] = baseline_package.get(
-            field_pkg_package_type_name,
-            constant.PackageType.default) if clean_data.get('packageType', None) is None else clean_data['packageType']
-        keys = [('startFilePath', field_pkg_start_file_path_name), ('stopFilePath', field_pkg_stop_file_path_name),
-                ('deployFilePath', field_pkg_deploy_file_path_name), ('diffConfFile', field_pkg_diff_conf_file_name),
-                ('dbUpgradeDirectory', field_pkg_db_upgrade_directory_name), ('dbRollbackDirectory', field_pkg_db_rollback_directory_name),
-                ('dbUpgradeFilePath', field_pkg_db_upgrade_file_path_name), ('dbRollbackFilePath', field_pkg_db_rollback_file_path_name),
-                ('dbDeployFilePath', field_pkg_db_deploy_file_path_name), ('dbDiffConfFile', field_pkg_db_diff_conf_file_name)]
-        # 没有指定目录，无法探测
-        if (not clean_data.get(field_pkg_db_upgrade_directory_name, None)) and (not baseline_package.get(
-                field_pkg_db_upgrade_directory_name, None)):
-            b_db_upgrade_detect = False
-        if (not clean_data.get(field_pkg_db_rollback_directory_name, None)) and (not baseline_package.get(
-                field_pkg_db_rollback_directory_name, None)):
-            b_db_rollback_detect = False
-        for s_key, d_key in keys:
-            if s_key in clean_data and clean_data[s_key] is not None:
-                if d_key == field_pkg_db_upgrade_file_path_name:
-                    b_db_upgrade_detect = False
-                if d_key == field_pkg_db_rollback_file_path_name:
-                    b_db_rollback_detect = False
-                update_data[d_key] = self.build_file_object(clean_data[s_key])
-            else:
-                update_data[d_key] = self.build_file_object(baseline_package.get(d_key, None))
-        self.update(update_data,
-                    unit_design_id,
-                    new_pakcage['guid'],
-                    with_detail=False,
-                    db_upgrade_detect=b_db_upgrade_detect,
-                    db_rollback_detect=b_db_rollback_detect)
         return {'guid': new_pakcage['guid']}
 
     def _create_from_remote(self, package_name, package_guid, unit_design_id, operator, baseline_package_guid):
@@ -1114,7 +987,7 @@ class UnitDesignPackages(WeCubeResource):
                         'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         'baseline_package': baseline_package_guid
                     }
-                    ret = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [update_data])
+                    ret = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [update_data], keep_origin_value=(field_pkg_key_service_code_name,))
                     # package = {'guid': exists[0]['data']['guid'],
                     #           'deploy_package_url': exists[0]['data']['deploy_package_url']}
                     package = {'guid': package_guid}
@@ -1277,7 +1150,7 @@ class UnitDesignPackages(WeCubeResource):
     # 纯cmdb更新物料包
     def pure_update(self, data:list) -> list:
         cmdb_client = self.get_cmdb_client()
-        return cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, data)
+        return cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, data, keep_origin_value=(field_pkg_key_service_code_name,))
 
     def update(self,
                data,
@@ -1367,7 +1240,7 @@ class UnitDesignPackages(WeCubeResource):
         # FIXME: patch for wecmdb, error update without code
         clean_data['code'] = deploy_package['name']
         # 校验app diff conf扩展名
-        available_extensions = CONF.diff_conf_extension.split(',')
+        available_extensions = split_to_list(CONF.diff_conf_extension)
         if field_pkg_diff_conf_file_name in data:
             for item in data[field_pkg_diff_conf_file_name]:
                 matched = False
@@ -1383,7 +1256,7 @@ class UnitDesignPackages(WeCubeResource):
                             'options': available_extensions
                         })
         # 校验db diff conf扩展名
-        available_extensions = CONF.db_script_extension.split(',')
+        available_extensions = split_to_list(CONF.db_script_extension)
         if field_pkg_db_diff_conf_file_name in data:
             for item in data[field_pkg_db_diff_conf_file_name]:
                 matched = False
@@ -1437,15 +1310,15 @@ class UnitDesignPackages(WeCubeResource):
             clean_data[field_pkg_db_upgrade_file_path_name] = FileNameConcater().convert(
                 self.find_files_by_status(
                     clean_data['baseline_package'], deploy_package_id,
-                    clean_data[field_pkg_db_upgrade_directory_name].split('|') if clean_data[field_pkg_db_upgrade_directory_name] else [],
+                    split_to_list(clean_data[field_pkg_db_upgrade_directory_name]) if clean_data[field_pkg_db_upgrade_directory_name] else [],
                     ['new', 'changed']))
         if db_rollback_detect:
             clean_data[field_pkg_db_rollback_file_path_name] = FileNameConcater().convert(
                 self.find_files_by_status(
                     clean_data['baseline_package'], deploy_package_id,
-                    clean_data[field_pkg_db_rollback_directory_name].split('|') if clean_data[field_pkg_db_rollback_directory_name] else [],
+                    split_to_list(clean_data[field_pkg_db_rollback_directory_name]) if clean_data[field_pkg_db_rollback_directory_name] else [],
                     ['new', 'changed']))
-        resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [clean_data])
+        resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [clean_data], keep_origin_value=(field_pkg_key_service_code_name,))
         if with_detail:
             return self.get(unit_design_id, deploy_package_id)
         return resp_json['data']
@@ -1643,40 +1516,8 @@ class UnitDesignPackages(WeCubeResource):
 
     def baseline_compare(self, unit_design_id, deploy_package_id, baseline_package_id):
         cmdb_client = self.get_cmdb_client()
-        query = {
-            "dialect": {
-                "queryMode": "new"
-            },
-            "filters": [{
-                "name": "guid",
-                "operator": "eq",
-                "value": deploy_package_id
-            }],
-            "paging": False
-        }
-        self.set_package_query_fields(query)
-        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
-        if not resp_json.get('data', {}).get('contents', []):
-            raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
-                                           {'rid': deploy_package_id})
-        deploy_package = resp_json['data']['contents'][0]
-        query = {
-            "dialect": {
-                "queryMode": "new"
-            },
-            "filters": [{
-                "name": "guid",
-                "operator": "eq",
-                "value": baseline_package_id
-            }],
-            "paging": False
-        }
-        self.set_package_query_fields(query)
-        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
-        if not resp_json.get('data', {}).get('contents', []):
-            raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
-                                           {'rid': baseline_package_id})
-        baseline_package = resp_json['data']['contents'][0]
+        deploy_package = self._get_deploy_package_by_id(deploy_package_id)
+        baseline_package = self._get_deploy_package_by_id(baseline_package_id)
         baseline_cached_dir = None
         package_cached_dir = None
         # 确认baseline和package文件已下载并解压缓存在本地(加锁)
@@ -1685,6 +1526,15 @@ class UnitDesignPackages(WeCubeResource):
         package_cached_dir = self.ensure_package_cached(deploy_package['guid'], deploy_package['deploy_package_url'])
         package_type = baseline_package.get(field_pkg_package_type_name,
                                             constant.PackageType.default) or constant.PackageType.default
+        is_decompression = baseline_package.get(field_pkg_is_decompression_name,
+                                            field_pkg_is_decompression_default_value) or field_pkg_is_decompression_default_value
+        key_service_code = baseline_package.get(field_pkg_key_service_code_name,
+                                            field_pkg_key_service_code_default_value) or field_pkg_key_service_code_default_value
+        new_deploy_package_attrs = self._analyze_package_attrs(deploy_package_id, baseline_package_id, {
+            field_pkg_package_type_name: package_type,
+            field_pkg_is_decompression_name: is_decompression,
+            field_pkg_key_service_code_name: key_service_code
+        })
 
         result = {}
         # |切割为列表
@@ -1693,20 +1543,20 @@ class UnitDesignPackages(WeCubeResource):
                   field_pkg_start_file_path_name, field_pkg_stop_file_path_name,
                   field_pkg_log_file_directory_name)
         for field in fields:
-            result[field] = self.build_file_object(baseline_package.get(field, None))
+            result[field] = self.build_file_object(new_deploy_package_attrs.get(field, None))
             if package_type in (constant.PackageType.app, constant.PackageType.mixed):
                 # 更新文件的md5,comparisonResult,isDir
                 self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
         fields = (field_pkg_log_file_trade_name, field_pkg_log_file_keyword_name,
                   field_pkg_log_file_metric_name, field_pkg_log_file_trace_name,)
         for field in fields:
-            result[field] = self.build_file_object(baseline_package.get(field, None))
+            result[field] = self.build_file_object(new_deploy_package_attrs.get(field, None))
         # db部署支持
         fields = (field_pkg_db_deploy_file_directory_name, field_pkg_db_deploy_file_path_name,
                   field_pkg_db_diff_conf_directory_name, field_pkg_db_diff_conf_file_name,
                   field_pkg_db_upgrade_directory_name, field_pkg_db_rollback_directory_name,)
         for field in fields:
-            result[field] = self.build_file_object(baseline_package.get(field, None))
+            result[field] = self.build_file_object(new_deploy_package_attrs.get(field, None))
             self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
         if package_type in (constant.PackageType.db, constant.PackageType.mixed):
             result[field_pkg_db_upgrade_file_path_name] = self.find_files_by_status(
@@ -2170,7 +2020,7 @@ class UnitDesignPackages(WeCubeResource):
                 # 差异化文件清单自动分析(扩展名限制)
                 file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
                 filtered_file_objs = []
-                available_extensions = CONF.diff_conf_extension.split(',')
+                available_extensions = split_to_list(CONF.diff_conf_extension)
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['name'], '*' + ext):
@@ -2190,24 +2040,27 @@ class UnitDesignPackages(WeCubeResource):
                                         baseline_file_obj, file_key='filename')
                 # remove deleted status
                 filtered_file_objs = [f for f in baseline_file_obj if f['comparisonResult'] != 'deleted']
+                changed_file_objs = [f for f in baseline_file_obj if f['comparisonResult'] == 'changed']
+                changed_file_objs_map = set([f['filename'] for f in changed_file_objs])
                 # find new,changed status
                 file_objs = self.find_files_by_status(
                     baseline_package_id, package_id,
-                    ret_data[fset.name].split('|') if ret_data[fset.name] else [],
+                    split_to_list(ret_data[fset.name]) if ret_data[fset.name] else [],
                     ['new', 'changed'])
                 # append new files
-                available_extensions = CONF.diff_conf_extension.split(',')
+                available_extensions = split_to_list(CONF.diff_conf_extension)
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
-                            filtered_file_objs.append(f)
+                            if f['filename'] not in changed_file_objs_map:
+                                filtered_file_objs.append(f)
                 ret_data[field_pkg_diff_conf_file_name] = FileNameConcater().convert(filtered_file_objs)
                 if do_bind_vars:
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
                     bind_variables, new_create_variables = self._analyze_diff_var(package_id, deploy_package['deploy_package_url'], 
                                         [], conf_files)
                     if new_create_variables is not None:
-                        bind_variables = [c['guid'] for c in deploy_package[field_pkg_diff_conf_var_name]]
+                        bind_variables = [c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]]
                         bind_variables.extend(new_create_variables)
                         ret_data[field_pkg_diff_conf_var_name] = bind_variables
         else:
@@ -2216,7 +2069,7 @@ class UnitDesignPackages(WeCubeResource):
                 # 差异化文件清单自动分析
                 file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
                 filtered_file_objs = []
-                available_extensions = CONF.diff_conf_extension.split(',')
+                available_extensions = split_to_list(CONF.diff_conf_extension)
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['name'], '*' + ext):
@@ -2243,24 +2096,27 @@ class UnitDesignPackages(WeCubeResource):
                                         baseline_file_obj, file_key='filename')
                 # remove deleted status
                 filtered_file_objs = [f for f in baseline_file_obj if f['comparisonResult'] != 'deleted']
+                changed_file_objs = [f for f in baseline_file_obj if f['comparisonResult'] == 'changed']
+                changed_file_objs_map = set([f['filename'] for f in changed_file_objs])
                 # find new,changed status
                 file_objs = self.find_files_by_status(
                     baseline_package_id, package_id,
-                    ret_data[fset.name].split('|') if ret_data[fset.name] else [],
+                    split_to_list(ret_data[fset.name]) if ret_data[fset.name] else [],
                     ['new', 'changed'])
                 # append new files
-                available_extensions = CONF.diff_conf_extension.split(',')
+                available_extensions = split_to_list(CONF.diff_conf_extension)
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
-                            filtered_file_objs.append(f)
+                            if f['filename'] not in changed_file_objs_map:
+                                filtered_file_objs.append(f)
                 ret_data[field_pkg_diff_conf_file_name] = FileNameConcater().convert(filtered_file_objs)
                 if do_bind_vars:
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
                     bind_variables, new_create_variables = self._analyze_diff_var(package_id, deploy_package['deploy_package_url'], 
                                         [], conf_files)
                     if new_create_variables is not None:
-                        bind_variables = [c['guid'] for c in deploy_package[field_pkg_diff_conf_var_name]]
+                        bind_variables = [c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]]
                         bind_variables.extend(new_create_variables)
                         ret_data[field_pkg_diff_conf_var_name] = bind_variables
         # app bin script
@@ -2344,7 +2200,7 @@ class UnitDesignPackages(WeCubeResource):
                 # 文件清单自动分析(扩展名限制)
                 file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
                 filtered_file_objs = []
-                available_extensions = CONF.db_script_extension.split(',')
+                available_extensions = split_to_list(CONF.db_script_extension)
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['name'], '*' + ext):
@@ -2357,10 +2213,10 @@ class UnitDesignPackages(WeCubeResource):
                 # find new,changed status
                 file_objs = self.find_files_by_status(
                     baseline_package_id, package_id,
-                    ret_data[fset.name].split('|') if ret_data[fset.name] else [],
+                    split_to_list(ret_data[fset.name]) if ret_data[fset.name] else [],
                     ['new', 'changed'])
                 # append new files
-                available_extensions = CONF.db_script_extension.split(',')
+                available_extensions = split_to_list(CONF.db_script_extension)
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
@@ -2373,7 +2229,7 @@ class UnitDesignPackages(WeCubeResource):
                 # 文件清单自动分析(扩展名限制)
                 file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
                 filtered_file_objs = []
-                available_extensions = CONF.db_script_extension.split(',')
+                available_extensions = split_to_list(CONF.db_script_extension)
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['name'], '*' + ext):
@@ -2392,10 +2248,10 @@ class UnitDesignPackages(WeCubeResource):
                 # find new,changed status
                 file_objs = self.find_files_by_status(
                     baseline_package_id, package_id,
-                    ret_data[fset.name].split('|') if ret_data[fset.name] else [],
+                    split_to_list(ret_data[fset.name]) if ret_data[fset.name] else [],
                     ['new', 'changed'])
                 # append new files
-                available_extensions = CONF.db_script_extension.split(',')
+                available_extensions = split_to_list(CONF.db_script_extension)
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
@@ -2409,7 +2265,7 @@ class UnitDesignPackages(WeCubeResource):
                 # 文件清单自动分析(扩展名限制)
                 # file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
                 # filtered_file_objs = []
-                # available_extensions = CONF.db_script_extension.split(',')
+                # available_extensions = split_to_list(CONF.db_script_extension)
                 # for f in file_objs:
                 #     for ext in available_extensions:
                 #         if fnmatch.fnmatch(f['name'], '*' + ext):
@@ -2421,11 +2277,11 @@ class UnitDesignPackages(WeCubeResource):
                 # 文件清单仅追加
                 file_objs = self.find_files_by_status(
                     baseline_package_id, package_id,
-                    ret_data[fset.name].split('|') if ret_data[fset.name] else [],
+                    split_to_list(ret_data[fset.name]) if ret_data[fset.name] else [],
                     ['new', 'changed'])
                 filtered_file_objs = []
                 # append new files
-                available_extensions = CONF.db_script_extension.split(',')
+                available_extensions = split_to_list(CONF.db_script_extension)
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
@@ -2438,7 +2294,7 @@ class UnitDesignPackages(WeCubeResource):
                 # 文件清单自动分析(扩展名限制)
                 # file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
                 # filtered_file_objs = []
-                # available_extensions = CONF.db_script_extension.split(',')
+                # available_extensions = split_to_list(CONF.db_script_extension)
                 # for f in file_objs:
                 #     for ext in available_extensions:
                 #         if fnmatch.fnmatch(f['name'], '*' + ext):
@@ -2457,11 +2313,11 @@ class UnitDesignPackages(WeCubeResource):
                     # 文件清单仅追加
                     file_objs = self.find_files_by_status(
                         baseline_package_id, package_id,
-                        ret_data[fset.name].split('|') if ret_data[fset.name] else [],
+                        split_to_list(ret_data[fset.name]) if ret_data[fset.name] else [],
                         ['new', 'changed'])
                     filtered_file_objs = []
                     # append new files
-                    available_extensions = CONF.db_script_extension.split(',')
+                    available_extensions = split_to_list(CONF.db_script_extension)
                     for f in file_objs:
                         for ext in available_extensions:
                             if fnmatch.fnmatch(f['filename'], '*' + ext):
@@ -2475,7 +2331,7 @@ class UnitDesignPackages(WeCubeResource):
                 # 文件清单自动分析(扩展名限制)
                 # file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
                 # filtered_file_objs = []
-                # available_extensions = CONF.db_script_extension.split(',')
+                # available_extensions = split_to_list(CONF.db_script_extension)
                 # for f in file_objs:
                 #     for ext in available_extensions:
                 #         if fnmatch.fnmatch(f['name'], '*' + ext):
@@ -2487,11 +2343,11 @@ class UnitDesignPackages(WeCubeResource):
                 # 文件清单仅追加
                 file_objs = self.find_files_by_status(
                     baseline_package_id, package_id,
-                    ret_data[fset.name].split('|') if ret_data[fset.name] else [],
+                    split_to_list(ret_data[fset.name]) if ret_data[fset.name] else [],
                     ['new', 'changed'])
                 filtered_file_objs = []
                 # append new files
-                available_extensions = CONF.db_script_extension.split(',')
+                available_extensions = split_to_list(CONF.db_script_extension)
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
@@ -2504,7 +2360,7 @@ class UnitDesignPackages(WeCubeResource):
                 # 文件清单自动分析(扩展名限制)
                 # file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
                 # filtered_file_objs = []
-                # available_extensions = CONF.db_script_extension.split(',')
+                # available_extensions = split_to_list(CONF.db_script_extension)
                 # for f in file_objs:
                 #     for ext in available_extensions:
                 #         if fnmatch.fnmatch(f['name'], '*' + ext):
@@ -2523,11 +2379,11 @@ class UnitDesignPackages(WeCubeResource):
                     # 文件清单仅追加
                     file_objs = self.find_files_by_status(
                         baseline_package_id, package_id,
-                        ret_data[fset.name].split('|') if ret_data[fset.name] else [],
+                        split_to_list(ret_data[fset.name]) if ret_data[fset.name] else [],
                         ['new', 'changed'])
                     filtered_file_objs = []
                     # append new files
-                    available_extensions = CONF.db_script_extension.split(',')
+                    available_extensions = split_to_list(CONF.db_script_extension)
                     for f in file_objs:
                         for ext in available_extensions:
                             if fnmatch.fnmatch(f['filename'], '*' + ext):
