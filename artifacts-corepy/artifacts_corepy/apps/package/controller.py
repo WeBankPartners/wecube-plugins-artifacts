@@ -341,8 +341,8 @@ class SystemConfig(base_controller.Controller):
             'code': 200,
             'status': 'OK',
             'data': {
-                'upload_enabled': utils.bool_from_string(CONF.wecube.upload_enabled) and local_nexus_server,
-                'upload_from_nexus_enabled': utils.bool_from_string(CONF.wecube.upload_nexus_enabled) and remote_nexus_server,
+                'upload_enabled': bool(utils.bool_from_string(CONF.wecube.upload_enabled) and local_nexus_server),
+                'upload_from_nexus_enabled': bool(utils.bool_from_string(CONF.wecube.upload_nexus_enabled) and remote_nexus_server),
                 'push_to_nexus_enabled': True if push_nexus_server else False,
             },
             'message': 'success'
