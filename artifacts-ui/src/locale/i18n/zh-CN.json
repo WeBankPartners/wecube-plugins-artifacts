@@ -120,5 +120,6 @@
   "art_business_metric_log": "业务指标日志",
   "art_keyword_log": "关键字日志",
   "art_metric_log": "Metric日志",
-  "art_trace_log": "Trace日志"
+  "art_trace_log": "Trace日志",
+  "art_log_path_validte_tip": "日志文件需以日志目录开始"
 }

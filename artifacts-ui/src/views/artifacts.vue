@@ -25,11 +25,11 @@
       <!-- 包管理 -->
       <Card v-if="guid" class="artifact-management-top-card">
         <!-- 本地上传 -->
-        <Button type="info" ghost icon="ios-cloud-upload-outline" @click="pkgUpload('local')">
+        <Button type="info" ghost icon="ios-cloud-upload-outline" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">
           {{ $t('artifacts_upload_new_package') }}
         </Button>
         <!-- 在线选择 -->
-        <Button style="margin-left: 10px" type="info" ghost icon="ios-cloud-outline" @click="pkgUpload('online')">
+        <Button style="margin-left: 10px" type="info" ghost icon="ios-cloud-outline" :disabled="!btnGroupControl.upload_from_nexus_enabled" @click="pkgUpload('online')">
           {{ $t('select_online') }}
         </Button>
         <!-- 包列表table -->
@@ -383,7 +383,7 @@
 </template>
 
 <script>
-import { pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType } from '@/api/server.js'
+import { pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType, btnControl } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
@@ -409,6 +409,11 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      btnGroupControl: {
+        upload_enabled: false, // 本地上传
+        upload_from_nexus_enabled: false, // 在线上传
+        push_to_nexus_enabled: false // 推送
+      },
       baselinePackageOptions: [],
 
       packageType: '',
@@ -508,7 +513,7 @@ export default {
                 <Button onClick={() => this.toExportPkg(params.row)} size="small" style="margin-right: 5px;margin-bottom: 5px;background-color: rgb(153 206 233); color: white;">
                   {this.$t('export')}
                 </Button>
-                <Button type="info" onClick={() => this.toPushPkg(params.row)} size="small" style="margin-right: 5px;margin-bottom: 5px;">
+                <Button disabled={!this.btnGroupControl.push_to_nexus_enabled} type="info" onClick={() => this.toPushPkg(params.row)} size="small" style="margin-right: 5px;margin-bottom: 5px;">
                   {this.$t('push')}
                 </Button>
               </div>
@@ -1038,6 +1043,13 @@ export default {
         this.guid = node[0].guid
         this.queryPackages(true)
         this.initPackageDetail()
+        this.btnControl()
+      }
+    },
+    async btnControl () {
+      let { status, data } = await btnControl()
+      if (status === 'OK') {
+        this.btnGroupControl = data
       }
     },
     getHeaders () {

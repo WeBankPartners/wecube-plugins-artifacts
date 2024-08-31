@@ -53,3 +53,8 @@ export const uploadLocalArtifact = (guid, formData) => req.post(`/unit-designs/$
 export const getCompareContent = (unitDesignId, deployPackageId, data) => req.post(`/unit-designs/${unitDesignId}/packages/${deployPackageId}/files/comparison`, data)
 
 export const pushPkg = (unitDesignId, deployPackageId) => req.post(`/unit-designs/${unitDesignId}/packages/${deployPackageId}/push`)
+
+// 获取上传路径
+export const getFilePath = guid => req.get(`/unit-designs/${guid}/packages/queryNexusPath`)
+// 获取按钮权限
+export const btnControl = () => req.get(`/sysconfig`)

@@ -120,5 +120,6 @@
   "art_business_metric_log": "Business Metric Log",
   "art_keyword_log": "Keyword Log",
   "art_metric_log": "Metric Log",
-  "art_trace_log": "Trace Log"
+  "art_trace_log": "Trace Log",
+  "art_log_path_validte_tip": "Log files must start with the log directory"
 }

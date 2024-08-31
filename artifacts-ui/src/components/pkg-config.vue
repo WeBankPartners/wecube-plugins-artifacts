@@ -200,7 +200,7 @@
               </div>
             </div>
             <!-- 关键交易服务码 -->
-            <div style="margin-top: 16px;">
+            <div style="margin-top: 16px;" v-if="isShowKeyServiceCode">
               <Row>
                 <Col span="3" style="margin-top: 30px">
                   <span style="color:#5cadff">{{ $t('art_service_code') }}</span>
@@ -427,6 +427,7 @@ export default {
   name: '',
   data () {
     return {
+      isShowKeyServiceCode: false,
       columns1: [
         {
           title: this.$t('artifacts_configuration'),
@@ -525,6 +526,18 @@ export default {
       toggleCheckFileTreeChanged: '',
       toggleCheckFileTreeDeleted: ''
       // -------------------
+    }
+  },
+  watch: {
+    'packageInput.log_file_trade': {
+      handler (newVal, oldVal) {
+        let needShow = newVal.filter(item => item.filename !== '').length > 0
+        if (this.isShowKeyServiceCode !== needShow) {
+          this.packageInput.key_service_code = []
+          this.isShowKeyServiceCode = needShow
+        }
+      },
+      deep: true
     }
   },
   computed: {
@@ -1343,9 +1356,31 @@ export default {
       this.initPackageDetail()
       this.openDrawer = false
     },
-    async saveConfigFiles () {
-      if (this.disableAddCodeStringMap) {
+    paramsValiate () {
+      let canSave = true
+      const res1 = this.isLogFileStartWidthLogDir('log_file_trade')
+      const res2 = this.isLogFileStartWidthLogDir('log_file_keyword')
+      const res3 = this.isLogFileStartWidthLogDir('log_file_metric')
+      const res4 = this.isLogFileStartWidthLogDir('log_file_trace')
+      if (!res1 || !res2 || !res3 || !res4) {
+        this.$Message.warning(this.$t('art_log_path_validte_tip'))
+        canSave = false
+      }
+      if (this.isShowKeyServiceCode && this.disableAddCodeStringMap) {
         this.$Message.warning(this.$t('art_service_code_tip'))
+        canSave = false
+      }
+      return canSave
+    },
+    isLogFileStartWidthLogDir (key) {
+      this.packageInput[key] = this.packageInput[key].filter(item => item.filename !== '')
+      const logFileDir = this.packageInput.log_file_directory.length === 1 ? this.packageInput.log_file_directory[0].filename + '/' : ''
+      let res = this.packageInput[key].every(item => item.filename.startsWith(logFileDir))
+      return res
+    },
+    async saveConfigFiles () {
+      const canSave = this.paramsValiate()
+      if (!canSave) {
         return
       }
       let obj = {
