@@ -377,7 +377,7 @@
       <!-- 部署包上传组件 -->
       <PkgUpload ref="pkgUploadRef" @refreshTable="queryPackages"></PkgUpload>
       <!-- 脚本配置组件 -->
-      <PkgConfig ref="pkgConfigRef"></PkgConfig>
+      <PkgConfig ref="pkgConfigRef" @queryPackages="queryPackages" @syncPackageDetail="syncPackageDetail"></PkgConfig>
     </Col>
   </Row>
 </template>
