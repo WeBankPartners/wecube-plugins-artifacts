@@ -82,8 +82,8 @@
   "comparison_result": "Comparison Result",
   "package_type": "Package Yype",
   "db_upgrade_directory": "DB Upgrade Directory",
-  "db_rollback_directory": "DB Rollback Directory",
-  "db_upgrade_file_path": "DB Upgrade File Path",
+  "db_rollback_directory": "Rollback Directory",
+  "db_upgrade_file_path": "Upgrade File Path",
   "db_rollback_file_path": "DB Rollback File Path",
   "db_deploy_file_path": "DB Deploy File Path",
   "detail": "Detail",
@@ -107,5 +107,13 @@
   "art_select_directory": "Select Directory",
   "art_script": "Script",
   "art_log": "Log",
-  "art_enter_log_path": "Please enter the log path"
+  "art_enter_log_path": "Please enter the log path",
+  "art_service_code": "Key Transaction Service Code",
+  "art_match_type": "Match Type",
+  "art_source_value": "Source Value",
+  "art_match_value": "Mapping Value (Character, Number)",
+  "art_regular_match": "Regular Match",
+  "art_irregular_matching": "Irregular Match",
+  "art_multi_dir_warn": "Only one directory is allowed to be selected",
+  "art_initial_deployment_script": "Initial Deployment Script"
 }
