@@ -217,7 +217,7 @@
                       {{ $t('art_match_value') }}
                     </Col>
                   </Row>
-                  <Row v-for="(item, itemIndex) in packageInput.code_string_map" :key="itemIndex" style="margin:6px 0;">
+                  <Row v-for="(item, itemIndex) in packageInput.key_service_code" :key="itemIndex" style="margin:6px 0;">
                     <Col span="4">
                       <Select v-model="item.regulative" style="width:90%" @change="changeCodeStringMap(itemIndex)">
                         <Option :value="1" key="art_regular_match">{{ $t('art_regular_match') }}</Option>
@@ -472,7 +472,7 @@ export default {
         log_file_keyword: [],
         log_file_metric: [],
         log_file_trace: [],
-        code_string_map: [], // 关键交易服务码
+        key_service_code: [], // 关键交易服务码
         is_decompression: true,
 
         db_diff_conf_directory: [], // DB差异化变量
@@ -497,7 +497,7 @@ export default {
         log_file_keyword: [],
         log_file_metric: [],
         log_file_trace: [],
-        code_string_map: [], // 关键交易服务码
+        key_service_code: [], // 关键交易服务码
         is_decompression: true,
 
         db_diff_conf_directory: [], // DB差异化变量
@@ -529,7 +529,7 @@ export default {
   },
   computed: {
     disableAddCodeStringMap () {
-      let res = this.packageInput.code_string_map.some(item => item.source_value === '' || item.target_value === '')
+      let res = this.packageInput.key_service_code.some(item => item.source_value === '' || item.target_value === '')
       return res
     }
   },
@@ -591,7 +591,7 @@ export default {
       this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_directory || []))
       this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_path || []))
 
-      this.packageInput.code_string_map = JSON.parse(JSON.stringify(this.packageDetail.code_string_map || []))
+      this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code || []))
 
       this.packageId = row.guid
       this.hideFooter = hideFooter
@@ -823,7 +823,7 @@ export default {
         log_file_keyword: [],
         log_file_metric: [],
         log_file_trace: [],
-        code_string_map: [], // 关键交易服务码
+        key_service_code: [], // 关键交易服务码
         is_decompression: true,
 
         db_diff_conf_directory: [], // DB差异化变量
@@ -874,9 +874,11 @@ export default {
       this.isShowTreeModal = true
       this.isFileSelect = false
       let queryFiles = []
+      let queryFilesParent = []
       if (type === 0) {
         this.configFileTreeTitle = this.$t('artifacts_config_files')
         queryFiles = this.packageInput.diff_conf_file.map(_ => _.filename)
+        queryFilesParent = this.packageInput.diff_conf_directory.map(_ => _.filename)
       } else if (type === 0.1) {
         this.isFileSelect = true
         this.configFileTreeTitle = this.$t('artifacts_config_files')
@@ -888,12 +890,15 @@ export default {
       } else if (type === 1) {
         this.configFileTreeTitle = this.$t('artifacts_select_start_script')
         queryFiles = this.packageInput.start_file_path.map(_ => _.filename)
+        queryFilesParent = this.packageInput.script_file_directory.map(_ => _.filename)
       } else if (type === 2) {
         this.configFileTreeTitle = this.$t('artifacts_select_stop_script')
         queryFiles = this.packageInput.stop_file_path.map(_ => _.filename)
+        queryFilesParent = this.packageInput.script_file_directory.map(_ => _.filename)
       } else if (type === 3) {
         this.configFileTreeTitle = this.$t('artifacts_select_deploy_script')
         queryFiles = this.packageInput.deploy_file_path.map(_ => _.filename)
+        queryFilesParent = this.packageInput.script_file_directory.map(_ => _.filename)
       } else if (type === 0.4) {
         this.isFileSelect = true
         this.configFileTreeTitle = this.$t('art_initial_deployment_script')
@@ -913,15 +918,19 @@ export default {
       } else if (type === 103) {
         this.configFileTreeTitle = this.$t('db_upgrade_file_path')
         queryFiles = this.packageInput.db_upgrade_file_path.map(_ => _.filename)
+        queryFilesParent = this.packageInput.db_upgrade_directory.map(_ => _.filename)
       } else if (type === 104) {
         this.configFileTreeTitle = this.$t('db_rollback_file_path')
         queryFiles = this.packageInput.db_rollback_file_path.map(_ => _.filename)
+        queryFilesParent = this.packageInput.db_rollback_directory.map(_ => _.filename)
       } else if (type === 105) {
         this.configFileTreeTitle = this.$t('art_initial_deployment_script')
         queryFiles = this.packageInput.db_deploy_file_path.map(_ => _.filename)
+        queryFilesParent = this.packageInput.db_deploy_file_directory.map(_ => _.filename)
       } else if (type === 106) {
         this.configFileTreeTitle = this.$t('artifacts_config_files')
         queryFiles = this.packageInput.db_diff_conf_file.map(_ => _.filename)
+        queryFilesParent = this.packageInput.db_diff_conf_directory.map(_ => _.filename)
       } else if (type === 0.3) {
         this.isFileSelect = true
         this.configFileTreeTitle = this.$t('art_log')
@@ -929,10 +938,56 @@ export default {
       }
       const { data } = await getFiles(this.guid, this.packageId, {
         baselinePackage: this.packageInput.baseline_package,
-        fileList: queryFiles,
+        fileList: queryFiles.length > 0 ? queryFiles : queryFilesParent,
         expandAll: true
       })
       this.configFileTree.treeData = this.formatConfigFileTree(data, queryFiles)
+      // 填补最后一级数据
+      if (queryFiles.length === 0 && queryFilesParent.length === 1) {
+        const nodeNeedExpand = this.findNodeByPath(this.configFileTree.treeData, queryFilesParent[0])
+        nodeNeedExpand && this.expendLast(nodeNeedExpand)
+      }
+    },
+    // 找出需要展开的节点
+    findNodeByPath (tree, targetPath) {
+      for (let node of tree) {
+        if (node.path === targetPath) {
+          return node
+        } else if (node.children && node.children.length > 0) {
+          const result = this.findNodeByPath(node.children, targetPath)
+          if (result) return result
+        }
+      }
+      return null
+    },
+    // 获取最后一级数据
+    async expendLast (item) {
+      if (item.isDir && !item.disabled) {
+        let baselinePackage = this.packageInput.baseline_package
+        if (item.comparisonResult === 'new') {
+          baselinePackage = null
+        }
+        const { data } = await getFiles(this.guid, this.packageId, { baselinePackage: baselinePackage, fileList: [item.path], expandAll: false })
+        let treeChild = this.formatConfigFileTree(data)
+        if (item.comparisonResult === 'new') {
+          treeChild.forEach(_ => {
+            _.comparisonResult = 'new'
+          })
+        }
+        this.configFileTree.treeData = this.replaceChildrenWithChild(this.configFileTree.treeData, item.path, treeChild)
+      }
+    },
+    // 将最后一级数据添加进结构
+    replaceChildrenWithChild (tree, targetPath, newChildren) {
+      tree.forEach(node => {
+        if (node.path === targetPath) {
+          node.children = newChildren
+          node.expand = true
+        } else if (node.children && node.children.length > 0) {
+          this.replaceChildrenWithChild(node.children, targetPath, newChildren) // 递归遍历子节点
+        }
+      })
+      return tree
     },
     saveConfigFileTree () {
       let saveData = []
@@ -983,17 +1038,18 @@ export default {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
         } else {
           this.packageInput.db_upgrade_directory = saveData
+          this.packageInput.db_upgrade_file_path = []
         }
       } else if (this.configFileTree.treeType === 102) {
         if (saveData.length > 1) {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
         } else {
           this.packageInput.db_rollback_directory = saveData
+          this.packageInput.db_rollback_file_path = []
         }
       } else if (this.configFileTree.treeType === 103) {
         this.packageInput.db_upgrade_file_path = saveData
       } else if (this.configFileTree.treeType === 104) {
-        console.log(123, saveData)
         this.packageInput.db_rollback_file_path = saveData
       } else if (this.configFileTree.treeType === 105) {
         this.packageInput.db_deploy_file_path = saveData
@@ -1004,18 +1060,24 @@ export default {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
         } else {
           this.packageInput.log_file_directory = saveData
+          this.packageInput.log_file_trade = []
+          this.packageInput.log_file_keyword = []
+          this.packageInput.log_file_metric = []
+          this.packageInput.log_file_trace = []
         }
       } else if (this.configFileTree.treeType === 0.4) {
         if (saveData.length > 1) {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
         } else {
           this.packageInput.db_deploy_file_directory = saveData
+          this.packageInput.db_deploy_file_path = []
         }
       } else if (this.configFileTree.treeType === 0.5) {
         if (saveData.length > 1) {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
         } else {
           this.packageInput.db_diff_conf_directory = saveData
+          this.packageInput.db_diff_conf_file = []
         }
       }
     },
@@ -1255,7 +1317,7 @@ export default {
     },
     // 新增服务码
     addCodeStringMap () {
-      this.packageInput.code_string_map.push({
+      this.packageInput.key_service_code.push({
         regulative: 0,
         source_value: '',
         target_value: ''
@@ -1263,11 +1325,11 @@ export default {
     },
     // 删除服务码
     deleteCodeStringMap (index) {
-      this.packageInput.code_string_map.splice(index, 1)
+      this.packageInput.key_service_code.splice(index, 1)
     },
     changeCodeStringMap (index) {
-      this.packageInput.code_string_map[index].source_value = ''
-      this.packageInput.code_string_map[index].target_value = ''
+      this.packageInput.key_service_code[index].source_value = ''
+      this.packageInput.key_service_code[index].target_value = ''
     },
     initTreeConfig (type) {
       this.configFileTree.treeType = type
@@ -1313,7 +1375,7 @@ export default {
         db_deploy_file_directory: this.packageInput.db_deploy_file_directory,
         db_deploy_file_path: this.packageInput.db_deploy_file_path,
 
-        code_string_map: this.packageInput.code_string_map
+        key_service_code: this.packageInput.key_service_code
       }
       this.saveConfigLoading = true
       let { status } = await updatePackage(this.guid, this.packageId, obj)
