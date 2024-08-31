@@ -32,7 +32,7 @@ class NeuxsClient(object):
         group = '/' + group.rstrip('/')
         query = {'repository': repository, 'group': group}
         if filename:
-            query['name'] = filename
+            query['q'] = filename
         if continue_token:
             query['continuationToken'] = continue_token
         LOG.info('GET %s', url)
