@@ -121,5 +121,14 @@
   "art_keyword_log": "Keyword Log",
   "art_metric_log": "Metric Log",
   "art_trace_log": "Trace Log",
-  "art_log_path_validte_tip": "Log files must start with the log directory"
+  "art_log_path_validte_tip": "Log files must start with the log directory",
+  "art_delete": "Delete",
+  "art_update": "Update",
+  "art_rollback": "Rollback",
+  "art_confirm": "Confirm",
+  "art_release": "release",
+  "art_release_history": "Release History",
+  "art_ok": "Confirm",
+  "art_select_orch": "Select Orchestration",
+  "art_release_artifact_package": "Release Artifact Package"
 }

@@ -121,5 +121,14 @@
   "art_keyword_log": "关键字日志",
   "art_metric_log": "Metric日志",
   "art_trace_log": "Trace日志",
-  "art_log_path_validte_tip": "日志文件需以日志目录开始"
+  "art_log_path_validte_tip": "日志文件需以日志目录开始",
+  "art_delete": "删除",
+  "art_update": "编辑",
+  "art_rollback": "回退",
+  "art_confirm": "确认",
+  "art_release": "发布",
+  "art_release_history": "发布历史",
+  "art_ok": "确定",
+  "art_select_orch": "选择编排",
+  "art_release_artifact_package": "发布物料包"
 }

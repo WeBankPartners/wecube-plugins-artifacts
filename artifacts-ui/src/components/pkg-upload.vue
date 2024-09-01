@@ -17,7 +17,7 @@
           <Select filterable clearable v-model="onlineUploadParams.downloadUrl">
             <Option v-for="conf in onlinePackages" :value="conf.downloadUrl" :label="conf.name" :key="conf.downloadUrl">
               <span>{{ conf.name }}</span>
-              <!-- <span style="float:right;color:#ccc">{{ dayjs(conf.lastModified).format('YYYY-MM-DD HH:mm:ss') }}</span> -->
+              <span style="float:right;color:#ccc">{{ utcToLocal(conf.lastModified) }}</span>
             </Option>
           </Select>
         </FormItem>
@@ -64,7 +64,8 @@
 </template>
 
 <script>
-// import dayjs from 'dayjs'
+// eslint-disable-next-line no-unused-vars
+import dayjs from 'dayjs'
 import { queryArtifactsList, queryPackages, uploadArtifact, uploadLocalArtifact, getFilePath } from '@/api/server.js'
 export default {
   name: '',
@@ -95,6 +96,9 @@ export default {
   watch: {},
   props: [],
   methods: {
+    utcToLocal (utcDate) {
+      return dayjs(utcDate).format('YYYY-MM-DD HH:mm:ss')
+    },
     openUploadDialog (uploadType, guid) {
       this.isfullscreen = false
       this.uploadType = uploadType
@@ -154,7 +158,7 @@ export default {
         filters: [],
         paging: true,
         pageable: {
-          pageSize: 100,
+          pageSize: 10000,
           startIndex: 0
         }
       })
@@ -183,7 +187,6 @@ export default {
       })
     },
     handleUpload (file) {
-      console.log(file)
       this.localUploadParams.fileName = file.name
       this.formData = new FormData()
       this.formData.append('file', file)
