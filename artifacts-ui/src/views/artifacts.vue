@@ -495,16 +495,12 @@ export default {
         {
           title: this.$t('artifacts_package_name'),
           key: 'name',
-          tooltip: true,
-          ellipsis: true,
           render: (h, params) => this.renderCell(params.row.name)
         },
         {
           title: 'GUID',
           width: 160,
-          key: 'guid',
-          ellipsis: true,
-          tooltip: true
+          key: 'guid'
         },
         {
           title: this.$t('package_type'),
