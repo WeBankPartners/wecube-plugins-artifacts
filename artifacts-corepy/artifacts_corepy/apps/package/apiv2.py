@@ -1537,6 +1537,9 @@ class UnitDesignPackages(WeCubeResource):
         })
 
         result = {}
+        key_service_code = result[field_pkg_package_type_name] = package_type
+        key_service_code = result[field_pkg_is_decompression_name] = is_decompression
+        key_service_code = result[field_pkg_key_service_code_name] = key_service_code
         # |切割为列表
         fields = (field_pkg_diff_conf_directory_name, field_pkg_diff_conf_file_name,
                   field_pkg_script_file_directory_name, field_pkg_deploy_file_path_name, 
