@@ -495,12 +495,16 @@ export default {
         {
           title: this.$t('artifacts_package_name'),
           key: 'name',
+          tooltip: true,
+          ellipsis: true,
           render: (h, params) => this.renderCell(params.row.name)
         },
         {
           title: 'GUID',
           width: 160,
-          key: 'guid'
+          key: 'guid',
+          ellipsis: true,
+          tooltip: true
         },
         {
           title: this.$t('package_type'),
@@ -687,13 +691,13 @@ export default {
             if (params.row.conf_variable.bound) {
               return (
                 <span>
-                  <Icon type="md-checkmark-circle" color="#2d8cf0" style="font-size: 18px;" />
+                  <Icon type="md-checkmark-circle" color="#2d8cf0" style="font-size: 16px;" />
                 </span>
               )
             } else {
               return (
                 <span>
-                  <Icon type="md-close-circle" color="red" style="font-size: 18px;" />
+                  <Icon type="md-close-circle" color="red" style="font-size: 16px;" />
                 </span>
               )
             }
