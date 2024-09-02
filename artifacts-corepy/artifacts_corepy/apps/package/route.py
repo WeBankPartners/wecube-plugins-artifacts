@@ -64,6 +64,8 @@ class EntityAdapter(object):
 
 
 def add_routes(api):
+    # process
+    api.add_route('/artifacts/process/definitions', controller.CollectionProcessDef())
     # cmdb api forward
     api.add_route('/artifacts/system-design-versions', controller.CollectionSystemDesign())
     api.add_route('/artifacts/system-design-versions/{rid}', controller.ItemSystemDesign())

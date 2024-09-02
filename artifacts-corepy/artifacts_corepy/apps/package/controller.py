@@ -46,6 +46,13 @@ class ControllerVariableRootCiTypeId(object):
             'message': 'success'
         }
 
+
+class CollectionProcessDef(Collection):
+    allow_methods = ('GET', )
+    name = 'artifacts.process.defs'
+    resource = package_api.ProcessDef
+
+
 class CollectionSystemDesign(Collection):
     allow_methods = ('GET', )
     name = 'artifacts.system-designs'

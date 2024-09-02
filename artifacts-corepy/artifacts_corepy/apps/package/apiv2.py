@@ -177,6 +177,18 @@ class WeCubeResource(object):
         pass
 
 
+class ProcessDef(WeCubeResource):
+    def list(self, params):
+        params['plugin'] = 'artifacts'
+        params['permission'] = 'USE'
+        if 'all' not in params:
+            params['all'] = 'N'
+        if 'rootEntity' not in params:
+            params['rootEntity'] = 'wecmdb:' + CONF.wecube.wecmdb.citypes.deploy_package
+        api_client = self.get_cmdb_client()
+        url = self.server + '/platform/v1/public/process/definitions'
+        return api_client.get(url, params)
+
 class SystemDesign(WeCubeResource):
     def list(self, params):
         cmdb_client = self.get_cmdb_client()
