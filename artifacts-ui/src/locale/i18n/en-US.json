@@ -130,5 +130,6 @@
   "art_release_history": "Release History",
   "art_ok": "Confirm",
   "art_select_orch": "Select Orchestration",
-  "art_release_artifact_package": "Release Artifact Package"
+  "art_release_artifact_package": "Release Artifact Package",
+  "art_status": "Status"
 }
