@@ -88,12 +88,13 @@ class WeCMDBClient(object):
                     raise exceptions.PluginError(message=resp_json['data'][0]['errorMessage'])
             raise exceptions.PluginError(message=resp_json['statusMessage'])
 
-    def get(self, url, param=None):
+    def get(self, url, param=None, check_resp=True):
         LOG.info('GET %s', url)
         LOG.debug('Request: query - %s, data - None', str(param))
         resp_json = utils.RestfulJson.get(url, headers=self.build_headers(), params=param)
         LOG.debug('Response: %s', str(resp_json))
-        self.check_response(resp_json)
+        if check_resp:
+            self.check_response(resp_json)
         return resp_json
 
     def post(self, url, data, param=None):

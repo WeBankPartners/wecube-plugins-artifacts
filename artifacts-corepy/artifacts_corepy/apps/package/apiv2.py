@@ -187,7 +187,7 @@ class ProcessDef(WeCubeResource):
             params['rootEntity'] = 'wecmdb:' + CONF.wecube.wecmdb.citypes.deploy_package
         api_client = self.get_cmdb_client()
         url = self.server + '/platform/v1/public/process/definitions'
-        return api_client.get(url, params)
+        return api_client.get(url, params, check_resp=False)
 
 class SystemDesign(WeCubeResource):
     def list(self, params):
@@ -342,13 +342,21 @@ class UnitDesignPackages(WeCubeResource):
         query['filters'].append({"name": "unit_design", "operator": "eq", "value": unit_design_id})
         resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
         for i in resp_json['data']['contents']:
-            fields = (field_pkg_deploy_file_path_name, field_pkg_start_file_path_name, field_pkg_stop_file_path_name, field_pkg_diff_conf_file_name)
+            i[field_pkg_package_type_name] = i.get(field_pkg_package_type_name, constant.PackageType.default) or constant.PackageType.default
+            i[field_pkg_is_decompression_name] = i.get(field_pkg_is_decompression_name, field_pkg_is_decompression_default_value) or field_pkg_is_decompression_default_value
+            i[field_pkg_key_service_code_name] = i.get(field_pkg_key_service_code_name, field_pkg_key_service_code_default_value) or field_pkg_key_service_code_default_value
+            fields = (field_pkg_diff_conf_directory_name, field_pkg_diff_conf_file_name,
+                  field_pkg_script_file_directory_name, field_pkg_deploy_file_path_name, 
+                  field_pkg_start_file_path_name, field_pkg_stop_file_path_name,
+                  field_pkg_log_file_directory_name,field_pkg_log_file_trade_name, 
+                  field_pkg_log_file_keyword_name, field_pkg_log_file_metric_name, field_pkg_log_file_trace_name,)
             for field in fields:
                 i[field] = self.build_file_object(i.get(field, None))
             # db部署支持
-            i[field_pkg_package_type_name] = i.get(field_pkg_package_type_name, constant.PackageType.default) or constant.PackageType.default
-            fields = (field_pkg_db_upgrade_directory_name, field_pkg_db_rollback_directory_name, field_pkg_db_upgrade_file_path_name, field_pkg_db_rollback_file_path_name,
-                      field_pkg_db_deploy_file_path_name, field_pkg_db_diff_conf_file_name)
+            fields = (field_pkg_db_deploy_file_directory_name, field_pkg_db_deploy_file_path_name,
+                  field_pkg_db_diff_conf_directory_name, field_pkg_db_diff_conf_file_name,
+                  field_pkg_db_upgrade_directory_name, field_pkg_db_rollback_file_path_name, 
+                  field_pkg_db_rollback_directory_name, field_pkg_db_upgrade_file_path_name,)
             for field in fields:
                 i[field] = self.build_file_object(i.get(field, None))
         return resp_json['data']
