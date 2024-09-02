@@ -68,10 +68,10 @@ field_pkg_deploy_file_path_default_value = 'bin/deploy.sh'
 field_pkg_start_file_path_default_value = 'bin/start.sh'
 field_pkg_stop_file_path_default_value = 'bin/stop.sh'
 field_pkg_log_file_directory_default_value = 'logs'
-field_pkg_log_file_trade_default_value = 'trade.log'
-field_pkg_log_file_keyword_default_value = 'keyword.log'
-field_pkg_log_file_metric_default_value = 'metric.log'
-field_pkg_log_file_trace_default_value = 'trace.log'
+field_pkg_log_file_trade_default_value = 'logs/trade.log'
+field_pkg_log_file_keyword_default_value = 'logs/keyword.log'
+field_pkg_log_file_metric_default_value = 'logs/metric.log'
+field_pkg_log_file_trace_default_value = 'logs/trace.log'
 
 # DB
 field_pkg_db_deploy_file_directory_name = 'db_deploy_file_directory'
@@ -176,6 +176,18 @@ class WeCubeResource(object):
     def list_by_post(self, query):
         pass
 
+
+class ProcessDef(WeCubeResource):
+    def list(self, params):
+        params['plugin'] = 'artifacts'
+        params['permission'] = 'USE'
+        if 'all' not in params:
+            params['all'] = 'N'
+        if 'rootEntity' not in params:
+            params['rootEntity'] = 'wecmdb:' + CONF.wecube.wecmdb.citypes.deploy_package
+        api_client = self.get_cmdb_client()
+        url = self.server + '/platform/v1/public/process/definitions'
+        return api_client.get(url, params)
 
 class SystemDesign(WeCubeResource):
     def list(self, params):
@@ -1537,6 +1549,9 @@ class UnitDesignPackages(WeCubeResource):
         })
 
         result = {}
+        key_service_code = result[field_pkg_package_type_name] = package_type
+        key_service_code = result[field_pkg_is_decompression_name] = is_decompression
+        key_service_code = result[field_pkg_key_service_code_name] = key_service_code
         # |切割为列表
         fields = (field_pkg_diff_conf_directory_name, field_pkg_diff_conf_file_name,
                   field_pkg_script_file_directory_name, field_pkg_deploy_file_path_name, 
