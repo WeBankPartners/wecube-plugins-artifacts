@@ -42,7 +42,7 @@
                 <div class="grid-cell">
                   <div>
                     <Tooltip :content="$t('art_select_directory')" placement="top">
-                      <Icon type="ios-folder" size="18" color="white" class="ios-folder-upload" @click="() => showTreeModal(0.1, packageInput.diff_conf_directory || [])" />
+                      <Icon type="ios-folder" size="16" color="white" class="ios-folder-upload" @click="() => showTreeModal(0.1, packageInput.diff_conf_directory || [])" />
                     </Tooltip>
                     <div id="diff_conf_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.diff_conf_directory" :key="index">
@@ -56,7 +56,7 @@
                 <div class="grid-cell">
                   <div style="display: flex;align-items: flex-start;">
                     <Tooltip :content="$t('artifacts_select_file')" placement="top">
-                      <Icon type="md-document" size="18" color="white" class="ios-doc-upload" @click="() => showTreeModal(0, packageInput.diff_conf_file || [])" />
+                      <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(0, packageInput.diff_conf_file || [])" />
                     </Tooltip>
                     <div id="diff_conf_file_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.diff_conf_file" :key="index">
@@ -76,7 +76,7 @@
                 <div class="grid-cell">
                   <div>
                     <Tooltip :content="$t('art_select_directory')" placement="top">
-                      <Icon type="ios-folder" size="18" color="white" class="ios-folder-upload" @click="() => showTreeModal(0.2, packageInput.script_file_directory || [])" />
+                      <Icon type="ios-folder" size="16" color="white" class="ios-folder-upload" @click="() => showTreeModal(0.2, packageInput.script_file_directory || [])" />
                     </Tooltip>
                     <div id="script_file_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.script_file_directory" :key="index">
@@ -92,7 +92,7 @@
                   <div style="display: flex;align-items: flex-start;margin: 2px 0">
                     <span style="margin-right: 10px">{{ $t('artifacts_start_script') }}</span>
                     <Tooltip :content="$t('artifacts_select_file')" placement="top">
-                      <Icon type="md-document" size="18" color="white" class="ios-doc-upload" @click="() => showTreeModal(1, packageInput.start_file_path || [])" />
+                      <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(1, packageInput.start_file_path || [])" />
                     </Tooltip>
                     <div id="start_file_path_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.start_file_path" :key="index">
@@ -106,7 +106,7 @@
                   <div style="display: flex;align-items: flex-start;margin: 2px 0">
                     <span style="margin-right: 10px">{{ $t('artifacts_stop_script') }}</span>
                     <Tooltip :content="$t('artifacts_select_file')" placement="top">
-                      <Icon type="md-document" size="18" color="white" class="ios-doc-upload" @click="() => showTreeModal(2, packageInput.stop_file_path || [])" />
+                      <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(2, packageInput.stop_file_path || [])" />
                     </Tooltip>
                     <div id="stop_file_path_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.stop_file_path" :key="index">
@@ -120,7 +120,7 @@
                   <div style="display: flex;align-items: flex-start;margin: 2px 0">
                     <span style="margin-right: 10px">{{ $t('artifacts_deploy_script') }}</span>
                     <Tooltip :content="$t('artifacts_select_file')" placement="top">
-                      <Icon type="md-document" size="18" color="white" class="ios-doc-upload" @click="() => showTreeModal(3, packageInput.deploy_file_path || [])" />
+                      <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(3, packageInput.deploy_file_path || [])" />
                     </Tooltip>
                     <div id="deploy_file_path_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.deploy_file_path" :key="index">
@@ -140,7 +140,7 @@
                 <div class="grid-cell">
                   <div>
                     <Tooltip :content="$t('art_select_directory')" placement="top">
-                      <Icon type="ios-folder" size="18" color="white" class="ios-folder-upload" @click="() => showTreeModal(0.3, packageInput.log_file_directory || [])" />
+                      <Icon type="ios-folder" size="16" color="white" class="ios-folder-upload" @click="() => showTreeModal(0.3, packageInput.log_file_directory || [])" />
                     </Tooltip>
                     <div id="log_file_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_directory" :key="index">
@@ -262,7 +262,7 @@
                 <div class="grid-cell">
                   <div>
                     <Tooltip :content="$t('art_select_directory')" placement="top">
-                      <Icon type="ios-folder" size="18" color="white" class="ios-folder-upload" @click="() => showTreeModal(101, packageInput.db_upgrade_directory || [])" />
+                      <Icon type="ios-folder" size="16" color="white" class="ios-folder-upload" @click="() => showTreeModal(101, packageInput.db_upgrade_directory || [])" />
                     </Tooltip>
                     <div id="db_upgrade_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_upgrade_directory" :key="index">
@@ -276,7 +276,7 @@
                 <div class="grid-cell">
                   <div style="display: flex;align-items: flex-start;">
                     <Tooltip :content="$t('artifacts_select_file')" placement="top">
-                      <Icon type="md-document" size="18" color="white" class="ios-doc-upload" @click="() => showTreeModal(103, packageInput.db_upgrade_file_path || [])" />
+                      <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(103, packageInput.db_upgrade_file_path || [])" />
                     </Tooltip>
                     <div id="db_upgrade_file_path_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_upgrade_file_path" :key="index">
@@ -296,7 +296,7 @@
                 <div class="grid-cell">
                   <div>
                     <Tooltip :content="$t('art_select_directory')" placement="top">
-                      <Icon type="ios-folder" size="18" color="white" class="ios-folder-upload" @click="() => showTreeModal(102, packageInput.db_rollback_directory || [])" />
+                      <Icon type="ios-folder" size="16" color="white" class="ios-folder-upload" @click="() => showTreeModal(102, packageInput.db_rollback_directory || [])" />
                     </Tooltip>
                     <div id="db_rollback_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_rollback_directory" :key="index">
@@ -310,7 +310,7 @@
                 <div class="grid-cell">
                   <div style="display: flex;align-items: flex-start;">
                     <Tooltip :content="$t('artifacts_select_file')" placement="top">
-                      <Icon type="md-document" size="18" color="white" class="ios-doc-upload" @click="() => showTreeModal(104, packageInput.db_rollback_file_path || [])" />
+                      <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(104, packageInput.db_rollback_file_path || [])" />
                     </Tooltip>
                     <div id="db_rollback_file_path_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_rollback_file_path" :key="index">
@@ -330,7 +330,7 @@
                 <div class="grid-cell">
                   <div>
                     <Tooltip :content="$t('art_select_directory')" placement="top">
-                      <Icon type="ios-folder" size="18" color="white" class="ios-folder-upload" @click="() => showTreeModal(0.4, packageInput.db_deploy_file_directory || [])" />
+                      <Icon type="ios-folder" size="16" color="white" class="ios-folder-upload" @click="() => showTreeModal(0.4, packageInput.db_deploy_file_directory || [])" />
                     </Tooltip>
                     <div id="db_deploy_file_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_deploy_file_directory" :key="index">
@@ -344,7 +344,7 @@
                 <div class="grid-cell">
                   <div style="display: flex;align-items: flex-start;">
                     <Tooltip :content="$t('artifacts_select_file')" placement="top">
-                      <Icon type="md-document" size="18" color="white" class="ios-doc-upload" @click="() => showTreeModal(105, packageInput.db_deploy_file_path || [])" />
+                      <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(105, packageInput.db_deploy_file_path || [])" />
                     </Tooltip>
                     <div id="db_deploy_file_path_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_deploy_file_path" :key="index">
@@ -364,7 +364,7 @@
                 <div class="grid-cell">
                   <div>
                     <Tooltip :content="$t('art_select_directory')" placement="top">
-                      <Icon type="ios-folder" size="18" color="white" class="ios-folder-upload" @click="() => showTreeModal(0.5, packageInput.db_diff_conf_directory || [])" />
+                      <Icon type="ios-folder" size="16" color="white" class="ios-folder-upload" @click="() => showTreeModal(0.5, packageInput.db_diff_conf_directory || [])" />
                     </Tooltip>
                     <div id="db_diff_conf_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_diff_conf_directory" :key="index">
@@ -378,7 +378,7 @@
                 <div class="grid-cell">
                   <div style="display: flex;align-items: flex-start;">
                     <Tooltip :content="$t('artifacts_select_file')" placement="top">
-                      <Icon type="md-document" size="18" color="white" class="ios-doc-upload" @click="() => showTreeModal(106, packageInput.db_diff_conf_file || [])" />
+                      <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(106, packageInput.db_diff_conf_file || [])" />
                     </Tooltip>
                     <div id="db_diff_conf_file_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_diff_conf_file" :key="index">
@@ -1459,11 +1459,11 @@ export default {
 <style lang="scss" scoped>
 .textarea-dir {
   display: inline-block;
-  width: 320px;
+  width: 300px;
 }
 .textarea-input {
   display: inline-block;
-  width: 480px;
+  width: 450px;
 }
 
 .config-tab :deep(.ivu-tabs-nav) {
@@ -1507,7 +1507,7 @@ export default {
 .cloud-upload {
   margin-right: 4px;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 2px 4px;
   vertical-align: middle;
   border-radius: 4px;
 }
