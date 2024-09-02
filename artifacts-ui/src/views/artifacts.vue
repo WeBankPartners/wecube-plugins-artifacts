@@ -549,26 +549,18 @@ export default {
                       {this.$t('detail')}
                     </Button>
                   )}
-                  <Tooltip content={this.$t('export')} placement="top" transfer={true}>
-                    <Button size="small" onClick={() => this.toExportPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
-                      <Icon type="md-cloud-download" color="white" size="16"></Icon>
-                    </Button>
-                  </Tooltip>
-                  <Tooltip content={this.$t('push')} placement="top" transfer={true}>
-                    <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
-                      <Icon type="md-cloud-upload" color="white" size="16"></Icon>
-                    </Button>
-                  </Tooltip>
-                  <Tooltip content={this.$t('art_release')} placement="top" transfer={true}>
-                    <Button size="small" onClick={() => this.toRealsePkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#18b55f', borderColor: '#18b55f', marginBottom: '2px' }}>
-                      <Icon type="ios-send-outline" color="white" size="16"></Icon>
-                    </Button>
-                  </Tooltip>
-                  <Tooltip content={this.$t('art_release_history')} placement="top" transfer={true}>
-                    <Button size="small" onClick={() => this.toRealsePkgHistory(params.row)} style={{ marginRight: '5px', backgroundColor: '#7728f5', borderColor: '#7728f5', marginBottom: '2px' }}>
-                      <Icon type="ios-timer-outline" color="white" size="16"></Icon>
-                    </Button>
-                  </Tooltip>
+                  <Button size="small" onClick={() => this.toExportPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
+                    <Icon type="md-cloud-download" color="white" size="16"></Icon>
+                  </Button>
+                  <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
+                    <Icon type="md-cloud-upload" color="white" size="16"></Icon>
+                  </Button>
+                  <Button size="small" onClick={() => this.toRealsePkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#18b55f', borderColor: '#18b55f', marginBottom: '2px' }}>
+                    <Icon type="ios-send-outline" color="white" size="16"></Icon>
+                  </Button>
+                  <Button size="small" onClick={() => this.toRealsePkgHistory(params.row)} style={{ marginRight: '5px', backgroundColor: '#7728f5', borderColor: '#7728f5', marginBottom: '2px' }}>
+                    <Icon type="ios-timer-outline" color="white" size="16"></Icon>
+                  </Button>
                 </div>
                 <div>{this.renderActionButton(params)}</div>
               </div>
@@ -1395,11 +1387,9 @@ export default {
       let res = []
       operations.forEach(op => {
         res.push(
-          <Tooltip content={typeToBtn[op.type].tip} placement="top" transfer={true}>
-            <Button size="small" onClick={() => this.changeStatus(row, op.type, event)} style={{ marginRight: '5px', backgroundColor: typeToBtn[op.type].color, borderColor: typeToBtn[op.type].color, marginBottom: '2px' }}>
-              <Icon type={typeToBtn[op.type].icon} color="white" size="16"></Icon>
-            </Button>
-          </Tooltip>
+          <Button size="small" onClick={() => this.changeStatus(row, op.type, event)} style={{ marginRight: '5px', backgroundColor: typeToBtn[op.type].color, borderColor: typeToBtn[op.type].color, marginBottom: '2px' }}>
+            <Icon type={typeToBtn[op.type].icon} color="white" size="16"></Icon>
+          </Button>
         )
       })
       return res
