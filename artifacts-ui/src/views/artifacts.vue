@@ -388,8 +388,8 @@
           </FormItem>
         </Form>
         <div slot="footer">
-          <Button type="text" @click="onReleaseCancel()" :loading="historyBtnLoading">{{ $t('artifacts_cancel') }} </Button>
-          <Button type="primary" @click="onReleaseConfirm()" :loading="historyBtnLoading">{{ $t('art_ok') }} </Button>
+          <Button type="text" @click="onReleaseCancel()">{{ $t('artifacts_cancel') }} </Button>
+          <Button type="primary" @click="onReleaseConfirm()" :disabled="releaseParams.selectedFlow === ''">{{ $t('art_ok') }} </Button>
         </div>
       </Modal>
     </Col>
@@ -511,6 +511,11 @@ export default {
             const baseLine = params.row.baseline_package ? params.row.baseline_package.key_name : ''
             return <span>{baseLine}</span>
           }
+        },
+        {
+          title: this.$t('art_status'),
+          key: 'state',
+          width: 100
         },
         {
           title: this.$t('artifacts_uploaded_by'),
@@ -1472,8 +1477,8 @@ export default {
         this.packageInput.db_diff_conf_file = found.db_diff_conf_file ? JSON.parse(JSON.stringify(found.db_diff_conf_file)) : []
         this.packageInput.db_upgrade_directory = found.db_upgrade_directory ? JSON.parse(JSON.stringify(found.db_upgrade_directory)) : []
         this.packageInput.db_rollback_directory = found.db_rollback_directory ? JSON.parse(JSON.stringify(found.db_rollback_directory)) : []
-        this.packageInput.db_upgrade_file_path = []
-        this.packageInput.db_rollback_file_path = []
+        this.packageInput.db_upgrade_file_path = found.db_upgrade_file_path ? JSON.parse(JSON.stringify(found.db_upgrade_file_path)) : []
+        this.packageInput.db_rollback_file_path = found.db_rollback_file_path ? JSON.parse(JSON.stringify(found.db_rollback_file_path)) : []
         this.packageInput.db_deploy_file_path = found.db_deploy_file_path ? JSON.parse(JSON.stringify(found.db_deploy_file_path)) : []
       }
       await this.syncBaselineFileStatus()
@@ -2221,7 +2226,10 @@ export default {
     },
     onReleaseConfirm () {
       console.log(this.releaseParams.selectedFlow)
+      this.releaseParams.selectedFlow = 'pdef_61d07f0052e248f29c915'
       this.releaseParams.showReleaseModal = false
+      const path = `${window.location.origin}/#/implementation/workflow-execution/normal-create?templateId=${this.releaseParams.selectedFlow}&subProc=main&targetId=resource_set_60b9d40e7dea345c`
+      window.open(path, '_blank')
     },
     // 发布历史
     toRealsePkgHistory (row) {},
