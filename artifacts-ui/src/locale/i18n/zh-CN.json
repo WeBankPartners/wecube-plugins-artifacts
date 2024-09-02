@@ -131,5 +131,7 @@
   "art_ok": "确定",
   "art_select_orch": "选择编排",
   "art_release_artifact_package": "发布物料包",
-  "art_status": "状态"
+  "art_status": "状态",
+  "art_upload_import": "上传/导入",
+  "art_online_selection": "在线选包"
 }
