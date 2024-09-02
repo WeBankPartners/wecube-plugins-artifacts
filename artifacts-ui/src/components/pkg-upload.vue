@@ -11,13 +11,13 @@
       </div>
       <Form :label-width="80" ref="onlineUploadRuleValidateRef" :model="onlineUploadParams" :rules="onlineUploadRuleValidate">
         <FormItem :label="$t('filterPath')">
-          <span style="vertical-align: middle;">test/{{ onlineUploadParams.filterPath }} /test</span>
+          <span style="vertical-align: middle;">{{ onlineUploadParams.filterPath }}</span>
         </FormItem>
         <FormItem :label="$t('art_package')" prop="downloadUrl">
           <Select filterable clearable v-model="onlineUploadParams.downloadUrl">
             <Option v-for="conf in onlinePackages" :value="conf.downloadUrl" :label="conf.name" :key="conf.downloadUrl">
               <span>{{ conf.name }}</span>
-              <span style="float:right;color:#ccc">{{ conf.createTime || '0000-00-00 00:00:00' }}</span>
+              <span style="float:right;color:#ccc">{{ utcToLocal(conf.lastModified) }}</span>
             </Option>
           </Select>
         </FormItem>
@@ -64,7 +64,9 @@
 </template>
 
 <script>
-import { queryArtifactsList, queryPackages, uploadArtifact, uploadLocalArtifact } from '@/api/server.js'
+// eslint-disable-next-line no-unused-vars
+import dayjs from 'dayjs'
+import { queryArtifactsList, queryPackages, uploadArtifact, uploadLocalArtifact, getFilePath } from '@/api/server.js'
 export default {
   name: '',
   data () {
@@ -94,6 +96,9 @@ export default {
   watch: {},
   props: [],
   methods: {
+    utcToLocal (utcDate) {
+      return dayjs(utcDate).format('YYYY-MM-DD HH:mm:ss')
+    },
     openUploadDialog (uploadType, guid) {
       this.isfullscreen = false
       this.uploadType = uploadType
@@ -113,10 +118,19 @@ export default {
     async onlineUpload () {
       this.$refs['onlineUploadRuleValidateRef'].resetFields()
       this.emptyJsonKey('onlineUploadParams')
+      await this.getFilePath()
       await this.queryOnlinePackages()
       await this.getbaselinePkg()
       this.onlineModal = true
     },
+    async getFilePath () {
+      const { status, data } = await getFilePath(this.guid)
+      if (status === 'OK') {
+        this.onlineUploadParams.filterPath = data.artifact_path || ''
+      }
+    },
+    // onlineUploadParams: {
+    //   filterPath: '后台提供接口',
     emptyJsonKey (objName) {
       let obj = this[objName]
       Object.keys(obj).forEach(key => {
@@ -144,7 +158,7 @@ export default {
         filters: [],
         paging: true,
         pageable: {
-          pageSize: 100,
+          pageSize: 10000,
           startIndex: 0
         }
       })
@@ -173,7 +187,6 @@ export default {
       })
     },
     handleUpload (file) {
-      console.log(file)
       this.localUploadParams.fileName = file.name
       this.formData = new FormData()
       this.formData.append('file', file)

@@ -25,11 +25,11 @@
       <!-- 包管理 -->
       <Card v-if="guid" class="artifact-management-top-card">
         <!-- 本地上传 -->
-        <Button type="info" ghost icon="ios-cloud-upload-outline" @click="pkgUpload('local')">
+        <Button type="info" ghost icon="ios-cloud-upload-outline" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">
           {{ $t('artifacts_upload_new_package') }}
         </Button>
         <!-- 在线选择 -->
-        <Button style="margin-left: 10px" type="info" ghost icon="ios-cloud-outline" @click="pkgUpload('online')">
+        <Button style="margin-left: 10px" type="info" ghost icon="ios-cloud-outline" :disabled="!btnGroupControl.upload_from_nexus_enabled" @click="pkgUpload('online')">
           {{ $t('select_online') }}
         </Button>
         <!-- 包列表table -->
@@ -118,7 +118,7 @@
       </Modal>
 
       <!-- 包配置模态框 -->
-      <Modal width="70" :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowFilesModal" :footer-hide="hideFooter" :title="hideFooter ? $t('detail') : $t('artifacts_script_configuration')" :okText="$t('artifacts_save')">
+      <!-- <Modal width="70" :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowFilesModal" :footer-hide="hideFooter" :title="hideFooter ? $t('detail') : $t('artifacts_script_configuration')" :okText="$t('artifacts_save')">
         <Card :bordered="false" :padding="8">
           <Row>
             <Col style="text-align: right; line-height: 32px" span="5">
@@ -340,7 +340,7 @@
           <Button @click="closeFilesModal">{{ $t('artifacts_cancel') }}</Button>
           <Button type="primary" @click="saveConfigFiles" :loading="saveConfigLoading">{{ $t('artifacts_save') }}</Button>
         </div>
-      </Modal>
+      </Modal> -->
 
       <!-- 包配置文件选择 -->
       <Modal :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" @on-ok="saveConfigFileTree" @on-cancel="closeConfigFileTree" draggable width="700">
@@ -377,13 +377,27 @@
       <!-- 部署包上传组件 -->
       <PkgUpload ref="pkgUploadRef" @refreshTable="queryPackages"></PkgUpload>
       <!-- 脚本配置组件 -->
-      <PkgConfig ref="pkgConfigRef"></PkgConfig>
+      <PkgConfig ref="pkgConfigRef" @queryPackages="queryPackages" @syncPackageDetail="syncPackageDetail"></PkgConfig>
+      <!-- 发布物料包弹窗 -->
+      <Modal v-model="releaseParams.showReleaseModal" :title="releaseParams.title" :mask-closable="false">
+        <Form :label-width="120">
+          <FormItem :label="$t('art_select_orch')">
+            <Select style="width: 80%" v-model="releaseParams.selectedFlow" filterable>
+              <Option v-for="item in releaseParams.flowList" :value="item.id" :key="item.id">{{ item.name }}</Option>
+            </Select>
+          </FormItem>
+        </Form>
+        <div slot="footer">
+          <Button type="text" @click="onReleaseCancel()" :loading="historyBtnLoading">{{ $t('artifacts_cancel') }} </Button>
+          <Button type="primary" @click="onReleaseConfirm()" :loading="historyBtnLoading">{{ $t('art_ok') }} </Button>
+        </div>
+      </Modal>
     </Col>
   </Row>
 </template>
 
 <script>
-import { pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType } from '@/api/server.js'
+import { pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType, btnControl } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
@@ -409,6 +423,17 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      btnGroupControl: {
+        upload_enabled: false, // 本地上传
+        upload_from_nexus_enabled: false, // 在线上传
+        push_to_nexus_enabled: false // 推送
+      },
+      releaseParams: {
+        showReleaseModal: false,
+        title: '',
+        selectedFlow: '',
+        flowList: []
+      },
       baselinePackageOptions: [],
 
       packageType: '',
@@ -459,29 +484,29 @@ export default {
       tableData: [],
       tableColumns: [
         {
-          title: 'GUID',
-          width: 160,
-          key: 'guid'
-        },
-        {
           title: this.$t('artifacts_package_name'),
           key: 'name',
+          tooltip: true,
           render: (h, params) => this.renderCell(params.row.name)
+        },
+        {
+          title: 'GUID',
+          width: 160,
+          key: 'guid',
+          tooltip: true
         },
         {
           title: this.$t('package_type'),
           key: 'package_type',
+          width: 120,
           render: (h, params) => {
             return <span>{this.$t(params.row.package_type)}</span>
           }
         },
         {
-          title: this.$t('artifacts_upload_time'),
-          key: 'upload_time'
-        },
-        {
           title: this.$t('baseline_package'),
           key: 'baseline_package',
+          width: 160,
           render: (h, params) => {
             const baseLine = params.row.baseline_package ? params.row.baseline_package.key_name : ''
             return <span>{baseLine}</span>
@@ -490,12 +515,19 @@ export default {
         {
           title: this.$t('artifacts_uploaded_by'),
           key: 'upload_user',
+          width: 100,
           render: (h, params) => this.renderCell(params.row.upload_user)
+        },
+        {
+          title: this.$t('artifacts_upload_time'),
+          key: 'upload_time',
+          width: 160
         },
         {
           title: this.$t('artifacts_action'),
           key: 'state',
           fixed: 'right',
+          width: 260,
           render: (h, params) => {
             return (
               <div style="padding-top:5px">
@@ -505,12 +537,26 @@ export default {
                     {this.$t('detail')}
                   </Button>
                 )}
-                <Button onClick={() => this.toExportPkg(params.row)} size="small" style="margin-right: 5px;margin-bottom: 5px;background-color: rgb(153 206 233); color: white;">
-                  {this.$t('export')}
-                </Button>
-                <Button type="info" onClick={() => this.toPushPkg(params.row)} size="small" style="margin-right: 5px;margin-bottom: 5px;">
-                  {this.$t('push')}
-                </Button>
+                <Tooltip content={this.$t('export')} placement="top" transfer={true}>
+                  <Button size="small" onClick={() => this.toExportPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
+                    <Icon type="md-cloud-download" color="white" size="16"></Icon>
+                  </Button>
+                </Tooltip>
+                <Tooltip content={this.$t('push')} placement="top" transfer={true}>
+                  <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
+                    <Icon type="md-cloud-upload" color="white" size="16"></Icon>
+                  </Button>
+                </Tooltip>
+                <Tooltip content={this.$t('art_release')} placement="top" transfer={true}>
+                  <Button size="small" onClick={() => this.toRealsePkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#18b55f', borderColor: '#18b55f', marginBottom: '2px' }}>
+                    <Icon type="ios-send-outline" color="white" size="16"></Icon>
+                  </Button>
+                </Tooltip>
+                <Tooltip content={this.$t('art_release_history')} placement="top" transfer={true}>
+                  <Button size="small" onClick={() => this.toRealsePkgHistory(params.row)} style={{ marginRight: '5px', backgroundColor: '#7728f5', borderColor: '#7728f5', marginBottom: '2px' }}>
+                    <Icon type="ios-timer-outline" color="white" size="16"></Icon>
+                  </Button>
+                </Tooltip>
               </div>
             )
           }
@@ -844,7 +890,7 @@ export default {
         ],
         paging: true,
         pageable: {
-          pageSize: 100,
+          pageSize: 10000,
           startIndex: 0
         }
       })
@@ -1038,6 +1084,13 @@ export default {
         this.guid = node[0].guid
         this.queryPackages(true)
         this.initPackageDetail()
+        this.btnControl()
+      }
+    },
+    async btnControl () {
+      let { status, data } = await btnControl()
+      if (status === 'OK') {
+        this.btnGroupControl = data
       }
     },
     getHeaders () {
@@ -1287,14 +1340,39 @@ export default {
       } else {
         operations = this.statusOperations.filter(_ => row.nextOperations.indexOf(_.type) >= 0)
       }
-      const lang = localStorage.getItem('lang') || 'zh-CN'
-      return operations.map(_ => {
-        return (
-          <Button {...{ props: { ..._.props } }} style="margin-right:5px;margin-bottom:5px;" onClick={() => this.changeStatus(row, _.type, event)}>
-            {lang === 'zh-CN' ? _.label : _.actionType}
-          </Button>
+      let typeToBtn = {
+        Delete: {
+          tip: this.$t('art_delete'),
+          color: '#ed4014',
+          icon: 'md-trash'
+        },
+        Update: {
+          tip: this.$t('art_update'),
+          color: '#2d8cf0',
+          icon: 'md-create'
+        },
+        Rollback: {
+          tip: this.$t('art_rollback'),
+          color: 'rgb(255, 153, 0)',
+          icon: 'ios-redo'
+        },
+        Confirm: {
+          tip: this.$t('art_confirm'),
+          color: '#a2ef4d',
+          icon: 'ios-checkmark-circle'
+        }
+      }
+      let res = []
+      operations.forEach(op => {
+        res.push(
+          <Tooltip content={typeToBtn[op.type].tip} placement="top" transfer={true}>
+            <Button size="small" onClick={() => this.changeStatus(row, op.type, event)} style={{ marginRight: '5px', backgroundColor: typeToBtn[op.type].color, borderColor: typeToBtn[op.type].color, marginBottom: '2px' }}>
+              <Icon type={typeToBtn[op.type].icon} color="white" size="16"></Icon>
+            </Button>
+          </Tooltip>
         )
       })
+      return res
     },
     changeStatus (row, status, event) {
       switch (status) {
@@ -1314,23 +1392,6 @@ export default {
         default:
           this.handleStatusChange(row, status)
           break
-      }
-    },
-    initPackageInput () {
-      this.packageInput = {
-        baseline_package: null,
-        diff_conf_file: [],
-        start_file_path: [],
-        stop_file_path: [],
-        deploy_file_path: [],
-        is_decompression: 'true',
-
-        db_diff_conf_file: [],
-        db_upgrade_directory: [],
-        db_rollback_directory: [],
-        db_upgrade_file_path: [],
-        db_rollback_file_path: [],
-        db_deploy_file_path: []
       }
     },
     async syncBaselineFileStatus () {
@@ -1485,10 +1546,6 @@ export default {
         animation: 150
       })
     },
-    closeFilesModal () {
-      this.initPackageInput()
-      this.isShowFilesModal = false
-    },
     async getCompareFile (file) {
       const params = {
         baselinePackage: this.packageInput.baseline_package || '',
@@ -1500,35 +1557,6 @@ export default {
         this.showFileCompare = true
         this.$refs.compareParams.compareFile(data[0].baseline_content, data[0].content, file.comparisonResult)
       }
-    },
-    async saveConfigFiles () {
-      let obj = {
-        package_type: this.packageType,
-        baseline_package: this.packageInput.baseline_package || null,
-        diff_conf_file: this.packageInput.diff_conf_file,
-        start_file_path: this.packageInput.start_file_path,
-        stop_file_path: this.packageInput.stop_file_path,
-        deploy_file_path: this.packageInput.deploy_file_path,
-        is_decompression: this.packageInput.is_decompression || 'true',
-
-        db_diff_conf_file: this.packageInput.db_diff_conf_file,
-        db_upgrade_directory: this.packageInput.db_upgrade_directory,
-        db_rollback_directory: this.packageInput.db_rollback_directory,
-        db_upgrade_file_path: this.packageInput.db_upgrade_file_path,
-        db_rollback_file_path: this.packageInput.db_rollback_file_path,
-        db_deploy_file_path: this.packageInput.db_deploy_file_path
-      }
-      this.saveConfigLoading = true
-      let { status } = await updatePackage(this.guid, this.packageId, obj)
-      this.saveConfigLoading = false
-      if (status === 'OK') {
-        this.isShowFilesModal = false
-        this.$Notice.success({
-          title: this.$t('artifacts_successed')
-        })
-      }
-      await this.queryPackages()
-      await this.syncPackageDetail()
     },
     _formatConfigFileTreeNode (tree, element, checkNodes) {
       let children = element.children || []
@@ -2176,6 +2204,27 @@ export default {
         })
       }
     },
+    // 发布物料包
+    toRealsePkg (row) {
+      this.releaseParams.title = this.$t('art_release_artifact_package') + ': ' + row.code
+      this.releaseParams.selectedFlow = ''
+      this.releaseParams.flowList = [
+        {
+          id: '123',
+          name: 'aaa'
+        }
+      ]
+      this.releaseParams.showReleaseModal = true
+    },
+    onReleaseCancel () {
+      this.releaseParams.showReleaseModal = false
+    },
+    onReleaseConfirm () {
+      console.log(this.releaseParams.selectedFlow)
+      this.releaseParams.showReleaseModal = false
+    },
+    // 发布历史
+    toRealsePkgHistory (row) {},
     async updateHeaders () {
       let refreshRequest = null
       const currentTime = new Date().getTime()
