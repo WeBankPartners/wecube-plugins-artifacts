@@ -58,3 +58,5 @@ export const pushPkg = (unitDesignId, deployPackageId) => req.post(`/unit-design
 export const getFilePath = guid => req.get(`/unit-designs/${guid}/packages/queryNexusPath`)
 // 获取按钮权限
 export const btnControl = () => req.get(`/sysconfig`)
+// 获取可用编排
+export const getFlowLists = () => req.get(`/process/definitions`)

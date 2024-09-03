@@ -24,6 +24,7 @@
     <Col span="18" style="margin-left: 35px">
       <!-- 包管理 -->
       <Card v-if="guid" class="artifact-management-top-card">
+        <div style="padding-bottom: 8px">{{ $t('art_sys_artch') }}{{ treePath.join('/') }}</div>
         <div style="display: flex;justify-content: space-between;margin-bottom: 8px;">
           <div>
             <Input v-model="tableFilter.key_name" @on-change="queryPackages(true)" :placeholder="$t('artifacts_package_name')" clearable style="width: 200px;margin-right: 8px;" />
@@ -120,232 +121,6 @@
           </FormItem>
         </Form>
       </Modal>
-
-      <!-- 包配置模态框 -->
-      <!-- <Modal width="70" :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowFilesModal" :footer-hide="hideFooter" :title="hideFooter ? $t('detail') : $t('artifacts_script_configuration')" :okText="$t('artifacts_save')">
-        <Card :bordered="false" :padding="8">
-          <Row>
-            <Col style="text-align: right; line-height: 32px" span="5">
-              <span style="margin-right: 10px">{{ $t('package_type') }}</span>
-            </Col>
-            <Col span="18" offset="1">
-              <Select clearable :placeholder="$t('package_type')" v-model="packageType">
-                <Option v-for="pkt in packageTypeOptions" :value="pkt.value" :key="pkt.value" :disabled="pkt.value === 'IMAGE'">{{ $t(pkt.label) }}</Option>
-              </Select>
-            </Col>
-          </Row>
-        </Card>
-        <Card :bordered="false" :padding="8">
-          <Row>
-            <Col style="text-align: right; line-height: 32px" span="5">
-              <span style="margin-right: 10px">{{ $t('baseline_package') }}</span>
-            </Col>
-            <Col span="18" offset="1">
-              <Select clearable filterable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" v-model="packageInput.baseline_package">
-                <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
-              </Select>
-            </Col>
-          </Row>
-        </Card>
-        <Tabs :value="currentConfigTab" class="config-tab" @on-click="changeCurrentConfigTab">
-          <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('APP')" name="APP">
-            <template>
-              <Card :bordered="false" :padding="8">
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span style="margin-right: 10px">{{ $t('artifacts_config_files') }}</span>
-                    <Button type="info" ghost @click="() => showTreeModal(0, packageInput.diff_conf_file || [])">{{ $t('artifacts_select_file') }}</Button>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <div id="diff_conf_file">
-                      <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.diff_conf_file" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.diff_conf_file[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
-                        <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'diff_conf_file')"></Button>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-              <Card :bordered="false" :padding="8">
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span style="margin-right: 10px">{{ $t('artifacts_start_script') }}</span>
-                    <Button type="info" ghost @click="() => showTreeModal(1, packageInput.start_file_path || [])">{{ $t('artifacts_select_file') }}</Button>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <div id="start_file_path">
-                      <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.start_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
-                        <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-              <Card :bordered="false" :padding="8">
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span style="margin-right: 10px">{{ $t('artifacts_stop_script') }}</span>
-                    <Button type="info" ghost @click="() => showTreeModal(2, packageInput.stop_file_path || [])">{{ $t('artifacts_select_file') }}</Button>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <div id="stop_file_path">
-                      <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.stop_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
-                        <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-              <Card :bordered="false" :padding="8">
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span style="margin-right: 10px">{{ $t('artifacts_deploy_script') }}</span>
-                    <Button type="info" ghost @click="() => showTreeModal(3, packageInput.deploy_file_path || [])">{{ $t('artifacts_select_file') }}</Button>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <div id="deploy_file_path">
-                      <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.deploy_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
-                        <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-              <Card :bordered="false" :padding="8">
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span>{{ $t('is_decompression') }}</span>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <RadioGroup v-model="packageInput.is_decompression">
-                      <Radio label="true"></Radio>
-                      <Radio label="false"></Radio>
-                    </RadioGroup>
-                  </Col>
-                </Row>
-              </Card>
-            </template>
-          </TabPane>
-          <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('DB')" name="DB">
-            <template>
-              <Card :bordered="false" :padding="8">
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span style="margin-right: 10px">{{ $t('artifacts_config_files') }}</span>
-                    <Button type="info" ghost @click="() => showTreeModal(106, packageInput.db_diff_conf_file || [])">{{ $t('artifacts_select_file') }}</Button>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <div id="db_diff_conf_file">
-                      <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_diff_conf_file" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.db_diff_conf_file[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
-                        <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_diff_conf_file')"></Button>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-              <Card :bordered="false" :padding="8">
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span style="margin-right: 10px">{{ $t('db_upgrade_directory') }}</span>
-                    <Button type="info" ghost @click="() => showTreeModal(101, packageInput.db_upgrade_directory || [])">{{ $t('artifacts_select_file') }}</Button>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <div id="db_upgrade_directory">
-                      <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_upgrade_directory" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('db_upgrade_directory')" type="textarea" v-model="packageInput.db_upgrade_directory[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
-                        <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_upgrade_directory')"></Button>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-              <Card :bordered="false" :padding="8">
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span style="margin-right: 10px">{{ $t('db_rollback_directory') }}</span>
-                    <Button type="info" ghost @click="() => showTreeModal(102, packageInput.db_rollback_directory || [])">{{ $t('artifacts_select_file') }}</Button>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <div id="db_rollback_directory">
-                      <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_rollback_directory" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.db_rollback_directory[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
-                        <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_rollback_directory')"></Button>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-              <Card :bordered="false" :padding="8">
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span style="margin-right: 10px">{{ $t('db_upgrade_file_path') }}</span>
-                    <Button type="info" ghost @click="() => showTreeModal(103, packageInput.db_upgrade_file_path || [])">{{ $t('artifacts_select_file') }}</Button>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <div id="db_upgrade_file_path">
-                      <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_upgrade_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.db_upgrade_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
-                        <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_upgrade_file_path')"></Button>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-              <Card :bordered="false" :padding="8">
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span style="margin-right: 10px">{{ $t('db_rollback_file_path') }}</span>
-                    <Button type="info" ghost @click="() => showTreeModal(104, packageInput.db_rollback_file_path || [])">{{ $t('artifacts_select_file') }}</Button>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <div id="db_rollback_file_path">
-                      <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_rollback_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.db_rollback_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
-                        <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_rollback_file_path')"></Button>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-              <Card :bordered="false" :padding="8">
-                <Row>
-                  <Col style="text-align: right" span="5">
-                    <span style="margin-right: 10px">{{ $t('db_deploy_file_path') }}</span>
-                    <Button type="info" ghost @click="() => showTreeModal(105, packageInput.db_deploy_file_path || [])">{{ $t('artifacts_select_file') }}</Button>
-                  </Col>
-                  <Col span="18" offset="1">
-                    <div id="db_deploy_file_path">
-                      <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_deploy_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.db_deploy_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
-                        <Button style="float: right" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_deploy_file_path')"></Button>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-            </template>
-          </TabPane>
-        </Tabs>
-        <div slot="footer">
-          <Button @click="closeFilesModal">{{ $t('artifacts_cancel') }}</Button>
-          <Button type="primary" @click="saveConfigFiles" :loading="saveConfigLoading">{{ $t('artifacts_save') }}</Button>
-        </div>
-      </Modal> -->
-
       <!-- 包配置文件选择 -->
       <Modal :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" @on-ok="saveConfigFileTree" @on-cancel="closeConfigFileTree" draggable width="700">
         <CheckboxGroup v-if="packageInput.baseline_package">
@@ -427,6 +202,7 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      treePath: [], // 节点路径
       btnGroupControl: {
         upload_enabled: false, // 本地上传
         upload_from_nexus_enabled: false, // 在线上传
@@ -553,9 +329,11 @@ export default {
                       {this.$t('detail')}
                     </Button>
                   )}
-                  <Button size="small" onClick={() => this.toExportPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
-                    <Icon type="md-cloud-download" color="white" size="16"></Icon>
-                  </Button>
+                  <Tooltip placement="top" content="123">
+                    <Button size="small" onClick={() => this.toExportPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
+                      <Icon type="md-cloud-download" color="white" size="16"></Icon>
+                    </Button>
+                  </Tooltip>
                   <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
                     <Icon type="md-cloud-upload" color="white" size="16"></Icon>
                   </Button>
@@ -1108,10 +886,33 @@ export default {
     selectTreeNode (node) {
       if (node.length && node[0].level === 3) {
         this.guid = node[0].guid
+        this.treePath = this.findPathByGuid(this.treeData, this.guid)
         this.queryPackages(true)
         this.initPackageDetail()
         this.btnControl()
       }
+    },
+    // 获取单元路径
+    findPathByGuid (tree, targetGuid) {
+      let path = []
+
+      function searchTree (nodes, currentPath) {
+        for (let node of nodes) {
+          let newPath = currentPath.concat(`${node.code}[${node.title}]`)
+          if (node.guid === targetGuid) {
+            path = newPath
+            return true
+          }
+          if (node.children && node.children.length > 0) {
+            if (searchTree(node.children, newPath)) {
+              return true
+            }
+          }
+        }
+        return false
+      }
+      searchTree(tree, [])
+      return path
     },
     async btnControl () {
       let { status, data } = await btnControl()
@@ -1421,66 +1222,17 @@ export default {
     async syncBaselineFileStatus () {
       if (this.packageInput.baseline_package) {
         const { data } = await compareBaseLineFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package })
-        this.packageInput.diff_conf_file.forEach(el => {
-          data.diff_conf_file.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
+        const keys = ['diff_conf_directory', 'diff_conf_file', 'script_file_directory', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'log_file_directory', 'log_file_trade', 'log_file_keyword', 'log_file_metric', 'log_file_trace', 'db_diff_conf_directory', 'db_diff_conf_file', 'db_upgrade_directory', 'db_upgrade_file_path', 'db_rollback_directory', 'db_rollback_file_path', 'db_deploy_file_directory', 'db_deploy_file_path']
+        keys.forEach(k => {
+          this.packageInput[k].forEach(el => {
+            data[k] &&
+              data[k].forEach(elRet => {
+                if (elRet.filename === el.filename) {
+                  el.comparisonResult = elRet.comparisonResult
+                }
+              })
           })
         })
-        this.packageInput.start_file_path.forEach(el => {
-          data.start_file_path.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.stop_file_path.forEach(el => {
-          data.stop_file_path.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.deploy_file_path.forEach(el => {
-          data.deploy_file_path.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-
-        this.packageInput.db_diff_conf_file.forEach(el => {
-          data.db_diff_conf_file.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-
-        this.packageInput.db_upgrade_directory.forEach(el => {
-          data.db_upgrade_directory.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.db_rollback_directory.forEach(el => {
-          data.db_rollback_directory.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.db_deploy_file_path.forEach(el => {
-          data.db_deploy_file_path.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.db_upgrade_file_path = data.db_upgrade_file_path || []
-        this.packageInput.db_rollback_file_path = data.db_rollback_file_path || []
       }
     },
     async baseLinePackageChanged (v) {
@@ -2309,6 +2061,11 @@ export default {
 }
 .tree-size ::v-deep .ivu-tree-empty {
   font-size: 12px !important;
+}
+
+.tree-size {
+  height: calc(100vh - 320px);
+  overflow-y: auto;
 }
 
 .ivu-upload {
