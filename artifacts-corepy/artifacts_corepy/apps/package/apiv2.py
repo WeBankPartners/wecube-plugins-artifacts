@@ -1309,7 +1309,7 @@ class UnitDesignPackages(WeCubeResource):
         # 根据diff_conf_file计算变量进行更新绑定
         if field_pkg_diff_conf_file_name in data and auto_bind:
             bind_variables, new_create_variables = self._analyze_diff_var(deploy_package['guid'], deploy_package['deploy_package_url'], 
-                                   deploy_package[field_pkg_diff_conf_file_name], data[field_pkg_diff_conf_file_name], force=True)
+                                   deploy_package[field_pkg_diff_conf_file_name], data[field_pkg_diff_conf_file_name])
             if bind_variables is not None:
                 clean_data[field_pkg_diff_conf_var_name] = bind_variables
         # db部署支持
@@ -1323,9 +1323,9 @@ class UnitDesignPackages(WeCubeResource):
         # 根据diff_conf_file计算变量进行更新绑定
         if field_pkg_db_diff_conf_file_name in data and db_auto_bind:
             bind_variables, new_create_variables = self._analyze_diff_var(deploy_package['guid'], deploy_package['deploy_package_url'], 
-                                   deploy_package[field_pkg_db_diff_conf_file_name], data[field_pkg_db_diff_conf_file_name], force=True)
+                                   deploy_package[field_pkg_db_diff_conf_file_name], data[field_pkg_db_diff_conf_file_name])
             if bind_variables is not None:
-                clean_data[field_pkg_diff_conf_var_name] = bind_variables
+                clean_data[field_pkg_db_diff_conf_var_name] = bind_variables
         if db_upgrade_detect:
             clean_data[field_pkg_db_upgrade_file_path_name] = FileNameConcater().convert(
                 self.find_files_by_status(
@@ -1344,7 +1344,7 @@ class UnitDesignPackages(WeCubeResource):
         return resp_json['data']
 
 
-    def _analyze_diff_var(self, package_id, package_url, origin_conf_list, new_conf_list, force=False):
+    def _analyze_diff_var(self, package_id, package_url, origin_conf_list, new_conf_list):
         '''
         conf_list是列表，每个元素是string 或 dict[{configKeyInfos，filename}]
         
@@ -1361,7 +1361,7 @@ class UnitDesignPackages(WeCubeResource):
         old_diff_conf_file_list = set(
             [f['filename'] for f in self.build_file_object()])
         # diff_conf_file值并未发生改变，无需下载文件更新变量
-        if force or new_diff_conf_file_list != old_diff_conf_file_list:
+        if new_diff_conf_file_list != old_diff_conf_file_list:
             package_cached_dir = self.ensure_package_cached(package_id,
                                                             package_url)
             self.update_file_variable(package_cached_dir, new_conf_list)
