@@ -1359,12 +1359,14 @@ class UnitDesignPackages(WeCubeResource):
         if origin_conf_list and utils.is_string_type(origin_conf_list):
             origin_conf_list = self.build_file_object(origin_conf_list)
         old_diff_conf_file_list = set(
-            [f['filename'] for f in self.build_file_object()])
+            [f['filename'] for f in origin_conf_list])
         # diff_conf_file值并未发生改变，无需下载文件更新变量
+        # LOG.debug("new_diff_conf_file_list: %s, old_diff_conf_file_list: %s", new_diff_conf_file_list,old_diff_conf_file_list)
         if new_diff_conf_file_list != old_diff_conf_file_list:
             package_cached_dir = self.ensure_package_cached(package_id,
                                                             package_url)
             self.update_file_variable(package_cached_dir, new_conf_list)
+            # LOG.debug("new_conf_list: %s", new_conf_list)
             # 差异化配置项的差异
             package_diff_configs = []
             new_diff_configs = set()
@@ -1398,6 +1400,7 @@ class UnitDesignPackages(WeCubeResource):
             # 创建新的差异化变量项
             bind_variables = list(exist_diff_configs)
             new_create_variables = []
+            # LOG.debug("new_create_variables: %s", new_create_variables)
             if new_diff_configs:
                 resp_json = cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [{
                     'code': c,
@@ -1406,6 +1409,7 @@ class UnitDesignPackages(WeCubeResource):
                 } for c in new_diff_configs])
                 new_create_variables = [c['guid'] for c in resp_json['data']]
                 bind_variables.extend(new_create_variables)
+            # LOG.debug("bind_variables: %s", bind_variables)
             return bind_variables, new_create_variables
         return None, None
 
