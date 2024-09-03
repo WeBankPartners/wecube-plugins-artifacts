@@ -329,11 +329,9 @@ export default {
                       {this.$t('detail')}
                     </Button>
                   )}
-                  <Tooltip placement="top" content="123">
-                    <Button size="small" onClick={() => this.toExportPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
-                      <Icon type="md-cloud-download" color="white" size="16"></Icon>
-                    </Button>
-                  </Tooltip>
+                  <Button size="small" onClick={() => this.toExportPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
+                    <Icon type="md-cloud-download" color="white" size="16"></Icon>
+                  </Button>
                   <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
                     <Icon type="md-cloud-upload" color="white" size="16"></Icon>
                   </Button>
