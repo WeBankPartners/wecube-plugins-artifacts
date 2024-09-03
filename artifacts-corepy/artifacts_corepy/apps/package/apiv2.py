@@ -1307,15 +1307,11 @@ class UnitDesignPackages(WeCubeResource):
             clean_data[field_pkg_diff_conf_var_name] = [c['diffConfigGuid'] for c in data[field_pkg_diff_conf_var_name] if c['bound']]
             auto_bind = False
         # 根据diff_conf_file计算变量进行更新绑定
-        if field_pkg_diff_conf_file_name in data:
+        if field_pkg_diff_conf_file_name in data and auto_bind:
             bind_variables, new_create_variables = self._analyze_diff_var(deploy_package['guid'], deploy_package['deploy_package_url'], 
                                    deploy_package[field_pkg_diff_conf_file_name], data[field_pkg_diff_conf_file_name], force=True)
             if bind_variables is not None:
-                if auto_bind:
-                    clean_data[field_pkg_diff_conf_var_name] = bind_variables
-            else:
-                if auto_bind:
-                    clean_data[field_pkg_diff_conf_var_name] = deploy_package[field_pkg_diff_conf_file_name]
+                clean_data[field_pkg_diff_conf_var_name] = bind_variables
         # db部署支持
         # 根据用户指定进行变量绑定
         db_auto_bind = True
@@ -1325,10 +1321,10 @@ class UnitDesignPackages(WeCubeResource):
             ]
             db_auto_bind = False
         # 根据diff_conf_file计算变量进行更新绑定
-        if field_pkg_db_diff_conf_file_name in data:
+        if field_pkg_db_diff_conf_file_name in data and db_auto_bind:
             bind_variables, new_create_variables = self._analyze_diff_var(deploy_package['guid'], deploy_package['deploy_package_url'], 
                                    deploy_package[field_pkg_db_diff_conf_file_name], data[field_pkg_db_diff_conf_file_name], force=True)
-            if bind_variables is not None and db_auto_bind:
+            if bind_variables is not None:
                 clean_data[field_pkg_diff_conf_var_name] = bind_variables
         if db_upgrade_detect:
             clean_data[field_pkg_db_upgrade_file_path_name] = FileNameConcater().convert(
