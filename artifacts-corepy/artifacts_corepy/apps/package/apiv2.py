@@ -1307,10 +1307,10 @@ class UnitDesignPackages(WeCubeResource):
             clean_data[field_pkg_diff_conf_var_name] = [c['diffConfigGuid'] for c in data[field_pkg_diff_conf_var_name] if c['bound']]
             auto_bind = False
         # 根据diff_conf_file计算变量进行更新绑定
-        if field_pkg_diff_conf_file_name in data:
+        if field_pkg_diff_conf_file_name in data and auto_bind:
             bind_variables, new_create_variables = self._analyze_diff_var(deploy_package['guid'], deploy_package['deploy_package_url'], 
-                                   self.build_file_object(deploy_package[field_pkg_diff_conf_file_name]), data[field_pkg_diff_conf_file_name])
-            if bind_variables is not None and auto_bind:
+                                   deploy_package[field_pkg_diff_conf_file_name], data[field_pkg_diff_conf_file_name])
+            if bind_variables is not None:
                 clean_data[field_pkg_diff_conf_var_name] = bind_variables
         # db部署支持
         # 根据用户指定进行变量绑定
@@ -1321,11 +1321,11 @@ class UnitDesignPackages(WeCubeResource):
             ]
             db_auto_bind = False
         # 根据diff_conf_file计算变量进行更新绑定
-        if field_pkg_db_diff_conf_file_name in data:
+        if field_pkg_db_diff_conf_file_name in data and db_auto_bind:
             bind_variables, new_create_variables = self._analyze_diff_var(deploy_package['guid'], deploy_package['deploy_package_url'], 
-                                   self.build_file_object(deploy_package[field_pkg_db_diff_conf_file_name]), data[field_pkg_db_diff_conf_file_name])
-            if bind_variables is not None and db_auto_bind:
-                clean_data[field_pkg_diff_conf_var_name] = bind_variables
+                                   deploy_package[field_pkg_db_diff_conf_file_name], data[field_pkg_db_diff_conf_file_name])
+            if bind_variables is not None:
+                clean_data[field_pkg_db_diff_conf_var_name] = bind_variables
         if db_upgrade_detect:
             clean_data[field_pkg_db_upgrade_file_path_name] = FileNameConcater().convert(
                 self.find_files_by_status(
@@ -1343,15 +1343,23 @@ class UnitDesignPackages(WeCubeResource):
             return self.get(unit_design_id, deploy_package_id)
         return resp_json['data']
 
-    # conf_list是列表，每个元素是dict，包含configKeyInfos，filename
-    # 如果返回None表示没有改变不应更新CMDB字段值，否则返回可以用于更新CMDB的variable值(即variable guid 列表)
+
     def _analyze_diff_var(self, package_id, package_url, origin_conf_list, new_conf_list):
+        '''
+        conf_list是列表，每个元素是string 或 dict[{configKeyInfos，filename}]
+        
+        如果返回None表示没有改变不应更新CMDB字段值，否则返回可以用于更新CMDB的variable值(即variable guid 列表)
+        '''
         cmdb_client = self.get_cmdb_client()
         new_diff_conf_file_list = set()
         old_diff_conf_file_list = set()
+        if new_conf_list and utils.is_string_type(new_conf_list):
+            new_conf_list = self.build_file_object(new_conf_list)
         new_diff_conf_file_list = set([f['filename'] for f in new_conf_list])
+        if origin_conf_list and utils.is_string_type(origin_conf_list):
+            origin_conf_list = self.build_file_object(origin_conf_list)
         old_diff_conf_file_list = set(
-            [f['filename'] for f in self.build_file_object(origin_conf_list)])
+            [f['filename'] for f in self.build_file_object()])
         # diff_conf_file值并未发生改变，无需下载文件更新变量
         if new_diff_conf_file_list != old_diff_conf_file_list:
             package_cached_dir = self.ensure_package_cached(package_id,
@@ -1916,6 +1924,8 @@ class UnitDesignPackages(WeCubeResource):
     def update_file_variable(self, package_cached_dir, files):
         '''
         解析文件差异化变量
+        
+        files为[{filename: xxx}]格式
         '''
         spliters = [s.strip() for s in CONF.encrypt_variable_prefix.split(',')]
         spliters.extend([s.strip() for s in CONF.file_variable_prefix.split(',')])
