@@ -1,4 +1,4 @@
-FROM python:3.7-slim
+FROM python:3.8-slim
 LABEL maintainer = "Webank CTB Team"
 RUN sed -i 's/deb.debian.org/mirrors.tencentyun.com/g' /etc/apt/sources.list.d/debian.sources
 RUN sed -i 's/security.debian.org/mirrors.tencentyun.com/g' /etc/apt/sources.list.d/debian.sources
