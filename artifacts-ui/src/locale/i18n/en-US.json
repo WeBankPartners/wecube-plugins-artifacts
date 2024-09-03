@@ -131,5 +131,7 @@
   "art_ok": "Confirm",
   "art_select_orch": "Select Orchestration",
   "art_release_artifact_package": "Release Artifact Package",
-  "art_status": "Status"
+  "art_status": "Status",
+  "art_upload_import": "Upload/Import",
+  "art_online_selection": "Online Selection"
 }

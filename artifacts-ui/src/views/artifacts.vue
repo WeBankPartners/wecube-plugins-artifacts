@@ -24,14 +24,18 @@
     <Col span="18" style="margin-left: 35px">
       <!-- 包管理 -->
       <Card v-if="guid" class="artifact-management-top-card">
-        <!-- 本地上传 -->
-        <Button type="info" ghost icon="ios-cloud-upload-outline" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">
-          {{ $t('artifacts_upload_new_package') }}
-        </Button>
-        <!-- 在线选择 -->
-        <Button style="margin-left: 10px" type="info" ghost icon="ios-cloud-outline" :disabled="!btnGroupControl.upload_from_nexus_enabled" @click="pkgUpload('online')">
-          {{ $t('select_online') }}
-        </Button>
+        <div style="display: flex;justify-content: space-between;margin-bottom: 8px;">
+          <div>
+            <Input v-model="tableFilter.key_name" @on-change="queryPackages(true)" :placeholder="$t('artifacts_package_name')" clearable style="width: 200px;margin-right: 8px;" />
+            <Input v-model="tableFilter.guid" @on-change="queryPackages(true)" placeholder="GUID" clearable style="width: 200px" />
+          </div>
+          <div>
+            <!-- 本地上传 -->
+            <Button icon="md-cloud-upload" style="background: #28aef3;border-color: #28aef3;margin-right: 8px;" type="info" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">{{ $t('art_upload_import') }}</Button>
+            <!-- 在线选择 -->
+            <Button icon="ios-apps" style="background: #81b337;border-color: #81b337;" type="primary" :disabled="!btnGroupControl.upload_from_nexus_enabled" @click="pkgUpload('online')">{{ $t('art_online_selection') }}</Button>
+          </div>
+        </div>
         <!-- 包列表table -->
         <ArtifactsSimpleTable class="artifact-management-package-table" :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
       </Card>
@@ -383,7 +387,7 @@
         <Form :label-width="120">
           <FormItem :label="$t('art_select_orch')">
             <Select style="width: 80%" v-model="releaseParams.selectedFlow" filterable>
-              <Option v-for="item in releaseParams.flowList" :value="item.id" :key="item.id">{{ item.name }}</Option>
+              <Option v-for="item in releaseParams.flowList" :value="item.procDefId" :key="item.procDefId">{{ item.procDefName }}[{{ item.procDefVersion }}]</Option>
             </Select>
           </FormItem>
         </Form>
@@ -397,7 +401,7 @@
 </template>
 
 <script>
-import { pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType, btnControl } from '@/api/server.js'
+import { getFlowLists, pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType, btnControl } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
@@ -428,10 +432,15 @@ export default {
         upload_from_nexus_enabled: false, // 在线上传
         push_to_nexus_enabled: false // 推送
       },
+      tableFilter: {
+        key_name: '',
+        guid: ''
+      },
       releaseParams: {
         showReleaseModal: false,
         title: '',
         selectedFlow: '',
+        guid: '',
         flowList: []
       },
       baselinePackageOptions: [],
@@ -487,12 +496,14 @@ export default {
           title: this.$t('artifacts_package_name'),
           key: 'name',
           tooltip: true,
+          ellipsis: true,
           render: (h, params) => this.renderCell(params.row.name)
         },
         {
           title: 'GUID',
           width: 160,
           key: 'guid',
+          ellipsis: true,
           tooltip: true
         },
         {
@@ -532,36 +543,30 @@ export default {
           title: this.$t('artifacts_action'),
           key: 'state',
           fixed: 'right',
-          width: 260,
+          width: 200,
           render: (h, params) => {
             return (
               <div style="padding-top:5px">
-                {this.renderActionButton(params)}
-                {!params.row.package_type && (
-                  <Button type="warning" onClick={() => this.showFilesModal(params.row, event, true)} size="small" style="margin-right: 5px;margin-bottom: 5px;">
-                    {this.$t('detail')}
-                  </Button>
-                )}
-                <Tooltip content={this.$t('export')} placement="top" transfer={true}>
+                <div>
+                  {!params.row.package_type && (
+                    <Button type="warning" onClick={() => this.showFilesModal(params.row, event, true)} size="small" style="margin-right: 5px;margin-bottom: 5px;">
+                      {this.$t('detail')}
+                    </Button>
+                  )}
                   <Button size="small" onClick={() => this.toExportPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
                     <Icon type="md-cloud-download" color="white" size="16"></Icon>
                   </Button>
-                </Tooltip>
-                <Tooltip content={this.$t('push')} placement="top" transfer={true}>
                   <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
                     <Icon type="md-cloud-upload" color="white" size="16"></Icon>
                   </Button>
-                </Tooltip>
-                <Tooltip content={this.$t('art_release')} placement="top" transfer={true}>
                   <Button size="small" onClick={() => this.toRealsePkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#18b55f', borderColor: '#18b55f', marginBottom: '2px' }}>
                     <Icon type="ios-send-outline" color="white" size="16"></Icon>
                   </Button>
-                </Tooltip>
-                <Tooltip content={this.$t('art_release_history')} placement="top" transfer={true}>
                   <Button size="small" onClick={() => this.toRealsePkgHistory(params.row)} style={{ marginRight: '5px', backgroundColor: '#7728f5', borderColor: '#7728f5', marginBottom: '2px' }}>
                     <Icon type="ios-timer-outline" color="white" size="16"></Icon>
                   </Button>
-                </Tooltip>
+                </div>
+                <div>{this.renderActionButton(params)}</div>
               </div>
             )
           }
@@ -686,13 +691,13 @@ export default {
             if (params.row.conf_variable.bound) {
               return (
                 <span>
-                  <Icon type="md-checkmark-circle" color="#2d8cf0" style="font-size: 18px;" />
+                  <Icon type="md-checkmark-circle" color="#2d8cf0" style="font-size: 16px;" />
                 </span>
               )
             } else {
               return (
                 <span>
-                  <Icon type="md-close-circle" color="red" style="font-size: 18px;" />
+                  <Icon type="md-close-circle" color="red" style="font-size: 16px;" />
                 </span>
               )
             }
@@ -1060,18 +1065,34 @@ export default {
       if (resetCurrentPage) {
         this.pageInfo.currentPage = 1
       }
-      this.tableLoading = true
-      let { status, data } = await queryPackages(this.guid, {
+      let params = {
         sorting: {
           asc: false,
           field: 'upload_time'
         },
+        filters: [],
         paging: true,
         pageable: {
           pageSize: this.pageInfo.pageSize,
           startIndex: (this.pageInfo.currentPage - 1) * this.pageInfo.pageSize
         }
-      })
+      }
+      if (this.tableFilter.key_name !== '') {
+        params.filters.push({
+          name: 'key_name',
+          operator: 'contains',
+          value: this.tableFilter.key_name
+        })
+      }
+      if (this.tableFilter.guid !== '') {
+        params.filters.push({
+          name: 'guid',
+          operator: 'contains',
+          value: this.tableFilter.guid
+        })
+      }
+      this.tableLoading = true
+      let { status, data } = await queryPackages(this.guid, params)
       if (status === 'OK') {
         this.tableLoading = false
         this.tableData = data.contents.map(_ => {
@@ -1370,11 +1391,9 @@ export default {
       let res = []
       operations.forEach(op => {
         res.push(
-          <Tooltip content={typeToBtn[op.type].tip} placement="top" transfer={true}>
-            <Button size="small" onClick={() => this.changeStatus(row, op.type, event)} style={{ marginRight: '5px', backgroundColor: typeToBtn[op.type].color, borderColor: typeToBtn[op.type].color, marginBottom: '2px' }}>
-              <Icon type={typeToBtn[op.type].icon} color="white" size="16"></Icon>
-            </Button>
-          </Tooltip>
+          <Button size="small" onClick={() => this.changeStatus(row, op.type, event)} style={{ marginRight: '5px', backgroundColor: typeToBtn[op.type].color, borderColor: typeToBtn[op.type].color, marginBottom: '2px' }}>
+            <Icon type={typeToBtn[op.type].icon} color="white" size="16"></Icon>
+          </Button>
         )
       })
       return res
@@ -2210,29 +2229,34 @@ export default {
       }
     },
     // 发布物料包
-    toRealsePkg (row) {
+    async toRealsePkg (row) {
       this.releaseParams.title = this.$t('art_release_artifact_package') + ': ' + row.code
       this.releaseParams.selectedFlow = ''
-      this.releaseParams.flowList = [
-        {
-          id: '123',
-          name: 'aaa'
-        }
-      ]
-      this.releaseParams.showReleaseModal = true
+      this.releaseParams.guid = row.guid
+      this.releaseParams.flowList = []
+      const res = await getFlowLists()
+      console.log(res)
+      if (res.status === 'OK') {
+        this.releaseParams.flowList = res.data.data || []
+        this.releaseParams.showReleaseModal = true
+      }
     },
     onReleaseCancel () {
       this.releaseParams.showReleaseModal = false
     },
     onReleaseConfirm () {
       console.log(this.releaseParams.selectedFlow)
-      this.releaseParams.selectedFlow = 'pdef_61d07f0052e248f29c915'
       this.releaseParams.showReleaseModal = false
-      const path = `${window.location.origin}/#/implementation/workflow-execution/normal-create?templateId=${this.releaseParams.selectedFlow}&subProc=main&targetId=resource_set_60b9d40e7dea345c`
+      window.sessionStorage.currentPath = ''
+      const path = `${window.location.origin}/#/implementation/workflow-execution/normal-create?templateId=${this.releaseParams.selectedFlow}&subProc=main&targetId=${this.releaseParams.guid}`
       window.open(path, '_blank')
     },
     // 发布历史
-    toRealsePkgHistory (row) {},
+    toRealsePkgHistory (row) {
+      window.sessionStorage.currentPath = ''
+      const path = `${window.location.origin}/#/implementation/workflow-execution/normal-history?entityDisplayName=${row.key_name}&subProc=main&rootEntityGuid=${row.guid}`
+      window.open(path, '_blank')
+    },
     async updateHeaders () {
       let refreshRequest = null
       const currentTime = new Date().getTime()
