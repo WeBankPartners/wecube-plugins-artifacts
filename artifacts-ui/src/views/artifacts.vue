@@ -1421,66 +1421,17 @@ export default {
     async syncBaselineFileStatus () {
       if (this.packageInput.baseline_package) {
         const { data } = await compareBaseLineFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package })
-        this.packageInput.diff_conf_file.forEach(el => {
-          data.diff_conf_file.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
+        const keys = ['diff_conf_directory', 'diff_conf_file', 'script_file_directory', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'log_file_directory', 'log_file_trade', 'log_file_keyword', 'log_file_metric', 'log_file_trace', 'db_diff_conf_directory', 'db_diff_conf_file', 'db_upgrade_directory', 'db_upgrade_file_path', 'db_rollback_directory', 'db_rollback_file_path', 'db_deploy_file_directory', 'db_deploy_file_path']
+        keys.forEach(k => {
+          this.packageInput[k].forEach(el => {
+            data[k] &&
+              data[k].forEach(elRet => {
+                if (elRet.filename === el.filename) {
+                  el.comparisonResult = elRet.comparisonResult
+                }
+              })
           })
         })
-        this.packageInput.start_file_path.forEach(el => {
-          data.start_file_path.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.stop_file_path.forEach(el => {
-          data.stop_file_path.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.deploy_file_path.forEach(el => {
-          data.deploy_file_path.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-
-        this.packageInput.db_diff_conf_file.forEach(el => {
-          data.db_diff_conf_file.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-
-        this.packageInput.db_upgrade_directory.forEach(el => {
-          data.db_upgrade_directory.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.db_rollback_directory.forEach(el => {
-          data.db_rollback_directory.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.db_deploy_file_path.forEach(el => {
-          data.db_deploy_file_path.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.db_upgrade_file_path = data.db_upgrade_file_path || []
-        this.packageInput.db_rollback_file_path = data.db_rollback_file_path || []
       }
     },
     async baseLinePackageChanged (v) {
@@ -2309,6 +2260,11 @@ export default {
 }
 .tree-size ::v-deep .ivu-tree-empty {
   font-size: 12px !important;
+}
+
+.tree-size {
+  height: calc(100vh - 320px);
+  overflow-y: auto;
 }
 
 .ivu-upload {
