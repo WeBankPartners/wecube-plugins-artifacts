@@ -1309,7 +1309,7 @@ class UnitDesignPackages(WeCubeResource):
         # 根据diff_conf_file计算变量进行更新绑定
         if field_pkg_diff_conf_file_name in data:
             bind_variables, new_create_variables = self._analyze_diff_var(deploy_package['guid'], deploy_package['deploy_package_url'], 
-                                   deploy_package[field_pkg_diff_conf_file_name], data[field_pkg_diff_conf_file_name])
+                                   self.build_file_object(deploy_package[field_pkg_diff_conf_file_name]), data[field_pkg_diff_conf_file_name])
             if bind_variables is not None and auto_bind:
                 clean_data[field_pkg_diff_conf_var_name] = bind_variables
         # db部署支持
@@ -1323,7 +1323,7 @@ class UnitDesignPackages(WeCubeResource):
         # 根据diff_conf_file计算变量进行更新绑定
         if field_pkg_db_diff_conf_file_name in data:
             bind_variables, new_create_variables = self._analyze_diff_var(deploy_package['guid'], deploy_package['deploy_package_url'], 
-                                   deploy_package[field_pkg_db_diff_conf_file_name], data[field_pkg_db_diff_conf_file_name])
+                                   self.build_file_object(deploy_package[field_pkg_db_diff_conf_file_name]), data[field_pkg_db_diff_conf_file_name])
             if bind_variables is not None and db_auto_bind:
                 clean_data[field_pkg_diff_conf_var_name] = bind_variables
         if db_upgrade_detect:
@@ -1347,6 +1347,8 @@ class UnitDesignPackages(WeCubeResource):
     # 如果返回None表示没有改变不应更新CMDB字段值，否则返回可以用于更新CMDB的variable值(即variable guid 列表)
     def _analyze_diff_var(self, package_id, package_url, origin_conf_list, new_conf_list):
         cmdb_client = self.get_cmdb_client()
+        new_diff_conf_file_list = set()
+        old_diff_conf_file_list = set()
         new_diff_conf_file_list = set([f['filename'] for f in new_conf_list])
         old_diff_conf_file_list = set(
             [f['filename'] for f in self.build_file_object(origin_conf_list)])
