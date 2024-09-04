@@ -2158,16 +2158,16 @@ class UnitDesignPackages(WeCubeResource):
             ret_data[fset.name] = input_attrs[fset.name]
             if not baseline_package:
                 # 文件清单自动分析(扩展名限制)
-                # file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
-                # filtered_file_objs = []
-                # available_extensions = split_to_list(CONF.db_script_extension)
-                # for f in file_objs:
-                #     for ext in available_extensions:
-                #         if fnmatch.fnmatch(f['name'], '*' + ext):
-                #             filtered_file_objs.append(f)
-                # ret_data[field_pkg_db_upgrade_file_path_name] = FilePathConcater().convert(filtered_file_objs)
+                file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
+                filtered_file_objs = []
+                available_extensions = split_to_list(CONF.db_script_extension)
+                for f in file_objs:
+                    for ext in available_extensions:
+                        if fnmatch.fnmatch(f['name'], '*' + ext):
+                            filtered_file_objs.append(f)
+                ret_data[field_pkg_db_upgrade_file_path_name] = FilePathConcater().convert(filtered_file_objs)
                 # 目录有输入，没有baseline，脚本文件应当为空
-                ret_data[field_pkg_db_upgrade_file_path_name] = field_pkg_db_upgrade_file_path_default_value
+                # ret_data[field_pkg_db_upgrade_file_path_name] = field_pkg_db_upgrade_file_path_default_value
             else:
                 # 文件清单仅追加
                 file_objs = self.find_files_by_status(
@@ -2187,16 +2187,16 @@ class UnitDesignPackages(WeCubeResource):
                 # 填充默认目录值
                 ret_data[fset.name] = fset.default_value
                 # 文件清单自动分析(扩展名限制)
-                # file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
-                # filtered_file_objs = []
-                # available_extensions = split_to_list(CONF.db_script_extension)
-                # for f in file_objs:
-                #     for ext in available_extensions:
-                #         if fnmatch.fnmatch(f['name'], '*' + ext):
-                #             filtered_file_objs.append(f)
-                # ret_data[field_pkg_db_upgrade_file_path_name] = FilePathConcater().convert(filtered_file_objs)
+                file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
+                filtered_file_objs = []
+                available_extensions = split_to_list(CONF.db_script_extension)
+                for f in file_objs:
+                    for ext in available_extensions:
+                        if fnmatch.fnmatch(f['name'], '*' + ext):
+                            filtered_file_objs.append(f)
+                ret_data[field_pkg_db_upgrade_file_path_name] = FilePathConcater().convert(filtered_file_objs)
                 # 目录没有输入，没有baseline，脚本文件应当为空
-                ret_data[field_pkg_db_upgrade_file_path_name] = field_pkg_db_upgrade_file_path_default_value
+                # ret_data[field_pkg_db_upgrade_file_path_name] = field_pkg_db_upgrade_file_path_default_value
             else:
                 # 目录值仅继承
                 ret_data[fset.name] = baseline_package[fset.name]
@@ -2224,16 +2224,16 @@ class UnitDesignPackages(WeCubeResource):
             ret_data[fset.name] = input_attrs[fset.name]
             if not baseline_package:
                 # 文件清单自动分析(扩展名限制)
-                # file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
-                # filtered_file_objs = []
-                # available_extensions = split_to_list(CONF.db_script_extension)
-                # for f in file_objs:
-                #     for ext in available_extensions:
-                #         if fnmatch.fnmatch(f['name'], '*' + ext):
-                #             filtered_file_objs.append(f)
-                # ret_data[field_pkg_db_rollback_file_path_name] = FilePathConcater().convert(filtered_file_objs)
+                file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
+                filtered_file_objs = []
+                available_extensions = split_to_list(CONF.db_script_extension)
+                for f in file_objs:
+                    for ext in available_extensions:
+                        if fnmatch.fnmatch(f['name'], '*' + ext):
+                            filtered_file_objs.append(f)
+                ret_data[field_pkg_db_rollback_file_path_name] = FilePathConcater().convert(filtered_file_objs)
                 # 目录有输入，没有baseline，脚本文件应当为空
-                ret_data[field_pkg_db_rollback_file_path_name] = field_pkg_db_rollback_file_path_default_value
+                # ret_data[field_pkg_db_rollback_file_path_name] = field_pkg_db_rollback_file_path_default_value
             else:
                 # 文件清单仅追加
                 file_objs = self.find_files_by_status(
@@ -2253,16 +2253,16 @@ class UnitDesignPackages(WeCubeResource):
                 # 填充默认目录值
                 ret_data[fset.name] = fset.default_value
                 # 文件清单自动分析(扩展名限制)
-                # file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
-                # filtered_file_objs = []
-                # available_extensions = split_to_list(CONF.db_script_extension)
-                # for f in file_objs:
-                #     for ext in available_extensions:
-                #         if fnmatch.fnmatch(f['name'], '*' + ext):
-                #             filtered_file_objs.append(f)
-                # ret_data[field_pkg_db_rollback_file_path_name] = FilePathConcater().convert(filtered_file_objs)
+                file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, True)
+                filtered_file_objs = []
+                available_extensions = split_to_list(CONF.db_script_extension)
+                for f in file_objs:
+                    for ext in available_extensions:
+                        if fnmatch.fnmatch(f['name'], '*' + ext):
+                            filtered_file_objs.append(f)
+                ret_data[field_pkg_db_rollback_file_path_name] = FilePathConcater().convert(filtered_file_objs)
                 # 目录没有输入，没有baseline，脚本文件应当为空
-                ret_data[field_pkg_db_rollback_file_path_name] = field_pkg_db_rollback_file_path_default_value
+                # ret_data[field_pkg_db_rollback_file_path_name] = field_pkg_db_rollback_file_path_default_value
             else:
                 # 目录值仅继承
                 ret_data[fset.name] = baseline_package[fset.name]
