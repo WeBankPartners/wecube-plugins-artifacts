@@ -38,9 +38,7 @@
           </div>
         </div>
         <!-- 包列表table -->
-        123
-        <Table :data="tableData" :columns="tableColumns"></Table>
-        <!-- <ArtifactsSimpleTable :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable> -->
+        <ArtifactsSimpleTable :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
       </Card>
 
       <!-- 差异化变量 -->

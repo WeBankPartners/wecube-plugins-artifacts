@@ -7,7 +7,7 @@
             <span style="margin-right: 10px">{{ $t('package_type') }}</span>
           </Col>
           <Col span="18" offset="1">
-            <Select clearable :placeholder="$t('package_type')" v-model="packageType">
+            <Select clearable :placeholder="$t('package_type')" v-model="packageType" @on-change="packageTypeChanged">
               <Option v-for="pkt in packageTypeOptions" :value="pkt.value" :key="pkt.value" :disabled="pkt.value === 'IMAGE'">{{ $t(pkt.label) }}</Option>
             </Select>
           </Col>
@@ -26,7 +26,7 @@
         </Row>
       </Card>
       <Tabs :value="currentConfigTab" class="config-tab" @on-click="changeCurrentConfigTab">
-        <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('APP')" name="APP">
+        <TabPane :disabled="disableAppCard" :label="$t('APP')" name="APP">
           <div class="tab-content">
             <div style="margin-bottom: 16px;">
               {{ $t('is_decompression') }}：
@@ -250,7 +250,7 @@
             </div>
           </div>
         </TabPane>
-        <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('DB')" name="DB">
+        <TabPane :disabled="disableDBCard" :label="$t('DB')" name="DB">
           <div class="tab-content">
             <div style="border:1px solid #e8eaec;">
               <Table :columns="columns1" :data="[]" size="small" class="table-only-have-header"></Table>
@@ -544,9 +544,26 @@ export default {
     disableAddCodeStringMap () {
       let res = this.packageInput.key_service_code.some(item => item.source_value === '' || item.target_value === '')
       return res
+    },
+    disableAppCard () {
+      return this.packageType === this.constPackageOptions.db
+    },
+    disableDBCard () {
+      return this.packageType === this.constPackageOptions.app
     }
   },
   methods: {
+    packageTypeChanged (val) {
+      let toTab = ''
+      if (val === 'APP') {
+        toTab = 'APP'
+      } else if (val === 'DB') {
+        toTab = 'DB'
+      } else if (val === 'APP&DB') {
+        toTab = 'APP'
+      }
+      this.currentConfigTab = toTab
+    },
     initSortable (key) {
       const $ul = document.getElementById(key + '_test')
       const _this = this
@@ -604,11 +621,13 @@ export default {
       this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_directory || []))
       this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_path || []))
 
-      this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code || []))
+      this.$nextTick(() => {
+        this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code || []))
+      })
 
-      this.packageId = row.guid
       this.hideFooter = hideFooter
       await this.getAllpkg()
+      this.packageId = row.guid
       this.openDrawer = true
 
       this.$nextTick(() => {
@@ -739,8 +758,9 @@ export default {
         this.packageInput.db_rollback_file_path = []
         this.packageInput.db_deploy_file_directory = found.db_deploy_file_directory ? JSON.parse(JSON.stringify(found.db_deploy_file_directory)) : []
         this.packageInput.db_deploy_file_path = found.db_deploy_file_path ? JSON.parse(JSON.stringify(found.db_deploy_file_path)) : []
-
-        this.packageInput.key_service_code = found.key_service_code ? JSON.parse(JSON.stringify(found.key_service_code)) : []
+        this.$nextTick(() => {
+          this.packageInput.key_service_code = found.key_service_code ? JSON.parse(JSON.stringify(found.key_service_code)) : []
+        })
       }
       await this.syncBaselineFileStatus()
     },
