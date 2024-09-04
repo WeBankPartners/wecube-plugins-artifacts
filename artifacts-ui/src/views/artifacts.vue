@@ -21,9 +21,8 @@
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
     </Col>
-    <Col span="18" style="margin-left: 35px">
-      <!-- 包管理 -->
-      <Card v-if="guid" class="artifact-management-top-card">
+    <Col span="18" v-if="guid" style="margin-left: 16px;border: 1px solid #e8eaec;padding: 8px;width: 78%;">
+      <div>
         <div style="padding-bottom: 8px">{{ $t('art_sys_artch') }}{{ treePath.join('/') }}</div>
         <div style="display: flex;justify-content: space-between;margin-bottom: 8px;">
           <div>
@@ -37,50 +36,50 @@
             <Button icon="ios-apps" style="background: #81b337;border-color: #81b337;" type="primary" :disabled="!btnGroupControl.upload_from_nexus_enabled" @click="pkgUpload('online')">{{ $t('art_online_selection') }}</Button>
           </div>
         </div>
+      </div>
+      <div class="artifact-management-content">
+        <!-- 包管理 -->
         <!-- 包列表table -->
         <ArtifactsSimpleTable :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
-      </Card>
-
-      <!-- 差异化变量 -->
-      <div v-if="showDiffConfigTab" style="text-align: end; margin-top: 32px">
-        <span>
-          <Button style="display: inline-block" @click="exportData" size="small" icon="ios-cloud-download-outline">{{ $t('export') }}</Button>
-          <Upload :before-upload="handleUpload" action="">
-            <Button style="display: inline-block" icon="ios-cloud-upload-outline" size="small">{{ $t('import') }}</Button>
-          </Upload>
-        </span>
-      </div>
-      <div v-if="showDiffConfigTab">
-        <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig">
-          <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('APP')" name="APP" tab="diffConfig">
-            <div class="batchOperation" style="text-align: right">
-              <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+        <!-- 差异化变量 -->
+        <div v-if="showDiffConfigTab" style="display: flex;width: 100%;">
+          <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
+            <div slot="extra">
+              <Button style="display: inline-block" @click="exportData" size="small" icon="ios-cloud-download-outline">{{ $t('export') }}</Button>
+              <Upload :before-upload="handleUpload" action="">
+                <Button style="display: inline-block;margin-left: 4px;" icon="ios-cloud-upload-outline" size="small">{{ $t('import') }}</Button>
+              </Upload>
             </div>
-            <Spin size="large" fix v-if="tabTableLoading">
-              <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
-              <div>{{ $t('artifacts_loading') }}</div>
-            </Spin>
-            <Tabs :value="activeTab" @on-click="changeTab" name="APP">
-              <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="APP">
-                <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions" size="small"></Table>
-              </TabPane>
-            </Tabs>
-          </TabPane>
-          <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('DB')" name="DB" tab="diffConfig">
-            <div class="batchOperation" style="text-align: right">
-              <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
-            </div>
-            <Spin size="large" fix v-if="tabTableLoading">
-              <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
-              <div>{{ $t('artifacts_loading') }}</div>
-            </Spin>
-            <Tabs :value="activeTab" @on-click="changeTab" name="DB">
-              <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="DB">
-                <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions" size="small"></Table>
-              </TabPane>
-            </Tabs>
-          </TabPane>
-        </Tabs>
+            <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('APP')" name="APP" tab="diffConfig">
+              <div class="batchOperation" style="text-align: right">
+                <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+              </div>
+              <Spin size="large" fix v-if="tabTableLoading">
+                <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
+                <div>{{ $t('artifacts_loading') }}</div>
+              </Spin>
+              <Tabs :value="activeTab" @on-click="changeTab" name="APP">
+                <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="APP">
+                  <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions" size="small"></Table>
+                </TabPane>
+              </Tabs>
+            </TabPane>
+            <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('DB')" name="DB" tab="diffConfig">
+              <div class="batchOperation" style="text-align: right">
+                <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+              </div>
+              <Spin size="large" fix v-if="tabTableLoading">
+                <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
+                <div>{{ $t('artifacts_loading') }}</div>
+              </Spin>
+              <Tabs :value="activeTab" @on-click="changeTab" name="DB">
+                <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="DB">
+                  <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions" size="small"></Table>
+                </TabPane>
+              </Tabs>
+            </TabPane>
+          </Tabs>
+        </div>
       </div>
 
       <Modal :mask-closable="false" v-model="isShowBatchBindModal" :width="800" :title="$t('multi_bind_config')">
@@ -176,7 +175,7 @@
 </template>
 
 <script>
-import { getFlowLists, pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getFiles, compareBaseLineFiles, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType, btnControl } from '@/api/server.js'
+import { getFlowLists, pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getFiles, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType, btnControl } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
@@ -294,10 +293,12 @@ export default {
         {
           title: this.$t('baseline_package'),
           key: 'baseline_package',
-          width: 160,
+          width: 120,
+          ellipsis: true,
+          tooltip: true,
           render: (h, params) => {
             const baseLine = params.row.baseline_package ? params.row.baseline_package.key_name : ''
-            return <span>{baseLine}</span>
+            return this.renderCell(baseLine)
           }
         },
         {
@@ -319,7 +320,7 @@ export default {
           title: this.$t('artifacts_action'),
           key: 'state',
           fixed: 'right',
-          width: 200,
+          width: 190,
           render: (h, params) => {
             return (
               <div style="padding-top:5px">
@@ -978,7 +979,7 @@ export default {
           <span slot="content" style="white-space:normal;">
             {res}
           </span>
-          <div style="width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{res}</div>
+          <div style="width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px">{res}</div>
         </Tooltip>
       )
     },
@@ -991,6 +992,7 @@ export default {
       this.queryPackages()
     },
     async rowClick (row) {
+      this.showSpin()
       this.packageName = row.code
       if (row.package_type === this.constPackageOptions.image) {
         this.showDiffConfigTab = false
@@ -1003,6 +1005,8 @@ export default {
       this.showDiffConfigTab = true
       // 获取包文件及差异化变量数据
       await this.syncPackageDetail()
+      console.log(3)
+      this.$Spin.hide()
     },
     historyPageChange (currentPage) {
       this.historyPageInfo.currentPage = currentPage
@@ -1227,41 +1231,6 @@ export default {
           break
       }
     },
-    async syncBaselineFileStatus () {
-      if (this.packageInput.baseline_package) {
-        const { data } = await compareBaseLineFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package })
-        const keys = ['diff_conf_directory', 'diff_conf_file', 'script_file_directory', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'log_file_directory', 'log_file_trade', 'log_file_keyword', 'log_file_metric', 'log_file_trace', 'db_diff_conf_directory', 'db_diff_conf_file', 'db_upgrade_directory', 'db_upgrade_file_path', 'db_rollback_directory', 'db_rollback_file_path', 'db_deploy_file_directory', 'db_deploy_file_path']
-        keys.forEach(k => {
-          this.packageInput[k].forEach(el => {
-            data[k] &&
-              data[k].forEach(elRet => {
-                if (elRet.filename === el.filename) {
-                  el.comparisonResult = elRet.comparisonResult
-                }
-              })
-          })
-        })
-      }
-    },
-    async baseLinePackageChanged (v) {
-      if (v) {
-        const found = JSON.parse(JSON.stringify(this.baselinePackageOptions.find(row => row.guid === v)))
-        this.packageType = found.package_type
-        this.packageInput.diff_conf_file = found.diff_conf_file ? JSON.parse(JSON.stringify(found.diff_conf_file)) : []
-        this.packageInput.start_file_path = found.start_file_path ? JSON.parse(JSON.stringify(found.start_file_path)) : []
-        this.packageInput.stop_file_path = found.stop_file_path ? JSON.parse(JSON.stringify(found.stop_file_path)) : []
-        this.packageInput.deploy_file_path = found.deploy_file_path ? JSON.parse(JSON.stringify(found.deploy_file_path)) : []
-        this.packageInput.is_decompression = found.is_decompression || 'true'
-
-        this.packageInput.db_diff_conf_file = found.db_diff_conf_file ? JSON.parse(JSON.stringify(found.db_diff_conf_file)) : []
-        this.packageInput.db_upgrade_directory = found.db_upgrade_directory ? JSON.parse(JSON.stringify(found.db_upgrade_directory)) : []
-        this.packageInput.db_rollback_directory = found.db_rollback_directory ? JSON.parse(JSON.stringify(found.db_rollback_directory)) : []
-        this.packageInput.db_upgrade_file_path = found.db_upgrade_file_path ? JSON.parse(JSON.stringify(found.db_upgrade_file_path)) : []
-        this.packageInput.db_rollback_file_path = found.db_rollback_file_path ? JSON.parse(JSON.stringify(found.db_rollback_file_path)) : []
-        this.packageInput.db_deploy_file_path = found.db_deploy_file_path ? JSON.parse(JSON.stringify(found.db_deploy_file_path)) : []
-      }
-      await this.syncBaselineFileStatus()
-    },
     async showFilesModal (row, event, hideFooter = false) {
       event.stopPropagation()
       this.$refs.pkgConfigRef.open(this.guid, row, hideFooter)
@@ -1286,7 +1255,6 @@ export default {
       this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_path || []))
 
       this.packageId = row.guid
-      // await this.syncBaselineFileStatus()
       this.hideFooter = hideFooter
       await this.getAllpkg()
       // this.isShowFilesModal = true
@@ -1995,7 +1963,6 @@ export default {
       this.releaseParams.guid = row.guid
       this.releaseParams.flowList = []
       const res = await getFlowLists()
-      console.log(res)
       if (res.status === 'OK') {
         this.releaseParams.flowList = res.data.data || []
         this.releaseParams.showReleaseModal = true
@@ -2005,7 +1972,6 @@ export default {
       this.releaseParams.showReleaseModal = false
     },
     onReleaseConfirm () {
-      console.log(this.releaseParams.selectedFlow)
       this.releaseParams.showReleaseModal = false
       window.sessionStorage.currentPath = ''
       const path = `${window.location.origin}/#/implementation/workflow-execution/normal-create?templateId=${this.releaseParams.selectedFlow}&subProc=main&targetId=${this.releaseParams.guid}`
@@ -2046,6 +2012,25 @@ export default {
       } else {
         window.location.href = window.location.origin + '/#/login'
       }
+    },
+    showSpin () {
+      this.$Spin.show({
+        render: h => {
+          return h('div', [
+            h('Icon', {
+              class: 'demo-spin-icon-load',
+              props: {
+                type: 'ios-loading',
+                size: 18
+              }
+            }),
+            h('div', 'Loading')
+          ])
+        }
+      })
+      setTimeout(() => {
+        this.$Spin.hide()
+      }, 20000)
     }
   },
   created () {
@@ -2075,7 +2060,12 @@ export default {
   height: calc(100vh - 320px);
   overflow-y: auto;
 }
-
+.artifact-management-content {
+  height: calc(100vh - 206px);
+  overflow-y: auto;
+  padding-right: 8px;
+  width: 100%;
+}
 .ivu-upload {
   display: inline-block;
 }
@@ -2095,7 +2085,7 @@ export default {
 .artifact-management {
   padding: 20px;
   &-top-card {
-    padding-bottom: 40px;
+    padding-bottom: 8px;
   }
   &-bottom-card {
     margin-top: 30px;

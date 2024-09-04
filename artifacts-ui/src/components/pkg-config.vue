@@ -1,37 +1,37 @@
 <template>
   <div>
     <Drawer :title="$t('artifacts_script_configuration')" :mask-closable="false" :closable="false" v-model="openDrawer" width="1300">
-      <Card :bordered="false" :padding="8">
-        <Row>
-          <Col style="text-align: right; line-height: 32px" span="5">
-            <span style="margin-right: 10px">{{ $t('package_type') }}</span>
-          </Col>
-          <Col span="18" offset="1">
-            <Select clearable :placeholder="$t('package_type')" v-model="packageType" @on-change="packageTypeChanged">
-              <Option v-for="pkt in packageTypeOptions" :value="pkt.value" :key="pkt.value" :disabled="pkt.value === 'IMAGE'">{{ $t(pkt.label) }}</Option>
-            </Select>
-          </Col>
-        </Row>
-      </Card>
-      <Card :bordered="false" :padding="8">
-        <Row>
-          <Col style="text-align: right; line-height: 32px" span="5">
-            <span style="margin-right: 10px">{{ $t('baseline_package') }}</span>
-          </Col>
-          <Col span="18" offset="1">
-            <Select clearable filterable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" v-model="packageInput.baseline_package">
-              <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
-            </Select>
-          </Col>
-        </Row>
-      </Card>
+      <Row style="margin-bottom: 8px;">
+        <Col style="text-align: right; line-height: 32px" span="5">
+          <span style="margin-right: 10px">{{ $t('package_type') }}</span>
+        </Col>
+        <Col span="18">
+          <Select clearable :placeholder="$t('package_type')" v-model="packageType" @on-change="packageTypeChanged">
+            <Option v-for="pkt in packageTypeOptions" :value="pkt.value" :key="pkt.value" :disabled="pkt.value === 'IMAGE'">{{ $t(pkt.label) }}</Option>
+          </Select>
+        </Col>
+      </Row>
+      <Row style="margin-bottom: 8px;">
+        <Col style="text-align: right; line-height: 32px" span="5">
+          <span style="margin-right: 10px">{{ $t('baseline_package') }}</span>
+        </Col>
+        <Col span="18">
+          <Select clearable filterable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" @on-clear="clearBaseline" v-model="packageInput.baseline_package">
+            <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
+          </Select>
+        </Col>
+      </Row>
+      <Row style="margin-bottom: 8px;">
+        <Col style="text-align: right;" span="5">
+          <span style="margin-right: 10px">{{ $t('is_decompression') }}</span>
+        </Col>
+        <Col span="18">
+          <i-switch v-model="packageInput.is_decompression" />
+        </Col>
+      </Row>
       <Tabs :value="currentConfigTab" class="config-tab" @on-click="changeCurrentConfigTab">
         <TabPane :disabled="disableAppCard" :label="$t('APP')" name="APP">
           <div class="tab-content">
-            <div style="margin-bottom: 16px;">
-              {{ $t('is_decompression') }}：
-              <i-switch v-model="packageInput.is_decompression" />
-            </div>
             <div style="border:1px solid #e8eaec;">
               <Table :columns="columns1" :data="[]" size="small" class="table-only-have-header"></Table>
               <!-- 差异化配置文件 -->
@@ -460,6 +460,7 @@ export default {
         mixed: 'APP&DB',
         image: 'IMAGE'
       },
+      oriPackageInput: {},
       packageInput: {
         baseline_package: null,
         diff_conf_directory: [], // 差异化变量
@@ -624,10 +625,10 @@ export default {
       this.$nextTick(() => {
         this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code || []))
       })
-
       this.hideFooter = hideFooter
       await this.getAllpkg()
       this.packageId = row.guid
+      this.oriPackageInput = JSON.parse(JSON.stringify(this.packageInput))
       this.openDrawer = true
 
       this.$nextTick(() => {
@@ -732,6 +733,13 @@ export default {
           this.activeTabData = {}
         }
       }
+    },
+    clearBaseline () {
+      const packageInput = JSON.parse(JSON.stringify(this.oriPackageInput))
+      this.packageInput = packageInput
+      this.$nextTick(() => {
+        this.packageInput.key_service_code = packageInput.key_service_code || []
+      })
     },
     async baseLinePackageChanged (v) {
       if (v) {
