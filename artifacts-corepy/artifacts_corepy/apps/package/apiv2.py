@@ -102,17 +102,26 @@ field_pkg_diff_conf_var_name = 'diff_conf_variable'
 field_pkg_db_diff_conf_var_name = 'db_diff_conf_variable'
 
 field_pkg_overwrite_map_str = os.getenv('ARTIFACTS_DEPLOY_PACKAGE_FIELD_MAP', default='')
+field_pkg_overwrite_map = {}
 if field_pkg_overwrite_map_str.strip():
     try:
         field_pkg_overwrite_map = json.loads(field_pkg_overwrite_map_str)
     except Exception as e:
-        LOG.error('Failed to parse ARTIFACTS_DEPLOY_PACKAGE_FIELD_MAP')
+        LOG.error('Failed to parse ARTIFACTS_DEPLOY_PACKAGE_FIELD_MAP: %s', field_pkg_overwrite_map_str)
         LOG.exception(e)
     local_vars = locals()
     for k, v in field_pkg_overwrite_map.items():
         if k.startswith('field_pkg_') and (k.endswith('_name') or k.endswith('_default_value')) and k in local_vars:
             local_vars[k] = v
-            
+
+field_diff_conf_tpl_map_str = os.getenv('ARTIFACTS_DIFF_CONF_TEMPLATE_MAP', default='')
+field_diff_conf_tpl_map = {}
+if field_diff_conf_tpl_map_str.strip():
+    try:
+        field_diff_conf_tpl_map = json.loads(field_diff_conf_tpl_map_str)
+    except Exception as e:
+        LOG.error('Failed to parse ARTIFACTS_DIFF_CONF_TEMPLATE_MAP: %s', field_diff_conf_tpl_map_str)
+        LOG.exception(e)  
 
 def is_upload_local_enabled():
     return utils.bool_from_string(CONF.wecube.upload_enabled)
@@ -736,7 +745,7 @@ class UnitDesignPackages(WeCubeResource):
             'code': filename,
             'deploy_package_url': new_download_url,
             'md5_value': calculate_md5(fileobj),
-            field_pkg_is_decompression_name: 'true',
+            field_pkg_is_decompression_name: field_pkg_is_decompression_default_value,
             'upload_user': scoped_globals.GLOBALS.request.auth_user,
             'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'unit_design': unit_design_id
@@ -804,7 +813,7 @@ class UnitDesignPackages(WeCubeResource):
                 'code': url_info['filename'],
                 'deploy_package_url': CONF.wecube.server.rstrip('/') + '/artifacts' + url_info['fullpath'],
                 'md5_value': nexus_md5,
-                field_pkg_is_decompression_name: 'true',
+                field_pkg_is_decompression_name: field_pkg_is_decompression_default_value,
                 'upload_user': scoped_globals.GLOBALS.request.auth_user,
                 'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'unit_design': unit_design_id
@@ -847,7 +856,7 @@ class UnitDesignPackages(WeCubeResource):
                                                              CONF.wecube.server.rstrip('/') + '/artifacts'),
                         'md5_value':
                         calculate_md5(fileobj),
-                        field_pkg_is_decompression_name: 'true',
+                        field_pkg_is_decompression_name: field_pkg_is_decompression_default_value,
                         'upload_user':
                         scoped_globals.GLOBALS.request.auth_user,
                         'upload_time':
@@ -986,7 +995,7 @@ class UnitDesignPackages(WeCubeResource):
                         'code': package_name,
                         'deploy_package_url': deploy_package_url,
                         'md5_value': md5 or 'N/A',
-                        field_pkg_is_decompression_name: 'true',
+                        field_pkg_is_decompression_name: field_pkg_is_decompression_default_value,
                         'upload_user': operator,
                         'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         'baseline_package': baseline_package_guid
@@ -1359,19 +1368,21 @@ class UnitDesignPackages(WeCubeResource):
         if origin_conf_list and utils.is_string_type(origin_conf_list):
             origin_conf_list = self.build_file_object(origin_conf_list)
         old_diff_conf_file_list = set(
-            [f['filename'] for f in self.build_file_object()])
+            [f['filename'] for f in origin_conf_list])
         # diff_conf_file值并未发生改变，无需下载文件更新变量
+        # LOG.debug("new_diff_conf_file_list: %s, old_diff_conf_file_list: %s", new_diff_conf_file_list,old_diff_conf_file_list)
         if new_diff_conf_file_list != old_diff_conf_file_list:
             package_cached_dir = self.ensure_package_cached(package_id,
                                                             package_url)
             self.update_file_variable(package_cached_dir, new_conf_list)
+            # LOG.debug("new_conf_list: %s", new_conf_list)
             # 差异化配置项的差异
             package_diff_configs = []
             new_diff_configs = set()
             exist_diff_configs = set()
             for conf_file in new_conf_list:
                 package_diff_configs.extend(conf_file['configKeyInfos'])
-            query_diff_configs = [p['key'] for p in package_diff_configs]
+            query_diff_configs = list(set([p['key'] for p in package_diff_configs]))
             all_diff_configs = []
             if query_diff_configs:
                 diff_config_query = {
@@ -1388,24 +1399,38 @@ class UnitDesignPackages(WeCubeResource):
                 resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
                 all_diff_configs = resp_json['data']['contents']
             finder = artifact_utils.CaseInsensitiveDict()
+            new_diff_configs_map = artifact_utils.CaseInsensitiveDict()
             for conf in all_diff_configs:
                 finder[conf['key_name']] = conf
             for diff_conf in package_diff_configs:
                 if diff_conf['key'] not in finder:
                     new_diff_configs.add(diff_conf['key'])
+                    new_diff_configs_map[diff_conf['key']] = diff_conf
                 else:
                     exist_diff_configs.add(finder[diff_conf['key']]['guid'])
             # 创建新的差异化变量项
             bind_variables = list(exist_diff_configs)
             new_create_variables = []
+            # LOG.debug("new_create_variables: %s", new_create_variables)
             if new_diff_configs:
+                # 处理模板替换
+                for var_name in new_diff_configs:
+                    diff_conf = new_diff_configs_map[var_name]
+                    if diff_conf['type'] in field_diff_conf_tpl_map:
+                        diff_conf_tpl = field_diff_conf_tpl_map[diff_conf['type']]
+                        if diff_conf_tpl:
+                            # 替换模板值 $& var_name &$
+                            replace_pattern = r'\$&\s*([a-zA-Z0-9_-]+?)\s*\$&'
+                            diff_conf['value'] = re.sub(replace_pattern, var_name, diff_conf_tpl)
                 resp_json = cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [{
                     'code': c,
                     'variable_name': c,
-                    'description': c
+                    'description': c,
+                    'variable_value': new_diff_configs_map.get(c, {}).get('value', '')
                 } for c in new_diff_configs])
                 new_create_variables = [c['guid'] for c in resp_json['data']]
                 bind_variables.extend(new_create_variables)
+            # LOG.debug("bind_variables: %s", bind_variables)
             return bind_variables, new_create_variables
         return None, None
 
@@ -1567,9 +1592,9 @@ class UnitDesignPackages(WeCubeResource):
         })
 
         result = {}
-        key_service_code = result[field_pkg_package_type_name] = package_type
-        key_service_code = result[field_pkg_is_decompression_name] = is_decompression
-        key_service_code = result[field_pkg_key_service_code_name] = key_service_code
+        result[field_pkg_package_type_name] = package_type
+        result[field_pkg_is_decompression_name] = is_decompression
+        result[field_pkg_key_service_code_name] = key_service_code
         # |切割为列表
         fields = (field_pkg_diff_conf_directory_name, field_pkg_diff_conf_file_name,
                   field_pkg_script_file_directory_name, field_pkg_deploy_file_path_name, 
