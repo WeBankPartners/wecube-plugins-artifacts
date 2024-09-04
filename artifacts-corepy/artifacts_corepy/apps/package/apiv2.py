@@ -899,129 +899,6 @@ class UnitDesignPackages(WeCubeResource):
         new_pakcage = self.upload_from_nexus(url, baseline_package_id, unit_design_id)[0]
         return {'guid': new_pakcage['guid']}
 
-    def _create_from_remote(self, package_name, package_guid, unit_design_id, operator, baseline_package_guid):
-        # cmdb_client = wecmdb.WeCMDBClient(CONF.wecube.server, scoped_globals.GLOBALS.request.auth_token)
-        cmdb_client = self.get_cmdb_client()
-        query = {
-            "dialect": {
-                "queryMode": "new"
-            },
-            "filters": [{
-                "name": "guid",
-                "operator": "eq",
-                "value": unit_design_id
-            }],
-            "paging": False
-        }
-        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.unit_design, query)
-        if not resp_json.get('data', {}).get('contents', []):
-            raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
-                                                   {'rid': unit_design_id})
-        unit_design = resp_json['data']['contents'][0]
-
-        # download package from remote nexus and upload to local nexus
-        r_artifact_path = self.get_unit_design_artifact_path(unit_design)
-        if r_artifact_path != '/':
-            group = r_artifact_path.lstrip('/')
-            group = '/' + group.rstrip('/') + '/'
-            r_artifact_path = group
-        download_url = CONF.wecube.nexus.server.rstrip(
-            '/') + '/repository/' + CONF.wecube.nexus.repository + r_artifact_path + package_name
-        l_nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
-        l_artifact_path = self.build_local_nexus_path(unit_design)
-        r_nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
-                                           CONF.wecube.nexus.password)
-        if self._is_compose_package(os.path.basename(package_name)):
-            with r_nexus_client.download_stream(url=download_url) as resp:
-                stream = resp.raw
-                chunk_size = 1024 * 1024
-                with tempfile.TemporaryFile() as tmp_file:
-                    chunk = stream.read(chunk_size)
-                    while chunk:
-                        tmp_file.write(chunk)
-                        chunk = stream.read(chunk_size)
-                    tmp_file.seek(0)
-                    new_package = self.upload_compose_package(os.path.basename(package_name), tmp_file, unit_design_id, force_operator=operator,baseline_package=baseline_package_guid)
-                    update_data = {}
-                    update_data['baseline_package'] = baseline_package_guid
-                    self.update(update_data,
-                            unit_design_id,
-                            new_package[0]['guid'],
-                            with_detail=False,
-                            db_upgrade_detect=False,
-                            db_rollback_detect=False)
-                    return {'guid': new_package[0]['guid']}
-        with r_nexus_client.download_stream(url=download_url) as resp:
-            stream = resp.raw
-            chunk_size = 1024 * 1024
-            with tempfile.TemporaryFile() as tmp_file:
-                chunk = stream.read(chunk_size)
-                while chunk:
-                    tmp_file.write(chunk)
-                    chunk = stream.read(chunk_size)
-                tmp_file.seek(0)
-                filetype = resp.headers.get('Content-Type', 'application/octet-stream')
-                fileobj = tmp_file
-                filename = download_url.split('/')[-1]
-                
-                upload_result = l_nexus_client.upload(CONF.nexus.repository, l_artifact_path, filename, filetype,
-                                                      fileobj)
-                # 用 guid 判断包记录是否存在, 若 guid 为空, 则创建新的记录，否则更新记录
-                query = {
-                    "dialect": {
-                        "queryMode": "new"
-                    },
-                    "filters": [{
-                        "name": "key_name",
-                        "operator": "eq",
-                        "value": package_name
-                    }, {
-                        "name": "unit_design",
-                        "operator": "eq",
-                        "value": unit_design_id
-                    }],
-                    "paging":
-                        False
-                }
-                # resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
-                # exists = resp_json.get('data', {}).get('contents', [])
-                deploy_package_url = upload_result['downloadUrl'].replace(CONF.nexus.server.rstrip('/'),
-                                                                        CONF.wecube.server.rstrip('/') + '/artifacts')
-                md5 = calculate_md5(fileobj)
-                if not package_guid:
-                    data = {
-                        'unit_design': unit_design_id,
-                        'name': package_name,
-                        'code': package_name,
-                        'deploy_package_url': deploy_package_url,
-                        'md5_value': md5 or 'N/A',
-                        field_pkg_is_decompression_name: field_pkg_is_decompression_default_value,
-                        'upload_user': operator,
-                        'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        'baseline_package': baseline_package_guid
-                    }
-                    ret = cmdb_client.create(CONF.wecube.wecmdb.citypes.deploy_package, [data])
-                    package = {'guid': ret['data'][0]['guid']}
-                    # package = {'guid': ret['data'][0]['guid'],
-                    #           'deploy_package_url': ret['data'][0]['deploy_package_url']}
-                else:
-                    update_data = {
-                        'guid': package_guid,
-                        'unit_design': unit_design_id,
-                        'name': package_name,
-                        'code': package_name,
-                        'deploy_package_url': deploy_package_url,
-                        'md5_value': md5 or 'N/A',
-                        'upload_user': operator,
-                        'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        'baseline_package': baseline_package_guid
-                    }
-                    ret = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [update_data], keep_origin_value=(field_pkg_key_service_code_name,))
-                    # package = {'guid': exists[0]['data']['guid'],
-                    #           'deploy_package_url': exists[0]['data']['deploy_package_url']}
-                    package = {'guid': package_guid}
-                return package
-
     def upload_and_create2(self, data):
         def _pop_none(d, k):
             if k in d and d[k] is None:
@@ -1080,7 +957,6 @@ class UnitDesignPackages(WeCubeResource):
                 }
                 try:
                     clean_data = crud.ColumnValidator.get_clean_data(input_rules, item, 'check')
-                    baseline_package_id = clean_data.get('baseline_package_guid')
                     cmdb_client = self.get_cmdb_client()
                     query = {
                         "dialect": {
@@ -1089,72 +965,31 @@ class UnitDesignPackages(WeCubeResource):
                         "filters": [{
                             "name": "guid",
                             "operator": "eq",
-                            "value": baseline_package_id
+                            "value": clean_data['unit_design']
                         }],
                         "paging": False
                     }
-                    resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+                    resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.unit_design, query)
                     if not resp_json.get('data', {}).get('contents', []):
                         raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
-                                                               {'rid': baseline_package_id})
-                    baseline_package = resp_json['data']['contents'][0]
-
-
-                    '''
-                    url = CONF.wecube.nexus.server.rstrip(
-                        '/') + '/repository/' + CONF.wecube.nexus.repository + '/' + clean_data['nexusUrl'].lstrip('/')
-                    unit_design_id = baseline_package['unit_design']['guid']
-                    new_pakcage = self.upload_from_nexus(url, unit_design_id)[0]
-                    '''
-                    unit_design_id = clean_data.get('unit_design')
-                    new_pakcage = self._create_from_remote(clean_data['package_name'],
-                                                          clean_data['package_guid'],
-                                                          clean_data['unit_design'],
-                                                          operator,
-                                                          clean_data['baseline_package_guid'])
-                    if self._is_compose_package(os.path.basename(clean_data['package_name'])):
-                        return new_pakcage
-                    # db部署支持, 检查是否用户手动指定值
-                    b_db_upgrade_detect = True
-                    b_db_rollback_detect = True
-                    update_data = {}
-                    update_data['baseline_package'] = baseline_package_id
-                    update_data[field_pkg_is_decompression_name] = baseline_package[field_pkg_is_decompression_name]
-                    update_data[field_pkg_package_type_name] = baseline_package.get(
-                        field_pkg_package_type_name,
-                        constant.PackageType.default) if clean_data.get('packageType', None) is None else clean_data[
-                        'packageType']
-                    keys = [('startFilePath', field_pkg_start_file_path_name), ('stopFilePath', field_pkg_stop_file_path_name),
-                            ('deployFilePath', field_pkg_deploy_file_path_name), ('diffConfFile', field_pkg_diff_conf_file_name),
-                            ('dbUpgradeDirectory', field_pkg_db_upgrade_directory_name),
-                            ('dbRollbackDirectory', field_pkg_db_rollback_directory_name),
-                            ('dbUpgradeFilePath', field_pkg_db_upgrade_file_path_name),
-                            ('dbRollbackFilePath', field_pkg_db_rollback_file_path_name),
-                            ('dbDeployFilePath', field_pkg_db_deploy_file_path_name), ('dbDiffConfFile', field_pkg_db_diff_conf_file_name)]
-                    # 没有指定目录，无法探测
-                    if (not clean_data.get(field_pkg_db_upgrade_directory_name, None)) and (not baseline_package.get(
-                            field_pkg_db_upgrade_directory_name, None)):
-                        b_db_upgrade_detect = False
-                    if (not clean_data.get(field_pkg_db_rollback_directory_name, None)) and (not baseline_package.get(
-                            field_pkg_db_rollback_directory_name, None)):
-                        b_db_rollback_detect = False
-                    for s_key, d_key in keys:
-                        if s_key in clean_data and clean_data[s_key] is not None:
-                            if d_key == field_pkg_db_upgrade_file_path_name:
-                                b_db_upgrade_detect = False
-                            if d_key == field_pkg_db_rollback_file_path_name:
-                                b_db_rollback_detect = False
-                            update_data[d_key] = self.build_file_object(clean_data[s_key])
-                        else:
-                            update_data[d_key] = self.build_file_object(baseline_package.get(d_key, None))
-                    self.update(update_data,
-                                unit_design_id,
-                                new_pakcage['guid'],
-                                with_detail=False,
-                                db_upgrade_detect=b_db_upgrade_detect,
-                                db_rollback_detect=b_db_rollback_detect)
-
-                    # return {'guid': new_pakcage['guid']}
+                                                            {'rid': clean_data['unit_design']})
+                    unit_design = resp_json['data']['contents'][0]
+                    if clean_data['package_guid']:
+                        # 有package_guid，则更新
+                        new_deploy_attrs = self._analyze_package_attrs(clean_data['package_guid'], clean_data['baseline_package_guid'], {})
+                        # update 属性
+                        new_deploy_attrs['guid'] = clean_data['package_guid']
+                        self.pure_update([new_deploy_attrs])
+                    else :
+                        # 没有package_guid，则创建
+                        r_artifact_path = self.get_unit_design_artifact_path(unit_design)
+                        if r_artifact_path != '/':
+                            group = r_artifact_path.lstrip('/')
+                            group = '/' + group.rstrip('/') + '/'
+                            r_artifact_path = group
+                        download_url = CONF.wecube.nexus.server.rstrip(
+                            '/') + '/repository/' + CONF.wecube.nexus.repository + r_artifact_path + clean_data['package_name']
+                        self.upload_from_nexus(download_url, clean_data['baseline_package_guid'], clean_data['unit_design'])
                     result['results']['outputs'].append(single_result)
                 except Exception as e:
                     single_result['errorCode'] = '1'
