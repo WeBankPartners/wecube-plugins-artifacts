@@ -38,7 +38,9 @@
           </div>
         </div>
         <!-- 包列表table -->
-        <ArtifactsSimpleTable class="artifact-management-package-table" :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
+        123
+        <Table :data="tableData" :columns="tableColumns"></Table>
+        <!-- <ArtifactsSimpleTable :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable> -->
       </Card>
 
       <!-- 差异化变量 -->
@@ -146,7 +148,7 @@
 
       <Modal v-model="isShowHistoryModal" :title="$t('operation_data_rollback')" width="900">
         <div v-if="isShowHistoryModal" style="max-height: 500px; overflow: auto">
-          <ArtifactsSimpleTable class="artifact-management-package-table" :loading="historyTableLoading" :columns="historyTableColumns" :data="historyTableData" :page="historyPageInfo" :pagable="false" @pageChange="historyPageChange" @pageSizeChange="historyPageSizeChange" @rowClick="onHistoryRowClick"> </ArtifactsSimpleTable>
+          <ArtifactsSimpleTable :loading="historyTableLoading" :columns="historyTableColumns" :data="historyTableData" :page="historyPageInfo" :pagable="false" @pageChange="historyPageChange" @pageSizeChange="historyPageSizeChange" @rowClick="onHistoryRowClick"> </ArtifactsSimpleTable>
         </div>
         <div slot="footer">
           <Button type="text" @click="onHistoryCancel()" :loading="historyBtnLoading">{{ $t('artifacts_cancel') }} </Button>
@@ -307,8 +309,7 @@ export default {
         {
           title: this.$t('artifacts_uploaded_by'),
           key: 'upload_user',
-          width: 100,
-          render: (h, params) => this.renderCell(params.row.upload_user)
+          width: 100
         },
         {
           title: this.$t('artifacts_upload_time'),
@@ -329,9 +330,11 @@ export default {
                       {this.$t('detail')}
                     </Button>
                   )}
-                  <Button size="small" onClick={() => this.toExportPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
-                    <Icon type="md-cloud-download" color="white" size="16"></Icon>
-                  </Button>
+                  <Tooltip content="Here is the prompt text">
+                    <Button size="small" onClick={() => this.toExportPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
+                      <Icon type="md-cloud-download" color="white" size="16"></Icon>
+                    </Button>
+                  </Tooltip>
                   <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
                     <Icon type="md-cloud-upload" color="white" size="16"></Icon>
                   </Button>
