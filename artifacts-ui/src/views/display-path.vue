@@ -4,7 +4,7 @@
     <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same">[{{ file.comparisonResult }}]</div>
     <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed">[{{ file.comparisonResult }}]</div>
     <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted">[{{ file.comparisonResult }}]</div>
-    <Icon type="ios-move" size="18" style="cursor: move" />
+    <Icon v-if="canBeMoved" type="ios-move" size="18" style="cursor: move" />
   </span>
 </template>
 
@@ -14,7 +14,7 @@ export default {
   data () {
     return {}
   },
-  props: ['packageInput', 'file'],
+  props: ['packageInput', 'file', 'canBeMoved'],
   methods: {},
   components: {}
 }

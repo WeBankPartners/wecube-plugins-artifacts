@@ -3,9 +3,9 @@
     <Drawer :title="$t('artifacts_script_configuration')" :mask-closable="false" :closable="false" v-model="openDrawer" width="1300">
       <Row style="margin-bottom: 8px;">
         <Col style="text-align: right; line-height: 32px" span="5">
-          <span style="margin-right: 10px">{{ $t('package_type') }}</span>
+          <span style="margin-right: 8px">{{ $t('package_type') }}</span>
         </Col>
-        <Col span="18">
+        <Col span="19">
           <Select clearable :placeholder="$t('package_type')" v-model="packageType" @on-change="packageTypeChanged">
             <Option v-for="pkt in packageTypeOptions" :value="pkt.value" :key="pkt.value" :disabled="pkt.value === 'IMAGE'">{{ $t(pkt.label) }}</Option>
           </Select>
@@ -13,9 +13,9 @@
       </Row>
       <Row style="margin-bottom: 8px;">
         <Col style="text-align: right; line-height: 32px" span="5">
-          <span style="margin-right: 10px">{{ $t('baseline_package') }}</span>
+          <span style="margin-right: 8px">{{ $t('baseline_package') }}</span>
         </Col>
-        <Col span="18">
+        <Col span="19">
           <Select clearable filterable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" @on-clear="clearBaseline" v-model="packageInput.baseline_package">
             <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
           </Select>
@@ -23,7 +23,7 @@
       </Row>
       <Row style="margin-bottom: 8px;">
         <Col style="text-align: right;" span="5">
-          <span style="margin-right: 10px">{{ $t('is_decompression') }}</span>
+          <span style="margin-right: 8px">{{ $t('is_decompression') }}</span>
         </Col>
         <Col span="18">
           <i-switch v-model="packageInput.is_decompression" />
@@ -47,7 +47,7 @@
                     <div id="diff_conf_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.diff_conf_directory" :key="index">
                         <Input class="textarea-dir" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.diff_conf_directory[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
                         <Button size="small" type="error" style="margin-left:4px" icon="md-trash" ghost @click="deleteFilePath(index, 'diff_conf_directory')"></Button>
                       </div>
                     </div>
@@ -55,13 +55,15 @@
                 </div>
                 <div class="grid-cell">
                   <div style="display: flex;align-items: flex-start;">
-                    <Tooltip :content="$t('artifacts_select_file')" placement="top">
-                      <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(0, packageInput.diff_conf_file || [])" />
-                    </Tooltip>
-                    <div id="diff_conf_file_test" style="display: inline-block;">
+                    <div style="width: 100px;margin-right: 8px;">
+                      <Tooltip :content="$t('artifacts_select_file')" placement="top">
+                        <Icon type="md-document" style="margin-right: 12px;" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(0, packageInput.diff_conf_file || [])" />
+                      </Tooltip>
+                    </div>
+                    <div id="diff_conf_file_test">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.diff_conf_file" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.diff_conf_file[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'diff_conf_file')"></Button>
                       </div>
                     </div>
@@ -81,7 +83,7 @@
                     <div id="script_file_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.script_file_directory" :key="index">
                         <Input class="textarea-dir" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.script_file_directory[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'script_file_directory')"></Button>
                       </div>
                     </div>
@@ -90,42 +92,48 @@
                 <div class="grid-cell">
                   <!-- 启动脚本 -->
                   <div style="display: flex;align-items: flex-start;margin: 2px 0">
-                    <span style="margin-right: 10px">{{ $t('artifacts_start_script') }}</span>
-                    <Tooltip :content="$t('artifacts_select_file')" placement="top">
-                      <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(1, packageInput.start_file_path || [])" />
-                    </Tooltip>
-                    <div id="start_file_path_test" style="display: inline-block;">
+                    <div style="width: 100px;margin-right: 8px;">
+                      <span style="margin-right: 8px">{{ $t('artifacts_start_script') }}</span>
+                      <Tooltip :content="$t('artifacts_select_file')" placement="top">
+                        <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(1, packageInput.start_file_path || [])" />
+                      </Tooltip>
+                    </div>
+                    <div id="start_file_path_test">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.start_file_path" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.start_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
                       </div>
                     </div>
                   </div>
                   <!-- 停止脚本 -->
                   <div style="display: flex;align-items: flex-start;margin: 2px 0">
-                    <span style="margin-right: 10px">{{ $t('artifacts_stop_script') }}</span>
-                    <Tooltip :content="$t('artifacts_select_file')" placement="top">
-                      <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(2, packageInput.stop_file_path || [])" />
-                    </Tooltip>
-                    <div id="stop_file_path_test" style="display: inline-block;">
+                    <div style="width: 100px;margin-right: 8px;">
+                      <span style="margin-right: 8px">{{ $t('artifacts_stop_script') }}</span>
+                      <Tooltip :content="$t('artifacts_select_file')" placement="top">
+                        <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(2, packageInput.stop_file_path || [])" />
+                      </Tooltip>
+                    </div>
+                    <div id="stop_file_path_test">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.stop_file_path" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.stop_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
                       </div>
                     </div>
                   </div>
                   <!-- 部署脚本 -->
                   <div style="display: flex;align-items: flex-start;margin: 2px 0">
-                    <span style="margin-right: 10px">{{ $t('artifacts_deploy_script') }}</span>
-                    <Tooltip :content="$t('artifacts_select_file')" placement="top">
-                      <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(3, packageInput.deploy_file_path || [])" />
-                    </Tooltip>
-                    <div id="deploy_file_path_test" style="display: inline-block;">
+                    <div style="width: 100px;margin-right: 8px;">
+                      <span style="margin-right: 8px">{{ $t('artifacts_deploy_script') }}</span>
+                      <Tooltip :content="$t('artifacts_select_file')" placement="top">
+                        <Icon type="md-document" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(3, packageInput.deploy_file_path || [])" />
+                      </Tooltip>
+                    </div>
+                    <div id="deploy_file_path_test">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.deploy_file_path" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.deploy_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
                       </div>
                     </div>
@@ -145,7 +153,7 @@
                     <div id="log_file_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_directory" :key="index">
                         <Input class="textarea-dir" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.log_file_directory[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_directory')"></Button>
                       </div>
                     </div>
@@ -153,44 +161,44 @@
                 </div>
                 <div class="grid-cell">
                   <div style="display: flex;align-items: flex-start;margin: 2px">
-                    <div style="display: inline-block; width: 100px; margin-right: 10px">{{ $t('art_business_metric_log') }}</div>
+                    <div style="width: 100px; margin-right: 8px">{{ $t('art_business_metric_log') }}</div>
                     <div id="log_file_trade_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_trade" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('art_enter_log_path')" type="textarea" v-model="packageInput.log_file_trade[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_trade')"></Button>
                       </div>
                     </div>
                     <Button style="margin: 4px" size="small" type="info" icon="md-add" ghost @click="addFilePath('log_file_trade')"></Button>
                   </div>
                   <div style="display: flex;align-items: flex-start;margin: 2px">
-                    <div style="display: inline-block; width: 100px; margin-right: 10px">{{ $t('art_keyword_log') }}</div>
+                    <div style="width: 100px; margin-right: 8px">{{ $t('art_keyword_log') }}</div>
                     <div id="log_file_keyword_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_keyword" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('art_enter_log_path')" type="textarea" v-model="packageInput.log_file_keyword[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_keyword')"></Button>
                       </div>
                     </div>
                     <Button style="margin: 4px" size="small" type="info" icon="md-add" ghost @click="addFilePath('log_file_keyword')"></Button>
                   </div>
                   <div style="display: flex;align-items: flex-start;margin: 2px">
-                    <div style="display: inline-block; width: 100px; margin-right: 10px">{{ $t('art_metric_log') }}</div>
+                    <div style="width: 100px; margin-right: 8px">{{ $t('art_metric_log') }}</div>
                     <div id="log_file_metric_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_metric" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('art_enter_log_path')" type="textarea" v-model="packageInput.log_file_metric[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_metric')"></Button>
                       </div>
                     </div>
                     <Button style="margin: 4px" size="small" type="info" icon="md-add" ghost @click="addFilePath('log_file_metric')"></Button>
                   </div>
                   <div style="display: flex;align-items: flex-start;margin: 2px">
-                    <div style="display: inline-block; width: 100px; margin-right: 10px">{{ $t('art_trace_log') }}</div>
+                    <div style="width: 100px; margin-right: 8px">{{ $t('art_trace_log') }}</div>
                     <div id="log_file_trace_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_trace" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('art_enter_log_path')" type="textarea" v-model="packageInput.log_file_trace[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_trace')"></Button>
                       </div>
                     </div>
@@ -267,7 +275,7 @@
                     <div id="db_upgrade_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_upgrade_directory" :key="index">
                         <Input class="textarea-dir" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.db_upgrade_directory[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
                         <Button size="small" type="error" style="margin-left:4px" icon="md-trash" ghost @click="deleteFilePath(index, 'db_upgrade_directory')"></Button>
                       </div>
                     </div>
@@ -281,7 +289,7 @@
                     <div id="db_upgrade_file_path_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_upgrade_file_path" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.db_upgrade_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_upgrade_file_path')"></Button>
                       </div>
                     </div>
@@ -301,7 +309,7 @@
                     <div id="db_rollback_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_rollback_directory" :key="index">
                         <Input class="textarea-dir" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.db_rollback_directory[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
                         <Button size="small" type="error" style="margin-left:4px" icon="md-trash" ghost @click="deleteFilePath(index, 'db_rollback_directory')"></Button>
                       </div>
                     </div>
@@ -315,7 +323,7 @@
                     <div id="db_rollback_file_path_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_rollback_file_path" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.db_rollback_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_rollback_file_path')"></Button>
                       </div>
                     </div>
@@ -335,7 +343,7 @@
                     <div id="db_deploy_file_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_deploy_file_directory" :key="index">
                         <Input class="textarea-dir" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.db_deploy_file_directory[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
                         <Button size="small" type="error" style="margin-left:4px" icon="md-trash" ghost @click="deleteFilePath(index, 'db_deploy_file_directory')"></Button>
                       </div>
                     </div>
@@ -349,7 +357,7 @@
                     <div id="db_deploy_file_path_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_deploy_file_path" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.db_deploy_file_path[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_deploy_file_path')"></Button>
                       </div>
                     </div>
@@ -369,7 +377,7 @@
                     <div id="db_diff_conf_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_diff_conf_directory" :key="index">
                         <Input class="textarea-dir" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.db_diff_conf_directory[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
                         <Button size="small" type="error" style="margin-left:4px" icon="md-trash" ghost @click="deleteFilePath(index, 'db_diff_conf_directory')"></Button>
                       </div>
                     </div>
@@ -383,7 +391,7 @@
                     <div id="db_diff_conf_file_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.db_diff_conf_file" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.db_diff_conf_file[index].filename" />
-                        <DisplayPath :file="file"></DisplayPath>
+                        <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'db_diff_conf_file')"></Button>
                       </div>
                     </div>
