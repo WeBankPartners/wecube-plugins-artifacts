@@ -120,18 +120,6 @@
           </FormItem>
         </Form>
       </Modal>
-      <!-- 包配置文件选择 -->
-      <Modal :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" @on-ok="saveConfigFileTree" @on-cancel="closeConfigFileTree" draggable width="700">
-        <CheckboxGroup v-if="packageInput.baseline_package">
-          <Button :style="toggleCheckFileTreeNew" type="dashed" size="small" @click="checkConfigFileTreeVis('new')"><span style="color: #18b566">new</span></Button>
-          <Button :style="toggleCheckFileTreeSame" type="dashed" size="small" @click="checkConfigFileTreeVis('same')"><span>same</span></Button>
-          <Button :style="toggleCheckFileTreeChanged" type="dashed" size="small" @click="checkConfigFileTreeVis('changed')"><span style="color: #2d8cf0">changed</span></Button>
-          <Button :style="toggleCheckFileTreeDeleted" type="dashed" size="small" @click="checkConfigFileTreeVis('deleted')"><span style="color: #cccccc">deleted</span></Button>
-        </CheckboxGroup>
-        <div style="height: 450px; overflow-y: auto">
-          <Tree ref="configTree" :data="configFileTree.treeData" :load-data="configFileTreeLoadNode" @on-toggle-expand="configFileTreeExpand" @on-check-change="changeChildChecked" show-checkbox> </Tree>
-        </div>
-      </Modal>
 
       <!-- eslint-disable-next-line vue/no-parsing-error -->
       <Modal :z-index="9999" width="1200" v-model="showFileCompare" :fullscreen="fullscreen" footer-hide>
@@ -175,7 +163,7 @@
 </template>
 
 <script>
-import { getFlowLists, pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getFiles, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType, btnControl } from '@/api/server.js'
+import { getFlowLists, pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType, btnControl } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
@@ -428,7 +416,6 @@ export default {
       // -------------------
       // 包配置文件选择模态数据
       // -------------------
-      isShowTreeModal: false,
       configFileTree: {
         treeType: 0,
         treeData: []
@@ -1005,7 +992,6 @@ export default {
       this.showDiffConfigTab = true
       // 获取包文件及差异化变量数据
       await this.syncPackageDetail()
-      console.log(3)
       this.$Spin.hide()
     },
     historyPageChange (currentPage) {
@@ -1479,54 +1465,6 @@ export default {
       })
       return treeData
     },
-    async showTreeModal (type, files) {
-      this.initTreeConfig(type)
-      this.isShowTreeModal = true
-      this.isFileSelect = false
-      let queryFiles = []
-      if (type === 0) {
-        this.configFileTreeTitle = this.$t('artifacts_select_config_files')
-        queryFiles = this.packageInput.diff_conf_file.map(_ => _.filename)
-      } else if (type === 1) {
-        this.configFileTreeTitle = this.$t('artifacts_select_start_script')
-        queryFiles = this.packageInput.start_file_path.map(_ => _.filename)
-      } else if (type === 2) {
-        this.configFileTreeTitle = this.$t('artifacts_select_stop_script')
-        queryFiles = this.packageInput.stop_file_path.map(_ => _.filename)
-      } else if (type === 3) {
-        this.configFileTreeTitle = this.$t('artifacts_select_deploy_script')
-        queryFiles = this.packageInput.deploy_file_path.map(_ => _.filename)
-      } else if (type === 101) {
-        this.isFileSelect = true
-        this.configFileTreeTitle = this.$t('db_upgrade_directory')
-        queryFiles = this.packageInput.db_upgrade_directory.map(_ => _.filename)
-      } else if (type === 102) {
-        this.isFileSelect = true
-        this.configFileTreeTitle = this.$t('db_rollback_directory')
-        queryFiles = this.packageInput.db_rollback_directory.map(_ => _.filename)
-      } else if (type === 103) {
-        this.configFileTreeTitle = this.$t('db_upgrade_file_path')
-        queryFiles = this.packageInput.db_upgrade_file_path.map(_ => _.filename)
-      } else if (type === 104) {
-        this.configFileTreeTitle = this.$t('db_rollback_file_path')
-        queryFiles = this.packageInput.db_rollback_file_path.map(_ => _.filename)
-      } else if (type === 105) {
-        this.configFileTreeTitle = this.$t('db_deploy_file_path')
-        queryFiles = this.packageInput.db_deploy_file_path.map(_ => _.filename)
-      } else if (type === 106) {
-        this.configFileTreeTitle = this.$t('artifacts_select_config_files')
-        queryFiles = this.packageInput.db_diff_conf_file.map(_ => _.filename)
-      }
-      const { data } = await getFiles(this.guid, this.packageId, {
-        baselinePackage: this.packageInput.baseline_package,
-        fileList: queryFiles,
-        expandAll: true
-      })
-      this.configFileTree.treeData = this.formatConfigFileTree(data, queryFiles)
-    },
-    closeConfigFileTree () {
-      this.isShowTreeModal = false
-    },
     deleteFilePath (index, key) {
       this.packageInput[key].splice(index, 1)
     },
@@ -1537,48 +1475,6 @@ export default {
       this.toggleCheckFileTreeSame = ''
       this.toggleCheckFileTreeChanged = ''
       this.toggleCheckFileTreeDeleted = ''
-    },
-    saveConfigFileTree () {
-      let saveData = []
-      this.$refs.configTree.getCheckedNodes().forEach(_ => {
-        if (this.isFileSelect) {
-          if (_.isDir) {
-            if (_.children) {
-              const isReal = _.children.every(item => item.isDir !== true)
-              if (isReal) {
-                saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-              }
-            } else {
-              saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-            }
-          }
-        } else {
-          if (!_.isDir) {
-            saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-          }
-        }
-      })
-      if (this.configFileTree.treeType === 0) {
-        this.packageInput.diff_conf_file = saveData
-      } else if (this.configFileTree.treeType === 1) {
-        this.packageInput.start_file_path = saveData
-      } else if (this.configFileTree.treeType === 2) {
-        this.packageInput.stop_file_path = saveData
-      } else if (this.configFileTree.treeType === 3) {
-        this.packageInput.deploy_file_path = saveData
-      } else if (this.configFileTree.treeType === 101) {
-        this.packageInput.db_upgrade_directory = saveData
-      } else if (this.configFileTree.treeType === 102) {
-        this.packageInput.db_rollback_directory = saveData
-      } else if (this.configFileTree.treeType === 103) {
-        this.packageInput.db_upgrade_file_path = saveData
-      } else if (this.configFileTree.treeType === 104) {
-        this.packageInput.db_rollback_file_path = saveData
-      } else if (this.configFileTree.treeType === 105) {
-        this.packageInput.db_deploy_file_path = saveData
-      } else if (this.configFileTree.treeType === 106) {
-        this.packageInput.db_diff_conf_file = saveData
-      }
     },
     _travelConfigFileTreeNodes (node, status, checked) {
       let changeParent = false
@@ -1598,97 +1494,6 @@ export default {
         })
       }
       return changeParent
-    },
-    checkConfigFileTreeVis (status) {
-      let checked = true
-      if (status === 'new') {
-        if (this.toggleCheckFileTreeNew) {
-          checked = false
-          this.toggleCheckFileTreeNew = ''
-        } else {
-          checked = true
-          this.toggleCheckFileTreeNew = 'box-shadow: rgb(165 165 165) 2px 2px 2px 0px inset; background: rgb(238 238 238);'
-        }
-      } else if (status === 'same') {
-        if (this.toggleCheckFileTreeSame) {
-          checked = false
-          this.toggleCheckFileTreeSame = ''
-        } else {
-          checked = true
-          this.toggleCheckFileTreeSame = 'box-shadow: rgb(165 165 165) 2px 2px 2px 0px inset; background: rgb(238 238 238);'
-        }
-      } else if (status === 'changed') {
-        if (this.toggleCheckFileTreeChanged) {
-          checked = false
-          this.toggleCheckFileTreeChanged = ''
-        } else {
-          checked = true
-          this.toggleCheckFileTreeChanged = 'box-shadow: rgb(165 165 165) 2px 2px 2px 0px inset; background: rgb(238 238 238);'
-        }
-      } else if (status === 'deleted') {
-        if (this.toggleCheckFileTreeDeleted) {
-          checked = false
-          this.toggleCheckFileTreeDeleted = ''
-        } else {
-          checked = true
-          this.toggleCheckFileTreeDeleted = 'box-shadow: rgb(165 165 165) 2px 2px 2px 0px inset; background: rgb(238 238 238);'
-        }
-      }
-      this.configFileTree.treeData.forEach(el => {
-        let tmpChangeParent = this._travelConfigFileTreeNodes(el, status, checked)
-        if (tmpChangeParent) {
-          this.$set(el, 'checked', false)
-        }
-      })
-    },
-    async configFileTreeLoadNode (item, callback) {
-      if (item.isDir && !item.disabled) {
-        let baselinePackage = this.packageInput.baseline_package
-        if (item.comparisonResult === 'new') {
-          baselinePackage = null
-        }
-        const { data } = await getFiles(this.guid, this.packageId, { baselinePackage: baselinePackage, fileList: [item.path], expandAll: false })
-        let treeChild = this.formatConfigFileTree(data)
-        if (item.comparisonResult === 'new') {
-          treeChild.forEach(_ => {
-            _.comparisonResult = 'new'
-          })
-        }
-        callback(treeChild)
-      } else {
-        let emptyData = []
-        callback(emptyData)
-      }
-    },
-    configFileTreeExpand (item) {
-      // console.log('configFileTreeExpand', item)
-    },
-    async changeChildChecked (checkedList, item) {
-      if (item.isDir && item.checked) {
-        // 获取文件夹下的子列表
-        if (!item.expand) {
-          let baselinePackage = this.packageInput.baseline_package
-          if (item.comparisonResult === 'new') {
-            baselinePackage = null
-          }
-          const { data } = await getFiles(this.guid, this.packageId, { baselinePackage: baselinePackage, fileList: [item.path], expandAll: false })
-          let children = this.formatConfigFileTree(data)
-          if (item.comparisonResult === 'new') {
-            children.forEach(_ => {
-              _.comparisonResult = 'new'
-            })
-          }
-          item.children = children.map(_ => {
-            if (_.isDir) {
-              _.checked = false
-            } else {
-              _.checked = item.checked
-            }
-            return _
-          })
-          item.expand = true
-        }
-      }
     },
     async handleDelete (row) {
       this.$Modal.confirm({

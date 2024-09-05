@@ -29,7 +29,7 @@
       </Form>
       <div slot="footer">
         <Button @click="onlineModal = false">{{ $t('artifacts_cancel') }}</Button>
-        <Button type="primary" @click="confirmOnlineUpload">{{ $t('art_upload') }}</Button>
+        <Button type="primary" :disabled="onlineUploadParams.downloadUrl === ''" :loading="loading" @click="confirmOnlineUpload">{{ $t('art_upload') }}</Button>
       </div>
     </Modal>
 
@@ -44,7 +44,7 @@
       </div>
       <Form :label-width="80">
         <FormItem :label="$t('art_package')">
-          <Upload action="" :before-upload="handleUpload">
+          <Upload action="" :before-upload="handleUpload" :show-upload-list="false">
             <Button icon="ios-cloud-upload-outline">{{ $t('artifacts_upload_new_package') }}</Button>
           </Upload>
           <span>{{ localUploadParams.fileName }}</span>
@@ -57,7 +57,7 @@
       </Form>
       <div slot="footer">
         <Button @click="localModal = false">{{ $t('artifacts_cancel') }}</Button>
-        <Button type="primary" @click="confirmLocalUpload">{{ $t('art_upload') }}</Button>
+        <Button type="primary" :disabled="localUploadParams.fileName === ''" :loading="loading" @click="confirmLocalUpload">{{ $t('art_upload') }}</Button>
       </div>
     </Modal>
   </div>
@@ -71,6 +71,7 @@ export default {
   name: '',
   data () {
     return {
+      loading: false,
       isfullscreen: false,
       guid: '', // 当前单元
       uploadType: '', // uploadType: 'local' | 'online'
@@ -174,14 +175,18 @@ export default {
     confirmOnlineUpload () {
       this.$refs['onlineUploadRuleValidateRef'].validate(async valid => {
         if (valid) {
+          this.loading = true
+          this.$Notice.success({
+            title: this.$t('art_success'),
+            desc: this.$t('art_need_time')
+          })
           const { status } = await uploadArtifact(this.guid, this.onlineUploadParams.downloadUrl, this.onlineUploadParams.baseline_package)
           if (status === 'OK') {
-            this.$Notice.success({
-              title: this.$t('art_success'),
-              desc: this.$t('art_need_time')
-            })
+            this.loading = false
             this.onlineModal = false
             this.$emit('refreshTable')
+          } else {
+            this.loading = false
           }
         }
       })
@@ -194,14 +199,18 @@ export default {
     // 本地上传
     async confirmLocalUpload () {
       this.formData.append('baseline_package', this.localUploadParams.baseline_package)
+      this.loading = true
+      this.$Notice.success({
+        title: this.$t('art_success'),
+        desc: this.$t('art_need_time')
+      })
       const { status } = await uploadLocalArtifact(this.guid, this.formData)
       if (status === 'OK') {
-        this.$Notice.success({
-          title: this.$t('art_success'),
-          desc: this.$t('art_need_time')
-        })
+        this.loading = false
         this.localModal = false
         this.$emit('refreshTable')
+      } else {
+        this.loading = false
       }
     },
     fullscreenChange () {

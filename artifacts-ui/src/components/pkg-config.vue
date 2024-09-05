@@ -33,7 +33,7 @@
         <TabPane :disabled="disableAppCard" :label="$t('APP')" name="APP">
           <div class="tab-content">
             <div style="border:1px solid #e8eaec;">
-              <Table :columns="columns1" :data="[]" size="small" class="table-only-have-header"></Table>
+              <Table :columns="columns" :data="[]" size="small" class="table-only-have-header"></Table>
               <!-- 差异化配置文件 -->
               <div class="grid-row">
                 <div class="grid-cell">
@@ -253,7 +253,7 @@
         <TabPane :disabled="disableDBCard" :label="$t('DB')" name="DB">
           <div class="tab-content">
             <div style="border:1px solid #e8eaec;">
-              <Table :columns="columns1" :data="[]" size="small" class="table-only-have-header"></Table>
+              <Table :columns="columns" :data="[]" size="small" class="table-only-have-header"></Table>
               <!-- 升级脚本 -->
               <div class="grid-row">
                 <div class="grid-cell">
@@ -400,7 +400,7 @@
       </div>
     </Drawer>
     <!-- 包配置文件选择 -->
-    <Modal :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" @on-ok="saveConfigFileTree" @on-cancel="closeConfigFileTree" draggable width="700">
+    <Modal :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" draggable width="700">
       <CheckboxGroup v-if="packageInput.baseline_package">
         <Button :style="toggleCheckFileTreeNew" type="dashed" size="small" @click="checkConfigFileTreeVis('new')"><span style="color: #18b566">new</span></Button>
         <Button :style="toggleCheckFileTreeSame" type="dashed" size="small" @click="checkConfigFileTreeVis('same')"><span>same</span></Button>
@@ -408,7 +408,11 @@
         <Button :style="toggleCheckFileTreeDeleted" type="dashed" size="small" @click="checkConfigFileTreeVis('deleted')"><span style="color: #cccccc">deleted</span></Button>
       </CheckboxGroup>
       <div style="height: 450px; overflow-y: auto">
-        <Tree ref="configTree" :data="configFileTree.treeData" :load-data="configFileTreeLoadNode" @on-toggle-expand="configFileTreeExpand" @on-check-change="changeChildChecked" show-checkbox> </Tree>
+        <Tree ref="configTree" :multiple="false" :check-strictly="isFileSelect" :data="configFileTree.treeData" :load-data="configFileTreeLoadNode" @on-toggle-expand="configFileTreeExpand" @on-check-change="changeChildChecked" show-checkbox> </Tree>
+      </div>
+      <div class="drawer-footer">
+        <Button @click="closeConfigFileTree" style="margin-right: 8px">{{ $t('artifacts_cancel') }}</Button>
+        <Button @click="saveConfigFileTree" type="primary">{{ $t('artifacts_save') }}</Button>
       </div>
     </Modal>
   </div>
@@ -427,8 +431,9 @@ export default {
   name: '',
   data () {
     return {
+      isFileSelect: false,
       isShowKeyServiceCode: false,
-      columns1: [
+      columns: [
         {
           title: this.$t('artifacts_configuration'),
           key: 'name',
@@ -923,7 +928,6 @@ export default {
     },
     async showTreeModal (type, files) {
       this.initTreeConfig(type)
-      this.isShowTreeModal = true
       this.isFileSelect = false
       let queryFiles = []
       let queryFilesParent = []
@@ -999,6 +1003,7 @@ export default {
         const nodeNeedExpand = this.findNodeByPath(this.configFileTree.treeData, queryFilesParent[0])
         nodeNeedExpand && this.expendLast(nodeNeedExpand)
       }
+      this.isShowTreeModal = true
     },
     // 找出需要展开的节点
     findNodeByPath (tree, targetPath) {
@@ -1041,20 +1046,27 @@ export default {
       })
       return tree
     },
+    cleanData (data) {
+      return data.filter(item => {
+        return !data.some(other => other !== item && other.filename.startsWith(item.filename))
+      })
+    },
     saveConfigFileTree () {
       let saveData = []
       this.$refs.configTree.getCheckedNodes().forEach(_ => {
         if (this.isFileSelect) {
           if (_.isDir) {
-            if (_.children) {
-              const isReal = _.children.every(item => item.isDir !== true)
-              if (isReal) {
-                saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-              }
-            } else {
-              saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-            }
+            saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
+            // if (_.children) {
+            //   const isReal = _.children.every(item => item.isDir !== true)
+            //   if (isReal) {
+            //     saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
+            //   }
+            // } else {
+            //   saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
+            // }
           }
+          saveData = this.cleanData(saveData)
         } else {
           if (!_.isDir) {
             saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
@@ -1066,6 +1078,7 @@ export default {
       } else if (this.configFileTree.treeType === 0.1) {
         if (saveData.length > 1) {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
+          return
         } else {
           this.packageInput.diff_conf_directory = saveData
           this.packageInput.diff_conf_file = []
@@ -1073,6 +1086,7 @@ export default {
       } else if (this.configFileTree.treeType === 0.2) {
         if (saveData.length > 1) {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
+          return
         } else {
           this.packageInput.script_file_directory = saveData
           this.packageInput.start_file_path = []
@@ -1088,6 +1102,7 @@ export default {
       } else if (this.configFileTree.treeType === 101) {
         if (saveData.length > 1) {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
+          return
         } else {
           this.packageInput.db_upgrade_directory = saveData
           this.packageInput.db_upgrade_file_path = []
@@ -1095,6 +1110,7 @@ export default {
       } else if (this.configFileTree.treeType === 102) {
         if (saveData.length > 1) {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
+          return
         } else {
           this.packageInput.db_rollback_directory = saveData
           this.packageInput.db_rollback_file_path = []
@@ -1110,6 +1126,7 @@ export default {
       } else if (this.configFileTree.treeType === 0.3) {
         if (saveData.length > 1) {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
+          return
         } else {
           this.packageInput.log_file_directory = saveData
           this.packageInput.log_file_trade = []
@@ -1120,6 +1137,7 @@ export default {
       } else if (this.configFileTree.treeType === 0.4) {
         if (saveData.length > 1) {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
+          return
         } else {
           this.packageInput.db_deploy_file_directory = saveData
           this.packageInput.db_deploy_file_path = []
@@ -1127,11 +1145,13 @@ export default {
       } else if (this.configFileTree.treeType === 0.5) {
         if (saveData.length > 1) {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
+          return
         } else {
           this.packageInput.db_diff_conf_directory = saveData
           this.packageInput.db_diff_conf_file = []
         }
       }
+      this.isShowTreeModal = false
     },
     async configFileTreeLoadNode (item, callback) {
       if (item.isDir && !item.disabled) {
