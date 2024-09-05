@@ -261,14 +261,14 @@ export default {
           tooltip: true,
           ellipsis: true,
           minWidth: 100,
-          render: (h, params) => this.renderCell(params.row.name)
+          render: (h, params) => {
+            return <span>{params.row.name}</span>
+          }
         },
         {
           title: 'GUID',
           width: 160,
-          key: 'guid',
-          ellipsis: true,
-          tooltip: true
+          key: 'guid'
         },
         {
           title: this.$t('package_type'),
@@ -282,11 +282,9 @@ export default {
           title: this.$t('baseline_package'),
           key: 'baseline_package',
           width: 120,
-          ellipsis: true,
-          tooltip: true,
           render: (h, params) => {
             const baseLine = params.row.baseline_package ? params.row.baseline_package.key_name : ''
-            return this.renderCell(baseLine)
+            return <span>{baseLine}</span>
           }
         },
         {

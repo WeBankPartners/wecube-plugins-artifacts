@@ -55,7 +55,7 @@
                 </div>
                 <div class="grid-cell">
                   <div style="display: flex;align-items: flex-start;">
-                    <div style="width: 100px;margin-right: 8px;">
+                    <div style="width: 100px;margin-right: 8px;text-align: end;">
                       <Tooltip :content="$t('artifacts_select_file')" placement="top">
                         <Icon type="md-document" style="margin-right: 12px;" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(0, packageInput.diff_conf_file || [])" />
                       </Tooltip>
@@ -670,66 +670,32 @@ export default {
     async syncBaselineFileStatus () {
       if (this.packageInput.baseline_package) {
         const { data } = await compareBaseLineFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package })
-        this.packageInput.diff_conf_file.forEach(el => {
-          data.diff_conf_file.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.start_file_path.forEach(el => {
-          data.start_file_path.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.stop_file_path.forEach(el => {
-          data.stop_file_path.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.deploy_file_path.forEach(el => {
-          data.deploy_file_path.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
+        this.packageInput.diff_conf_directory = JSON.parse(JSON.stringify(data.diff_conf_directory || []))
+        this.packageInput.diff_conf_file = JSON.parse(JSON.stringify(data.diff_conf_file || []))
+        this.packageInput.script_file_directory = JSON.parse(JSON.stringify(data.script_file_directory || []))
+        this.packageInput.start_file_path = JSON.parse(JSON.stringify(data.start_file_path || []))
+        this.packageInput.stop_file_path = JSON.parse(JSON.stringify(data.stop_file_path || []))
+        this.packageInput.deploy_file_path = JSON.parse(JSON.stringify(data.deploy_file_path || []))
+        this.packageInput.log_file_directory = JSON.parse(JSON.stringify(data.log_file_directory || []))
+        this.packageInput.log_file_trade = JSON.parse(JSON.stringify(data.log_file_trade || []))
+        this.packageInput.log_file_keyword = JSON.parse(JSON.stringify(data.log_file_keyword || []))
+        this.packageInput.log_file_metric = JSON.parse(JSON.stringify(data.log_file_metric || []))
+        this.packageInput.log_file_trace = JSON.parse(JSON.stringify(data.log_file_trace || []))
 
-        this.packageInput.db_diff_conf_file.forEach(el => {
-          data.db_diff_conf_file.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
+        this.packageInput.is_decompression = data.is_decompression || true
 
-        this.packageInput.db_upgrade_directory.forEach(el => {
-          data.db_upgrade_directory.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
+        this.packageInput.db_diff_conf_directory = JSON.parse(JSON.stringify(data.db_diff_conf_directory || []))
+        this.packageInput.db_diff_conf_file = JSON.parse(JSON.stringify(data.db_diff_conf_file || []))
+        this.packageInput.db_upgrade_directory = JSON.parse(JSON.stringify(data.db_upgrade_directory || []))
+        this.packageInput.db_upgrade_file_path = JSON.parse(JSON.stringify(data.db_upgrade_file_path || []))
+        this.packageInput.db_rollback_directory = JSON.parse(JSON.stringify(data.db_rollback_directory || []))
+        this.packageInput.db_rollback_file_path = JSON.parse(JSON.stringify(data.db_rollback_file_path || []))
+        this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(data.db_deploy_file_directory || []))
+        this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(data.db_deploy_file_path || []))
+
+        this.$nextTick(() => {
+          this.packageInput.key_service_code = JSON.parse(JSON.stringify(data.key_service_code || []))
         })
-        this.packageInput.db_rollback_directory.forEach(el => {
-          data.db_rollback_directory.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.db_deploy_file_path.forEach(el => {
-          data.db_deploy_file_path.forEach(elRet => {
-            if (elRet.filename === el.filename) {
-              el.comparisonResult = elRet.comparisonResult
-            }
-          })
-        })
-        this.packageInput.db_upgrade_file_path = data.db_upgrade_file_path || []
-        this.packageInput.db_rollback_file_path = data.db_rollback_file_path || []
       }
     },
     async syncPackageDetail () {
@@ -1519,7 +1485,7 @@ export default {
 }
 .textarea-input {
   display: inline-block;
-  width: 450px;
+  width: 440px;
 }
 
 .config-tab :deep(.ivu-tabs-nav) {
