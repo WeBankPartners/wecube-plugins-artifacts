@@ -1,6 +1,6 @@
 <template>
-  <Row id="weArtifacts" class="artifact-management">
-    <Col span="5">
+  <div id="weArtifacts" class="artifact-management" style="display: flex;">
+    <div style="width: 20%;">
       <!-- 系统设计版本 -->
       <Card>
         <p slot="title">{{ $t('artifacts_system_design_version') }}</p>
@@ -20,8 +20,8 @@
         </div>
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
-    </Col>
-    <Col span="18" v-if="guid" style="margin-left: 16px;border: 1px solid #e8eaec;padding: 8px;width: 78%;">
+    </div>
+    <div v-if="guid" style="margin-left: 16px;border: 1px solid #e8eaec;padding: 8px;width: 79%;">
       <div>
         <div style="padding-bottom: 8px">{{ $t('art_sys_artch') }}{{ treePath.join('/') }}</div>
         <div style="display: flex;justify-content: space-between;margin-bottom: 8px;">
@@ -158,8 +158,8 @@
           <Button type="primary" @click="onReleaseConfirm()" :disabled="releaseParams.selectedFlow === ''">{{ $t('art_ok') }} </Button>
         </div>
       </Modal>
-    </Col>
-  </Row>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -316,22 +316,22 @@ export default {
                       {this.$t('detail')}
                     </Button>
                   )}
-                  <Tooltip content={this.$t('export')} placement="top" transfer={true}>
+                  <Tooltip content={this.$t('export')} placement="top" delay={500} transfer={true}>
                     <Button size="small" onClick={() => this.toExportPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
                       <Icon type="md-cloud-download" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
-                  <Tooltip content={this.$t('push')} placement="top" transfer={true}>
+                  <Tooltip content={this.$t('push')} placement="top" delay={500} transfer={true}>
                     <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
                       <Icon type="md-cloud-upload" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
-                  <Tooltip content={this.$t('art_release')} placement="top" transfer={true}>
+                  <Tooltip content={this.$t('art_release')} placement="top" delay={500} transfer={true}>
                     <Button size="small" onClick={() => this.toRealsePkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#18b55f', borderColor: '#18b55f', marginBottom: '2px' }}>
                       <Icon type="ios-send-outline" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
-                  <Tooltip content={this.$t('art_release_history')} placement="top" transfer={true}>
+                  <Tooltip content={this.$t('art_release_history')} placement="top" delay={500} transfer={true}>
                     <Button size="small" onClick={() => this.toRealsePkgHistory(params.row)} style={{ marginRight: '5px', backgroundColor: '#7728f5', borderColor: '#7728f5', marginBottom: '2px' }}>
                       <Icon type="ios-timer-outline" color="white" size="16"></Icon>
                     </Button>
@@ -1184,9 +1184,9 @@ export default {
         }
       }
       let res = []
-      operations.forEach(op => {
+      operations.reverse().forEach(op => {
         res.push(
-          <Tooltip content={typeToBtn[op.type].tip} placement="top" transfer={true}>
+          <Tooltip content={typeToBtn[op.type].tip} placement="top" delay={500} transfer={true}>
             <Button size="small" onClick={() => this.changeStatus(row, op.type, event)} style={{ marginRight: '5px', backgroundColor: typeToBtn[op.type].color, borderColor: typeToBtn[op.type].color, marginBottom: '2px' }}>
               <Icon type={typeToBtn[op.type].icon} color="white" size="16"></Icon>
             </Button>

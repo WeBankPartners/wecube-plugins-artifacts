@@ -624,7 +624,7 @@ export default {
       this.packageInput.log_file_metric = JSON.parse(JSON.stringify(this.packageDetail.log_file_metric))
       this.packageInput.log_file_trace = JSON.parse(JSON.stringify(this.packageDetail.log_file_trace))
 
-      this.packageInput.is_decompression = row.is_decompression || true
+      this.packageInput.is_decompression = row.is_decompression === 'true'
 
       this.packageInput.db_diff_conf_directory = JSON.parse(JSON.stringify(this.packageDetail.db_diff_conf_directory))
       this.packageInput.db_diff_conf_file = JSON.parse(JSON.stringify(this.packageDetail.db_diff_conf_file))
@@ -682,7 +682,7 @@ export default {
         this.packageInput.log_file_metric = JSON.parse(JSON.stringify(data.log_file_metric || []))
         this.packageInput.log_file_trace = JSON.parse(JSON.stringify(data.log_file_trace || []))
 
-        this.packageInput.is_decompression = data.is_decompression || true
+        this.packageInput.is_decompression = data.is_decompression === 'true'
 
         this.packageInput.db_diff_conf_directory = JSON.parse(JSON.stringify(data.db_diff_conf_directory || []))
         this.packageInput.db_diff_conf_file = JSON.parse(JSON.stringify(data.db_diff_conf_file || []))
@@ -716,6 +716,7 @@ export default {
     clearBaseline () {
       const packageInput = JSON.parse(JSON.stringify(this.oriPackageInput))
       this.packageInput = packageInput
+      this.packageInput.baseline_package = ''
       this.$nextTick(() => {
         this.packageInput.key_service_code = packageInput.key_service_code || []
       })
@@ -730,7 +731,7 @@ export default {
         this.packageInput.start_file_path = found.start_file_path ? JSON.parse(JSON.stringify(found.start_file_path)) : []
         this.packageInput.stop_file_path = found.stop_file_path ? JSON.parse(JSON.stringify(found.stop_file_path)) : []
         this.packageInput.deploy_file_path = found.deploy_file_path ? JSON.parse(JSON.stringify(found.deploy_file_path)) : []
-        this.packageInput.is_decompression = found.is_decompression || true
+        this.packageInput.is_decompression = found.is_decompression === 'true'
         this.packageInput.log_file_directory = found.log_file_directory ? JSON.parse(JSON.stringify(found.log_file_directory)) : []
         this.packageInput.log_file_trade = found.log_file_trade ? JSON.parse(JSON.stringify(found.log_file_trade)) : []
         this.packageInput.log_file_keyword = found.log_file_keyword ? JSON.parse(JSON.stringify(found.log_file_keyword)) : []
