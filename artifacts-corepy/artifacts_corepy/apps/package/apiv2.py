@@ -1145,6 +1145,9 @@ class UnitDesignPackages(WeCubeResource):
                     clean_data['baseline_package'] = clean_data['baseline_package'].get('guid', None)
             elif isinstance(clean_data['baseline_package'], str) and not clean_data['baseline_package']:
                 clean_data['baseline_package'] = None
+            # FIXME: CMDB 接口仅支持传''表示清空
+            if clean_data['baseline_package'] is None:
+                clean_data['baseline_package'] = ''
         # 根据用户指定进行变量绑定
         auto_bind = True
         if field_pkg_diff_conf_var_name in data:
