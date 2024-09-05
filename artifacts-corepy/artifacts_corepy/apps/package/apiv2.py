@@ -1430,34 +1430,30 @@ class UnitDesignPackages(WeCubeResource):
         result[field_pkg_package_type_name] = package_type
         result[field_pkg_is_decompression_name] = is_decompression
         result[field_pkg_key_service_code_name] = key_service_code
-        # |切割为列表
-        fields = (field_pkg_diff_conf_directory_name, field_pkg_diff_conf_file_name,
-                  field_pkg_script_file_directory_name, field_pkg_deploy_file_path_name, 
-                  field_pkg_start_file_path_name, field_pkg_stop_file_path_name,
-                  field_pkg_log_file_directory_name)
-        for field in fields:
-            result[field] = self.build_file_object(new_deploy_package_attrs.get(field, None))
-            if package_type in (constant.PackageType.app, constant.PackageType.mixed):
-                # 更新文件的md5,comparisonResult,isDir
-                self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
-        fields = (field_pkg_log_file_trade_name, field_pkg_log_file_keyword_name,
-                  field_pkg_log_file_metric_name, field_pkg_log_file_trace_name,)
-        for field in fields:
-            result[field] = self.build_file_object(new_deploy_package_attrs.get(field, None))
+        if package_type in (constant.PackageType.app, constant.PackageType.mixed):
+            # |切割为列表
+            fields = (field_pkg_diff_conf_directory_name, field_pkg_diff_conf_file_name,
+                    field_pkg_script_file_directory_name, field_pkg_deploy_file_path_name, 
+                    field_pkg_start_file_path_name, field_pkg_stop_file_path_name,
+                    field_pkg_log_file_directory_name)
+            for field in fields:
+                result[field] = self.build_file_object(new_deploy_package_attrs.get(field, None))
+                if package_type in (constant.PackageType.app, constant.PackageType.mixed):
+                    # 更新文件的md5,comparisonResult,isDir
+                    self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
+            fields = (field_pkg_log_file_trade_name, field_pkg_log_file_keyword_name,
+                    field_pkg_log_file_metric_name, field_pkg_log_file_trace_name,)
+            for field in fields:
+                result[field] = self.build_file_object(new_deploy_package_attrs.get(field, None))
         # db部署支持
-        fields = (field_pkg_db_deploy_file_directory_name, field_pkg_db_deploy_file_path_name,
-                  field_pkg_db_diff_conf_directory_name, field_pkg_db_diff_conf_file_name,
-                  field_pkg_db_upgrade_directory_name, field_pkg_db_rollback_directory_name,)
-        for field in fields:
-            result[field] = self.build_file_object(new_deploy_package_attrs.get(field, None))
-            self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
         if package_type in (constant.PackageType.db, constant.PackageType.mixed):
-            result[field_pkg_db_upgrade_file_path_name] = self.find_files_by_status(
-                baseline_package_id, deploy_package_id, [i['filename'] for i in result[field_pkg_db_upgrade_directory_name]],
-                ['new', 'changed'])
-            result[field_pkg_db_rollback_file_path_name] = self.find_files_by_status(
-                baseline_package_id, deploy_package_id, [i['filename'] for i in result[field_pkg_db_rollback_directory_name]],
-                ['new', 'changed'])
+            fields = (field_pkg_db_deploy_file_directory_name, field_pkg_db_deploy_file_path_name,
+                    field_pkg_db_diff_conf_directory_name, field_pkg_db_diff_conf_file_name,
+                    field_pkg_db_upgrade_directory_name, field_pkg_db_upgrade_file_path_name,
+                    field_pkg_db_rollback_directory_name, field_pkg_db_rollback_file_path_name,)
+            for field in fields:
+                result[field] = self.build_file_object(new_deploy_package_attrs.get(field, None))
+                self.update_file_status(baseline_cached_dir, package_cached_dir, result[field])
         return result
 
     def baseline_files_compare(self, data, unit_design_id, deploy_package_id, baseline_package_id):
