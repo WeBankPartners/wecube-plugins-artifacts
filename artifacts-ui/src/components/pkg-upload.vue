@@ -77,7 +77,7 @@ export default {
       uploadType: '', // uploadType: 'local' | 'online'
       onlineModal: false,
       onlineUploadParams: {
-        filterPath: '后台提供接口',
+        filterPath: '',
         downloadUrl: '',
         baseline_package: ''
       },
@@ -113,6 +113,7 @@ export default {
     async localUpload () {
       this.emptyJsonKey('localUploadParams')
       await this.getbaselinePkg()
+      this.formData = new FormData()
       this.localModal = true
     },
     // 在线包上传
@@ -193,12 +194,11 @@ export default {
     },
     handleUpload (file) {
       this.localUploadParams.fileName = file.name
-      this.formData = new FormData()
       this.formData.append('file', file)
     },
     // 本地上传
     async confirmLocalUpload () {
-      this.formData.append('baseline_package', this.localUploadParams.baseline_package)
+      this.formData.append('baseline_package', this.localUploadParams.baseline_package || '')
       this.loading = true
       this.$Notice.success({
         title: this.$t('art_success'),
