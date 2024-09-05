@@ -1945,6 +1945,7 @@ class UnitDesignPackages(WeCubeResource):
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
                             if f['filename'] not in changed_file_objs_map:
                                 filtered_file_objs.append(f)
+                # filtered_file_objs.sort(key=lambda x: x['filename'], reverse=False)
                 ret_data[field_pkg_diff_conf_file_name] = FileNameConcater().convert(filtered_file_objs)
                 if do_bind_vars:
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
@@ -2001,6 +2002,7 @@ class UnitDesignPackages(WeCubeResource):
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
                             if f['filename'] not in changed_file_objs_map:
                                 filtered_file_objs.append(f)
+                # filtered_file_objs.sort(key=lambda x: x['filename'], reverse=False)
                 ret_data[field_pkg_diff_conf_file_name] = FileNameConcater().convert(filtered_file_objs)
                 if do_bind_vars:
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
@@ -2101,6 +2103,10 @@ class UnitDesignPackages(WeCubeResource):
                 # 文件清单继承追加
                 baseline_file_value = baseline_package[field_pkg_db_deploy_file_path_name]
                 baseline_file_obj = self.build_file_object(baseline_file_value)
+                self.update_file_status(self.get_package_cached_path(baseline_package_id), self.get_package_cached_path(package_id), 
+                                        baseline_file_obj, file_key='filename')
+                changed_file_objs = [f for f in baseline_file_obj if f['comparisonResult'] == 'changed']
+                changed_file_objs_map = set([f['filename'] for f in changed_file_objs])
                 # find new,changed status
                 file_objs = self.find_files_by_status(
                     baseline_package_id, package_id,
@@ -2111,7 +2117,9 @@ class UnitDesignPackages(WeCubeResource):
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
-                            baseline_file_obj.append(f)
+                            if f['filename'] not in changed_file_objs_map:
+                                baseline_file_obj.append(f)
+                # baseline_file_obj.sort(key=lambda x: x['filename'], reverse=False)
                 ret_data[field_pkg_db_deploy_file_path_name] = FileNameConcater().convert(baseline_file_obj)
         else:
             if not baseline_package:
@@ -2136,6 +2144,10 @@ class UnitDesignPackages(WeCubeResource):
                 # 文件清单继承追加
                 baseline_file_value = baseline_package[field_pkg_db_deploy_file_path_name]
                 baseline_file_obj = self.build_file_object(baseline_file_value)
+                self.update_file_status(self.get_package_cached_path(baseline_package_id), self.get_package_cached_path(package_id), 
+                                        baseline_file_obj, file_key='filename')
+                changed_file_objs = [f for f in baseline_file_obj if f['comparisonResult'] == 'changed']
+                changed_file_objs_map = set([f['filename'] for f in changed_file_objs])
                 # find new,changed status
                 file_objs = self.find_files_by_status(
                     baseline_package_id, package_id,
@@ -2146,7 +2158,9 @@ class UnitDesignPackages(WeCubeResource):
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
-                            baseline_file_obj.append(f)
+                            if f['filename'] not in changed_file_objs_map:
+                                baseline_file_obj.append(f)
+                # baseline_file_obj.sort(key=lambda x: x['filename'], reverse=False)
                 ret_data[field_pkg_db_deploy_file_path_name] = FileNameConcater().convert(baseline_file_obj)
         # db upgrade
         fset = FieldSetting(name=field_pkg_db_upgrade_directory_name, default_value=field_pkg_db_upgrade_directory_default_value)
