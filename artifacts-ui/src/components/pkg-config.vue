@@ -613,7 +613,6 @@ export default {
       this.currentConfigTab = this.packageType === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
       // 以下4个变量类型为字符串
       // row从table数据中来，此时baseline_package为对象
-      this.packageInput.baseline_package = this.packageDetail.baseline_package ? this.packageDetail.baseline_package : null
       this.packageInput.diff_conf_directory = JSON.parse(JSON.stringify(this.packageDetail.diff_conf_directory || []))
       this.packageInput.diff_conf_file = JSON.parse(JSON.stringify(this.packageDetail.diff_conf_file))
       this.packageInput.script_file_directory = JSON.parse(JSON.stringify(this.packageDetail.script_file_directory || []))
@@ -642,6 +641,7 @@ export default {
       })
       this.hideFooter = hideFooter
       await this.getAllpkg()
+      this.packageInput.baseline_package = this.packageDetail.baseline_package ? this.packageDetail.baseline_package : ''
       this.packageId = row.guid
       this.oriPackageInput = JSON.parse(JSON.stringify(this.packageInput))
       this.openDrawer = true

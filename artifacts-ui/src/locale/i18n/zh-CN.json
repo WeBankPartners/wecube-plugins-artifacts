@@ -134,5 +134,6 @@
   "art_status": "状态",
   "art_upload_import": "上传/导入",
   "art_online_selection": "在线选包",
-  "art_sys_artch": "系统架构："
+  "art_sys_artch": "系统架构：",
+  "art_close": "关闭"
 }

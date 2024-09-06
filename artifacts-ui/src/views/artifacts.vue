@@ -41,45 +41,6 @@
         <!-- 包管理 -->
         <!-- 包列表table -->
         <ArtifactsSimpleTable :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
-        <!-- 差异化变量 -->
-        <div v-if="showDiffConfigTab" style="display: flex;width: 100%;">
-          <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
-            <div slot="extra">
-              <Button style="display: inline-block" @click="exportData" size="small" icon="ios-cloud-download-outline">{{ $t('export') }}</Button>
-              <Upload :before-upload="handleUpload" action="">
-                <Button style="display: inline-block;margin-left: 4px;" icon="ios-cloud-upload-outline" size="small">{{ $t('import') }}</Button>
-              </Upload>
-            </div>
-            <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('APP')" name="APP" tab="diffConfig">
-              <div class="batchOperation" style="text-align: right">
-                <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
-              </div>
-              <Spin size="large" fix v-if="tabTableLoading">
-                <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
-                <div>{{ $t('artifacts_loading') }}</div>
-              </Spin>
-              <Tabs :value="activeTab" @on-click="changeTab" name="APP">
-                <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="APP">
-                  <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions" size="small"></Table>
-                </TabPane>
-              </Tabs>
-            </TabPane>
-            <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('DB')" name="DB" tab="diffConfig">
-              <div class="batchOperation" style="text-align: right">
-                <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
-              </div>
-              <Spin size="large" fix v-if="tabTableLoading">
-                <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
-                <div>{{ $t('artifacts_loading') }}</div>
-              </Spin>
-              <Tabs :value="activeTab" @on-click="changeTab" name="DB">
-                <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="DB">
-                  <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions" size="small"></Table>
-                </TabPane>
-              </Tabs>
-            </TabPane>
-          </Tabs>
-        </div>
       </div>
 
       <Modal :mask-closable="false" v-model="isShowBatchBindModal" :width="800" :title="$t('multi_bind_config')">
@@ -149,6 +110,8 @@
       <PkgUpload ref="pkgUploadRef" @refreshTable="queryPackages"></PkgUpload>
       <!-- 脚本配置组件 -->
       <PkgConfig ref="pkgConfigRef" @queryPackages="queryPackages" @syncPackageDetail="syncPackageDetail"></PkgConfig>
+      <!-- 差异化变量配置组件 -->
+      <PkgDiffVariableConfig ref="pkgDiffVariableConfigRef"></PkgDiffVariableConfig>
       <!-- 发布物料包弹窗 -->
       <Modal v-model="releaseParams.showReleaseModal" :title="releaseParams.title" :mask-closable="false">
         <Form :label-width="120">
@@ -178,6 +141,7 @@ import CompareFile from './compare-file'
 import DisplayPath from './display-path'
 import PkgUpload from '../components/pkg-upload.vue'
 import PkgConfig from '../components/pkg-config.vue'
+import PkgDiffVariableConfig from '../components/pkg-diff-variable.vue'
 import { decode } from 'js-base64'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
@@ -322,22 +286,22 @@ export default {
                     </Button>
                   )}
                   <Tooltip content={this.$t('export')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" onClick={() => this.toExportPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
+                    <Button size="small" onClick={() => this.toExportPkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
                       <Icon type="md-cloud-download" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
                   <Tooltip content={this.$t('push')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
+                    <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
                       <Icon type="md-cloud-upload" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
                   <Tooltip content={this.$t('art_release')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" onClick={() => this.toRealsePkg(params.row)} style={{ marginRight: '5px', backgroundColor: '#18b55f', borderColor: '#18b55f', marginBottom: '2px' }}>
+                    <Button size="small" onClick={() => this.toRealsePkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#18b55f', borderColor: '#18b55f', marginBottom: '2px' }}>
                       <Icon type="ios-send-outline" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
                   <Tooltip content={this.$t('art_release_history')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" onClick={() => this.toRealsePkgHistory(params.row)} style={{ marginRight: '5px', backgroundColor: '#7728f5', borderColor: '#7728f5', marginBottom: '2px' }}>
+                    <Button size="small" onClick={() => this.toRealsePkgHistory(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#7728f5', borderColor: '#7728f5', marginBottom: '2px' }}>
                       <Icon type="ios-timer-outline" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
@@ -982,20 +946,7 @@ export default {
       this.queryPackages()
     },
     async rowClick (row) {
-      // this.showSpin()
-      this.packageName = row.code
-      if (row.package_type === this.constPackageOptions.image) {
-        this.showDiffConfigTab = false
-        this.packageDetail = []
-        return
-      }
-      this.packageType = row.package_type
-      this.currentDiffConfigTab = this.packageType === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
-      this.packageId = row.guid
-      this.showDiffConfigTab = true
-      // 获取包文件及差异化变量数据
-      await this.syncPackageDetail()
-      // this.$Spin.hide()
+      this.$refs.pkgDiffVariableConfigRef.initDrawer(this.guid, row)
     },
     historyPageChange (currentPage) {
       this.historyPageInfo.currentPage = currentPage
@@ -1220,6 +1171,7 @@ export default {
       return res
     },
     changeStatus (row, status, event) {
+      event.stopPropagation()
       switch (status) {
         // 配置
         case 'Update':
@@ -1569,13 +1521,6 @@ export default {
     tabChange (tabName) {
       // console.log('tabChange', tabName)
     },
-    showBatchBindModal () {
-      // 复制一份数据用于临时使用bound勾选状态
-      let tempBindData = this.formatPackageDetail(this.packageDetail)
-      const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_variable' : 'diff_conf_variable'
-      this.batchBindData = tempBindData[tmp]
-      this.isShowBatchBindModal = true
-    },
     batchBindSelectAll () {
       this.batchBindData.forEach(item => {
         item.bound = !this.isBatchBindAllChecked
@@ -1757,7 +1702,8 @@ export default {
         }
       })
     },
-    async toExportPkg (row) {
+    async toExportPkg (row, event) {
+      event.stopPropagation()
       this.$Notice.info({
         title: `${this.$t('export')}`,
         desc: `${row.code} ${this.$t('export')} ${this.$t('senting')}`
@@ -1770,7 +1716,8 @@ export default {
       document.body.removeChild(a)
     },
 
-    async toPushPkg (row) {
+    async toPushPkg (row, event) {
+      event.stopPropagation()
       this.$Notice.info({
         title: `${this.$t('push')}`,
         desc: `${row.code} ${this.$t('push')} ${this.$t('senting')}`
@@ -1784,7 +1731,8 @@ export default {
       }
     },
     // 发布物料包
-    async toRealsePkg (row) {
+    async toRealsePkg (row, event) {
+      event.stopPropagation()
       this.releaseParams.title = this.$t('art_release_artifact_package') + ': ' + row.code
       this.releaseParams.selectedFlow = ''
       this.releaseParams.guid = row.guid
@@ -1805,7 +1753,8 @@ export default {
       window.open(path, '_blank')
     },
     // 发布历史
-    toRealsePkgHistory (row) {
+    toRealsePkgHistory (row, event) {
+      event.stopPropagation()
       window.sessionStorage.currentPath = ''
       const path = `${window.location.origin}/#/implementation/workflow-execution/normal-history?entityDisplayName=${row.key_name}&subProc=main&rootEntityGuid=${row.guid}`
       window.open(path, '_blank')
@@ -1870,7 +1819,8 @@ export default {
     CompareFile,
     DisplayPath,
     PkgUpload,
-    PkgConfig
+    PkgConfig,
+    PkgDiffVariableConfig
   }
 }
 </script>

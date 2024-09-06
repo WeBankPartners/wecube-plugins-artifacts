@@ -134,5 +134,6 @@
   "art_status": "Status",
   "art_upload_import": "Upload/Import",
   "art_online_selection": "Online Selection",
-  "art_sys_artch": "System Architecture:"
+  "art_sys_artch": "System Architecture:",
+  "art_close": "Close"
 }
