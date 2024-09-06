@@ -27,7 +27,9 @@
         <div style="display: flex;justify-content: space-between;margin-bottom: 8px;">
           <div>
             <Input v-model="tableFilter.key_name" @on-change="queryPackages(true)" :placeholder="$t('artifacts_package_name')" clearable style="width: 200px;margin-right: 8px;" />
-            <Input v-model="tableFilter.guid" @on-change="queryPackages(true)" placeholder="GUID" clearable style="width: 200px" />
+            <Input v-model="tableFilter.guid" @on-change="queryPackages(true)" placeholder="GUID" clearable style="width: 200px;margin-right: 8px;" />
+            <Input v-model="tableFilter.baseline_package" @on-change="queryPackages(true)" :placeholder="$t('baseline_package')" clearable style="width: 200px;margin-right: 8px;" />
+            <Input v-model="tableFilter.upload_user" @on-change="queryPackages(true)" :placeholder="$t('artifacts_uploaded_by')" clearable style="width: 200px;margin-right: 8px;" />
           </div>
           <div>
             <!-- 本地上传 -->
@@ -166,7 +168,9 @@ export default {
       },
       tableFilter: {
         key_name: '',
-        guid: ''
+        guid: '',
+        baseline_package: '',
+        upload_user: ''
       },
       releaseParams: {
         showReleaseModal: false,
@@ -275,7 +279,7 @@ export default {
           title: this.$t('artifacts_action'),
           key: 'state',
           fixed: 'right',
-          width: 190,
+          width: 230,
           render: (h, params) => {
             return (
               <div style="padding-top:5px">
@@ -639,7 +643,7 @@ export default {
         ],
         paging: true,
         pageable: {
-          pageSize: 10000,
+          pageSize: 1000,
           startIndex: 0
         }
       })
@@ -828,6 +832,20 @@ export default {
           name: 'guid',
           operator: 'contains',
           value: this.tableFilter.guid
+        })
+      }
+      if (this.tableFilter.baseline_package !== '') {
+        params.filters.push({
+          name: 'baseline_package',
+          operator: 'contains',
+          value: this.tableFilter.baseline_package
+        })
+      }
+      if (this.tableFilter.upload_user !== '') {
+        params.filters.push({
+          name: 'upload_user',
+          operator: 'contains',
+          value: this.tableFilter.upload_user
         })
       }
       this.tableLoading = true
@@ -1160,13 +1178,15 @@ export default {
       }
       let res = []
       operations.reverse().forEach(op => {
-        res.push(
-          <Tooltip content={typeToBtn[op.type].tip} placement="top" delay={500} transfer={true}>
-            <Button size="small" onClick={() => this.changeStatus(row, op.type, event)} style={{ marginRight: '5px', backgroundColor: typeToBtn[op.type].color, borderColor: typeToBtn[op.type].color, marginBottom: '2px' }}>
-              <Icon type={typeToBtn[op.type].icon} color="white" size="16"></Icon>
-            </Button>
-          </Tooltip>
-        )
+        if (typeToBtn[op.type]) {
+          res.push(
+            <Tooltip content={typeToBtn[op.type].tip} placement="top" delay={500} transfer={true}>
+              <Button size="small" onClick={() => this.changeStatus(row, op.type, event)} style={{ marginRight: '5px', backgroundColor: typeToBtn[op.type].color, borderColor: typeToBtn[op.type].color, marginBottom: '2px' }}>
+                <Icon type={typeToBtn[op.type].icon} color="white" size="16"></Icon>
+              </Button>
+            </Tooltip>
+          )
+        }
       })
       return res
     },

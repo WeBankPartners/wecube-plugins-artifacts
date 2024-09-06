@@ -39,8 +39,7 @@
       </Tabs>
     </div>
     <div class="drawer-footer">
-      <Button @click="openDrawer = false" type="primary">{{ $t('art_close') }}</Button
-      >x'x'x'x'x
+      <Button @click="openDrawer = false" type="primary">{{ $t('art_close') }}</Button>
     </div>
     <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setConfigRowValue" @on-cancel="closeConfigSelectModal">
       <div style="display: flex">

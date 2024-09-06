@@ -160,7 +160,7 @@ export default {
         filters: [],
         paging: true,
         pageable: {
-          pageSize: 10000,
+          pageSize: 1000,
           startIndex: 0
         }
       })
