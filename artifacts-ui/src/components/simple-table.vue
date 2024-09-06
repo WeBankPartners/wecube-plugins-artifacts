@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Table :data="data" class="artifact-simple-table" :columns="columns" highlight-row :loading="loading" size="small" @on-row-click="onRowClick"></Table>
+    <Table :data="data" class="artifact-simple-table" :columns="columns" highlight-row :loading="loading" :max-height="500" size="small" @on-row-click="onRowClick"></Table>
     <div v-if="pagable">
       <Page :current="page.currentPage" :page-size="page.pageSize" :page-size-opts="pageSizeOptions" :total="page.total" @on-change="onChange" @on-page-size-change="onPageSizeChange" show-elevator show-sizer show-total style="float: right; margin: 10px 0;" />
     </div>

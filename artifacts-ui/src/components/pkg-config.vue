@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Drawer :title="$t('artifacts_script_configuration')" :mask-closable="false" :closable="false" v-model="openDrawer" width="1300">
+    <Drawer :title="pkgName" :mask-closable="false" :closable="false" v-model="openDrawer" width="1300">
       <Row style="margin-bottom: 8px;">
         <Col style="text-align: right; line-height: 32px" span="5">
           <span style="margin-right: 8px">{{ $t('package_type') }}</span>
@@ -439,6 +439,7 @@ export default {
   name: '',
   data () {
     return {
+      pkgName: '', // 当前选中的包名
       isFileSelect: false,
       isShowKeyServiceCode: false,
       columns: [
@@ -604,6 +605,7 @@ export default {
       this.initSortable(key)
     },
     async open (guid, row, hideFooter) {
+      this.pkgName = `${this.$t('artifacts_script_configuration')}[${row.key_name}]`
       this.guid = guid
       this.packageId = row.guid
       await this.syncPackageDetail()

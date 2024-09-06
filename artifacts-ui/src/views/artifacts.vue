@@ -131,7 +131,12 @@
         <CompareFile ref="compareParams" :fileContentHeight="fileContentHeight"></CompareFile>
       </Modal>
 
-      <Modal v-model="isShowHistoryModal" :title="$t('operation_data_rollback')" width="900">
+      <Modal v-model="isShowHistoryModal" :title="$t('operation_data_rollback')" :fullscreen="fullscreen" width="900">
+        <p slot="header">
+          <span>{{ $t('file_compare') }}</span>
+          <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
+          <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
+        </p>
         <div v-if="isShowHistoryModal" style="max-height: 500px; overflow: auto">
           <ArtifactsSimpleTable :loading="historyTableLoading" :columns="historyTableColumns" :data="historyTableData" :page="historyPageInfo" :pagable="false" @pageChange="historyPageChange" @pageSizeChange="historyPageSizeChange" @rowClick="onHistoryRowClick"> </ArtifactsSimpleTable>
         </div>
@@ -163,7 +168,7 @@
 </template>
 
 <script>
-import { getFlowLists, pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType, btnControl } from '@/api/server.js'
+import { getCiTypeAttr, getFlowLists, pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType, btnControl } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
@@ -977,7 +982,7 @@ export default {
       this.queryPackages()
     },
     async rowClick (row) {
-      this.showSpin()
+      // this.showSpin()
       this.packageName = row.code
       if (row.package_type === this.constPackageOptions.image) {
         this.showDiffConfigTab = false
@@ -990,7 +995,7 @@ export default {
       this.showDiffConfigTab = true
       // 获取包文件及差异化变量数据
       await this.syncPackageDetail()
-      this.$Spin.hide()
+      // this.$Spin.hide()
     },
     historyPageChange (currentPage) {
       this.historyPageInfo.currentPage = currentPage
@@ -1028,9 +1033,28 @@ export default {
       }
     },
     async showHistoryModal (row) {
+      this.fullscreen = false
       this.isShowHistoryModal = true
+      await this.getHistoryColums()
       const resp = await queryHistoryPackages(row.guid)
       this.historyTableData = resp.data || []
+    },
+    async getHistoryColums () {
+      const { status, data } = await getCiTypeAttr(this.packageCiType)
+      if (status === 'OK') {
+        const lang = localStorage.getItem('lang') || 'zh-CN'
+        this.historyTableColumns = data
+          .filter(item => item.displayByDefault === 'yes')
+          .map(item => {
+            return {
+              title: lang === 'zh-CN' ? item.name : item.propertyName,
+              key: item.propertyName,
+              width: 200,
+              tooltip: true,
+              ellipsis: true
+            }
+          })
+      }
     },
     initPackageDetail () {
       this.packageDetail = {
