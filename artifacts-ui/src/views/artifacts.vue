@@ -3,14 +3,14 @@
     <div style="width: 20%;">
       <!-- 系统设计版本 -->
       <Card>
-        <p slot="title">{{ $t('artifacts_system_design_version') }}</p>
+        <BaseHeaderTitle class="custom-title" :title="$t('artifacts_system_design_version')"></BaseHeaderTitle>
         <Select @on-change="selectSystemDesignVersion" @on-clear="clearSelectSystemDesign" label-in-name v-model="systemDesignVersion" filterable clearable>
           <Option v-for="version in systemDesignVersions" :value="version.guid || ''" :key="version.guid">{{ version.confirm_time ? `${version.name}[${version.confirm_time}]` : version.name }}</Option>
         </Select>
       </Card>
       <!-- 系统设计列表 -->
-      <Card>
-        <p slot="title">{{ $t('artifacts_system_design_list') }}</p>
+      <Card style="margin-top: 16px;">
+        <BaseHeaderTitle class="custom-title" :title="$t('artifacts_system_design_list')"></BaseHeaderTitle>
         <div>
           <Tree :data="treeData" @on-select-change="selectTreeNode" class="tree-size"> </Tree>
           <Spin size="large" fix v-if="treeLoading">
@@ -23,7 +23,7 @@
     </div>
     <div v-if="guid" style="margin-left: 16px;border: 1px solid #e8eaec;padding: 8px;width: 79%;">
       <div>
-        <div style="padding-bottom: 8px">{{ $t('art_sys_artch') }}{{ treePath.join('/') }}</div>
+        <BaseHeaderTitle class="custom-title" :title="$t('art_sys_artch') + treePath.join(' / ')"></BaseHeaderTitle>
         <div style="display: flex;justify-content: space-between;margin-bottom: 8px;">
           <div>
             <Input v-model="tableFilter.key_name" @on-change="queryPackages(true)" :placeholder="$t('artifacts_package_name')" clearable style="width: 200px;margin-right: 8px;" />
@@ -35,14 +35,14 @@
             <!-- 本地上传 -->
             <Button icon="md-cloud-upload" style="background: #28aef3;border-color: #28aef3;margin-right: 8px;" type="info" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">{{ $t('art_upload_import') }}</Button>
             <!-- 在线选择 -->
-            <Button icon="ios-apps" style="background: #81b337;border-color: #81b337;" type="primary" :disabled="!btnGroupControl.upload_from_nexus_enabled" @click="pkgUpload('online')">{{ $t('art_online_selection') }}</Button>
+            <Button icon="ios-apps" type="success" :disabled="!btnGroupControl.upload_from_nexus_enabled" @click="pkgUpload('online')">{{ $t('art_online_selection') }}</Button>
           </div>
         </div>
       </div>
       <div class="artifact-management-content">
         <!-- 包管理 -->
         <!-- 包列表table -->
-        <ArtifactsSimpleTable :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange" @rowClick="rowClick"></ArtifactsSimpleTable>
+        <ArtifactsSimpleTable :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange"></ArtifactsSimpleTable>
       </div>
 
       <Modal :mask-closable="false" v-model="isShowBatchBindModal" :width="800" :title="$t('multi_bind_config')">
@@ -156,6 +156,18 @@ const DIFF_CONFIGURATION = 'diff_configuration'
 const UNIT_DESIGN = 'unit_design'
 // // 部署包key_name
 // const DEPLOY_PACKAGE = 'deploy_package'
+
+const stateColor = {
+  added_0: '#19be6b',
+  added_1: '#19be6b',
+  updated_0: '#5cadff',
+  updated_1: '#5cadff',
+  delete: '#ed4014',
+  created: '#2b85e4',
+  changed: 'purple',
+  destroyed: '#ff9900'
+}
+
 export default {
   name: 'artifacts',
   data () {
@@ -231,8 +243,6 @@ export default {
         {
           title: this.$t('artifacts_package_name'),
           key: 'name',
-          tooltip: true,
-          ellipsis: true,
           minWidth: 100,
           render: (h, params) => {
             return <span>{params.row.name}</span>
@@ -240,7 +250,7 @@ export default {
         },
         {
           title: 'GUID',
-          width: 160,
+          width: 166,
           key: 'guid'
         },
         {
@@ -263,7 +273,13 @@ export default {
         {
           title: this.$t('art_status'),
           key: 'state',
-          width: 100
+          width: 100,
+          render: (h, params) => {
+            const style = {
+              color: stateColor[params.row.state] || '#2b85e4'
+            }
+            return <span style={style}>{params.row.state}</span>
+          }
         },
         {
           title: this.$t('artifacts_uploaded_by'),
@@ -274,6 +290,16 @@ export default {
           title: this.$t('artifacts_upload_time'),
           key: 'upload_time',
           width: 160
+        },
+        {
+          title: this.$t('artifacts_update_by'),
+          key: 'update_user',
+          width: 100
+        },
+        {
+          title: this.$t('artifacts_update_time'),
+          key: 'update_time',
+          width: 166
         },
         {
           title: this.$t('artifacts_action'),
@@ -289,6 +315,11 @@ export default {
                       {this.$t('detail')}
                     </Button>
                   )}
+                  <Tooltip content={this.$t('art_differentiated_variable_configuration')} placement="top" delay={500} transfer={true}>
+                    <Button size="small" onClick={() => this.startConfigDiff(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#D87093', borderColor: '#D87093', marginBottom: '2px' }}>
+                      <Icon type="ios-medical" color="white" size="16"></Icon>
+                    </Button>
+                  </Tooltip>
                   <Tooltip content={this.$t('export')} placement="top" delay={500} transfer={true}>
                     <Button size="small" onClick={() => this.toExportPkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
                       <Icon type="md-cloud-download" color="white" size="16"></Icon>
@@ -297,11 +328,6 @@ export default {
                   <Tooltip content={this.$t('push')} placement="top" delay={500} transfer={true}>
                     <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
                       <Icon type="md-cloud-upload" color="white" size="16"></Icon>
-                    </Button>
-                  </Tooltip>
-                  <Tooltip content={this.$t('art_release')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" onClick={() => this.toRealsePkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#18b55f', borderColor: '#18b55f', marginBottom: '2px' }}>
-                      <Icon type="ios-send-outline" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
                   <Tooltip content={this.$t('art_release_history')} placement="top" delay={500} transfer={true}>
@@ -320,37 +346,7 @@ export default {
       // 单元设计回滚表格配置
       // ----------------
       isShowHistoryModal: false,
-      historyTableColumns: [
-        {
-          title: this.$t('artifacts_package_name'),
-          key: 'name',
-          render: (h, params) => this.renderCell(params.row.name)
-        },
-        {
-          title: this.$t('package_type'),
-          key: 'package_type',
-          render: (h, params) => {
-            return <span>{this.$t(params.row.package_type)}</span>
-          }
-        },
-        {
-          title: this.$t('artifacts_upload_time'),
-          key: 'upload_time'
-        },
-        {
-          title: this.$t('baseline_package'),
-          key: 'baseline_package',
-          render: (h, params) => {
-            const baseLine = params.row.baseline_package ? params.row.baseline_package.code : ''
-            return <span>{baseLine}</span>
-          }
-        },
-        {
-          title: this.$t('artifacts_uploaded_by'),
-          key: 'upload_user',
-          render: (h, params) => this.renderCell(params.row.upload_user)
-        }
-      ],
+      historyTableColumns: [],
       historyTableData: [],
       historyTableLoading: false,
       historyPageInfo: {
@@ -426,89 +422,6 @@ export default {
       currentConfigRow: {},
       allDiffConfigs: [],
       allCIConfigs: [],
-      attrsTableColomnOptions: [
-        {
-          title: this.$t('artifacts_property_isbind'),
-          width: 100,
-          render: (h, params) => {
-            if (params.row.conf_variable.bound) {
-              return (
-                <span>
-                  <Icon type="md-checkmark-circle" color="#2d8cf0" style="font-size: 16px;" />
-                </span>
-              )
-            } else {
-              return (
-                <span>
-                  <Icon type="md-close-circle" color="red" style="font-size: 16px;" />
-                </span>
-              )
-            }
-          }
-        },
-        {
-          title: this.$t('artifacts_property_seq'),
-          key: 'index',
-          width: 70
-        },
-        {
-          title: this.$t('artifacts_line_number'),
-          width: 100,
-          key: 'line'
-        },
-        {
-          title: this.$t('artifacts_property_name'),
-          width: 140,
-          render: (h, params) => {
-            // show static view only if confirmed
-            return (
-              <span>
-                {params.row.type || ''}
-                {params.row.key}
-              </span>
-            )
-          }
-        },
-        {
-          title: this.$t('root_ci'),
-          width: 120,
-          render: (h, params) => {
-            if (this.activeTabData[params.row._index]) {
-              params.row.rootCI = params.row.conf_variable.tempRootCI || params.row.conf_variable.originRootCI
-              return (
-                <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip')}>
-                  <Button size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showCIConfigModal(params.row)}>
-                    {this.$t('select_key')}
-                  </Button>
-                </Tooltip>
-              )
-            }
-          }
-        },
-        {
-          title: this.$t('artifacts_property_value_fill_rule'),
-          render: (h, params) => {
-            // show static view only if confirmed
-            if (this.activeTabData[params.row._index]) {
-              return params.row.conf_variable.fixedDate ? (
-                <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} isReadOnly={true} v-model={this.activeTabData[params.row._index].conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
-              ) : (
-                <div style="align-items:center;display:flex;">
-                  <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 10px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.activeTabData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
-                </div>
-              )
-            }
-          }
-        },
-        {
-          title: this.$t('artifacts_action'),
-          key: 'state',
-          width: 100,
-          render: (h, params) => {
-            return <div style="padding-top:5px">{this.renderConfigButton(params)}</div>
-          }
-        }
-      ],
       rootCI: [
         { value: defaultAppRootCiTypeId, label: this.$t('APP') },
         { value: defaultDBRootCiTypeId, label: this.$t('DB') }
@@ -698,6 +611,10 @@ export default {
       const [sysData, packageCiType] = await Promise.all([getSystemDesignVersions(), getPackageCiTypeId()])
       if (sysData.status === 'OK' && sysData.data.contents instanceof Array) {
         this.systemDesignVersions = sysData.data.contents.map(_ => _)
+        if (this.systemDesignVersions.length > 0) {
+          this.systemDesignVersion = this.systemDesignVersions[0].guid
+          this.selectSystemDesignVersion(this.systemDesignVersion)
+        }
       }
       if (packageCiType.status === 'OK') {
         this.packageCiType = packageCiType.data
@@ -750,16 +667,6 @@ export default {
       })
     },
     formatTreeData (array, level) {
-      const color = {
-        added_0: '#19be6b',
-        added_1: '#19be6b',
-        updated_0: '#5cadff',
-        updated_1: '#5cadff',
-        delete: '#ed4014',
-        created: '#2b85e4',
-        changed: 'purple',
-        destroyed: '#ff9900'
-      }
       return array.map(_ => {
         _.title = _.name
         _.level = level
@@ -772,7 +679,7 @@ export default {
               <div style={this.treeNodeSty} title={_.name}>
                 [{_.name}]
               </div>
-              <div style={`display:inline-block;max-width:60px;font-size:12px;vertical-align:top;color:${color[_.state]}`}>{_.state}</div>
+              <div style={`display:inline-block;max-width:60px;font-size:12px;vertical-align:top;color:${stateColor[_.state]}`}>{_.state}</div>
             </div>
           )
         }
@@ -963,7 +870,8 @@ export default {
       this.pageInfo.pageSize = pageSize
       this.queryPackages()
     },
-    async rowClick (row) {
+    async startConfigDiff (row, event) {
+      event.stopPropagation()
       this.$refs.pkgDiffVariableConfigRef.initDrawer(this.guid, row)
     },
     historyPageChange (currentPage) {
@@ -1174,10 +1082,23 @@ export default {
           tip: this.$t('art_confirm'),
           color: '#a2ef4d',
           icon: 'ios-checkmark-circle'
+        },
+        Execute: {
+          tip: this.$t('art_release'),
+          color: '#18b55f',
+          icon: 'ios-send'
         }
       }
       let res = []
-      operations.reverse().forEach(op => {
+      operations = operations.reverse()
+      // 查找"Update"的数据项并移到数组的第一位
+      let updateItemIndex = operations.findIndex(item => item.type === 'Update')
+
+      if (updateItemIndex > -1) {
+        let updateItem = operations.splice(updateItemIndex, 1)[0]
+        operations.unshift(updateItem)
+      }
+      operations.forEach(op => {
         if (typeToBtn[op.type]) {
           res.push(
             <Tooltip content={typeToBtn[op.type].tip} placement="top" delay={500} transfer={true}>
@@ -1854,12 +1775,12 @@ export default {
 }
 
 .tree-size {
-  height: calc(100vh - 320px);
+  height: calc(100vh - 340px);
   overflow-y: auto;
 }
 .artifact-management-content {
-  height: calc(100vh - 206px);
-  overflow-y: auto;
+  // height: calc(100vh - 246px);
+  // overflow-y: auto;
   padding-right: 8px;
   width: 100%;
 }
@@ -1915,5 +1836,14 @@ export default {
 .config-tab :deep(.ivu-tabs-tab) {
   width: 15%;
   text-align: center;
+}
+.custom-title {
+  margin-bottom: 16px;
+}
+.custom-title ::v-deep .content {
+  display: none;
+}
+.custom-title ::v-deep .ivu-icon-md-arrow-dropdown {
+  display: none;
 }
 </style>

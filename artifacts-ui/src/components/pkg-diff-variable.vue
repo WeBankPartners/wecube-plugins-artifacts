@@ -1,5 +1,5 @@
 <template>
-  <Drawer :title="$t('artifacts_config_files')" v-model="openDrawer" width="1300">
+  <Drawer :title="pkgName" v-model="openDrawer" :scrollable="false" width="1300">
     <div v-if="showDiffConfigTab" style="display: flex;width: 100%;">
       <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
@@ -88,6 +88,7 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      pkgName: '',
       openDrawer: false,
       treePath: [], // 节点路径
       tableFilter: {
@@ -328,6 +329,7 @@ export default {
   },
   methods: {
     async initDrawer (guid, row) {
+      this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
       this.guid = guid
       this.packageName = row.code
       if (row.package_type === this.constPackageOptions.image) {
@@ -714,10 +716,8 @@ export default {
     showBatchBindModal () {
       // 复制一份数据用于临时使用bound勾选状态
       let tempBindData = this.formatPackageDetail(this.packageDetail)
-      console.log(2)
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_variable' : 'diff_conf_variable'
       this.batchBindData = tempBindData[tmp]
-      console.log(3)
       this.isShowBatchBindModal = true
     },
     batchBindSelectAll () {

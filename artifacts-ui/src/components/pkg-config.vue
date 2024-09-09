@@ -1,32 +1,32 @@
 <template>
   <div>
-    <Drawer :title="pkgName" :mask-closable="false" :closable="false" v-model="openDrawer" width="1300">
+    <Drawer :title="pkgName" :mask-closable="false" :closable="true" v-model="openDrawer" :scrollable="false" width="1300">
       <Row style="margin-bottom: 8px;">
-        <Col style="text-align: right; line-height: 32px" span="5">
+        <Col style="text-align: left; line-height: 32px;margin-left: 6px;" span="2">
           <span style="margin-right: 8px">{{ $t('package_type') }}</span>
         </Col>
-        <Col span="19">
-          <Select clearable :placeholder="$t('package_type')" v-model="packageType" @on-change="packageTypeChanged">
+        <Col span="21">
+          <Select clearable :placeholder="$t('package_type')" v-model="packageType" @on-change="packageTypeChanged" style="margin-left: 10px;">
             <Option v-for="pkt in packageTypeOptions" :value="pkt.value" :key="pkt.value" :disabled="pkt.value === 'IMAGE'">{{ $t(pkt.label) }}</Option>
           </Select>
         </Col>
       </Row>
       <Row style="margin-bottom: 8px;">
-        <Col style="text-align: right; line-height: 32px" span="5">
+        <Col style="text-align: left; line-height: 32px;margin-left: 6px;" span="2">
           <span style="margin-right: 8px">{{ $t('baseline_package') }}</span>
         </Col>
-        <Col span="19">
-          <Select clearable filterable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" @on-clear="clearBaseline" v-model="packageInput.baseline_package">
+        <Col span="21">
+          <Select clearable filterable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" @on-clear="clearBaseline" v-model="packageInput.baseline_package" style="margin-left: 10px;">
             <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
           </Select>
         </Col>
       </Row>
       <Row style="margin-bottom: 8px;">
-        <Col style="text-align: right;" span="5">
+        <Col style="text-align: left;margin-left: 6px;" span="2">
           <span style="margin-right: 8px">{{ $t('is_decompression') }}</span>
         </Col>
         <Col span="18">
-          <i-switch v-model="packageInput.is_decompression" />
+          <i-switch v-model="packageInput.is_decompression" style="margin-left: 10px;" />
         </Col>
       </Row>
       <Tabs :value="currentConfigTab" class="config-tab" @on-click="changeCurrentConfigTab">
@@ -166,10 +166,10 @@
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_trade" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('art_enter_log_path')" type="textarea" v-model="packageInput.log_file_trade[index].filename" />
                         <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
-                        <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_trade')"></Button>
+                        <Button style="margin-left:20px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_trade')"></Button>
                       </div>
                     </div>
-                    <Button style="margin: 4px" size="small" type="info" icon="md-add" ghost @click="addFilePath('log_file_trade')"></Button>
+                    <Button style="margin: 4px" size="small" type="success" icon="md-add" ghost @click="addFilePath('log_file_trade')"></Button>
                   </div>
                   <div style="display: flex;align-items: flex-start;margin: 2px">
                     <div style="width: 100px; margin-right: 8px">{{ $t('art_keyword_log') }}</div>
@@ -177,10 +177,10 @@
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_keyword" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('art_enter_log_path')" type="textarea" v-model="packageInput.log_file_keyword[index].filename" />
                         <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
-                        <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_keyword')"></Button>
+                        <Button style="margin-left:20px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_keyword')"></Button>
                       </div>
                     </div>
-                    <Button style="margin: 4px" size="small" type="info" icon="md-add" ghost @click="addFilePath('log_file_keyword')"></Button>
+                    <Button style="margin: 4px" size="small" type="success" icon="md-add" ghost @click="addFilePath('log_file_keyword')"></Button>
                   </div>
                   <div style="display: flex;align-items: flex-start;margin: 2px">
                     <div style="width: 100px; margin-right: 8px">{{ $t('art_metric_log') }}</div>
@@ -188,10 +188,10 @@
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_metric" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('art_enter_log_path')" type="textarea" v-model="packageInput.log_file_metric[index].filename" />
                         <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
-                        <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_metric')"></Button>
+                        <Button style="margin-left:20px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_metric')"></Button>
                       </div>
                     </div>
-                    <Button style="margin: 4px" size="small" type="info" icon="md-add" ghost @click="addFilePath('log_file_metric')"></Button>
+                    <Button style="margin: 4px" size="small" type="success" icon="md-add" ghost @click="addFilePath('log_file_metric')"></Button>
                   </div>
                   <div style="display: flex;align-items: flex-start;margin: 2px">
                     <div style="width: 100px; margin-right: 8px">{{ $t('art_trace_log') }}</div>
@@ -199,10 +199,10 @@
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_trace" :key="index">
                         <Input class="textarea-input" :rows="1" :placeholder="$t('art_enter_log_path')" type="textarea" v-model="packageInput.log_file_trace[index].filename" />
                         <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
-                        <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_trace')"></Button>
+                        <Button style="margin-left:20px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_trace')"></Button>
                       </div>
                     </div>
-                    <Button style="margin: 4px" size="small" type="info" icon="md-add" ghost @click="addFilePath('log_file_trace')"></Button>
+                    <Button style="margin: 4px" size="small" type="success" icon="md-add" ghost @click="addFilePath('log_file_trace')"></Button>
                   </div>
                 </div>
               </div>
@@ -605,7 +605,7 @@ export default {
       this.initSortable(key)
     },
     async open (guid, row, hideFooter) {
-      this.pkgName = `${this.$t('artifacts_script_configuration')}[${row.key_name}]`
+      this.pkgName = `${row.key_name} - ${this.$t('artifacts_script_configuration')}`
       this.guid = guid
       this.packageId = row.guid
       await this.syncPackageDetail()
@@ -1488,7 +1488,7 @@ export default {
 }
 .textarea-input {
   display: inline-block;
-  width: 440px;
+  width: 400px;
 }
 
 .config-tab :deep(.ivu-tabs-nav) {

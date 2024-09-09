@@ -135,5 +135,8 @@
   "art_upload_import": "Upload/Import",
   "art_online_selection": "Online Selection",
   "art_sys_artch": "System Architecture:",
-  "art_close": "Close"
+  "art_close": "Close",
+  "art_differentiated_variable_configuration": "Differentiated Variable Configuration",
+  "artifacts_update_time": "Update Time",
+  "artifacts_update_by": "Update By"
 }

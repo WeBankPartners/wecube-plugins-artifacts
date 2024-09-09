@@ -135,5 +135,8 @@
   "art_upload_import": "上传/导入",
   "art_online_selection": "在线选包",
   "art_sys_artch": "系统架构：",
-  "art_close": "关闭"
+  "art_close": "关闭",
+  "art_differentiated_variable_configuration": "差异化变量配置",
+  "artifacts_update_time": "更新时间",
+  "artifacts_update_by": "更新人"
 }
