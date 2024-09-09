@@ -1775,7 +1775,7 @@ export default {
 }
 
 .tree-size {
-  height: calc(100vh - 340px);
+  height: calc(100vh - 300px);
   overflow-y: auto;
 }
 .artifact-management-content {
