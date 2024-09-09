@@ -100,8 +100,9 @@
           <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
           <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
         </p>
-        <div v-if="isShowHistoryModal" style="max-height: 500px; overflow: auto">
-          <ArtifactsSimpleTable :loading="historyTableLoading" :columns="historyTableColumns" :data="historyTableData" :page="historyPageInfo" :pagable="false" @pageChange="historyPageChange" @pageSizeChange="historyPageSizeChange" @rowClick="onHistoryRowClick"> </ArtifactsSimpleTable>
+        <div v-if="isShowHistoryModal">
+          <Table :columns="historyTableColumns" :data="historyTableData" :max-height="fileContentHeight.slice(0, -2)"></Table>
+          <!-- <ArtifactsSimpleTable :loading="historyTableLoading" :columns="historyTableColumns" :data="historyTableData" :page="historyPageInfo" :pagable="false" @pageChange="historyPageChange" @pageSizeChange="historyPageSizeChange" @rowClick="onHistoryRowClick"> </ArtifactsSimpleTable> -->
         </div>
         <div slot="footer">
           <Button type="text" @click="onHistoryCancel()" :loading="historyBtnLoading">{{ $t('artifacts_cancel') }} </Button>

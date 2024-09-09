@@ -196,8 +196,18 @@ export default {
       this.localUploadParams.fileName = file.name
       this.formData.append('file', file)
     },
+    removeFormDataKey (keyToRemove) {
+      let newFormData = new FormData()
+      for (let [key, value] of this.formData.entries()) {
+        if (key !== keyToRemove) {
+          newFormData.append(key, value)
+        }
+      }
+      this.formData = newFormData
+    },
     // 本地上传
     async confirmLocalUpload () {
+      this.removeFormDataKey('baseline_package')
       this.formData.append('baseline_package', this.localUploadParams.baseline_package || '')
       this.loading = true
       this.$Notice.success({
