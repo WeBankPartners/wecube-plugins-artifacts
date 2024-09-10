@@ -26,10 +26,12 @@
         <BaseHeaderTitle class="custom-title" :title="$t('art_sys_artch') + treePath.join(' / ')"></BaseHeaderTitle>
         <div style="display: flex;justify-content: space-between;margin-bottom: 8px;">
           <div>
-            <Input v-model="tableFilter.key_name" @on-change="queryPackages(true)" :placeholder="$t('artifacts_package_name')" clearable style="width: 200px;margin-right: 8px;" />
-            <Input v-model="tableFilter.guid" @on-change="queryPackages(true)" placeholder="GUID" clearable style="width: 200px;margin-right: 8px;" />
-            <Input v-model="tableFilter.baseline_package" @on-change="queryPackages(true)" :placeholder="$t('baseline_package')" clearable style="width: 200px;margin-right: 8px;" />
-            <Input v-model="tableFilter.upload_user" @on-change="queryPackages(true)" :placeholder="$t('artifacts_uploaded_by')" clearable style="width: 200px;margin-right: 8px;" />
+            <Input v-model="tableFilter.key_name" @on-change="paramsChange(true)" :placeholder="$t('artifacts_package_name')" clearable style="width: 200px;margin-right: 8px;" />
+            <Input v-model="tableFilter.guid" @on-change="paramsChange(true)" placeholder="GUID" clearable style="width: 200px;margin-right: 8px;" />
+            <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('baseline_package')" style="width: 200px;margin-right: 8px" v-model="tableFilter.baseline_package">
+              <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
+            </Select>
+            <Input v-model="tableFilter.upload_user" @on-change="paramsChange(true)" :placeholder="$t('artifacts_uploaded_by')" clearable style="width: 200px;margin-right: 8px;" />
           </div>
           <div>
             <!-- 本地上传 -->
@@ -146,6 +148,7 @@ import PkgUpload from '../components/pkg-upload.vue'
 import PkgConfig from '../components/pkg-config.vue'
 import PkgDiffVariableConfig from '../components/pkg-diff-variable.vue'
 import { decode } from 'js-base64'
+import { debounce } from 'lodash'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -468,6 +471,30 @@ export default {
     }
   },
   methods: {
+    // 获取基线列表
+    async getbaselinePkg () {
+      this.baselinePackageOptions = []
+      let { status, data } = await queryPackages(this.guid, {
+        resultColumns: ['guid', 'name', 'package_type', 'diff_conf_file', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'is_decompression', 'db_diff_conf_file', 'db_upgrade_directory', 'db_rollback_directory', 'db_deploy_file_path', 'db_upgrade_file_path', 'db_rollback_file_path'],
+        sorting: {
+          asc: false,
+          field: 'upload_time'
+        },
+        filters: [],
+        paging: true,
+        pageable: {
+          pageSize: 1000,
+          startIndex: 0
+        }
+      })
+      if (status === 'OK') {
+        this.baselinePackageOptions = data.contents.map(item => {
+          return {
+            ...item
+          }
+        })
+      }
+    },
     // #region 部署包上传
     pkgUpload (type) {
       this.$refs.pkgUploadRef.openUploadDialog(type, this.guid)
@@ -712,6 +739,9 @@ export default {
       this.systemDesignVersion = ''
       this.treeData = []
     },
+    paramsChange: debounce(function (resetCurrentPage) {
+      this.queryPackages(resetCurrentPage)
+    }, 300),
     async queryPackages (resetCurrentPage = false) {
       if (resetCurrentPage) {
         this.pageInfo.currentPage = 1
@@ -742,7 +772,7 @@ export default {
           value: this.tableFilter.guid
         })
       }
-      if (this.tableFilter.baseline_package !== '') {
+      if (this.tableFilter.baseline_package) {
         params.filters.push({
           name: 'baseline_package',
           operator: 'contains',
@@ -776,6 +806,7 @@ export default {
         this.treePath = this.findPathByGuid(this.treeData, this.guid)
         this.queryPackages(true)
         this.initPackageDetail()
+        this.getbaselinePkg()
         this.btnControl()
       }
     },

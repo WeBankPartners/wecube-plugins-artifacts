@@ -51,7 +51,6 @@ export default {
   },
   methods: {
     handleResize () {
-      console.log(123)
       this.maxHeight = window.innerHeight - 210
     },
     onChange (currentPage) {
