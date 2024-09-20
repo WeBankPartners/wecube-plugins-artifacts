@@ -324,17 +324,8 @@ class PushComposePackage(base_controller.Controller):
 
     def on_post(self, req, resp, **kwargs):
         body_param = {}
-        if (req.content_length and 'application/json' in (req.content_type or '')):
-            body = req.stream.read(req.content_length or 0)
-            if not body:
-                raise exceptions.BodyParseError(msg=_('empty request body, a valid json document is required.'))
-            try:
-                body = body.decode('utf-8')
-                body_param = json.loads(body)
-            except (ValueError, UnicodeDecodeError):
-                raise exceptions.BodyParseError(
-                    msg=_('malformed json, body was incorrect or not encoded as UTF-8.'))
-        
+        if hasattr(req, 'json'):
+            body_param = req.json
         resp.json = {
             'code': 200,
             'status': 'OK',
