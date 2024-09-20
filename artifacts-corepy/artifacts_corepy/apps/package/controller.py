@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import cgi
 import falcon
 import os
+import json
 import urllib.parse
 from talos.core import utils
 from talos.core import config
@@ -322,10 +323,22 @@ class PushComposePackage(base_controller.Controller):
     resource = package_api.UnitDesignPackages
 
     def on_post(self, req, resp, **kwargs):
+        body_param = {}
+        if (req.content_length and 'application/json' in (req.content_type or '')):
+            body = req.stream.read(req.content_length or 0)
+            if not body:
+                raise exceptions.BodyParseError(msg=_('empty request body, a valid json document is required.'))
+            try:
+                body = body.decode('utf-8')
+                body_param = json.loads(body)
+            except (ValueError, UnicodeDecodeError):
+                raise exceptions.BodyParseError(
+                    msg=_('malformed json, body was incorrect or not encoded as UTF-8.'))
+        
         resp.json = {
             'code': 200,
             'status': 'OK',
-            'data': self.resource().push_compose_package(**kwargs),
+            'data': self.resource().push_compose_package(body_param, **kwargs),
             'message': 'success'
         }
         resp.status = falcon.HTTP_200

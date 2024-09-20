@@ -545,7 +545,12 @@ class UnitDesignPackages(WeCubeResource):
             # 更新差异化变量配置
             deploy_package[field_pkg_diff_conf_var_name] = list(bind_app_diff_configs)
             deploy_package[field_pkg_db_diff_conf_var_name] = list(bind_db_diff_configs)
-            package_result = self.create([deploy_package])
+            exist_package = self._get_deploy_package_by_name_unit(deploy_package['name'],unit_design_id)
+            if exist_package is None:
+                package_result = self.create([deploy_package])
+            else:
+                deploy_package['guid'] = exist_package['guid']
+                package_result = self.pure_update([deploy_package])
             if baseline_package:
                 # 基于baseline，更新db upgrade和rollback
                 new_package_guid = package_result['data'][0]['guid']
@@ -582,14 +587,18 @@ class UnitDesignPackages(WeCubeResource):
     
     """推送组合物料包[含差异化变量，包配置，包文件] 到nexus
     """    
-    def push_compose_package(self, unit_design_id:str, deploy_package_id:str):
+    def push_compose_package(self, params, unit_design_id:str, deploy_package_id:str):
         filename,fileobj,filesize = self.download_compose_package(deploy_package_id)
         # 新增nexus配置
         nexus_server = CONF.pushnexus.server.rstrip('/')
         nexus_client = nexus.NeuxsClient(CONF.pushnexus.server, CONF.pushnexus.username,
                                             CONF.pushnexus.password)
-        unit_design = self._get_unit_design_by_id(unit_design_id)
-        artifact_path = self.get_unit_design_artifact_path(unit_design)
+        artifact_path = '/'
+        if params and params.get('path', None):
+            artifact_path = params['path']
+        else:
+            unit_design = self._get_unit_design_by_id(unit_design_id)
+            artifact_path = self.get_unit_design_artifact_path(unit_design)
         artifact_repository = CONF.pushnexus.repository
         upload_result = nexus_client.upload(artifact_repository, artifact_path, os.path.basename(filename), 'application/octet-stream', fileobj)
         return upload_result
@@ -622,6 +631,28 @@ class UnitDesignPackages(WeCubeResource):
         if not resp_json.get('data', {}).get('contents', []):
             raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
                                            {'rid': deploy_package_id})
+        return resp_json['data']['contents'][0]
+
+    def _get_deploy_package_by_name_unit(self, pkg_name: str, unit_design_id: str):
+        cmdb_client = self.get_cmdb_client()
+        query = {
+            "dialect": {
+                "queryMode": "new"
+            },
+            "filters": [{
+                "name": "name",
+                "operator": "eq",
+                "value": pkg_name
+            },{
+                "name": "unit_design",
+                "operator": "eq",
+                "value": unit_design_id
+            }],
+            "paging": False
+        }
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+        if not resp_json.get('data', {}).get('contents', []):
+            return None
         return resp_json['data']['contents'][0]
 
     def _get_unit_design_by_id(self, unit_design_id: str):
@@ -750,7 +781,12 @@ class UnitDesignPackages(WeCubeResource):
             'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'unit_design': unit_design_id
         }]
-        package_result = self.create(package_rows)
+        exist_package = self._get_deploy_package_by_name_unit(filename,unit_design_id)
+        if exist_package is None:
+            package_result = self.create(package_rows)
+        else:
+            package_rows[0]['guid'] = exist_package['guid']
+            package_result = self.pure_update(package_rows)
         new_package_guid = package_result['data'][0]['guid']
         new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {})
         # update 属性
@@ -818,7 +854,12 @@ class UnitDesignPackages(WeCubeResource):
                 'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'unit_design': unit_design_id
             }]
-            package_result = self.create(package_rows)
+            exist_package = self._get_deploy_package_by_name_unit(url_info['filename'],unit_design_id)
+            if exist_package is None:
+                package_result = self.create(package_rows)
+            else:
+                package_rows[0]['guid'] = exist_package['guid']
+                package_result = self.pure_update(package_rows)
             new_package_guid = package_result['data'][0]['guid']
             new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {})
             # update 属性
@@ -864,7 +905,12 @@ class UnitDesignPackages(WeCubeResource):
                         'unit_design':
                         unit_design_id
                     }]
-                    package_result = self.create(package_rows)
+                    exist_package = self._get_deploy_package_by_name_unit(filename,unit_design_id)
+                    if exist_package is None:
+                        package_result = self.create(package_rows)
+                    else:
+                        package_rows[0]['guid'] = exist_package['guid']
+                        package_result = self.pure_update(package_rows)
                     new_package_guid = package_result['data'][0]['guid']
                     new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {})
                     # update 属性
