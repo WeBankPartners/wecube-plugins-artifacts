@@ -344,8 +344,8 @@ class SystemConfig(base_controller.Controller):
         remote_nexus_server = CONF.wecube.nexus.server
         push_nexus_server = CONF.pushnexus.server
         local_nexus_server = local_nexus_server.strip()
-        remote_nexus_server = local_nexus_server.strip()
-        push_nexus_server = local_nexus_server.strip()
+        remote_nexus_server = remote_nexus_server.strip()
+        push_nexus_server = push_nexus_server.strip()
         if utils.bool_from_string(CONF.use_remote_nexus_only):
             local_nexus_server = remote_nexus_server
         resp.json = {
