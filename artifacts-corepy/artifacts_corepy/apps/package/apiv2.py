@@ -518,7 +518,8 @@ class UnitDesignPackages(WeCubeResource):
                     'code': key,
                     'variable_name': key,
                     'description': key,
-                    'variable_value': value['diffExpr']
+                    'variable_value': value.get('diffExpr', ''),
+                    'variable_type': value.get('type', '')
                 } for key,value in new_diff_configs.items()])
                 # 新创建的差异化变量也需要检测是否需要绑定
                 all_diff_configs = self._get_diff_configs_by_keyname(list(new_diff_configs.keys()))
@@ -721,8 +722,8 @@ class UnitDesignPackages(WeCubeResource):
         deploy_package_detail = self.get(None, deploy_package_id)
         package_app_diff_configs = deploy_package_detail.get(field_pkg_diff_conf_var_name, []) or []
         package_db_diff_configs = deploy_package_detail.get(field_pkg_db_diff_conf_var_name, []) or []
-        package_app_diff_configs = [{'bound': d['bound'], 'key':d['key'], 'diffExpr':d['diffExpr']} for d in package_app_diff_configs]
-        package_db_diff_configs = [{'bound': d['bound'], 'key':d['key'], 'diffExpr':d['diffExpr']} for d in package_db_diff_configs]
+        package_app_diff_configs = [{'bound': d['bound'], 'key':d['key'], 'diffExpr':d['diffExpr'], 'type': d['type']} for d in package_app_diff_configs]
+        package_db_diff_configs = [{'bound': d['bound'], 'key':d['key'], 'diffExpr':d['diffExpr'], 'type': d['type']} for d in package_db_diff_configs]
         # 下载原包文件
         with tempfile.TemporaryDirectory() as tmp_path:
             package_path_file = self.download_from_url(tmp_path, deploy_package_url)
@@ -1267,21 +1268,21 @@ class UnitDesignPackages(WeCubeResource):
             for conf_file in new_conf_list:
                 package_diff_configs.extend(conf_file['configKeyInfos'])
             query_diff_configs = list(set([p['key'] for p in package_diff_configs]))
-            all_diff_configs = []
-            if query_diff_configs:
-                diff_config_query = {
-                    "dialect": {
-                        "queryMode": "new"
-                    },
-                    "filters": [{
-                        "name": "key_name",
-                        "operator": "in",
-                        "value": query_diff_configs
-                    }],
-                    "paging": False
-                }
-                resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
-                all_diff_configs = resp_json['data']['contents']
+            all_diff_configs = self._get_diff_configs_by_keyname(query_diff_configs)
+            # if query_diff_configs:
+            #     diff_config_query = {
+            #         "dialect": {
+            #             "queryMode": "new"
+            #         },
+            #         "filters": [{
+            #             "name": "key_name",
+            #             "operator": "in",
+            #             "value": query_diff_configs
+            #         }],
+            #         "paging": False
+            #     }
+            #     resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
+            #     all_diff_configs = resp_json['data']['contents']
             finder = artifact_utils.CaseInsensitiveDict()
             new_diff_configs_map = artifact_utils.CaseInsensitiveDict()
             for conf in all_diff_configs:
@@ -1310,7 +1311,8 @@ class UnitDesignPackages(WeCubeResource):
                     'code': c,
                     'variable_name': c,
                     'description': c,
-                    'variable_value': new_diff_configs_map.get(c, {}).get('value', '')
+                    'variable_value': new_diff_configs_map.get(c, {}).get('value', ''),
+                    'variable_type': new_diff_configs_map.get(c, {}).get('type', '')
                 } for c in new_diff_configs])
                 new_create_variables = [c['guid'] for c in resp_json['data']]
                 bind_variables.extend(new_create_variables)
@@ -1428,21 +1430,21 @@ class UnitDesignPackages(WeCubeResource):
         query_diff_configs.extend([p['key'] for p in package_app_diff_configs])
         query_diff_configs.extend([p['key'] for p in package_db_diff_configs])
         query_diff_configs = list(set(query_diff_configs))
-        all_diff_configs = []
-        if query_diff_configs:
-            diff_config_query = {
-                "dialect": {
-                    "queryMode": "new"
-                },
-                "filters": [{
-                    "name": "key_name",
-                    "operator": "in",
-                    "value": query_diff_configs
-                }],
-                "paging": False
-            }
-            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
-            all_diff_configs = resp_json['data']['contents']
+        all_diff_configs = self._get_diff_configs_by_keyname(query_diff_configs)
+        # if query_diff_configs:
+        #     diff_config_query = {
+        #         "dialect": {
+        #             "queryMode": "new"
+        #         },
+        #         "filters": [{
+        #             "name": "key_name",
+        #             "operator": "in",
+        #             "value": query_diff_configs
+        #         }],
+        #         "paging": False
+        #     }
+        #     resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
+        #     all_diff_configs = resp_json['data']['contents']
         if package_app_diff_configs:
             # 更新差异化变量bound/diffConfigGuid/diffExpr/fixedDate/key/type
             result[field_pkg_diff_conf_var_name] = self.update_diff_conf_variable(all_diff_configs, package_app_diff_configs,
@@ -1832,9 +1834,15 @@ class UnitDesignPackages(WeCubeResource):
         
         files为[{filename: xxx}]格式
         '''
-        spliters = [s.strip() for s in CONF.encrypt_variable_prefix.split(',')]
-        spliters.extend([s.strip() for s in CONF.file_variable_prefix.split(',')])
-        spliters.extend([s.strip() for s in CONF.default_special_replace.split(',')])
+        spliters = []
+        if CONF.encrypt_variable_prefix.strip():
+            spliters = [s.strip() for s in CONF.encrypt_variable_prefix.split(',')]
+        if CONF.file_variable_prefix.strip():
+            spliters.extend([s.strip() for s in CONF.file_variable_prefix.split(',')])
+        if CONF.default_special_replace.strip():
+            spliters.extend([s.strip() for s in CONF.default_special_replace.split(',')])
+        if CONF.global_variable_prefix.strip():
+            spliters.extend([s.strip() for s in CONF.global_variable_prefix.split(',')])
         spliters = [s for s in spliters if s]
         for i in files:
             filepath = os.path.join(package_cached_dir, i['filename'])
