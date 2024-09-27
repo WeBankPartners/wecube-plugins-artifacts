@@ -410,6 +410,24 @@ class UnitDesignPackages(WeCubeResource):
             return True
         return False
     
+    def _conv_diff_conf_type(self, diff_conf_type:str) -> str:
+        """
+        将差异化配置文件类型转换为对应的枚举类型
+        """
+        variable_prefix_encrypt = [] if not CONF.encrypt_variable_prefix.strip() else [s.strip() for s in CONF.encrypt_variable_prefix.split(',')]
+        variable_prefix_file = [] if not CONF.file_variable_prefix.strip() else [s.strip() for s in CONF.file_variable_prefix.split(',')]
+        variable_prefix_default = [] if not CONF.default_special_replace.strip() else [s.strip() for s in CONF.default_special_replace.split(',')]
+        variable_prefix_global = [] if not CONF.global_variable_prefix.strip() else [s.strip() for s in CONF.global_variable_prefix.split(',')]
+        if diff_conf_type in variable_prefix_encrypt:
+            return 'ENCRYPTED'
+        elif diff_conf_type in variable_prefix_file:
+            return 'FILE'
+        elif diff_conf_type in variable_prefix_default:
+            return 'PRIVATE'
+        elif diff_conf_type in variable_prefix_global:
+            return 'GLOBAL'
+        return ''
+    
     """上传组合物料包[含差异化变量，包配置，包文件]
     """    
     def upload_compose_package(self, compose_filename:str, compose_fileobj, unit_design_id:str, force_operator=None, baseline_package=None):
@@ -519,7 +537,7 @@ class UnitDesignPackages(WeCubeResource):
                     'variable_name': key,
                     'description': key,
                     'variable_value': value.get('diffExpr', ''),
-                    'variable_type': value.get('type', '')
+                    'variable_type': self._conv_diff_conf_type(value.get('type', ''))
                 } for key,value in new_diff_configs.items()])
                 # 新创建的差异化变量也需要检测是否需要绑定
                 all_diff_configs = self._get_diff_configs_by_keyname(list(new_diff_configs.keys()))
@@ -1312,7 +1330,7 @@ class UnitDesignPackages(WeCubeResource):
                     'variable_name': c,
                     'description': c,
                     'variable_value': new_diff_configs_map.get(c, {}).get('value', ''),
-                    'variable_type': new_diff_configs_map.get(c, {}).get('type', '')
+                    'variable_type': self._conv_diff_conf_type(new_diff_configs_map.get(c, {}).get('type', ''))
                 } for c in new_diff_configs])
                 new_create_variables = [c['guid'] for c in resp_json['data']]
                 bind_variables.extend(new_create_variables)
