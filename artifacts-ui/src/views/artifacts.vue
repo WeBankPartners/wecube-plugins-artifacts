@@ -1158,6 +1158,9 @@ export default {
         case 'Rollback':
           this.showHistoryModal(row)
           break
+        case 'Execute':
+          this.toRealsePkg(row, event)
+          break
         // 确认
         default:
           this.handleStatusChange(row, status)
