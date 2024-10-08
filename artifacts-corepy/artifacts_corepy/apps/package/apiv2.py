@@ -194,6 +194,8 @@ class ProcessDef(WeCubeResource):
             params['all'] = 'N'
         if 'rootEntity' not in params:
             params['rootEntity'] = 'wecmdb:' + CONF.wecube.wecmdb.citypes.deploy_package
+        if 'rootEntityGuid' not in params:
+            params['rootEntityGuid'] = params['rootEntityGuid']
         api_client = self.get_cmdb_client()
         url = self.server + '/platform/v1/public/process/definitions'
         return api_client.get(url, params, check_resp=False)
