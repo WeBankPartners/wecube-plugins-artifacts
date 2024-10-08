@@ -152,7 +152,7 @@
                     </Tooltip>
                     <div id="log_file_directory_test" style="display: inline-block;">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.log_file_directory" :key="index">
-                        <Input class="textarea-dir" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.log_file_directory[index].filename" />
+                        <Input class="textarea-dir" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.log_file_directory[index].filename" />
                         <DisplayPath :file="file" :canBeMoved="false"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'log_file_directory')"></Button>
                       </div>
