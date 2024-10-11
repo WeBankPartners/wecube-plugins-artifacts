@@ -138,5 +138,9 @@
   "art_close": "关闭",
   "art_differentiated_variable_configuration": "差异化变量配置",
   "artifacts_update_time": "更新时间",
-  "artifacts_update_by": "更新人"
+  "artifacts_update_by": "更新人",
+  "art_variable_prefix_default": "私有变量",
+  "art_variable_prefix_encrypt": "密码变量",
+  "art_variable_prefix_file": "文件变量",
+  "art_variable_prefix_global": "全局变量"
 }

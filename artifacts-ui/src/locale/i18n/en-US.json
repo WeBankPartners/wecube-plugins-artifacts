@@ -138,5 +138,9 @@
   "art_close": "Close",
   "art_differentiated_variable_configuration": "Differentiated Variable Configuration",
   "artifacts_update_time": "Update Time",
-  "artifacts_update_by": "Update By"
+  "artifacts_update_by": "Update By",
+  "art_variable_prefix_default": "Default Prefix",
+  "art_variable_prefix_encrypt": "Encrypt Prefix",
+  "art_variable_prefix_file": "File Prefix",
+  "art_variable_prefix_global": "Global Prefix"
 }

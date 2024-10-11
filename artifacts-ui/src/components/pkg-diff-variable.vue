@@ -16,9 +16,14 @@
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
-          <Tabs :value="activeTab" @on-click="changeTab" name="APP">
-            <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="APP">
-              <Table :data="item.configKeyInfos || []" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"></Table>
+          <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
+            <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="APP">
+              <div class="pkg-variable">
+                <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
+                  <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
+                </RadioGroup>
+              </div>
+              <Table :data="tempTableData" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"></Table>
             </TabPane>
           </Tabs>
         </TabPane>
@@ -30,9 +35,14 @@
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
-          <Tabs :value="activeTab" @on-click="changeTab" name="DB">
-            <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="DB">
-              <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions" size="small"></Table>
+          <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.db_diff_conf_file)" name="DB">
+            <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="DB">
+              <div class="pkg-variable">
+                <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
+                  <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
+                </RadioGroup>
+              </div>
+              <Table :data="tempTableData" :columns="attrsTableColomnOptions" size="small"></Table>
             </TabPane>
           </Tabs>
         </TabPane>
@@ -71,7 +81,7 @@
 </template>
 
 <script>
-import { getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getCompareContent, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType } from '@/api/server.js'
+import { sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getCompareContent, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import axios from 'axios'
 import { decode } from 'js-base64'
@@ -247,7 +257,7 @@ export default {
           title: this.$t('root_ci'),
           width: 120,
           render: (h, params) => {
-            if (this.activeTabData[params.row._index]) {
+            if (this.tempTableData[params.row._index]) {
               params.row.rootCI = params.row.conf_variable.tempRootCI || params.row.conf_variable.originRootCI
               return (
                 <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip')}>
@@ -263,12 +273,12 @@ export default {
           title: this.$t('artifacts_property_value_fill_rule'),
           render: (h, params) => {
             // show static view only if confirmed
-            if (this.activeTabData[params.row._index]) {
+            if (this.tempTableData[params.row._index]) {
               return params.row.conf_variable.fixedDate ? (
-                <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} isReadOnly={true} v-model={this.activeTabData[params.row._index].conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
+                <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} isReadOnly={true} v-model={this.tempTableData[params.row._index].conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
               ) : (
                 <div style="align-items:center;display:flex;">
-                  <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 10px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.activeTabData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
+                  <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 10px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.tempTableData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
                 </div>
               )
             }
@@ -289,21 +299,36 @@ export default {
       ],
       activeTab: '',
       activeTabData: null,
-      treeNodeSty: {
-        display: 'inline-block',
-        marginRight: '4px',
-        maxWidth: '120px',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        verticalAlign: 'top'
-      },
       currentConfigTab: '', // 配置当前tab
 
       showDiffConfigTab: false,
       currentDiffConfigTab: '', // 差异化变量当前tab
       packageName: '',
-      maxHeight: 500
+      maxHeight: 500,
+      variablePrefixType: [
+        {
+          label: this.$t('art_variable_prefix_default'), // 私有变量
+          key: 'variable_prefix_default',
+          filterKey: []
+        },
+        {
+          label: this.$t('art_variable_prefix_encrypt'), // 密码变量
+          key: 'variable_prefix_encrypt',
+          filterKey: []
+        },
+        {
+          label: this.$t('art_variable_prefix_file'), // 文件变量
+          key: 'variable_prefix_file',
+          filterKey: []
+        },
+        {
+          label: this.$t('art_variable_prefix_global'), // 全局变量
+          key: 'variable_prefix_global',
+          filterKey: []
+        }
+      ],
+      prefixType: 'variable_prefix_default',
+      tempTableData: []
     }
   },
   computed: {},
@@ -336,7 +361,23 @@ export default {
     window.removeEventListener('resize', this.handleResize)
   },
   methods: {
+    typeChange (configKeyInfos) {
+      this.getVariableTableData(configKeyInfos, this.variablePrefixType.find(item => item.key === this.prefixType).filterKey)
+    },
+    getNum (configKeyInfos, filterKey) {
+      let num = 0
+      configKeyInfos.forEach(item => {
+        if (filterKey.includes(item.type)) {
+          num++
+        }
+      })
+      return num
+    },
+    getVariableTableData (configKeyInfos, filterKey) {
+      this.tempTableData = configKeyInfos.filter(item => filterKey.includes(item.type))
+    },
     async initDrawer (guid, row) {
+      this.getVariablePrefix()
       this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
       this.guid = guid
       this.packageName = row.code
@@ -351,7 +392,24 @@ export default {
       this.showDiffConfigTab = true
       // 获取包文件及差异化变量数据
       await this.syncPackageDetail()
+      this.initVariableTableData(0)
       this.openDrawer = true
+    },
+    initVariableTableData (index) {
+      if (this.currentDiffConfigTab === 'DB') {
+        this.typeChange(this.packageDetail.db_diff_conf_file[index].configKeyInfos || [])
+      }
+      if (this.currentDiffConfigTab === 'APP') {
+        this.typeChange(this.packageDetail.diff_conf_file[index].configKeyInfos || [])
+      }
+    },
+    async getVariablePrefix () {
+      let { status, data } = await sysConfig()
+      if (status === 'OK') {
+        this.variablePrefixType.forEach(item => {
+          item.filterKey = data[item.key] || []
+        })
+      }
     },
     // #endregion
     handleUpload (file) {
@@ -423,6 +481,7 @@ export default {
     },
     changeDiffConfigTab (tabName) {
       this.currentDiffConfigTab = tabName
+      this.prefixType = 'variable_prefix_default'
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
       if (this.packageDetail[tmp].length > 0) {
         this.activeTab = this.packageDetail[tmp][0].filename
@@ -431,12 +490,16 @@ export default {
         this.activeTab = ''
         this.activeTabData = {}
       }
+      this.initVariableTableData(0)
     },
-    changeTab (tabName) {
+    changeTab (tabName, tabs) {
       this.activeTab = tabName
+      this.prefixType = 'variable_prefix_default'
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
       // this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab).configKeyInfos
       this.activeTabData = this.packageDetail[tmp].find(item => item.filename === this.activeTab).configKeyInfos
+      const index = tabs.findIndex(item => item.filename === tabName)
+      this.initVariableTableData(index)
     },
     async fetchData () {
       const [sysData, packageCiType] = await Promise.all([getSystemDesignVersions(), getPackageCiTypeId()])
@@ -645,6 +708,7 @@ export default {
           index += 1
         })
       })
+      copyData.diff_conf_file.sort((a, b) => (a.configKeyInfos.length === 0 ? 1 : -1))
 
       dbDiffConfVariable.forEach(elVar => {
         // 记录原始值
@@ -678,6 +742,7 @@ export default {
           index += 1
         })
       })
+      copyData.db_diff_conf_file.sort((a, b) => (a.configKeyInfos.length === 0 ? 1 : -1))
       return copyData
     },
     async syncPackageDetail () {
@@ -944,5 +1009,13 @@ export default {
   padding: 10px 16px;
   text-align: center;
   background: #fff;
+}
+</style>
+<style lang="scss">
+.pkg-variable {
+  .ivu-radio-group-button .ivu-radio-wrapper-checked {
+    background: #2d8cf0;
+    color: #fff;
+  }
 }
 </style>
