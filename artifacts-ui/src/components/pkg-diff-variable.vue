@@ -1,6 +1,6 @@
 <template>
   <Drawer :title="pkgName" v-model="openDrawer" :scrollable="false" width="1300">
-    <div v-if="showDiffConfigTab" style="display: flex;width: 100%;">
+    <div v-if="showDiffConfigTab">
       <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
           <Button style="display: inline-block" @click="exportData" size="small" icon="ios-cloud-download-outline">{{ $t('export') }}</Button>
@@ -18,7 +18,7 @@
           </Spin>
           <Tabs :value="activeTab" @on-click="changeTab" name="APP">
             <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :label="item.shorFileName" :name="item.filename" :key="index" tab="APP">
-              <Table :data="item.configKeyInfos || []" :columns="attrsTableColomnOptions" size="small"></Table>
+              <Table :data="item.configKeyInfos || []" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"></Table>
             </TabPane>
           </Tabs>
         </TabPane>
@@ -302,7 +302,8 @@ export default {
 
       showDiffConfigTab: false,
       currentDiffConfigTab: '', // 差异化变量当前tab
-      packageName: ''
+      packageName: '',
+      maxHeight: 500
     }
   },
   computed: {},
@@ -326,6 +327,13 @@ export default {
     packageType: function (val) {
       this.currentConfigTab = val === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
     }
+  },
+  mounted () {
+    this.maxHeight = window.innerHeight - 260
+    window.addEventListener('resize', this.handleResize)
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.handleResize)
   },
   methods: {
     async initDrawer (guid, row) {
@@ -897,6 +905,9 @@ export default {
           })
         }
       })
+    },
+    handleResize () {
+      this.maxHeight = window.innerHeight - 260
     }
   },
   created () {
@@ -922,12 +933,14 @@ export default {
 .bind-style {
   margin: 8px;
 }
+
 .drawer-footer {
   width: 100%;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  border-top: 1px solid #e8e8e8;
+  // position: relative;
+  // top: 33px;
+  // left: 0;
+  // border-top: 1px solid #e8e8e8;
+  // margin-top: 8px;
   padding: 10px 16px;
   text-align: center;
   background: #fff;

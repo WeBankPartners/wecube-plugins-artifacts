@@ -1,11 +1,13 @@
 <template>
   <div id="weArtifacts" class="artifact-management" style="display: flex;">
-    <div style="width: 20%;">
+    <div style="width: 25%">
       <!-- 系统设计版本 -->
       <Card>
         <BaseHeaderTitle class="custom-title" :title="$t('artifacts_system_design_version')"></BaseHeaderTitle>
         <Select @on-change="selectSystemDesignVersion" @on-clear="clearSelectSystemDesign" label-in-name v-model="systemDesignVersion" filterable clearable>
-          <Option v-for="version in systemDesignVersions" :value="version.guid || ''" :key="version.guid">{{ version.confirm_time ? `${version.name}[${version.confirm_time}]` : version.name }}</Option>
+          <Option v-for="version in systemDesignVersions" :value="version.guid || ''" :key="version.guid" :label="version.code + ' [' + version.name + '] ' + (version.confirm_time ? version.confirm_time : '')">
+            {{ version.code }} [{{ version.name }}] <span style="float: right;color: #A7ACB5">{{ version.confirm_time ? version.confirm_time : '' }}</span></Option
+          >
         </Select>
       </Card>
       <!-- 系统设计列表 -->
@@ -21,7 +23,7 @@
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
     </div>
-    <div v-if="guid" style="margin-left: 16px;border: 1px solid #e8eaec;padding: 8px;width: 79%;">
+    <div v-if="guid" style="margin-left: 16px;border: 1px solid #e8eaec;padding: 8px;width: 74%;">
       <div>
         <BaseHeaderTitle class="custom-title" :title="$t('art_sys_artch') + treePath.join(' / ')"></BaseHeaderTitle>
         <div style="display: flex;justify-content: space-between;margin-bottom: 8px;">
@@ -435,7 +437,7 @@ export default {
       treeNodeSty: {
         display: 'inline-block',
         marginRight: '4px',
-        maxWidth: '120px',
+        maxWidth: '150px',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
@@ -701,13 +703,12 @@ export default {
         _.render = (h, params) => {
           return (
             <div style="white-space: break-spaces;">
-              <div style={this.treeNodeSty} title={_.code}>
-                {_.code}
+              <div style={this.treeNodeSty} title={_.key_name}>
+                {_.key_name}
               </div>
               <div style={this.treeNodeSty} title={_.name}>
                 [{_.name}]
               </div>
-              <div style={`display:inline-block;max-width:60px;font-size:12px;vertical-align:top;color:${stateColor[_.state]}`}>{_.state}</div>
             </div>
           )
         }
