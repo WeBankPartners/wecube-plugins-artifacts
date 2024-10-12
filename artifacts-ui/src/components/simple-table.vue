@@ -43,7 +43,7 @@ export default {
     }
   },
   mounted () {
-    this.maxHeight = window.innerHeight - 210
+    this.maxHeight = window.innerHeight - 256
     window.addEventListener('resize', this.handleResize)
   },
   beforeDestroy () {
@@ -51,7 +51,7 @@ export default {
   },
   methods: {
     handleResize () {
-      this.maxHeight = window.innerHeight - 210
+      this.maxHeight = window.innerHeight - 256
     },
     onChange (currentPage) {
       this.$emit('pageChange', currentPage)

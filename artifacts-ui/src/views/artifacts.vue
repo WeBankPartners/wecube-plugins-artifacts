@@ -49,45 +49,6 @@
         <ArtifactsSimpleTable :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange"></ArtifactsSimpleTable>
       </div>
 
-      <Modal :mask-closable="false" v-model="isShowBatchBindModal" :width="800" :title="$t('multi_bind_config')">
-        <Card>
-          <div slot="title">
-            <Checkbox border size="small" :indeterminate="isBatchBindIndeterminate" :value="isBatchBindAllChecked" @click.prevent.native="batchBindSelectAll">{{ $t('check_all') }}</Checkbox>
-          </div>
-          <div style="height: 300px; overflow-y: auto">
-            <div class="bind-style" v-for="(bindData, index) in batchBindData" :key="index">
-              <Checkbox v-model="bindData.bound">{{ bindData.key }}</Checkbox>
-              <span style="margin-left: 10px; color: #c4c3c3; word-break: break-all">[{{ bindData.fileNames }}]</span>
-            </div>
-          </div>
-        </Card>
-        <div slot="footer">
-          <Button @click="cancelBatchBindOperation">{{ $t('artifacts_cancel') }}</Button>
-          <Button type="primary" @click="saveBatchBindOperation">{{ $t('artifacts_save') }}</Button>
-        </div>
-      </Modal>
-      <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setConfigRowValue" @on-cancel="closeConfigSelectModal">
-        <div style="display: flex">
-          <Input type="text" :placeholder="$t('artifacts_unselected')" v-model="customSearch"> </Input>
-          <Button type="primary" @click="remoteConfigSearch" :loading="remoteLoading">{{ $t('search') }}</Button>
-        </div>
-        <Select ref="ddrop" :disabled="!allDiffConfigs || allDiffConfigs.length === 0" filterable clearable v-model="currentConfigValue" style="margin-top: 10px">
-          <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value && conf.code !== currentConfigRow.key)" :value="conf.variable_value" :key="conf.key_name">{{ conf.key_name }}</Option>
-        </Select>
-      </Modal>
-      <Modal :mask-closable="false" v-model="isShowCiConfigModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setCIConfigRowValue" @on-cancel="closeCIConfigSelectModal">
-        <Form :label-width="120">
-          <FormItem :label="$t('root_ci')">
-            <Select filterable clearable v-model="currentConfigValue" @on-change="handleCIConfigChange">
-              <Option v-for="conf in allCIConfigs" :value="conf.code" :key="conf.code">{{ conf.code }}</Option>
-            </Select>
-          </FormItem>
-          <FormItem v-show="currentConfigValue" v-for="input in customInputs" :key="input.key" :label="input.key">
-            <Input type="text" v-model="input.value" />
-          </FormItem>
-        </Form>
-      </Modal>
-
       <!-- eslint-disable-next-line vue/no-parsing-error -->
       <Modal :z-index="9999" width="1200" v-model="showFileCompare" :fullscreen="fullscreen" footer-hide>
         <p slot="header">
@@ -100,7 +61,7 @@
 
       <Modal v-model="isShowHistoryModal" :title="$t('operation_data_rollback')" :fullscreen="fullscreen" width="900">
         <p slot="header">
-          <span>{{ $t('file_compare') }}</span>
+          <span>{{ $t('art_rollback') }}</span>
           <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
           <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
         </p>
@@ -138,7 +99,7 @@
 </template>
 
 <script>
-import { getCiTypeAttr, getFlowLists, pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getCompareContent, queryHistoryPackages, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType, sysConfig } from '@/api/server.js'
+import { getCiTypeAttr, getFlowLists, pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, queryPackages, getPackageDetail, getCompareContent, queryHistoryPackages, getCITypeOperations, sysConfig } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
@@ -154,10 +115,6 @@ import { debounce } from 'lodash'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
-// cmdb插件包名
-const cmdbPackageName = 'wecmdb'
-// 差异配置key_name
-const DIFF_CONFIGURATION = 'diff_configuration'
 // 单元设计
 const UNIT_DESIGN = 'unit_design'
 // // 部署包key_name
@@ -200,12 +157,6 @@ export default {
       baselinePackageOptions: [],
 
       packageType: '',
-      packageTypeOptions: [
-        { label: 'APP', value: 'APP' },
-        { label: 'DB', value: 'DB' },
-        { label: 'APP&DB', value: 'APP&DB' },
-        { label: 'IMAGE', value: 'IMAGE' }
-      ],
       constPackageOptions: {
         db: 'DB',
         app: 'APP',
@@ -238,7 +189,7 @@ export default {
       headers: {},
       // 单元设计包列表table
       pageInfo: {
-        pageSize: 5,
+        pageSize: 10,
         currentPage: 1,
         total: 0
       },
@@ -249,7 +200,7 @@ export default {
         {
           title: this.$t('artifacts_package_name'),
           key: 'name',
-          minWidth: 100,
+          minWidth: 160,
           render: (h, params) => {
             return <span>{params.row.name}</span>
           }
@@ -416,15 +367,11 @@ export default {
         db_rollback_file_path: [],
         db_deploy_file_path: []
       },
-      isShowBatchBindModal: false,
-      batchBindData: [],
       isBatchBindIndeterminate: false,
       isBatchBindAllChecked: false,
       tabTableLoading: false,
       // 选择差异化变量临时保存值
       currentConfigValue: '',
-      isShowConfigKeyModal: false,
-      isShowCiConfigModal: false,
       currentConfigRow: {},
       allDiffConfigs: [],
       allCIConfigs: [],
@@ -452,22 +399,6 @@ export default {
   },
   computed: {},
   watch: {
-    batchBindData: {
-      handler (bindData) {
-        this.isBatchBindAllChecked = bindData.every(bd => {
-          return bd.bound === true
-        })
-        if (this.isBatchBindAllChecked) {
-          this.isBatchBindIndeterminate = false
-        } else {
-          this.isBatchBindIndeterminate = bindData.some(bd => {
-            return bd.bound === true
-          })
-        }
-      },
-      immediate: true,
-      deep: true
-    },
     packageType: function (val) {
       this.currentConfigTab = val === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
     }
@@ -598,9 +529,6 @@ export default {
         })
       }
     },
-    changeCurrentConfigTab (val) {
-      this.currentConfigTab = val
-    },
     zoomModalMax () {
       this.fileContentHeight = window.screen.availHeight - 310 + 'px'
       this.fullscreen = true
@@ -608,23 +536,6 @@ export default {
     zoomModalMin () {
       this.fileContentHeight = window.screen.availHeight * 0.4 + 'px'
       this.fullscreen = false
-    },
-    changeDiffConfigTab (tabName) {
-      this.currentDiffConfigTab = tabName
-      const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-      if (this.packageDetail[tmp].length > 0) {
-        this.activeTab = this.packageDetail[tmp][0].filename
-        this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
-      } else {
-        this.activeTab = ''
-        this.activeTabData = {}
-      }
-    },
-    changeTab (tabName) {
-      this.activeTab = tabName
-      const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-      // this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab).configKeyInfos
-      this.activeTabData = this.packageDetail[tmp].find(item => item.filename === this.activeTab).configKeyInfos
     },
     changeRootCI (rootCI, params) {
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
@@ -1480,204 +1391,6 @@ export default {
           this.initPackageDetail()
         }
       }
-    },
-    renderConfigButton (params) {
-      let row = params.row
-      return [
-        <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip')}>
-          <Button disabled={!!row.conf_variable.fixedDate} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showConfigKeyModal(row)}>
-            {this.$t('select_key')}
-          </Button>
-        </Tooltip>,
-        // disable no dirty data or row is confirmed
-        <Button disabled={!!(row.conf_variable.diffExpr === row.conf_variable.originDiffExpr || row.conf_variable.fixedDate)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveConfigVariableValue(row)}>
-          {this.$t('artifacts_save')}
-        </Button>
-      ]
-    },
-    tabChange (tabName) {
-      // console.log('tabChange', tabName)
-    },
-    batchBindSelectAll () {
-      this.batchBindData.forEach(item => {
-        item.bound = !this.isBatchBindAllChecked
-      })
-      this.isBatchBindAllChecked = !this.isBatchBindAllChecked
-    },
-    async saveBatchBindOperation () {
-      this.isShowBatchBindModal = false
-      this.tabTableLoading = true
-      let params = {}
-      const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_variable' : 'diff_conf_variable'
-      params[tmp] = this.batchBindData
-      const { status, data } = await updatePackage(this.guid, this.packageId, params)
-      if (status === 'OK') {
-        let uData = this.formatPackageDetail(data)
-        this.packageDetail = uData
-        this.$Notice.success({
-          title: this.$t('artifacts_bind_success')
-        })
-      }
-      this.tabTableLoading = false
-    },
-    cancelBatchBindOperation () {
-      this.isShowBatchBindModal = false
-    },
-    async showConfigKeyModal (row) {
-      // const diffConfigs = await getEntitiesByCiType(cmdbPackageName, DIFF_CONFIGURATION, {})
-      // if (diffConfigs.status === 'OK') {
-      // this.allDiffConfigs = diffConfigs.data
-      this.isShowConfigKeyModal = true
-      this.currentConfigRow = row
-      // }
-    },
-    async remoteConfigSearch () {
-      const query = this.customSearch
-      if (typeof query === 'string' && query.trim().length > 0) {
-        this.remoteLoading = true
-        const diffConfigs = await getEntitiesByCiType(cmdbPackageName, DIFF_CONFIGURATION, { criteria: {}, additionalFilters: [{ attrName: 'code', op: 'like', condition: query.trim() }] })
-        if (diffConfigs) {
-          this.allDiffConfigs = diffConfigs.data
-          this.$nextTick(() => {
-            this.$refs['ddrop'].toggleMenu(null, true)
-          })
-        }
-        this.remoteLoading = false
-      }
-    },
-    handleCIConfigChange (code) {
-      if (code === undefined) return
-      const value = this.allCIConfigs.find(ci => ci.code === code).value
-      const customRegex = /\$\^(\w*)\$\^/g
-      if (typeof value === 'string') {
-        const temps = []
-        let newSet = new Set()
-        for (const matched of value.matchAll(customRegex)) {
-          if (!newSet.has(matched[1])) {
-            newSet.add(matched[1])
-            temps.push({
-              origin: matched[0],
-              key: matched[1],
-              value: ''
-            })
-          }
-        }
-        this.customInputs = temps
-      }
-    },
-    async showCIConfigModal (row) {
-      const res = await getVariableRootCiTypeId()
-      if (res.status === 'OK') {
-        const tab = this.currentDiffConfigTab.toLowerCase()
-        const _template = res.data[`${tab}_template`]
-        const resp = await getEntitiesByCiType(cmdbPackageName, _template, {})
-        if (resp.status === 'OK') {
-          if (Array.isArray(resp.data)) {
-            this.allCIConfigs = resp.data.sort((first, second) => {
-              const firstCode = first.code.toLowerCase()
-              const secondCode = second.code.toLowerCase()
-              return firstCode.localeCompare(secondCode)
-            })
-            this.isShowCiConfigModal = true
-            this.currentConfigRow = row
-          }
-        }
-      }
-    },
-    setConfigRowValue () {
-      if (this.currentConfigValue) {
-        const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-        this.packageDetail[tmp].forEach(elFile => {
-          elFile.configKeyInfos.forEach(elFileVar => {
-            if (this.currentConfigRow.key.toLowerCase() === elFileVar.key.toLowerCase()) {
-              elFileVar.conf_variable.diffExpr = this.currentConfigValue
-            }
-          })
-        })
-        // this.$set(this.packageDetail.diff_conf_variable[this.currentConfigRow._index], 'diffExpr', this.currentConfigValue)
-      }
-      this.closeConfigSelectModal()
-    },
-    setCIConfigRowValue () {
-      const currentConfigValueCodeTovalue = this.allCIConfigs.find(ci => ci.code === this.currentConfigValue).value
-      if (currentConfigValueCodeTovalue) {
-        const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-        this.packageDetail[tmp].forEach(elFile => {
-          elFile.configKeyInfos.forEach(elFileVar => {
-            if (this.currentConfigRow.key.toLowerCase() === elFileVar.key.toLowerCase()) {
-              let resultStr = currentConfigValueCodeTovalue.replaceAll(/\$&(\w)*\$&/g, elFileVar.key)
-              this.customInputs.forEach(item => {
-                resultStr = resultStr.replaceAll(item.origin, item.value)
-              })
-              elFileVar.conf_variable.diffExpr = resultStr
-            }
-          })
-        })
-      }
-      this.closeCIConfigSelectModal()
-    },
-    closeConfigSelectModal () {
-      this.currentConfigValue = ''
-      this.isShowConfigKeyModal = false
-      this.currentConfigRow = {}
-      this.customSearch = ''
-      this.allDiffConfigs = []
-    },
-    closeCIConfigSelectModal () {
-      this.currentConfigValue = ''
-      this.isShowCiConfigModal = false
-      this.currentConfigRow = {}
-      this.customInputs = []
-    },
-    async updateEntity (params) {
-      const { packageName, entityName } = params
-      const { status, data } = await updateEntity(packageName, entityName, params.data)
-      if (status === 'OK') {
-        params.callback && params.callback(data)
-      }
-    },
-    updateAutoFillValue (val, row) {
-      // console.log('updateAutoFillValue', row)
-    },
-    checkFillRule (v) {
-      if (v === null || v === undefined) {
-        this.$Notice.error({
-          title: 'Error',
-          desc: this.$t('artifacts_auto_fill_rule_incomplete')
-        })
-        return false
-      } else {
-        return true
-      }
-    },
-    async saveConfigVariableValue (row) {
-      if (!this.checkFillRule(row.conf_variable.diffExpr)) {
-        return
-      }
-      await this.updateEntity({
-        packageName: cmdbPackageName,
-        entityName: DIFF_CONFIGURATION,
-        data: [
-          {
-            id: row.conf_variable.diffConfigGuid,
-            variable_value: row.conf_variable.diffExpr
-          }
-        ],
-        callback: () => {
-          const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-          this.packageDetail[tmp].forEach(elFile => {
-            elFile.configKeyInfos.forEach(elFileVar => {
-              if (row.key.toLowerCase() === elFileVar.key.toLowerCase()) {
-                elFileVar.conf_variable.originDiffExpr = row.conf_variable.diffExpr
-                elFileVar.conf_variable.diffExpr = row.conf_variable.diffExpr
-              }
-            })
-          })
-          this.$Notice.success({
-            title: this.$t('artifacts_successed')
-          })
-        }
-      })
     },
     async toExportPkg (row, event) {
       event.stopPropagation()

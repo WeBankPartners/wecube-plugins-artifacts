@@ -1,5 +1,5 @@
 <template>
-  <Drawer :title="pkgName" v-model="openDrawer" :scrollable="false" width="1300">
+  <Drawer :title="pkgName" v-model="openDrawer" class="xxxx" :scrollable="false" width="1300">
     <div v-if="showDiffConfigTab">
       <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
@@ -81,7 +81,7 @@
 </template>
 
 <script>
-import { sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, queryPackages, getPackageDetail, updatePackage, getCompareContent, getCITypeOperations, getVariableRootCiTypeId, getEntitiesByCiType } from '@/api/server.js'
+import { sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, getPackageDetail, updatePackage, getVariableRootCiTypeId, getEntitiesByCiType } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import axios from 'axios'
 import { decode } from 'js-base64'
@@ -92,8 +92,6 @@ const defaultDBRootCiTypeId = 'rdb_instance'
 const cmdbPackageName = 'wecmdb'
 // 差异配置key_name
 const DIFF_CONFIGURATION = 'diff_configuration'
-// 单元设计
-const UNIT_DESIGN = 'unit_design'
 export default {
   name: 'artifacts',
   data () {
@@ -105,15 +103,6 @@ export default {
         key_name: '',
         guid: ''
       },
-      releaseParams: {
-        showReleaseModal: false,
-        title: '',
-        selectedFlow: '',
-        guid: '',
-        flowList: []
-      },
-      baselinePackageOptions: [],
-
       packageType: '',
       constPackageOptions: {
         db: 'DB',
@@ -136,8 +125,6 @@ export default {
       guid: '',
       systemDesignVersions: [],
       systemDesignVersion: '',
-      treeData: [],
-      treeLoading: false,
       // ----------------
       // 系统设计物料包数据
       // ----------------
@@ -355,7 +342,7 @@ export default {
     }
   },
   mounted () {
-    this.maxHeight = window.innerHeight - 260
+    this.maxHeight = window.innerHeight - 290
     window.addEventListener('resize', this.handleResize)
   },
   beforeDestroy () {
@@ -411,6 +398,7 @@ export default {
         this.variablePrefixType.forEach(item => {
           item.filterKey = data[item.key] || []
         })
+        this.prefixType = 'variable_prefix_default'
       }
     },
     // #endregion
@@ -522,84 +510,6 @@ export default {
       let { status, data } = await getAllCITypesWithAttr(['notCreated', 'created', 'dirty', 'deleted'])
       if (status === 'OK') {
         this.ciTypes = JSON.parse(JSON.stringify(data))
-      }
-    },
-    async getCITypeOperations () {
-      // TODO: fixme
-      const buttonTypes = {
-        Confirm: 'success',
-        Rollback: 'warning',
-        Delete: 'error',
-        Discard: 'warning',
-        Update: 'primary'
-      }
-      const resp = await getCITypeOperations(UNIT_DESIGN)
-      this.statusOperations = resp.data.map(el => {
-        if (el.operation_en === 'Update') {
-          return {
-            type: el.operation_en,
-            label: this.$t('artifacts_configuration'),
-            props: {
-              type: buttonTypes[el.operation_en] || 'error',
-              size: 'small'
-            },
-            actionType: el.operation_en
-          }
-        } else {
-          return {
-            type: el.operation_en,
-            label: el.operation,
-            props: {
-              type: buttonTypes[el.operation_en] || 'error',
-              size: 'small'
-            },
-            actionType: el.operation_en
-          }
-        }
-      })
-    },
-    async queryPackages (resetCurrentPage = false) {
-      if (resetCurrentPage) {
-        this.pageInfo.currentPage = 1
-      }
-      let params = {
-        sorting: {
-          asc: false,
-          field: 'upload_time'
-        },
-        filters: [],
-        paging: true,
-        pageable: {
-          pageSize: this.pageInfo.pageSize,
-          startIndex: (this.pageInfo.currentPage - 1) * this.pageInfo.pageSize
-        }
-      }
-      if (this.tableFilter.key_name !== '') {
-        params.filters.push({
-          name: 'key_name',
-          operator: 'contains',
-          value: this.tableFilter.key_name
-        })
-      }
-      if (this.tableFilter.guid !== '') {
-        params.filters.push({
-          name: 'guid',
-          operator: 'contains',
-          value: this.tableFilter.guid
-        })
-      }
-      this.tableLoading = true
-      let { status, data } = await queryPackages(this.guid, params)
-      if (status === 'OK') {
-        this.tableLoading = false
-        this.tableData = data.contents.map(_ => {
-          return {
-            ..._
-          }
-        })
-        const { pageSize, totalRows: total } = data.pageInfo
-        const currentPage = this.pageInfo.currentPage
-        this.pageInfo = { currentPage, pageSize, total }
       }
     },
     getHeaders () {
@@ -760,18 +670,6 @@ export default {
           this.activeTab = ''
           this.activeTabData = {}
         }
-      }
-    },
-    async getCompareFile (file) {
-      const params = {
-        baselinePackage: this.packageInput.baseline_package || '',
-        content_length: 1024 * 100,
-        files: [{ path: file.path }]
-      }
-      const { status, data } = await getCompareContent(this.guid, this.packageId, params)
-      if (status === 'OK') {
-        this.showFileCompare = true
-        this.$refs.compareParams.compareFile(data[0].baseline_content, data[0].content, file.comparisonResult)
       }
     },
     renderConfigButton (params) {
@@ -975,14 +873,13 @@ export default {
       })
     },
     handleResize () {
-      this.maxHeight = window.innerHeight - 260
+      this.maxHeight = window.innerHeight - 290
     }
   },
   created () {
     this.fetchData()
     this.getSpecialConnector()
     this.getAllCITypesWithAttr()
-    this.getCITypeOperations()
   },
   components: {}
 }
@@ -1016,9 +913,15 @@ export default {
 </style>
 <style lang="scss">
 .pkg-variable {
+  margin-bottom: 16px;
   .ivu-radio-group-button .ivu-radio-wrapper-checked {
     background: #2d8cf0;
     color: #fff;
+  }
+}
+.xxxx {
+  .ivu-drawer-body {
+    height: calc(100% - 30px) !important;
   }
 }
 </style>
