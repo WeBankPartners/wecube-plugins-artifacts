@@ -327,8 +327,9 @@ export default {
           filterKey: []
         }
       ],
-      prefixType: 'variable_prefix_default',
-      tempTableData: []
+      prefixType: 'variable_prefix_default', // 前缀
+      tempTableData: [], // 通过类型、文件、前缀过滤后的展示数据
+      currentFileIndex: -1 // 缓存单签文件顺序
     }
   },
   computed: {},
@@ -396,6 +397,7 @@ export default {
       this.openDrawer = true
     },
     initVariableTableData (index) {
+      this.currentFileIndex = index
       if (this.currentDiffConfigTab === 'DB') {
         this.typeChange(this.packageDetail.db_diff_conf_file[index].configKeyInfos || [])
       }
@@ -812,6 +814,7 @@ export default {
         this.$Notice.success({
           title: this.$t('artifacts_bind_success')
         })
+        this.initVariableTableData(this.currentFileIndex)
       }
       this.tabTableLoading = false
     },
