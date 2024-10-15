@@ -423,15 +423,24 @@
         <Button @click="saveConfigFileTree" type="primary">{{ $t('artifacts_save') }}</Button>
       </div>
     </Modal>
+    <Modal :z-index="9999" width="1200" v-model="showFileCompare" :fullscreen="fullscreen" footer-hide>
+      <p slot="header">
+        <span>{{ $t('file_compare') }}</span>
+        <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
+        <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
+      </p>
+      <CompareFile ref="compareParams" :fileContentHeight="fileContentHeight"></CompareFile>
+    </Modal>
   </div>
 </template>
 
 <script>
-import { getPackageDetail, queryPackages, getFiles, compareBaseLineFiles, updatePackage } from '@/api/server.js'
+import { getPackageDetail, queryPackages, getFiles, compareBaseLineFiles, updatePackage, getCompareContent } from '@/api/server.js'
 import Sortable from 'sortablejs'
 import DisplayPath from '../views/display-path.vue'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
+import CompareFile from '../views/compare-file.vue'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -439,6 +448,13 @@ export default {
   name: '',
   data () {
     return {
+      showFileCompare: false,
+      compareParams: {
+        originContent: '',
+        newContent: ''
+      },
+      fullscreen: false,
+      fileContentHeight: window.screen.availHeight * 0.4 + 'px',
       pkgName: '', // 当前选中的包名
       isFileSelect: false,
       isShowKeyServiceCode: false,
@@ -568,6 +584,14 @@ export default {
     }
   },
   methods: {
+    zoomModalMax () {
+      this.fileContentHeight = window.screen.availHeight - 310 + 'px'
+      this.fullscreen = true
+    },
+    zoomModalMin () {
+      this.fileContentHeight = window.screen.availHeight * 0.4 + 'px'
+      this.fullscreen = false
+    },
     packageTypeChanged (val) {
       let toTab = ''
       if (val === 'APP') {
@@ -1459,15 +1483,32 @@ export default {
       }
       this.$emit('queryPackages')
       this.$emit('syncPackageDetail')
+    },
+    async getCompareFile (file) {
+      const params = {
+        baselinePackage: this.packageInput.baseline_package || '',
+        content_length: 1024 * 100,
+        files: [{ path: file.path }]
+      }
+      const { status, data } = await getCompareContent(this.guid, this.packageId, params)
+      if (status === 'OK') {
+        this.showFileCompare = true
+        this.$refs.compareParams.compareFile(data[0].baseline_content, data[0].content, file.comparisonResult)
+      }
     }
   },
   components: {
-    DisplayPath
+    DisplayPath,
+    CompareFile
   }
 }
 </script>
 
 <style scoped lang="scss">
+.header-icon {
+  float: right;
+  margin: 3px 20px 0 0 !important;
+}
 .custom-modal-header {
   line-height: 20px;
   font-size: 16px;
