@@ -25,22 +25,22 @@
     </div>
     <div v-if="guid" style="margin-left: 16px;border: 1px solid #e8eaec;padding: 8px;width: 74%;">
       <div>
-        <BaseHeaderTitle class="custom-title" :title="$t('art_sys_artch') + treePath.join(' / ')"></BaseHeaderTitle>
-        <div style="display: flex;justify-content: space-between;margin-bottom: 8px;">
-          <div>
-            <Input v-model="tableFilter.key_name" @on-change="paramsChange(true)" :placeholder="$t('artifacts_package_name')" clearable style="width: 200px;margin-right: 8px;" />
-            <Input v-model="tableFilter.guid" @on-change="paramsChange(true)" placeholder="GUID" clearable style="width: 200px;margin-right: 8px;" />
-            <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('baseline_package')" style="width: 200px;margin-right: 8px" v-model="tableFilter.baseline_package">
-              <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
-            </Select>
-            <Input v-model="tableFilter.upload_user" @on-change="paramsChange(true)" :placeholder="$t('artifacts_uploaded_by')" clearable style="width: 200px;margin-right: 8px;" />
-          </div>
+        <div style="display: flex;justify-content: space-between;">
+          <BaseHeaderTitle class="custom-title" :title="$t('art_sys_artch') + treePath.join(' / ')"></BaseHeaderTitle>
           <div>
             <!-- 本地上传 -->
             <Button icon="md-cloud-upload" style="background: #28aef3;border-color: #28aef3;margin-right: 8px;" type="info" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">{{ $t('art_upload_import') }}</Button>
             <!-- 在线选择 -->
             <Button icon="ios-apps" type="success" :disabled="!btnGroupControl.upload_from_nexus_enabled" @click="pkgUpload('online')">{{ $t('art_online_selection') }}</Button>
           </div>
+        </div>
+        <div>
+          <Input v-model="tableFilter.key_name" @on-change="paramsChange(true)" :placeholder="$t('artifacts_package_name')" clearable style="width: 200px;margin-right: 8px;" />
+          <Input v-model="tableFilter.guid" @on-change="paramsChange(true)" placeholder="GUID" clearable style="width: 200px;margin-right: 8px;" />
+          <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('baseline_package')" style="width: 200px;margin-right: 8px" v-model="tableFilter.baseline_package">
+            <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
+          </Select>
+          <Input v-model="tableFilter.upload_user" @on-change="paramsChange(true)" :placeholder="$t('artifacts_uploaded_by')" clearable style="width: 200px;margin-right: 8px;" />
         </div>
       </div>
       <div class="artifact-management-content">
@@ -49,16 +49,6 @@
         <ArtifactsSimpleTable :loading="tableLoading" :columns="tableColumns" :data="tableData" :page="pageInfo" @pageChange="pageChange" @pageSizeChange="pageSizeChange"></ArtifactsSimpleTable>
       </div>
 
-      <!-- eslint-disable-next-line vue/no-parsing-error -->
-      <Modal :z-index="9999" width="1200" v-model="showFileCompare" :fullscreen="fullscreen" footer-hide>
-        <p slot="header">
-          <span>{{ $t('file_compare') }}</span>
-          <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
-          <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
-        </p>
-        <CompareFile ref="compareParams" :fileContentHeight="fileContentHeight"></CompareFile>
-      </Modal>
-
       <Modal v-model="isShowHistoryModal" :title="$t('operation_data_rollback')" :fullscreen="fullscreen" width="900">
         <p slot="header">
           <span>{{ $t('art_rollback') }}</span>
@@ -66,7 +56,7 @@
           <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
         </p>
         <div v-if="isShowHistoryModal">
-          <Table :columns="historyTableColumns" :data="historyTableData" :max-height="fileContentHeight.slice(0, -2)"></Table>
+          <Table :columns="historyTableColumns" :data="historyTableData" :max-height="fileContentHeight.slice(0, -2)" highlight-row @on-row-click="onHistoryRowClick"></Table>
           <!-- <ArtifactsSimpleTable :loading="historyTableLoading" :columns="historyTableColumns" :data="historyTableData" :page="historyPageInfo" :pagable="false" @pageChange="historyPageChange" @pageSizeChange="historyPageSizeChange" @rowClick="onHistoryRowClick"> </ArtifactsSimpleTable> -->
         </div>
         <div slot="footer">
@@ -99,18 +89,13 @@
 </template>
 
 <script>
-import { getCiTypeAttr, getFlowLists, pushPkg, getSpecialConnector, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, queryPackages, getPackageDetail, getCompareContent, queryHistoryPackages, getCITypeOperations, sysConfig } from '@/api/server.js'
+import { getCiTypeAttr, getFlowLists, pushPkg, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, queryPackages, queryHistoryPackages, getCITypeOperations, sysConfig } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
-import iconFile from '../assets/file.png'
-import iconFolder from '../assets/folder.png'
 import axios from 'axios'
-import Sortable from 'sortablejs'
-import CompareFile from './compare-file'
 import DisplayPath from './display-path'
 import PkgUpload from '../components/pkg-upload.vue'
 import PkgConfig from '../components/pkg-config.vue'
 import PkgDiffVariableConfig from '../components/pkg-diff-variable.vue'
-import { decode } from 'js-base64'
 import { debounce } from 'lodash'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
@@ -223,7 +208,7 @@ export default {
           key: 'baseline_package',
           width: 120,
           render: (h, params) => {
-            const baseLine = params.row.baseline_package ? params.row.baseline_package.key_name : ''
+            const baseLine = params.row.baseline_package ? params.row.baseline_package.key_name : '-'
             return <span>{baseLine}</span>
           }
         },
@@ -340,15 +325,6 @@ export default {
       // -------------------
       // 包配置文件选择模态数据
       // -------------------
-      configFileTree: {
-        treeType: 0,
-        treeData: []
-      },
-      configFileTreeTitle: '',
-      toggleCheckFileTreeNew: '',
-      toggleCheckFileTreeSame: '',
-      toggleCheckFileTreeChanged: '',
-      toggleCheckFileTreeDeleted: '',
       // -------------------
       // 差异化变量数据
       // -------------------
@@ -367,14 +343,7 @@ export default {
         db_rollback_file_path: [],
         db_deploy_file_path: []
       },
-      isBatchBindIndeterminate: false,
-      isBatchBindAllChecked: false,
-      tabTableLoading: false,
       // 选择差异化变量临时保存值
-      currentConfigValue: '',
-      currentConfigRow: {},
-      allDiffConfigs: [],
-      allCIConfigs: [],
       rootCI: [
         { value: defaultAppRootCiTypeId, label: this.$t('APP') },
         { value: defaultDBRootCiTypeId, label: this.$t('DB') }
@@ -433,73 +402,6 @@ export default {
       this.$refs.pkgUploadRef.openUploadDialog(type, this.guid)
     },
     // #endregion
-    handleUpload (file) {
-      var FR = new FileReader()
-      FR.onload = ev => {
-        if (ev.target && typeof ev.target.result === 'string') {
-          const fileData = ev.target.result.split(',')
-          const jsonObj = JSON.parse(decode(fileData[1]))
-          const packageDetail = this.formatPackageDetail(jsonObj)
-          this.packageDetail.diff_conf_file.forEach(p => {
-            const findDiffFile = packageDetail.diff_conf_file.find(d => d.filename === p.filename)
-            if (findDiffFile) {
-              p.configKeyInfos.forEach(c => {
-                const findConfVariable = findDiffFile.configKeyInfos.find(config => config.key === c.key)
-                if (findConfVariable) {
-                  c.conf_variable.diffExpr = findConfVariable.conf_variable.diffExpr
-                }
-              })
-            }
-          })
-
-          this.packageDetail.db_diff_conf_file.forEach(p => {
-            const findDiffFile = packageDetail.db_diff_conf_file.find(d => d.filename === p.filename)
-            if (findDiffFile) {
-              p.configKeyInfos.forEach(c => {
-                const findConfVariable = findDiffFile.configKeyInfos.find(config => config.key === c.key)
-                if (findConfVariable) {
-                  c.conf_variable.diffExpr = findConfVariable.conf_variable.diffExpr
-                }
-              })
-            }
-          })
-        }
-      }
-      FR.readAsDataURL(file)
-
-      this.$Notice.success({
-        title: 'Success',
-        desc: this.$t('replaceTip')
-      })
-
-      return false
-    },
-    async exportData () {
-      let { status, data } = await getPackageDetail(this.guid, this.packageId)
-      if (status === 'OK') {
-        let content = JSON.stringify(data)
-        let fileName = `${this.packageName}-${new Date().getTime()}.json`
-        let blob = new Blob([content])
-        if ('msSaveOrOpenBlob' in navigator) {
-          window.navigator.msSaveOrOpenBlob(blob, fileName)
-        } else {
-          if ('download' in document.createElement('a')) {
-            // 非IE下载
-            let elink = document.createElement('a')
-            elink.download = fileName
-            elink.style.display = 'none'
-            elink.href = URL.createObjectURL(blob)
-            document.body.appendChild(elink)
-            elink.click()
-            URL.revokeObjectURL(elink.href) // 释放URL 对象
-            document.body.removeChild(elink)
-          } else {
-            // IE10+下载
-            navigator.msSaveOrOpenBlob(blob, fileName)
-          }
-        }
-      }
-    },
     async getAllpkg () {
       this.baselinePackageOptions = []
       let { status, data } = await queryPackages(this.guid, {
@@ -537,17 +439,6 @@ export default {
       this.fileContentHeight = window.screen.availHeight * 0.4 + 'px'
       this.fullscreen = false
     },
-    changeRootCI (rootCI, params) {
-      const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-      let activeTab = this.packageDetail[tmp].find(item => item.filename === this.activeTab)
-      let confVariable = activeTab.configKeyInfos[params.index].conf_variable
-      confVariable.tempRootCI = rootCI
-      if (confVariable.tempRootCI === confVariable.originRootCI) {
-        confVariable.diffExpr = confVariable.originDiffExpr
-      } else {
-        confVariable.diffExpr = ''
-      }
-    },
     async fetchData () {
       const [sysData, packageCiType] = await Promise.all([getSystemDesignVersions(), getPackageCiTypeId()])
       if (sysData.status === 'OK' && sysData.data.contents instanceof Array) {
@@ -559,12 +450,6 @@ export default {
       }
       if (packageCiType.status === 'OK') {
         this.packageCiType = packageCiType.data
-      }
-    },
-    async getSpecialConnector () {
-      const res = await getSpecialConnector()
-      if (res.status === 'OK') {
-        this.specialDelimiters = res.data
       }
     },
     async getAllCITypesWithAttr () {
@@ -787,25 +672,6 @@ export default {
         Authorization: 'Bearer ' + getCookie('accessToken')
       }
     },
-    renderCell (content) {
-      let res = ''
-      if (Array.isArray(content)) {
-        content.forEach(c => {
-          res += c.filename + '|'
-        })
-        res = res.substring(0, res.length - 1)
-      } else {
-        res = content
-      }
-      return (
-        <Tooltip min-width="200px" max-width="500px" style="width: 100%;">
-          <span slot="content" style="white-space:normal;">
-            {res}
-          </span>
-          <div style="width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px">{res}</div>
-        </Tooltip>
-      )
-    },
     pageChange (currentPage) {
       this.pageInfo.currentPage = currentPage
       this.queryPackages()
@@ -911,93 +777,7 @@ export default {
         throw err
       }
     },
-    formatPackageDetail (data) {
-      let dataString = JSON.stringify(data)
-      let copyData = JSON.parse(dataString)
-      let diffConfVariable = copyData.diff_conf_variable || []
-      let dbDiffConfVariable = copyData.db_diff_conf_variable || []
-      diffConfVariable.forEach(elVar => {
-        // 记录原始值
-        elVar.originDiffExpr = elVar.diffExpr
-        const rootCI = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
-        elVar.originRootCI = rootCI
-        elVar.tempRootCI = rootCI
-        elVar.withinFiles = []
-        elVar.withinFileIndexes = []
-        let index = 0
-        copyData.diff_conf_file.forEach(elFile => {
-          elFile.configKeyInfos = elFile.configKeyInfos || []
-          elFile.configKeyInfos.forEach(elFileVar => {
-            if (elVar.key.toLowerCase() === elFileVar.key.toLowerCase()) {
-              let baseName = elFile.filename.split('/').slice(-1)[0]
-              elVar.withinFiles.push(baseName)
-              elVar.withinFileIndexes.push(index)
-            }
-          })
-          index += 1
-        })
-        elVar.fileNames = elVar.withinFiles.join(', ')
-      })
-      copyData.diff_conf_file.forEach(elFile => {
-        let index = 1
-        elFile.shorFileName = elFile.filename.split('/').slice(-1)[0]
-        elFile.configKeyInfos.forEach(elFileVar => {
-          elFileVar.index = index
-          const found = diffConfVariable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase())
-          elFileVar.conf_variable = found
-          index += 1
-        })
-      })
-
-      dbDiffConfVariable.forEach(elVar => {
-        // 记录原始值
-        elVar.originDiffExpr = elVar.diffExpr
-        const rootCI = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId)
-        elVar.originRootCI = rootCI
-        elVar.tempRootCI = rootCI
-        elVar.withinFiles = []
-        elVar.withinFileIndexes = []
-        let index = 0
-        copyData.db_diff_conf_file.forEach(elFile => {
-          elFile.configKeyInfos = elFile.configKeyInfos || []
-          elFile.configKeyInfos.forEach(elFileVar => {
-            if (elVar.key.toLowerCase() === elFileVar.key.toLowerCase()) {
-              let baseName = elFile.filename.split('/').slice(-1)[0]
-              elVar.withinFiles.push(baseName)
-              elVar.withinFileIndexes.push(index)
-            }
-          })
-          index += 1
-        })
-        elVar.fileNames = elVar.withinFiles.join(', ')
-      })
-      copyData.db_diff_conf_file.forEach(elFile => {
-        let index = 1
-        elFile.shorFileName = elFile.filename.split('/').slice(-1)[0]
-        elFile.configKeyInfos.forEach(elFileVar => {
-          elFileVar.index = index
-          const found = dbDiffConfVariable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase())
-          elFileVar.conf_variable = found
-          index += 1
-        })
-      })
-      return copyData
-    },
-    async syncPackageDetail () {
-      this.initPackageDetail()
-      let { status, data } = await getPackageDetail(this.guid, this.packageId)
-      if (status === 'OK') {
-        const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-        this.packageDetail = this.formatPackageDetail(data)
-        if (this.packageDetail[tmp].length > 0) {
-          this.activeTab = this.packageDetail[tmp][0].filename
-          this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
-        } else {
-          this.activeTab = ''
-          this.activeTabData = {}
-        }
-      }
-    },
+    async syncPackageDetail () {},
     renderActionButton (params) {
       const row = params.row
       let operations = []
@@ -1105,257 +885,6 @@ export default {
       this.packageId = row.guid
       this.hideFooter = hideFooter
       await this.getAllpkg()
-      // this.isShowFilesModal = true
-
-      this.$nextTick(() => {
-        if (this.packageType !== this.constPackageOptions.db) {
-          this.genSortable('diff_conf_file')
-          this.genSortable('start_file_path')
-          this.genSortable('stop_file_path')
-          this.genSortable('deploy_file_path')
-        }
-        if (this.packageType !== this.constPackageOptions.app) {
-          this.genSortable('db_diff_conf_file')
-          this.genSortable('db_upgrade_directory')
-          this.genSortable('db_rollback_directory')
-          this.genSortable('db_upgrade_file_path')
-          this.genSortable('db_rollback_file_path')
-          this.genSortable('db_deploy_file_path')
-        }
-      })
-    },
-    genSortable (key) {
-      const _this = this
-      const $ul = document.getElementById(key)
-      // eslint-disable-next-line no-unused-vars
-      const sortable = new Sortable($ul, {
-        onUpdate: event => {
-          const newIndex = event.newIndex
-          const oldIndex = event.oldIndex
-          const $li = $ul.children[newIndex]
-          const $oldLi = $ul.children[oldIndex]
-          $ul.removeChild($li)
-          if (newIndex > oldIndex) {
-            $ul.insertBefore($li, $oldLi)
-          } else {
-            $ul.insertBefore($li, $oldLi.nextSibling)
-          }
-          const item = _this.packageInput[key].splice(oldIndex, 1)
-          _this.packageInput[key].splice(newIndex, 0, item[0])
-        },
-        animation: 150
-      })
-    },
-    async getCompareFile (file) {
-      const params = {
-        baselinePackage: this.packageInput.baseline_package || '',
-        content_length: 1024 * 100,
-        files: [{ path: file.path }]
-      }
-      const { status, data } = await getCompareContent(this.guid, this.packageId, params)
-      if (status === 'OK') {
-        this.showFileCompare = true
-        this.$refs.compareParams.compareFile(data[0].baseline_content, data[0].content, file.comparisonResult)
-      }
-    },
-    _formatConfigFileTreeNode (tree, element, checkNodes) {
-      let children = element.children || []
-      let treeNode = {
-        title: element.name,
-        disableCheckbox: this.isFileSelect ? !element.isDir : false,
-        path: element.path,
-        isDir: element.isDir,
-        exists: element.exists,
-        md5: element.md5,
-        comparisonResult: element.comparisonResult
-      }
-      if (treeNode.isDir) {
-        treeNode.expand = children.length > 0
-        treeNode.loading = false
-        treeNode.children = []
-        treeNode.render = (h, params) => {
-          if (params.data.comparisonResult === 'new') {
-            return (
-              <span>
-                <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
-                <span style="color: #19be6b;">
-                  {params.data.title}
-                  <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
-                </span>
-              </span>
-            )
-          } else if (params.data.comparisonResult === 'changed') {
-            return (
-              <span>
-                <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
-                <span style="color: #2d8cf0;">
-                  {params.data.title}
-                  <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
-                </span>
-              </span>
-            )
-          } else if (params.data.comparisonResult === 'deleted') {
-            return (
-              <span>
-                <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
-                <span style="color: #cccccc;">
-                  {params.data.title}
-                  <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
-                </span>
-              </span>
-            )
-          } else if (params.data.comparisonResult === 'same') {
-            return (
-              <span>
-                <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
-                <span>
-                  {params.data.title}
-                  <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
-                </span>
-              </span>
-            )
-          } else {
-            return (
-              <span>
-                <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
-                <span>{params.data.title}</span>
-              </span>
-            )
-          }
-        }
-      } else {
-        treeNode.render = (h, params) => {
-          if (params.data.comparisonResult) {
-            if (params.data.comparisonResult === 'new') {
-              return (
-                <span>
-                  <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #19be6b;">
-                    {params.data.title}
-                    <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
-                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
-                  </span>
-                </span>
-              )
-            } else if (params.data.comparisonResult === 'changed') {
-              return (
-                <span>
-                  <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #2d8cf0;">
-                    {params.data.title}
-                    <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
-                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
-                  </span>
-                </span>
-              )
-            } else if (params.data.comparisonResult === 'deleted') {
-              return (
-                <span>
-                  <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #cccccc;">
-                    {params.data.title}
-                    <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
-                  </span>
-                </span>
-              )
-            } else {
-              return (
-                <span>
-                  <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span>
-                    {params.data.title}
-                    <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
-                    <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
-                  </span>
-                </span>
-              )
-            }
-          } else {
-            if (params.data.comparisonResult === 'new') {
-              return (
-                <span>
-                  <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #19be6b;">{params.data.title}</span>
-                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
-                </span>
-              )
-            } else if (params.data.comparisonResult === 'changed') {
-              return (
-                <span>
-                  <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #2d8cf0;">{params.data.title}</span>
-                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
-                </span>
-              )
-            } else if (params.data.comparisonResult === 'deleted') {
-              return (
-                <span>
-                  <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #cccccc;">{params.data.title}</span>
-                </span>
-              )
-            } else {
-              return (
-                <span>
-                  <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span>{params.data.title}</span>
-                  <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
-                </span>
-              )
-            }
-          }
-        }
-      }
-      // if (checkNodes.indexOf(element.path) >= 0 && !treeNode.isDir) {
-      if (checkNodes.indexOf(element.path) >= 0) {
-        treeNode.checked = true
-      }
-      tree.push(treeNode)
-      if (children.length > 0) {
-        children.forEach(el => {
-          this._formatConfigFileTreeNode(treeNode.children, el, checkNodes)
-        })
-      }
-    },
-    formatConfigFileTree (data, checkNodes = null) {
-      let dataString = JSON.stringify(data)
-      let copyData = JSON.parse(dataString)
-      let treeData = []
-      checkNodes = checkNodes || []
-      copyData.forEach(el => {
-        this._formatConfigFileTreeNode(treeData, el, checkNodes)
-      })
-      return treeData
-    },
-    deleteFilePath (index, key) {
-      this.packageInput[key].splice(index, 1)
-    },
-    initTreeConfig (type) {
-      this.configFileTree.treeType = type
-      this.configFileTree.treeData = []
-      this.toggleCheckFileTreeNew = ''
-      this.toggleCheckFileTreeSame = ''
-      this.toggleCheckFileTreeChanged = ''
-      this.toggleCheckFileTreeDeleted = ''
-    },
-    _travelConfigFileTreeNodes (node, status, checked) {
-      let changeParent = false
-      if (!node.isDir && node.comparisonResult === status) {
-        this.$set(node, 'checked', checked)
-        if (!checked) {
-          changeParent = true
-        }
-      }
-      if (node.children && node.expand) {
-        node.children.forEach(el => {
-          let tmpChangeParent = this._travelConfigFileTreeNodes(el, status, checked)
-          if (tmpChangeParent) {
-            changeParent = tmpChangeParent
-            this.$set(node, 'checked', false)
-          }
-        })
-      }
-      return changeParent
     },
     async handleDelete (row) {
       this.$Modal.confirm({
@@ -1478,35 +1007,14 @@ export default {
       } else {
         window.location.href = window.location.origin + '/#/login'
       }
-    },
-    showSpin () {
-      this.$Spin.show({
-        render: h => {
-          return h('div', [
-            h('Icon', {
-              class: 'demo-spin-icon-load',
-              props: {
-                type: 'ios-loading',
-                size: 18
-              }
-            }),
-            h('div', 'Loading')
-          ])
-        }
-      })
-      setTimeout(() => {
-        this.$Spin.hide()
-      }, 20000)
     }
   },
   created () {
     this.fetchData()
-    this.getSpecialConnector()
     this.getAllCITypesWithAttr()
     this.getCITypeOperations()
   },
   components: {
-    CompareFile,
     DisplayPath,
     PkgUpload,
     PkgConfig,
@@ -1531,6 +1039,7 @@ export default {
   // height: calc(100vh - 246px);
   // overflow-y: auto;
   padding-right: 8px;
+  margin-top: 8px;
   width: 100%;
 }
 .ivu-upload {
@@ -1575,17 +1084,7 @@ export default {
     position: relative;
   }
 }
-.bind-style {
-  margin: 8px;
-}
 
-.config-tab :deep(.ivu-tabs-nav) {
-  width: 100%;
-}
-.config-tab :deep(.ivu-tabs-tab) {
-  width: 15%;
-  text-align: center;
-}
 .custom-title {
   margin-bottom: 16px;
 }

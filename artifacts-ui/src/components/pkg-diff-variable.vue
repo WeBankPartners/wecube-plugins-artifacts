@@ -1,22 +1,26 @@
 <template>
-  <Drawer :title="pkgName" v-model="openDrawer" class="xxxx" :scrollable="false" width="1300">
+  <Drawer :title="pkgName" v-model="openDrawer" class="custom-drawer" :scrollable="false" width="1300">
     <div v-if="showDiffConfigTab">
       <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
-          <Button style="display: inline-block" @click="exportData" size="small" icon="ios-cloud-download-outline">{{ $t('export') }}</Button>
           <Upload :before-upload="handleUpload" action="">
-            <Button style="display: inline-block;margin-left: 4px;" icon="ios-cloud-upload-outline" size="small">{{ $t('import') }}</Button>
+            <Button type="primary" style="margin-right: 8px;">
+              <img src="../assets/import.png" class="btn-img" alt="" />
+              {{ $t('import') }}
+            </Button>
           </Upload>
+          <Button type="info" class="btn-right" @click="exportData">
+            <img src="../assets/export.png" class="btn-img" alt="" />
+            {{ $t('export') }}
+          </Button>
         </div>
         <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('APP')" name="APP" tab="diffConfig">
-          <div class="batchOperation" style="text-align: right">
-            <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
-          </div>
           <Spin size="large" fix v-if="tabTableLoading">
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
           <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
+            <Button type="primary" style="vertical-align: text-top;" size="small" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
             <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="APP">
               <div class="pkg-variable">
                 <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
@@ -28,14 +32,12 @@
           </Tabs>
         </TabPane>
         <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('DB')" name="DB" tab="diffConfig">
-          <div class="batchOperation" style="text-align: right">
-            <Button type="primary" size="small" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
-          </div>
           <Spin size="large" fix v-if="tabTableLoading">
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
           <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.db_diff_conf_file)" name="DB">
+            <Button type="primary" style="vertical-align: text-top;" size="small" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
             <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="DB">
               <div class="pkg-variable">
                 <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
@@ -476,11 +478,11 @@ export default {
       if (this.packageDetail[tmp].length > 0) {
         this.activeTab = this.packageDetail[tmp][0].filename
         this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
+        this.initVariableTableData(0)
       } else {
         this.activeTab = ''
         this.activeTabData = {}
       }
-      this.initVariableTableData(0)
     },
     changeTab (tabName, tabs) {
       this.activeTab = tabName
@@ -910,6 +912,10 @@ export default {
   text-align: center;
   background: #fff;
 }
+.btn-img {
+  width: 16px;
+  vertical-align: middle;
+}
 </style>
 <style lang="scss">
 .pkg-variable {
@@ -918,8 +924,12 @@ export default {
     background: #2d8cf0;
     color: #fff;
   }
+  .ivu-radio-group-button .ivu-radio-wrapper-checked:hover {
+    border-color: #57a3f3;
+    color: white;
+  }
 }
-.xxxx {
+.custom-drawer {
   .ivu-drawer-body {
     height: calc(100% - 30px) !important;
   }
