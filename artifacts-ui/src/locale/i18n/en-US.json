@@ -142,5 +142,6 @@
   "art_variable_prefix_default": "Default Prefix",
   "art_variable_prefix_encrypt": "Encrypt Prefix",
   "art_variable_prefix_file": "File Prefix",
-  "art_variable_prefix_global": "Global Prefix"
+  "art_variable_prefix_global": "Global Prefix",
+  "art_no_data": "No data available."
 }

@@ -20,7 +20,7 @@
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
           <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
-            <Button type="primary" style="vertical-align: text-top;" size="small" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
+            <Button type="primary" style="vertical-align: text-top;" size="small" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
             <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="APP">
               <div class="pkg-variable">
                 <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
@@ -30,6 +30,9 @@
               <Table :data="tempTableData" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"></Table>
             </TabPane>
           </Tabs>
+          <div v-if="packageDetail.diff_conf_file.length === 0" style="text-align: center;">
+            {{ $t('art_no_data') }}
+          </div>
         </TabPane>
         <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('DB')" name="DB" tab="diffConfig">
           <Spin size="large" fix v-if="tabTableLoading">
@@ -37,7 +40,7 @@
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
           <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.db_diff_conf_file)" name="DB">
-            <Button type="primary" style="vertical-align: text-top;" size="small" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
+            <Button type="primary" style="vertical-align: text-top;" size="small" :disabled="packageDetail.db_diff_conf_file.length === 0" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
             <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="DB">
               <div class="pkg-variable">
                 <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
@@ -47,6 +50,9 @@
               <Table :data="tempTableData" :columns="attrsTableColomnOptions" size="small"></Table>
             </TabPane>
           </Tabs>
+          <div v-if="packageDetail.db_diff_conf_file.length === 0" style="text-align: center;">
+            {{ $t('art_no_data') }}
+          </div>
         </TabPane>
       </Tabs>
     </div>

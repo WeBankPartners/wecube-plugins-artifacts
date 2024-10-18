@@ -142,5 +142,6 @@
   "art_variable_prefix_default": "私有变量",
   "art_variable_prefix_encrypt": "密码变量",
   "art_variable_prefix_file": "文件变量",
-  "art_variable_prefix_global": "全局变量"
+  "art_variable_prefix_global": "全局变量",
+  "art_no_data": "暂无数据"
 }
