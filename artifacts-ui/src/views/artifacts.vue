@@ -682,6 +682,7 @@ export default {
     },
     async startConfigDiff (row, event) {
       event.stopPropagation()
+      this.$Spin.show()
       this.$refs.pkgDiffVariableConfigRef.initDrawer(this.guid, row)
     },
     historyPageChange (currentPage) {

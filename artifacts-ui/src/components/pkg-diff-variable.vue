@@ -358,7 +358,10 @@ export default {
   },
   methods: {
     typeChange (configKeyInfos) {
-      this.getVariableTableData(configKeyInfos, this.variablePrefixType.find(item => item.key === this.prefixType).filterKey)
+      this.tempTableData = []
+      this.$nextTick(() => {
+        this.getVariableTableData(configKeyInfos, this.variablePrefixType.find(item => item.key === this.prefixType).filterKey)
+      })
     },
     getNum (configKeyInfos, filterKey) {
       let num = 0
@@ -373,7 +376,8 @@ export default {
       this.tempTableData = configKeyInfos.filter(item => filterKey.includes(item.type))
     },
     async initDrawer (guid, row) {
-      this.getVariablePrefix()
+      await this.getAllCITypesWithAttr()
+      this.currentDiffConfigTab = ''
       this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
       this.guid = guid
       this.packageName = row.code
@@ -388,7 +392,10 @@ export default {
       this.showDiffConfigTab = true
       // 获取包文件及差异化变量数据
       await this.syncPackageDetail()
+      await this.getVariablePrefix()
+      this.setPrefixType()
       this.initVariableTableData(0)
+      this.$Spin.hide()
       this.openDrawer = true
     },
     initVariableTableData (index) {
@@ -406,8 +413,21 @@ export default {
         this.variablePrefixType.forEach(item => {
           item.filterKey = data[item.key] || []
         })
-        this.prefixType = 'variable_prefix_default'
       }
+    },
+    setPrefixType () {
+      this.prefixType = ''
+      this.$nextTick(() => {
+        const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
+        const tmpData = this.packageDetail[tmp].find(item => item.filename === this.activeTab).configKeyInfos || []
+        for (let i = 0; i < this.variablePrefixType.length; i++) {
+          const res = this.getNum(tmpData, this.variablePrefixType[i].filterKey)
+          if (res > 0) {
+            this.prefixType = this.variablePrefixType[i].key
+            break
+          }
+        }
+      })
     },
     // #endregion
     handleUpload (file) {
@@ -479,11 +499,11 @@ export default {
     },
     changeDiffConfigTab (tabName) {
       this.currentDiffConfigTab = tabName
-      this.prefixType = 'variable_prefix_default'
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
       if (this.packageDetail[tmp].length > 0) {
         this.activeTab = this.packageDetail[tmp][0].filename
         this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
+        this.setPrefixType()
         this.initVariableTableData(0)
       } else {
         this.activeTab = ''
@@ -492,11 +512,11 @@ export default {
     },
     changeTab (tabName, tabs) {
       this.activeTab = tabName
-      this.prefixType = 'variable_prefix_default'
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
       // this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab).configKeyInfos
       this.activeTabData = this.packageDetail[tmp].find(item => item.filename === this.activeTab).configKeyInfos
       const index = tabs.findIndex(item => item.filename === tabName)
+      this.setPrefixType()
       this.initVariableTableData(index)
     },
     async fetchData () {
@@ -887,7 +907,6 @@ export default {
   created () {
     this.fetchData()
     this.getSpecialConnector()
-    this.getAllCITypesWithAttr()
   },
   components: {}
 }
