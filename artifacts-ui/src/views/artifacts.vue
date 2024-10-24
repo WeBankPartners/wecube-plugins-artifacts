@@ -3,7 +3,8 @@
     <div style="width: 25%">
       <!-- 系统设计版本 -->
       <Card>
-        <BaseHeaderTitle class="custom-title" :title="$t('artifacts_system_design_version')"></BaseHeaderTitle>
+        <CustomTitle :title="$t('artifacts_system_design_version')"></CustomTitle>
+        <!-- <BaseHeaderTitle class="custom-title" :title="$t('artifacts_system_design_version')"></BaseHeaderTitle> -->
         <Select @on-change="selectSystemDesignVersion" @on-clear="clearSelectSystemDesign" label-in-name v-model="systemDesignVersion" filterable clearable>
           <Option v-for="version in systemDesignVersions" :value="version.guid || ''" :key="version.guid" :label="version.code + ' [' + version.name + '] ' + (version.confirm_time ? version.confirm_time : '')">
             {{ version.code }} [{{ version.name }}] <span style="float: right;color: #A7ACB5">{{ version.confirm_time ? version.confirm_time : '' }}</span></Option
@@ -12,7 +13,8 @@
       </Card>
       <!-- 系统设计列表 -->
       <Card style="margin-top: 16px;">
-        <BaseHeaderTitle class="custom-title" :title="$t('artifacts_system_design_list')"></BaseHeaderTitle>
+        <CustomTitle :title="$t('artifacts_system_design_list')"></CustomTitle>
+        <!-- <BaseHeaderTitle class="custom-title" :title="$t('artifacts_system_design_list')"></BaseHeaderTitle> -->
         <div>
           <Tree :data="treeData" @on-select-change="selectTreeNode" class="tree-size"> </Tree>
           <Spin size="large" fix v-if="treeLoading">
@@ -26,7 +28,8 @@
     <div v-if="guid" style="margin-left: 16px;border: 1px solid #e8eaec;padding: 8px;width: 74%;">
       <div>
         <div style="display: flex;justify-content: space-between;">
-          <BaseHeaderTitle class="custom-title" :title="$t('art_sys_artch') + treePath.join(' / ')"></BaseHeaderTitle>
+          <CustomTitle :title="$t('art_sys_artch') + treePath.join(' / ')"></CustomTitle>
+          <!-- <BaseHeaderTitle class="custom-title" :title="$t('art_sys_artch') + treePath.join(' / ')"></BaseHeaderTitle> -->
           <div>
             <!-- 本地上传 -->
             <Button icon="md-cloud-upload" style="background: #28aef3;border-color: #28aef3;margin-right: 8px;" type="info" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">{{ $t('art_upload_import') }}</Button>
@@ -93,6 +96,7 @@ import { getCiTypeAttr, getFlowLists, pushPkg, getAllCITypesWithAttr, deleteCiDa
 import { setCookie, getCookie } from '../util/cookie.js'
 import axios from 'axios'
 import DisplayPath from './display-path'
+import CustomTitle from '../components/custom-title.vue'
 import PkgUpload from '../components/pkg-upload.vue'
 import PkgConfig from '../components/pkg-config.vue'
 import PkgDiffVariableConfig from '../components/pkg-diff-variable.vue'
@@ -685,7 +689,7 @@ export default {
       this.$Spin.show()
       setTimeout(() => {
         this.$Spin.hide()
-      }, 3000)
+      }, 10000)
       this.$refs.pkgDiffVariableConfigRef.initDrawer(this.guid, row)
     },
     historyPageChange (currentPage) {
@@ -1020,6 +1024,7 @@ export default {
   },
   components: {
     DisplayPath,
+    CustomTitle,
     PkgUpload,
     PkgConfig,
     PkgDiffVariableConfig
