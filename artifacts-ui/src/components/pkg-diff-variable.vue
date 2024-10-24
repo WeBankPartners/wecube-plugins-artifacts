@@ -263,7 +263,7 @@ export default {
         },
         {
           title: this.$t('root_ci'),
-          width: 200,
+          width: 100,
           render: (h, params) => {
             let row = params.row
             if (this.tempTableData[params.row._index]) {
@@ -271,12 +271,12 @@ export default {
               return (
                 <div>
                   <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip_1')}>
-                    <Button size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showCIConfigModal(params.row)}>
+                    <Button size="small" style="margin:2px;" type="primary" ghost onClick={async () => this.showCIConfigModal(params.row)}>
                       {this.$t('art_use_template')}
                     </Button>
                   </Tooltip>
                   <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip_2')}>
-                    <Button disabled={!!row.conf_variable.fixedDate} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showConfigKeyModal(row)}>
+                    <Button disabled={!!row.conf_variable.fixedDate} type="info" ghost size="small" style="margin:2px;" onClick={async () => this.showConfigKeyModal(row)}>
                       {this.$t('art_copy_exist')}
                     </Button>
                   </Tooltip>
@@ -416,7 +416,6 @@ export default {
       await this.getVariablePrefix()
       this.setPrefixType()
       this.initVariableTableData(0)
-      this.$Spin.hide()
       this.openDrawer = true
     },
     initVariableTableData (index) {
