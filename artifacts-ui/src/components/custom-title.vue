@@ -1,6 +1,6 @@
 <template>
   <div class="art-title">
-    <div class="header">
+    <div class="art-header">
       <div class="title">
         {{ title }}
         <span class="underline"></span>
@@ -24,7 +24,7 @@ export default {
 <style scoped lang="scss">
 .art-title {
   margin-bottom: 16px;
-  .header {
+  .art-header {
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;

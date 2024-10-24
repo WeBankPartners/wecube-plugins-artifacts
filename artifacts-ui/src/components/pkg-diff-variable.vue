@@ -85,6 +85,19 @@
         <Button type="primary" @click="saveBatchBindOperation">{{ $t('artifacts_save') }}</Button>
       </div>
     </Modal>
+
+    <Modal :mask-closable="false" v-model="isShowCiConfigModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setCIConfigRowValue" @on-cancel="closeCIConfigSelectModal">
+      <Form :label-width="120">
+        <FormItem :label="$t('root_ci')">
+          <Select filterable clearable v-model="currentConfigValue" @on-change="handleCIConfigChange">
+            <Option v-for="conf in allCIConfigs" :value="conf.code" :key="conf.code">{{ conf.code }}</Option>
+          </Select>
+        </FormItem>
+        <FormItem v-show="currentConfigValue" v-for="input in customInputs" :key="input.key" :label="input.key">
+          <Input type="text" v-model="input.value" />
+        </FormItem>
+      </Form>
+    </Modal>
   </Drawer>
 </template>
 
@@ -250,16 +263,24 @@ export default {
         },
         {
           title: this.$t('root_ci'),
-          width: 120,
+          width: 200,
           render: (h, params) => {
+            let row = params.row
             if (this.tempTableData[params.row._index]) {
               params.row.rootCI = params.row.conf_variable.tempRootCI || params.row.conf_variable.originRootCI
               return (
-                <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip')}>
-                  <Button size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showCIConfigModal(params.row)}>
-                    {this.$t('select_key')}
-                  </Button>
-                </Tooltip>
+                <div>
+                  <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip_1')}>
+                    <Button size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showCIConfigModal(params.row)}>
+                      {this.$t('art_use_template')}
+                    </Button>
+                  </Tooltip>
+                  <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip_2')}>
+                    <Button disabled={!!row.conf_variable.fixedDate} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showConfigKeyModal(row)}>
+                      {this.$t('art_copy_exist')}
+                    </Button>
+                  </Tooltip>
+                </div>
               )
             }
           }
@@ -703,11 +724,11 @@ export default {
     renderConfigButton (params) {
       let row = params.row
       return [
-        <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip')}>
-          <Button disabled={!!row.conf_variable.fixedDate} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showConfigKeyModal(row)}>
-            {this.$t('select_key')}
-          </Button>
-        </Tooltip>,
+        // <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip')}>
+        //   <Button disabled={!!row.conf_variable.fixedDate} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showConfigKeyModal(row)}>
+        //     {this.$t('select_key')}
+        //   </Button>
+        // </Tooltip>,
         // disable no dirty data or row is confirmed
         <Button disabled={!!(row.conf_variable.diffExpr === row.conf_variable.originDiffExpr || row.conf_variable.fixedDate)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveConfigVariableValue(row)}>
           {this.$t('artifacts_save')}
@@ -783,6 +804,7 @@ export default {
             })
           }
         }
+        console.log(1.1, value, this.customInputs)
         this.customInputs = temps
       }
     },

@@ -69,8 +69,9 @@
   "artifacts_bind_success": "Bind Success",
   "multi_bind_config": "Binding Manage",
   "check_all": "Check All",
-  "variable_select_key_tooltip": "Choose a Key(variable) and use it's Value",
-  "root_ci": "Custom Expressions",
+  "variable_select_key_tooltip_1": "Select a differentiated variable template and apply variable replacement rules through configuration.",
+  "variable_select_key_tooltip_2": "Choose a Key(variable) and use it's Value",
+  "root_ci": "Quick Edit",
   "search": "Search",
   "APP": "Application",
   "DB": "DB Instance",
@@ -143,5 +144,7 @@
   "art_variable_prefix_encrypt": "Encrypt Prefix",
   "art_variable_prefix_file": "File Prefix",
   "art_variable_prefix_global": "Global Prefix",
-  "art_no_data": "No data available."
+  "art_no_data": "No data available.",
+  "art_use_template": "Use Template",
+  "art_copy_exist": "Copy Exist"
 }
