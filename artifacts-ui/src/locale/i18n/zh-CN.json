@@ -69,8 +69,9 @@
   "artifacts_bind_success": "绑定成功",
   "multi_bind_config": "绑定管理",
   "check_all": "全选",
-  "variable_select_key_tooltip": "选择已有的差异化变量使用其填充规则",
-  "root_ci": "自定义表达式",
+  "variable_select_key_tooltip_1": "选择差异化变量模版并通过设置其中变量替换填充规则",
+  "variable_select_key_tooltip_2": "选择已有的差异化变量替换填充规则",
+  "root_ci": "快捷编辑",
   "search": "搜索",
   "APP": "应用",
   "DB": "数据库",
@@ -143,5 +144,7 @@
   "art_variable_prefix_encrypt": "密码变量",
   "art_variable_prefix_file": "文件变量",
   "art_variable_prefix_global": "全局变量",
-  "art_no_data": "暂无数据"
+  "art_no_data": "暂无数据",
+  "art_use_template": "使用模版",
+  "art_copy_exist": "复制已有"
 }
