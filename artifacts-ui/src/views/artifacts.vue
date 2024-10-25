@@ -40,6 +40,9 @@
         <div>
           <Input v-model="tableFilter.key_name" @on-change="paramsChange(true)" :placeholder="$t('artifacts_package_name')" clearable style="width: 200px;margin-right: 8px;" />
           <Input v-model="tableFilter.guid" @on-change="paramsChange(true)" placeholder="GUID" clearable style="width: 200px;margin-right: 8px;" />
+          <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('package_type')" style="width: 200px;margin-right: 8px" v-model="tableFilter.package_type">
+            <Option v-for="item in packageOptions" :value="item.value" :key="item.label">{{ item.label }}</Option>
+          </Select>
           <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('baseline_package')" style="width: 200px;margin-right: 8px" v-model="tableFilter.baseline_package">
             <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
           </Select>
@@ -132,6 +135,7 @@ export default {
       },
       tableFilter: {
         key_name: '',
+        package_type: '',
         guid: '',
         baseline_package: '',
         upload_user: ''
@@ -152,6 +156,12 @@ export default {
         mixed: 'APP&DB',
         image: 'IMAGE'
       },
+      packageOptions: [
+        { label: this.$t('DB'), value: 'DB' },
+        { label: this.$t('APP'), value: 'APP' },
+        { label: this.$t('APP&DB'), value: 'APP&DB' },
+        { label: this.$t('IMAGE'), value: 'IMAGE' }
+      ],
       remoteLoading: false,
       isFileSelect: false,
       fullscreen: false,
@@ -564,6 +574,13 @@ export default {
           name: 'key_name',
           operator: 'contains',
           value: this.tableFilter.key_name
+        })
+      }
+      if (this.tableFilter.package_type !== '') {
+        params.filters.push({
+          name: 'package_type',
+          operator: 'eq',
+          value: this.tableFilter.package_type
         })
       }
       if (this.tableFilter.guid !== '') {
