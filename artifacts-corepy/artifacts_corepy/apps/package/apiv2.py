@@ -2098,32 +2098,9 @@ class UnitDesignPackages(WeCubeResource):
             ret_data[fset.name] = input_attrs[fset.name]
             if not baseline_package:
                 # 无输入则填充默认，否则使用输入值
-                # 先尝试寻找默认路径下以脚本默认值结尾的文件，找不到就使用默认值
-                file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.value], False, False)
-                filtered_file_objs = []
-                for f in file_objs:
-                    if fnmatch.fnmatch(f['name'], field_pkg_deploy_file_path_default_value_rule):
-                        filtered_file_objs.append(f)
-                if len(filtered_file_objs) > 0:
-                    ret_data[field_pkg_deploy_file_path_name] = FilePathConcater().convert(filtered_file_objs)
-                else:
-                    ret_data[field_pkg_deploy_file_path_name] = input_attrs.get(field_pkg_deploy_file_path_name, None) or field_pkg_deploy_file_path_default_value
-                filtered_file_objs = []
-                for f in file_objs:
-                    if fnmatch.fnmatch(f['name'], field_pkg_start_file_path_default_value_rule):
-                        filtered_file_objs.append(f)
-                if len(filtered_file_objs) > 0:
-                    ret_data[field_pkg_start_file_path_name] = FilePathConcater().convert(filtered_file_objs)
-                else:
-                    ret_data[field_pkg_start_file_path_name] = input_attrs.get(field_pkg_start_file_path_name, None) or field_pkg_start_file_path_default_value
-                filtered_file_objs = []
-                for f in file_objs:
-                    if fnmatch.fnmatch(f['name'], field_pkg_stop_file_path_default_value_rule):
-                        filtered_file_objs.append(f)
-                if len(filtered_file_objs) > 0:
-                    ret_data[field_pkg_stop_file_path_name] = FilePathConcater().convert(filtered_file_objs)
-                else:
-                    ret_data[field_pkg_stop_file_path_name] = input_attrs.get(field_pkg_stop_file_path_name, None) or field_pkg_stop_file_path_default_value
+                ret_data[field_pkg_deploy_file_path_name] = input_attrs.get(field_pkg_deploy_file_path_name, None) or field_pkg_deploy_file_path_default_value
+                ret_data[field_pkg_start_file_path_name] = input_attrs.get(field_pkg_start_file_path_name, None) or field_pkg_start_file_path_default_value
+                ret_data[field_pkg_stop_file_path_name] = input_attrs.get(field_pkg_stop_file_path_name, None) or field_pkg_stop_file_path_default_value
             else:
                 # 无输入则仅继承，否则使用输入值
                 ret_data[field_pkg_deploy_file_path_name] = input_attrs.get(field_pkg_deploy_file_path_name, None) or baseline_package[field_pkg_deploy_file_path_name]
@@ -2133,9 +2110,32 @@ class UnitDesignPackages(WeCubeResource):
             if not baseline_package:
                 # 填充默认目录值，脚本文件清单填充默认
                 ret_data[fset.name] = fset.default_value
-                ret_data[field_pkg_deploy_file_path_name] = field_pkg_deploy_file_path_default_value
-                ret_data[field_pkg_start_file_path_name] = field_pkg_start_file_path_default_value
-                ret_data[field_pkg_stop_file_path_name] = field_pkg_stop_file_path_default_value
+                # 先尝试寻找默认路径下以脚本默认值结尾的文件，找不到就使用默认值
+                file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.name], False, False)
+                filtered_file_objs = []
+                for f in file_objs:
+                    if fnmatch.fnmatch(f['name'], field_pkg_deploy_file_path_default_value_rule):
+                        filtered_file_objs.append(f)
+                if len(filtered_file_objs) > 0:
+                    ret_data[field_pkg_deploy_file_path_name] = FilePathConcater().convert(filtered_file_objs)
+                else:
+                    ret_data[field_pkg_deploy_file_path_name] = field_pkg_deploy_file_path_default_value
+                filtered_file_objs = []
+                for f in file_objs:
+                    if fnmatch.fnmatch(f['name'], field_pkg_start_file_path_default_value_rule):
+                        filtered_file_objs.append(f)
+                if len(filtered_file_objs) > 0:
+                    ret_data[field_pkg_start_file_path_name] = FilePathConcater().convert(filtered_file_objs)
+                else:
+                    ret_data[field_pkg_start_file_path_name] = field_pkg_start_file_path_default_value
+                filtered_file_objs = []
+                for f in file_objs:
+                    if fnmatch.fnmatch(f['name'], field_pkg_stop_file_path_default_value_rule):
+                        filtered_file_objs.append(f)
+                if len(filtered_file_objs) > 0:
+                    ret_data[field_pkg_stop_file_path_name] = FilePathConcater().convert(filtered_file_objs)
+                else:
+                    ret_data[field_pkg_stop_file_path_name] = field_pkg_stop_file_path_default_value
             else:
                 # 目录值仅继承，脚本文件清单仅继承
                 ret_data[fset.name] = baseline_package[fset.name]
