@@ -686,10 +686,6 @@ export default {
     },
     async startConfigDiff (row, event) {
       event.stopPropagation()
-      this.$Spin.show()
-      setTimeout(() => {
-        this.$Spin.hide()
-      }, 10000)
       this.$refs.pkgDiffVariableConfigRef.initDrawer(this.guid, row)
     },
     historyPageChange (currentPage) {
@@ -964,7 +960,7 @@ export default {
       this.releaseParams.selectedFlow = ''
       this.releaseParams.guid = row.guid
       this.releaseParams.flowList = []
-      const res = await getFlowLists()
+      const res = await getFlowLists(row.guid)
       if (res.status === 'OK') {
         this.releaseParams.flowList = res.data.data || []
         this.releaseParams.showReleaseModal = true

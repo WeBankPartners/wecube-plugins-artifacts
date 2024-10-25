@@ -59,4 +59,4 @@ export const getFilePath = guid => req.get(`/unit-designs/${guid}/packages/query
 // 获取按钮权限
 export const sysConfig = () => req.get(`/sysconfig`)
 // 获取可用编排
-export const getFlowLists = () => req.get(`/process/definitions`)
+export const getFlowLists = guid => req.get(`/process/definitions?rootEntityGuid=${guid}`)
