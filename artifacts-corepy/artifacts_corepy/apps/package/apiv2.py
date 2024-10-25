@@ -67,6 +67,9 @@ field_pkg_script_file_directory_default_value = 'bin'
 field_pkg_deploy_file_path_default_value = 'bin/deploy.sh'
 field_pkg_start_file_path_default_value = 'bin/start.sh'
 field_pkg_stop_file_path_default_value = 'bin/stop.sh'
+field_pkg_deploy_file_path_default_value_rule = 'bin/*deploy.sh'
+field_pkg_start_file_path_default_value_rule = 'bin/*start.sh'
+field_pkg_stop_file_path_default_value_rule = 'bin/*stop.sh'
 field_pkg_log_file_directory_default_value = 'logs'
 field_pkg_log_file_trade_default_value = 'logs/trade.log'
 field_pkg_log_file_keyword_default_value = 'logs/keyword.log'
@@ -2095,9 +2098,32 @@ class UnitDesignPackages(WeCubeResource):
             ret_data[fset.name] = input_attrs[fset.name]
             if not baseline_package:
                 # 无输入则填充默认，否则使用输入值
-                ret_data[field_pkg_deploy_file_path_name] = input_attrs.get(field_pkg_deploy_file_path_name, None) or field_pkg_deploy_file_path_default_value
-                ret_data[field_pkg_start_file_path_name] = input_attrs.get(field_pkg_start_file_path_name, None) or field_pkg_start_file_path_default_value
-                ret_data[field_pkg_stop_file_path_name] = input_attrs.get(field_pkg_stop_file_path_name, None) or field_pkg_stop_file_path_default_value
+                # 先尝试寻找默认路径下以脚本默认值结尾的文件，找不到就使用默认值
+                file_objs = self._scan_dir(self.get_package_cached_path(package_id), ret_data[fset.value], False, False)
+                filtered_file_objs = []
+                for f in file_objs:
+                    if fnmatch.fnmatch(f['name'], field_pkg_deploy_file_path_default_value_rule):
+                        filtered_file_objs.append(f)
+                if len(filtered_file_objs) > 0:
+                    ret_data[field_pkg_deploy_file_path_name] = FilePathConcater().convert(filtered_file_objs)
+                else:
+                    ret_data[field_pkg_deploy_file_path_name] = input_attrs.get(field_pkg_deploy_file_path_name, None) or field_pkg_deploy_file_path_default_value
+                filtered_file_objs = []
+                for f in file_objs:
+                    if fnmatch.fnmatch(f['name'], field_pkg_start_file_path_default_value_rule):
+                        filtered_file_objs.append(f)
+                if len(filtered_file_objs) > 0:
+                    ret_data[field_pkg_start_file_path_name] = FilePathConcater().convert(filtered_file_objs)
+                else:
+                    ret_data[field_pkg_start_file_path_name] = input_attrs.get(field_pkg_start_file_path_name, None) or field_pkg_start_file_path_default_value
+                filtered_file_objs = []
+                for f in file_objs:
+                    if fnmatch.fnmatch(f['name'], field_pkg_stop_file_path_default_value_rule):
+                        filtered_file_objs.append(f)
+                if len(filtered_file_objs) > 0:
+                    ret_data[field_pkg_stop_file_path_name] = FilePathConcater().convert(filtered_file_objs)
+                else:
+                    ret_data[field_pkg_stop_file_path_name] = input_attrs.get(field_pkg_stop_file_path_name, None) or field_pkg_stop_file_path_default_value
             else:
                 # 无输入则仅继承，否则使用输入值
                 ret_data[field_pkg_deploy_file_path_name] = input_attrs.get(field_pkg_deploy_file_path_name, None) or baseline_package[field_pkg_deploy_file_path_name]
