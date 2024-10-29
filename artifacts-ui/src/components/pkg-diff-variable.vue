@@ -276,7 +276,7 @@ export default {
                     </Button>
                   </Tooltip>
                   <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip_2')}>
-                    <Button disabled={!!row.conf_variable.fixedDate} type="info" ghost size="small" style="margin:2px;" onClick={async () => this.showConfigKeyModal(row)}>
+                    <Button type="info" ghost size="small" style="margin:2px;" onClick={async () => this.showConfigKeyModal(row)}>
                       {this.$t('art_copy_exist')}
                     </Button>
                   </Tooltip>
