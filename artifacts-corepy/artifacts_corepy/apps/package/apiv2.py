@@ -713,9 +713,9 @@ class UnitDesignPackages(WeCubeResource):
                 "paging": False
             }
             resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, diff_config_query)
-            if not resp_json.get('data', {}).get('contents', []):
-                raise exceptions.NotFoundError(message=_("Can not find ci data for key_names [%(names)s]") %
-                                           {'names': key_names})
+            # if not resp_json.get('data', {}).get('contents', []):
+            #     raise exceptions.NotFoundError(message=_("Can not find ci data for key_names [%(names)s]") %
+            #                                {'names': key_names})
             return resp_json['data']['contents']
         return []
     
