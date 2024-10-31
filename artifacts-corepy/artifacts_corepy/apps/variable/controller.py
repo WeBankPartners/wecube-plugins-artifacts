@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-# from talos.common.controller import CollectionController, ItemController
-
-from artifacts_corepy.common import exceptions
 from artifacts_corepy.common.mixin import CollectionController, ItemController
 from artifacts_corepy.apps.variable import api
 
