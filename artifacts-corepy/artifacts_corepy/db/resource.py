@@ -22,6 +22,19 @@ class MetaCRUD(crud.ResourceBase):
     def _before_update(self, rid, resource, validate):
         resource['update_user'] = scoped_globals.GLOBALS.request.auth_user or None
 
+    def _apply_primary_key_filter(self, query, rid):
+        query = super()._apply_primary_key_filter(query, rid)
+
+        if hasattr(self.orm_meta, 'is_deleted'):
+            query = query.filter(self.orm_meta.is_deleted == 0)
+
+        return query
+
+    def _addtional_list(self, query, filters):
+        if hasattr(self.orm_meta, 'is_deleted'):
+            query = query.filter(self.orm_meta.is_deleted == 0)
+        return query
+
 
 class DiffConfTemplate(MetaCRUD):
     orm_meta = models.DiffConfTemplate
@@ -29,7 +42,7 @@ class DiffConfTemplate(MetaCRUD):
 
     _validate = [
         crud.ColumnValidator(field='type',
-                             rule=my_validator.LengthValidator(1, 16),
+                             rule=my_validator.validator.InValidator(['app', 'db']),
                              validate_on=('create:M', 'update:O')),
         crud.ColumnValidator(field='code',
                              rule=my_validator.LengthValidator(1, 36),
@@ -42,10 +55,9 @@ class DiffConfTemplate(MetaCRUD):
                              rule=my_validator.LengthValidator(0, 128),
                              validate_on=('create:O', 'update:O'),
                              nullable=True),
-        # crud.ColumnValidator(field='updated_user', validate_on=('*:O',), nullable=True),
-        # crud.ColumnValidator(field='updated_time', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='create_user', validate_on=('*:O',), nullable=True),
         crud.ColumnValidator(field='roles',
-                             rule=validator.TypeValidator(list),
+                             rule=validator.TypeValidator(dict),
                              validate_on=('create:M', 'update:O'),
                              orm_required=False),
     ]
@@ -54,4 +66,3 @@ class DiffConfTemplate(MetaCRUD):
 class DiffConfTemplateRole(crud.ResourceBase):
     orm_meta = models.DiffConfTemplateRole
     _default_order = ['-id']
-

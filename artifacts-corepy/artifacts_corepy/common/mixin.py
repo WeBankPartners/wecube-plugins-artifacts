@@ -61,7 +61,6 @@ class CollectionController(BaseCollectionController):
             try:
                 rets.append(self.create(req, data, **kwargs))
             except base_ex.Error as e:
-                print(e)
                 ex_rets.append({'index': idx + 1, 'message': str(e)})
         if len(ex_rets):
             raise exceptions.BatchPartialError(num=len(ex_rets), action='create', exception_data={'data': ex_rets})
@@ -118,10 +117,15 @@ class CollectionController(BaseCollectionController):
         resp.status = falcon.HTTP_200
 
     def delete(self, req, **kwargs):
-        return self.make_resource(req).delete(**kwargs)
+        # return self.make_resource(req).delete(**kwargs)
+        before, after = self.make_resource(req).update(
+            rid=kwargs.get('rid'), resource={"is_deleted": 1}, validate=False
+        )
+        return 1 if before else 0, [after]
 
 
 class ItemController(BaseItemController):
+
     def on_get(self, req, resp, **kwargs):
         self._validate_method(req)
         ref = self.get(req, **kwargs)
@@ -149,3 +153,9 @@ class ItemController(BaseItemController):
             resp.json = {'code': 200, 'status': 'OK', 'data': {'count': ref, 'data': details}, 'message': 'success'}
         else:
             raise exceptions.NotFoundError(resource='%s[%s]' % (self.resource.__name__, kwargs.get('rid', '-')))
+
+    def delete(self, req, **kwargs):
+        before, after = self.make_resource(req).update(
+            rid=kwargs.get('rid'), resource={"is_deleted": 1}, validate=False
+        )
+        return 1 if before else 0, [after]
