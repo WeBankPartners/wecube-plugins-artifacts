@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 
 from talos.db.dictbase import DictBase
-from sqlalchemy import Column, DateTime, ForeignKey, String, text, Text, func, create_engine
+from sqlalchemy import Column, DateTime, ForeignKey, String, text, Text, func, create_engine, UniqueConstraint
 from sqlalchemy.dialects.mysql import BIGINT, TINYINT
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -13,6 +13,10 @@ metadata = Base.metadata
 
 class DiffConfTemplate(Base, DictBase):
     __tablename__ = 'diff_conf_template'
+    __table_args__ = (
+        UniqueConstraint('type', 'code', name='uk_type_code'),
+    )
+
     attributes = [
         'id', 'type', 'code', 'value', 'description', 'create_user', 'create_time', 'update_user', 'update_time',
         'is_deleted', 'roles',
