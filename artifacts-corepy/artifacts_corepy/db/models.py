@@ -14,7 +14,7 @@ metadata = Base.metadata
 class DiffConfTemplate(Base, DictBase):
     __tablename__ = 'diff_conf_template'
     attributes = [
-        'id', 'type', 'code', 'value', 'description', 'create_user', 'created_time', 'update_user', 'updated_time',
+        'id', 'type', 'code', 'value', 'description', 'create_user', 'create_time', 'update_user', 'update_time',
         'is_deleted', 'roles',
     ]
 
@@ -24,12 +24,12 @@ class DiffConfTemplate(Base, DictBase):
     value = Column(Text, comment='文本值')
     description = Column(String(128), server_default=text("''"))
     create_user = Column(String(36))
-    created_time = Column(DateTime, default=func.now())
+    create_time = Column(DateTime, default=func.now())
     update_user = Column(String(36))
     update_time = Column(DateTime, onupdate=func.now())
     is_deleted = Column(TINYINT, nullable=False, default=0, comment='软删除:0,1')
 
-    roles = relationship("RoleDiffConfTemplate", back_populates="diff_conf_template", uselist=True)
+    roles = relationship("DiffConfTemplateRole", back_populates="diff_conf_template")
 
     @property
     def as_dict(self):

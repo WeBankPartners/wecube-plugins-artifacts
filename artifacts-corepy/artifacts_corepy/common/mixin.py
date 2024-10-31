@@ -3,8 +3,8 @@
 from __future__ import absolute_import
 
 import falcon
-from talos.common.controller import CollectionController
-from talos.common.controller import ItemController
+from talos.common.controller import CollectionController as BaseCollectionController
+from talos.common.controller import ItemController as BaseItemController
 from talos.common.controller import Controller as BaseController
 from talos.core import exceptions as base_ex
 from talos.core import utils
@@ -38,7 +38,7 @@ class Controller(BaseController):
         return self.make_resource(req).get(**kwargs)
 
 
-class Collection(CollectionController):
+class CollectionController(BaseCollectionController):
     def on_get(self, req, resp, **kwargs):
         self._validate_method(req)
         refs = []
@@ -61,6 +61,7 @@ class Collection(CollectionController):
             try:
                 rets.append(self.create(req, data, **kwargs))
             except base_ex.Error as e:
+                print(e)
                 ex_rets.append({'index': idx + 1, 'message': str(e)})
         if len(ex_rets):
             raise exceptions.BatchPartialError(num=len(ex_rets), action='create', exception_data={'data': ex_rets})
@@ -120,7 +121,7 @@ class Collection(CollectionController):
         return self.make_resource(req).delete(**kwargs)
 
 
-class Item(ItemController):
+class ItemController(BaseItemController):
     def on_get(self, req, resp, **kwargs):
         self._validate_method(req)
         ref = self.get(req, **kwargs)
