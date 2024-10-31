@@ -26,7 +26,7 @@ def error_serializer(req, resp, exception):
     if 'error_code' in representation:
         representation['code'] = representation.pop('error_code')
     representation['status'] = 'ERROR'
-    representation['data'] = None
+    representation['data'] = representation.get('data') or None
     representation['message'] = representation.pop('description', '')
     resp.body = json.dumps(representation, cls=utils.ComplexEncoder)
     resp.content_type = 'application/json'
