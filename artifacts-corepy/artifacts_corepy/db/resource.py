@@ -102,6 +102,6 @@ class DiffConfTemplate(MetaCRUD):
 
 
 class RoleDiffConfTemplate(crud.ResourceBase):
-    orm_meta = models.RoleDiffConfTemplate
+    orm_meta = models.DiffConfTemplateRole
     _default_order = ['-id']
 
