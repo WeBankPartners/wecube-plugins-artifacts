@@ -404,7 +404,7 @@ class UnitDesignPackages(WeCubeResource):
         results = results[1].split('/', 1)
         ret['repository'] = results[0]
         ret['filename'] = results[1].split('/')[-1]
-        if ''.count('/') >= 1:
+        if results[1].count('/') >= 1:
             ret['group'] = '/' + results[1].rsplit('/', 1)[0]
         else:
             ret['group'] = '/'
