@@ -1,5 +1,6 @@
 <template>
   <Drawer :title="pkgName" v-model="openDrawer" class="custom-drawer" :scrollable="false" width="1300">
+    <Spin size="large" fix v-if="spinShow"></Spin>
     <div v-if="showDiffConfigTab">
       <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
@@ -117,6 +118,7 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      spinShow: false,
       pkgName: '',
       openDrawer: false,
       treePath: [], // 节点路径
@@ -397,6 +399,8 @@ export default {
       this.tempTableData = configKeyInfos.filter(item => filterKey.includes(item.type))
     },
     async initDrawer (guid, row) {
+      this.openDrawer = true
+      this.spinShow = true
       await this.getAllCITypesWithAttr()
       this.currentDiffConfigTab = ''
       this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
@@ -416,7 +420,7 @@ export default {
       await this.getVariablePrefix()
       this.setPrefixType()
       this.initVariableTableData(0)
-      this.openDrawer = true
+      this.spinShow = false
     },
     initVariableTableData (index) {
       this.currentFileIndex = index
@@ -812,6 +816,10 @@ export default {
       if (res.status === 'OK') {
         const tab = this.currentDiffConfigTab.toLowerCase()
         const _template = res.data[`${tab}_template`]
+        if (_template === '') {
+          this.$Message.warning(this.$t('art_no_template'))
+          return
+        }
         const resp = await getEntitiesByCiType(cmdbPackageName, _template, {})
         if (resp.status === 'OK') {
           if (Array.isArray(resp.data)) {
@@ -948,15 +956,12 @@ export default {
 }
 
 .drawer-footer {
-  width: 100%;
-  // position: relative;
-  // top: 33px;
-  // left: 0;
-  // border-top: 1px solid #e8e8e8;
-  // margin-top: 8px;
+  width: 1300px;
   padding: 10px 16px;
   text-align: center;
   background: #fff;
+  position: fixed;
+  bottom: 20px;
 }
 .btn-img {
   width: 16px;

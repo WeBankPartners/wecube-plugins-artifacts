@@ -1,6 +1,7 @@
 <template>
   <div>
     <Drawer :title="pkgName" :mask-closable="false" :closable="true" v-model="openDrawer" :scrollable="false" width="1300">
+      <Spin size="large" fix v-if="spinShow"></Spin>
       <Row style="margin-bottom: 8px;">
         <Col style="text-align: left; line-height: 32px;margin-left: 6px;" span="2">
           <span style="margin-right: 8px">{{ $t('package_type') }}</span>
@@ -448,6 +449,7 @@ export default {
   name: '',
   data () {
     return {
+      spinShow: false,
       showFileCompare: false,
       compareParams: {
         originContent: '',
@@ -629,6 +631,8 @@ export default {
       this.initSortable(key)
     },
     async open (guid, row, hideFooter) {
+      this.openDrawer = true
+      this.spinShow = true
       this.pkgName = `${row.key_name} - ${this.$t('artifacts_script_configuration')}`
       this.guid = guid
       this.packageId = row.guid
@@ -668,8 +672,7 @@ export default {
       this.packageInput.baseline_package = this.packageDetail.baseline_package ? this.packageDetail.baseline_package : ''
       this.packageId = row.guid
       this.oriPackageInput = JSON.parse(JSON.stringify(this.packageInput))
-      this.openDrawer = true
-
+      this.spinShow = false
       this.$nextTick(() => {
         if (this.packageType !== this.constPackageOptions.db) {
           this.genSortable1('diff_conf_file')
