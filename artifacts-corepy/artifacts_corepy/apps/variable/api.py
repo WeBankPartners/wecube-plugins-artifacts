@@ -3,6 +3,8 @@ from __future__ import absolute_import
 
 import logging
 from talos.core import config
+from talos.utils.scoped_globals import GLOBALS
+
 from artifacts_corepy.db import resource
 
 from artifacts_corepy.common import exceptions
@@ -23,3 +25,14 @@ class DiffConfTemplate(resource.DiffConfTemplate):
                         'role': perm_role,
                         'permission': perm
                     })
+
+    def _addtional_list(self, query, filters):
+        """权限控制，角色数据过滤"""
+        query = super()._addtional_list(query, filters)
+        permission_filters = {"roles.role": {'in': list(GLOBALS.request.auth_permissions)}}
+        query = self._apply_filters(query, self.orm_meta, permission_filters)
+        # print(str(query))
+        # print(query.statement.compile(), query.statement.compile().params)
+        return query
+
+

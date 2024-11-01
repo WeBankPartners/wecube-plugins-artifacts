@@ -31,6 +31,7 @@ class MetaCRUD(crud.ResourceBase):
         return query
 
     def _addtional_list(self, query, filters):
+        query = super()._addtional_list(query, filters)
         if hasattr(self.orm_meta, 'is_deleted'):
             query = query.filter(self.orm_meta.is_deleted == 0)
         return query
