@@ -338,7 +338,7 @@ export default {
           filterKey: []
         },
         {
-          label: this.$t('art_variable_prefix_global'), // 全局变量
+          label: this.$t('art_variable_prefix_global'), // 公共变量
           key: 'variable_prefix_global',
           filterKey: []
         }
