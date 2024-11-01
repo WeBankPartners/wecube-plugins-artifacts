@@ -1,10 +1,11 @@
 <template>
-  <span class=" ">
+  <span>
     <div v-if="file.comparisonResult === 'new'" class="baseline-cmp-new">[{{ file.comparisonResult }}]</div>
     <div v-if="file.comparisonResult === 'same'" class="baseline-cmp-same">[{{ file.comparisonResult }}]</div>
     <div v-if="file.comparisonResult === 'changed'" class="baseline-cmp-changed">[{{ file.comparisonResult }}]</div>
     <div v-if="file.comparisonResult === 'deleted'" class="baseline-cmp-deleted">[{{ file.comparisonResult }}]</div>
-    <Icon type="ios-move" size="18" style="cursor: move" />
+    <div v-if="[null, ''].includes(file.comparisonResult)" class="baseline-cmp-deleted"></div>
+    <Icon v-if="canBeMoved" type="ios-move" size="18" style="cursor: move" />
   </span>
 </template>
 
@@ -14,7 +15,7 @@ export default {
   data () {
     return {}
   },
-  props: ['packageInput', 'file'],
+  props: ['packageInput', 'file', 'canBeMoved'],
   methods: {},
   components: {}
 }
@@ -23,7 +24,7 @@ export default {
 <style scoped lang="scss">
 .common-position {
   width: 60px;
-  margin: 0 8px;
+  margin: 0 4px;
   display: inline-block;
 }
 .baseline-cmp-new {

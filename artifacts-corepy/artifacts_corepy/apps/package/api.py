@@ -1239,9 +1239,15 @@ class UnitDesignPackages(WeCubeResource):
         '''
         解析文件差异化变量
         '''
-        spliters = [s.strip() for s in CONF.encrypt_variable_prefix.split(',')]
-        spliters.extend([s.strip() for s in CONF.file_variable_prefix.split(',')])
-        spliters.extend([s.strip() for s in CONF.default_special_replace.split(',')])
+        spliters = []
+        if CONF.encrypt_variable_prefix.strip():
+            spliters = [s.strip() for s in CONF.encrypt_variable_prefix.split(',')]
+        if CONF.file_variable_prefix.strip():
+            spliters.extend([s.strip() for s in CONF.file_variable_prefix.split(',')])
+        if CONF.default_special_replace.strip():
+            spliters.extend([s.strip() for s in CONF.default_special_replace.split(',')])
+        if CONF.global_variable_prefix.strip():
+            spliters.extend([s.strip() for s in CONF.global_variable_prefix.split(',')])
         spliters = [s for s in spliters if s]
         for i in files:
             filepath = os.path.join(package_cached_dir, i['filename'])

@@ -64,6 +64,8 @@ class EntityAdapter(object):
 
 
 def add_routes(api):
+    # process
+    api.add_route('/artifacts/process/definitions', controller.CollectionProcessDef())
     # cmdb api forward
     api.add_route('/artifacts/system-design-versions', controller.CollectionSystemDesign())
     api.add_route('/artifacts/system-design-versions/{rid}', controller.ItemSystemDesign())
@@ -86,6 +88,8 @@ def add_routes(api):
     # nexus query
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/queryNexusDirectiry',
                   controller.CollectionUnitDesignNexusPackages())
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/queryNexusPath',
+                  controller.ItemUnitDesignNexusPackages())
     # nexus upload
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/uploadNexusPackage',
                   controller.CollectionUnitDesignNexusPackageUpload())
@@ -122,3 +126,7 @@ def add_routes(api):
                   controller.DownloadComposePackage())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/push',
                   controller.PushComposePackage())
+    
+    # system config
+    api.add_route('/artifacts/sysconfig',
+                  controller.SystemConfig())

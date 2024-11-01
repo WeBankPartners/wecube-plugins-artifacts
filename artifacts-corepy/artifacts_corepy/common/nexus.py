@@ -24,13 +24,15 @@ class NeuxsClient(object):
         self.username = username
         self.password = password
 
-    def list(self, repository, path, extensions=None, continue_token=None, search_url='/service/rest/v1/search/assets'):
+    def list(self, repository, path, extensions=None, continue_token=None, search_url='/service/rest/v1/search/assets', filename=None):
         results = []
         url = self.server + search_url
         # group必须以/开头且结尾不包含/
         group = path.lstrip('/')
         group = '/' + group.rstrip('/')
         query = {'repository': repository, 'group': group}
+        if filename:
+            query['q'] = filename
         if continue_token:
             query['continuationToken'] = continue_token
         LOG.info('GET %s', url)
@@ -50,10 +52,11 @@ class NeuxsClient(object):
         results.extend([{
             'name': i['path'].split('/')[-1],
             'downloadUrl': i['downloadUrl'],
-            'md5': i.get('checksum', {}).get('md5', None)
+            'md5': i.get('checksum', {}).get('md5', None) or i.get('checksum', {}).get('sha1', None) or 'N/A',
+            'lastModified': i['lastModified'][:19]+'Z' if i.get('lastModified', None) else None
         } for i in filtered_items])
         if resp_json['continuationToken']:
-            results.extend(self.list(repository, path, extensions, resp_json['continuationToken']))
+            results.extend(self.list(repository, path, extensions, continue_token=resp_json['continuationToken'], filename=filename))
         return results
 
     def upload(self, repository, path, filename, filetype, fileobj, upload_url='/service/rest/v1/components'):

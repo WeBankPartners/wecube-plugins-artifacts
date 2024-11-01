@@ -5,7 +5,9 @@ from __future__ import absolute_import
 import cgi
 import falcon
 import os
+import json
 import urllib.parse
+from talos.core import utils
 from talos.core import config
 from talos.core.i18n import _
 from talos.common import controller as base_controller
@@ -44,6 +46,13 @@ class ControllerVariableRootCiTypeId(object):
             },
             'message': 'success'
         }
+
+
+class CollectionProcessDef(Collection):
+    allow_methods = ('GET', )
+    name = 'artifacts.process.defs'
+    resource = package_api.ProcessDef
+
 
 class CollectionSystemDesign(Collection):
     allow_methods = ('GET', )
@@ -91,6 +100,11 @@ class CollectionUnitDesignNexusPackages(POSTCollection):
     allow_methods = ('POST', )
     name = 'artifacts.unit-design.nexus.packages'
     resource = package_api.UnitDesignNexusPackages
+    
+class ItemUnitDesignNexusPackages(Item):
+    allow_methods = ('GET', )
+    name = 'artifacts.unit-design.nexus.path'
+    resource = package_api.UnitDesignNexusPackages
 
 
 class CollectionUnitDesignNexusPackageUpload(object):
@@ -99,18 +113,19 @@ class CollectionUnitDesignNexusPackageUpload(object):
 
     def on_post(self, req, resp, **kwargs):
         download_url = req.params.get('downloadUrl', None)
+        baseline_package = req.params.get('baseline_package', None)
         if not download_url:
             raise exceptions.ValidationError(message=_('missing query: downloadUrl'))
         form = cgi.FieldStorage(fp=req.stream, environ=req.env)
         resp.json = {
             'code': 200,
             'status': 'OK',
-            'data': self.upload(req, download_url, **kwargs),
+            'data': self.upload(req, download_url, baseline_package, **kwargs),
             'message': 'success'
         }
 
-    def upload(self, req, download_url, **kwargs):
-        return self.resource().upload_from_nexus(download_url, **kwargs)
+    def upload(self, req, download_url, baseline_package, **kwargs):
+        return self.resource().upload_from_nexus(download_url, baseline_package, **kwargs)
 
 
 class CollectionUnitDesignPackageUpload(object):
@@ -119,15 +134,18 @@ class CollectionUnitDesignPackageUpload(object):
 
     def on_post(self, req, resp, **kwargs):
         form = cgi.FieldStorage(fp=req.stream, environ=req.env)
+        baseline_package = None
+        if 'baseline_package' in form:
+            baseline_package = form.getvalue('baseline_package', None)
         resp.json = {
             'code': 200,
             'status': 'OK',
-            'data': self.upload(req, form['file'].filename, form['file'].type, form['file'].file, **kwargs),
+            'data': self.upload(req, form['file'].filename, form['file'].type, form['file'].file, baseline_package, **kwargs),
             'message': 'success'
         }
 
-    def upload(self, req, filename, filetype, fileobj, **kwargs):
-        return self.resource().upload(filename, filetype, fileobj, **kwargs)
+    def upload(self, req, filename, filetype, fileobj, baseline_package, **kwargs):
+        return self.resource().upload(filename, filetype, fileobj, baseline_package, **kwargs)
 
 
 class ItemPackage(Item):
@@ -305,10 +323,43 @@ class PushComposePackage(base_controller.Controller):
     resource = package_api.UnitDesignPackages
 
     def on_post(self, req, resp, **kwargs):
+        body_param = {}
+        if hasattr(req, 'json'):
+            body_param = req.json
         resp.json = {
             'code': 200,
             'status': 'OK',
-            'data': self.resource().push_compose_package(**kwargs),
+            'data': self.resource().push_compose_package(body_param, **kwargs),
+            'message': 'success'
+        }
+        resp.status = falcon.HTTP_200
+        
+class SystemConfig(base_controller.Controller):
+    allow_methods = ('GET',)
+    name = 'artifacts.systemconfig'
+    resource = package_api.UnitDesignPackages
+
+    def on_get(self, req, resp, **kwargs):
+        local_nexus_server = CONF.nexus.server
+        remote_nexus_server = CONF.wecube.nexus.server
+        push_nexus_server = CONF.pushnexus.server
+        local_nexus_server = local_nexus_server.strip()
+        remote_nexus_server = remote_nexus_server.strip()
+        push_nexus_server = push_nexus_server.strip()
+        if utils.bool_from_string(CONF.use_remote_nexus_only):
+            local_nexus_server = remote_nexus_server
+        resp.json = {
+            'code': 200,
+            'status': 'OK',
+            'data': {
+                'upload_enabled': bool(utils.bool_from_string(CONF.wecube.upload_enabled) and local_nexus_server),
+                'upload_from_nexus_enabled': bool(utils.bool_from_string(CONF.wecube.upload_nexus_enabled) and remote_nexus_server),
+                'push_to_nexus_enabled': True if push_nexus_server else False,
+                'variable_prefix_encrypt': [] if not CONF.encrypt_variable_prefix.strip() else [s.strip() for s in CONF.encrypt_variable_prefix.split(',')],
+                'variable_prefix_file': [] if not CONF.file_variable_prefix.strip() else [s.strip() for s in CONF.file_variable_prefix.split(',')],
+                'variable_prefix_default': [] if not CONF.default_special_replace.strip() else [s.strip() for s in CONF.default_special_replace.split(',')],
+                'variable_prefix_global': [] if not CONF.global_variable_prefix.strip() else [s.strip() for s in CONF.global_variable_prefix.split(',')],
+            },
             'message': 'success'
         }
         resp.status = falcon.HTTP_200

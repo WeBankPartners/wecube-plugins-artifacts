@@ -46,7 +46,17 @@ export const getSpecialConnector = () => req.get('/static-data/special-connector
 export const getVariableRootCiTypeId = () => req.get('/getVariableRootCiTypeId')
 export const getEntitiesByCiType = (packageName, ci, data) => req.post(`/platform/v1/packages/${packageName}/entities/${ci}/retrieve`, data)
 export const queryArtifactsList = (guid, data) => req.post(`/unit-designs/${guid}/packages/queryNexusDirectiry`, data)
-export const uploadArtifact = (guid, url) => req.post(`/unit-designs/${guid}/packages/uploadNexusPackage?downloadUrl=${url}`)
+export const uploadArtifact = (guid, url, baselinePackage) => req.post(`/unit-designs/${guid}/packages/uploadNexusPackage?downloadUrl=${url}&&baseline_package=${baselinePackage}`)
+
+export const uploadLocalArtifact = (guid, formData) => req.post(`/unit-designs/${guid}/packages/upload`, formData)
+
 export const getCompareContent = (unitDesignId, deployPackageId, data) => req.post(`/unit-designs/${unitDesignId}/packages/${deployPackageId}/files/comparison`, data)
 
 export const pushPkg = (unitDesignId, deployPackageId) => req.post(`/unit-designs/${unitDesignId}/packages/${deployPackageId}/push`)
+
+// 获取上传路径
+export const getFilePath = guid => req.get(`/unit-designs/${guid}/packages/queryNexusPath`)
+// 获取按钮权限
+export const sysConfig = () => req.get(`/sysconfig`)
+// 获取可用编排
+export const getFlowLists = guid => req.get(`/process/definitions?rootEntityGuid=${guid}`)
