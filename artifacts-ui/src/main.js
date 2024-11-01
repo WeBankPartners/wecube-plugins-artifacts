@@ -8,7 +8,9 @@ import ArtifactsAutoFill from '../src/components/auto-fill.js'
 import VueI18n from 'vue-i18n'
 import locale from 'view-design/dist/locale/en-US'
 import './locale/i18n'
-
+import commonUI from 'wecube-common-ui'
+import 'wecube-common-ui/lib/wecube-common-ui.css'
+Vue.use(commonUI)
 Vue.component('ArtifactsSimpleTable', ArtifactsSimpleTable)
 Vue.component('ArtifactsAutoFill', ArtifactsAutoFill)
 

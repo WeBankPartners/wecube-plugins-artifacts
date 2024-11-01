@@ -1,8 +1,8 @@
 <template>
   <div>
-    <Table :data="data" :columns="columns" highlight-row :loading="loading" @on-row-click="onRowClick"></Table>
+    <Table :data="data" class="artifact-simple-table" :columns="columns" highlight-row :loading="loading" :max-height="maxHeight" size="small" @on-row-click="onRowClick"></Table>
     <div v-if="pagable">
-      <Page :current="page.currentPage" :page-size="page.pageSize" :page-size-opts="pageSizeOptions" :total="page.total" @on-change="onChange" @on-page-size-change="onPageSizeChange" show-elevator show-sizer show-total style="float: right; margin: 10px 0;" />
+      <Page :current="page.currentPage" :page-size="page.pageSize" :page-size-opts="pageSizeOptions" :total="page.total" @on-change="onChange" @on-page-size-change="onPageSizeChange" show-elevator show-sizer show-total style="position: absolute;right: 36px;bottom: 36px;z-index: 11" />
     </div>
   </div>
 </template>
@@ -37,7 +37,22 @@ export default {
       required: false
     }
   },
+  data () {
+    return {
+      maxHeight: 500
+    }
+  },
+  mounted () {
+    this.maxHeight = window.innerHeight - 256
+    window.addEventListener('resize', this.handleResize)
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.handleResize)
+  },
   methods: {
+    handleResize () {
+      this.maxHeight = window.innerHeight - 256
+    },
     onChange (currentPage) {
       this.$emit('pageChange', currentPage)
     },
@@ -51,4 +66,8 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.artifact-simple-table ::v-deep .ivu-table-hidden .ivu-tooltip {
+  width: initial !important;
+}
+</style>

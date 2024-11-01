@@ -71,6 +71,7 @@ req.interceptors.response.use(
   res => {
     if (res.status === 200) {
       if (res.data.status.startsWith('ERR')) {
+        this.$Spin.hide()
         const errorMes = Array.isArray(res.data.data) ? res.data.data.map(_ => _.errorMessage).join('<br/>') : res.data.message
         Vue.prototype.$Notice.error({
           title: 'Error',
@@ -82,12 +83,14 @@ req.interceptors.response.use(
         ...res.data
       }
     } else {
+      this.$Spin.hide()
       return {
         data: throwError(res)
       }
     }
   },
   error => {
+    this.$Spin.hide()
     const { response } = error
     Vue.prototype.$Notice.error({
       title: 'error',

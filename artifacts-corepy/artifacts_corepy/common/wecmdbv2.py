@@ -88,12 +88,13 @@ class WeCMDBClient(object):
                     raise exceptions.PluginError(message=resp_json['data'][0]['errorMessage'])
             raise exceptions.PluginError(message=resp_json['statusMessage'])
 
-    def get(self, url, param=None):
+    def get(self, url, param=None, check_resp=True):
         LOG.info('GET %s', url)
         LOG.debug('Request: query - %s, data - None', str(param))
         resp_json = utils.RestfulJson.get(url, headers=self.build_headers(), params=param)
         LOG.debug('Response: %s', str(resp_json))
-        self.check_response(resp_json)
+        if check_resp:
+            self.check_response(resp_json)
         return resp_json
 
     def post(self, url, data, param=None):
@@ -104,11 +105,13 @@ class WeCMDBClient(object):
         self.check_response(resp_json)
         return resp_json
 
-    def format_item(self, data):
+    def format_item(self, data, keep_origin_value=None):
         new_data = {}
         for key, value in data.items():
             new_value = value
-            if isinstance(value, (list, tuple, set)):
+            if keep_origin_value and key in keep_origin_value:
+                pass
+            elif isinstance(value, (list, tuple, set)):
                 if len(value) > 0:
                     if isinstance(value[0], dict):
                         new_value = ','.join([x['guid'] for x in value])
@@ -121,11 +124,11 @@ class WeCMDBClient(object):
             new_data[key] = new_value
         return new_data
 
-    def format(self, data):
+    def format(self, data, keep_origin_value=None):
         if isinstance(data, (list, tuple, set)):
-            return [self.format_item(item) for item in data]
+            return [self.format_item(item, keep_origin_value=keep_origin_value) for item in data]
         else:
-            return self.format_item(data)
+            return self.format_item(data, keep_origin_value=keep_origin_value)
 
     def special_connector(self):
         return [{"code": "&\u0001", "value": "&"}, {"code": "\u0001=\u0001", "value": "="}]
@@ -168,9 +171,9 @@ class WeCMDBClient(object):
         url = self.server + self.build_create_url(citype)
         return self.post(url, data)
 
-    def update(self, citype, data):
+    def update(self, citype, data, keep_origin_value=None):
         url = self.server + self.build_update_url(citype)
-        return self.post(url, self.format(data))
+        return self.post(url, self.format(data, keep_origin_value=keep_origin_value))
 
     def retrieve(self, citype, query):
         url = self.server + self.build_retrieve_url(citype)
