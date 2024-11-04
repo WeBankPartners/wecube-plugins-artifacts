@@ -67,3 +67,99 @@ class DiffConfTemplate(MetaCRUD):
 class DiffConfTemplateRole(crud.ResourceBase):
     orm_meta = models.DiffConfTemplateRole
     _default_order = ['-id']
+
+
+class SysRoleMenu(MetaCRUD):
+    orm_meta = models.SysRoleMenu
+    _default_order = ['-created_time']
+
+
+class SysRoleUser(MetaCRUD):
+    orm_meta = models.SysRoleUser
+    _default_order = ['-created_time']
+
+
+class SysMenu(MetaCRUD):
+    orm_meta = models.SysMenu
+    _default_order = ['seq_no']
+    _id_prefix = 'menu-'
+
+    _validate = [
+        crud.ColumnValidator(field='id', validate_on=('create:M', 'update:O')),
+        crud.ColumnValidator(field='display_name',
+                             rule=my_validator.LengthValidator(1, 64),
+                             validate_on=('create:M', 'update:O')),
+        crud.ColumnValidator(field='url',
+                             rule=my_validator.LengthValidator(0, 255),
+                             validate_on=('create:O', 'update:O'),
+                             nullable=True),
+        crud.ColumnValidator(field='seq_no',
+                             rule=my_validator.validator.NumberValidator(int, range_min=0, range_max=65535),
+                             validate_on=('create:O', 'update:O')),
+        crud.ColumnValidator(field='parent',
+                             rule=my_validator.BackRefValidator(SysRoleMenu),
+                             validate_on=('create:O', 'update:O'),
+                             nullable=True),
+        crud.ColumnValidator(field='is_active',
+                             rule=my_validator.validator.InValidator(['yes', 'no']),
+                             validate_on=('create:O', 'update:O')),
+        crud.ColumnValidator(field='created_by', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='created_time', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='updated_by', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='updated_time', validate_on=('*:O',), nullable=True),
+    ]
+
+
+class SysRole(MetaCRUD):
+    orm_meta = models.SysRole
+    _default_order = ['-created_time']
+    _id_prefix = 'role-'
+    _detail_relationship_as_summary = True
+
+    _validate = [
+        crud.ColumnValidator(field='id', validate_on=('create:M', 'update:O')),
+        crud.ColumnValidator(field='description',
+                             rule=my_validator.LengthValidator(1, 255),
+                             validate_on=('create:M', 'update:O')),
+        crud.ColumnValidator(field='role_type',
+                             rule=my_validator.LengthValidator(0, 32),
+                             validate_on=('create:O', 'update:O'),
+                             nullable=True),
+        crud.ColumnValidator(field='is_system',
+                             rule=my_validator.validator.InValidator(['yes', 'no']),
+                             validate_on=('create:O', 'update:O')),
+        crud.ColumnValidator(field='created_by', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='created_time', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='updated_by', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='updated_time', validate_on=('*:O',), nullable=True),
+    ]
+
+
+class SysUser(MetaCRUD):
+    orm_meta = models.SysUser
+    _default_order = ['-created_time']
+    _remove_fields = ['password', 'salt']
+    _id_prefix = 'user-'
+
+    _validate = [
+        crud.ColumnValidator(field='id', validate_on=('create:M', 'update:O')),
+        crud.ColumnValidator(field='display_name',
+                             rule=my_validator.LengthValidator(1, 64),
+                             validate_on=('create:M', 'update:O')),
+        crud.ColumnValidator(field='password', rule=my_validator.LengthValidator(1, 128), validate_on=('create:M',)),
+        crud.ColumnValidator(field='salt', rule=my_validator.LengthValidator(1, 36), validate_on=('create:M',)),
+        crud.ColumnValidator(field='description',
+                             rule=my_validator.LengthValidator(0, 255),
+                             validate_on=('create:O', 'update:O'),
+                             nullable=True),
+        crud.ColumnValidator(field='is_system',
+                             rule=my_validator.validator.InValidator(['yes', 'no']),
+                             validate_on=('create:O', 'update:O')),
+        crud.ColumnValidator(field='created_by', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='created_time', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='updated_by', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='updated_time', validate_on=('*:O',), nullable=True),
+    ]
+
+    def list_internal(self, filters=None, orders=None, offset=None, limit=None, hooks=None):
+        return super(MetaCRUD, self).list(filters=filters, orders=orders, offset=offset, limit=limit, hooks=hooks)
