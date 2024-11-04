@@ -6,10 +6,10 @@ from artifacts_corepy.apps.variable import api
 
 
 class CollectionDiffConfTemplates(CollectionController):
-    name = 'artifacts.diff_conf_templates'
+    name = 'artifacts.diff-conf-templates'
     resource = api.DiffConfTemplate
 
 
 class ItemDiffConfTemplate(ItemController):
-    name = 'artifacts.diff_conf_template'
+    name = 'artifacts.diff-conf-templates'
     resource = api.DiffConfTemplate
