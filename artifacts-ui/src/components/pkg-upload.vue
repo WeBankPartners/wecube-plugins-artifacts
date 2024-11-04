@@ -195,6 +195,7 @@ export default {
     handleUpload (file) {
       this.localUploadParams.fileName = file.name
       this.formData.append('file', file)
+      return false
     },
     removeFormDataKey (keyToRemove) {
       let newFormData = new FormData()
