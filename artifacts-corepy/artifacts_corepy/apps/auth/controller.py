@@ -1,5 +1,4 @@
-# coding=utf-8
-
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
 from talos.core.i18n import _
@@ -10,10 +9,14 @@ from artifacts_corepy.common.mixin import Controller, CollectionController as Co
 from artifacts_corepy.apps.auth import api as auth_api
 
 
+# proxy mode to platform
+# from artifacts_corepy.apps.auth import apiv2 as auth_api
+
+
 class Token(Controller):
     name = 'auth.token'
     resource = auth_api.SysUser
-    allow_methods = ('POST', )
+    allow_methods = ('POST',)
 
     def create(self, req, data, **kwargs):
         return self.make_resource(req).login(data.get('username', ''), data.get('password', ''))
@@ -22,7 +25,7 @@ class Token(Controller):
 class TokenRefresh(Controller):
     name = 'auth.token'
     resource = auth_api.SysUser
-    allow_methods = ('GET', )
+    allow_methods = ('GET',)
 
     def get(self, req, **kwargs):
         return self.make_resource(req).refresh(GLOBALS.request.auth_token)
@@ -31,7 +34,7 @@ class TokenRefresh(Controller):
 class UserMenus(Controller):
     name = 'auth.user-menus'
     resource = auth_api.SysUser
-    allow_methods = ('GET', )
+    allow_methods = ('GET',)
 
     def get(self, req, **kwargs):
         return self.make_resource(req).get_menus(GLOBALS.request.auth_user)
@@ -40,7 +43,7 @@ class UserMenus(Controller):
 class UserPassword(Controller):
     name = 'auth.user-password'
     resource = auth_api.SysUser
-    allow_methods = ('POST', )
+    allow_methods = ('POST',)
 
     def create(self, req, data, **kwargs):
         return self.make_resource(req).update_password(GLOBALS.request.auth_user, data.get('newPassword', ''),
@@ -60,7 +63,7 @@ class UserItem(Item):
 class UserItemMenu(Item):
     name = 'auth.users'
     resource = auth_api.SysUser
-    allow_methods = ('GET', )
+    allow_methods = ('GET',)
 
     def get(self, req, rid):
         return self.make_resource(req).get_menus(rid)
@@ -69,7 +72,7 @@ class UserItemMenu(Item):
 class UserItemResetPassword(Controller):
     name = 'auth.users.password'
     resource = auth_api.SysUser
-    allow_methods = ('POST', )
+    allow_methods = ('POST',)
 
     def create(self, req, data, rid):
         data = data or {}
@@ -79,7 +82,7 @@ class UserItemResetPassword(Controller):
 class UserItemRole(Item):
     name = 'auth.users'
     resource = auth_api.SysUser
-    allow_methods = ('GET', )
+    allow_methods = ('GET',)
 
     def get(self, req, rid):
         return self.make_resource(req).get_roles(rid)
@@ -122,10 +125,10 @@ class RoleItemUser(Controller):
 class Menu(Collection):
     name = 'auth.menus'
     resource = auth_api.SysMenu
-    allow_methods = ('GET', )
+    allow_methods = ('GET',)
 
 
 class MenuItem(Item):
     name = 'auth.menus'
     resource = auth_api.SysMenu
-    allow_methods = ('GET', )
+    allow_methods = ('GET',)
