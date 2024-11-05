@@ -28,7 +28,7 @@
     <div v-if="guid" style="margin-left: 16px;border: 1px solid #e8eaec;padding: 8px;width: 74%;">
       <div>
         <div style="display: flex;justify-content: space-between;">
-          <CustomTitle :title="$t('art_sys_artch') + treePath.join(' / ')"></CustomTitle>
+          <CustomTitle :title="customTreePath"></CustomTitle>
           <!-- <BaseHeaderTitle class="custom-title" :title="$t('art_sys_artch') + treePath.join(' / ')"></BaseHeaderTitle> -->
           <div>
             <!-- 本地上传 -->
@@ -128,6 +128,7 @@ export default {
   data () {
     return {
       treePath: [], // 节点路径
+      customTreePath: '',
       btnGroupControl: {
         upload_enabled: false, // 本地上传
         upload_from_nexus_enabled: false, // 在线上传
@@ -622,6 +623,10 @@ export default {
       if (node.length && node[0].level === 3) {
         this.guid = node[0].guid
         this.treePath = this.findPathByGuid(this.treeData, this.guid)
+        this.customTreePath = this.$t('art_sys_artch') + this.treePath.join(' / ')
+        if (this.customTreePath.length > 60) {
+          this.customTreePath = this.customTreePath.slice(0, 60) + '...'
+        }
         this.queryPackages(true)
         this.initPackageDetail()
         this.getbaselinePkg()
