@@ -69,7 +69,7 @@ class RoleAdapter(object):
         server = CONF.wecube.server
         token = req.auth_token
         client = wecube.WeCubeClient(server, token)
-        if action_name == 'roles':
+        if action_name == 'retrieve':
             data = client.get('/platform/v1/roles/retrieve')
             resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
         else:
