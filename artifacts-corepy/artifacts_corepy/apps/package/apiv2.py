@@ -2465,6 +2465,7 @@ class UnitDesignNexusPackages(WeCubeResource):
         unit_design = resp_json['data']['contents'][0]
         return {'artifact_path': self.get_unit_design_artifact_path(unit_design)}
 
+
 class DiffConfig(WeCubeResource):
     def update(self, data):
         cmdb_client = self.get_cmdb_client()
