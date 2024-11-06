@@ -18,6 +18,8 @@ def add_routes(api):
     api.add_route('/artifacts/v1/users/{rid}/menus', controller.UserItemMenu())
     api.add_route('/artifacts/v1/users/{rid}/roles', controller.UserItemRole())
     api.add_route('/artifacts/v1/roles', controller.Role())
+    # api.add_route('/artifacts/v1/users/roles', controller.ProxyUserRole())
+    # api.add_route('/artifacts/v1/roles', controller.ProxyRole())
     api.add_route('/artifacts/v1/roles/{rid}', controller.RoleItem())
     api.add_route('/artifacts/v1/roles/{rid}/menus', controller.RoleItemMenu())
     api.add_route('/artifacts/v1/roles/{rid}/users', controller.RoleItemUser())

@@ -24,8 +24,11 @@ class WeCubeResource(object):
         pass
 
 
+class SysRole(WeCubeResource):
+    def list(self, params):
+        return self.platform.get(self.server + '/platform/v1/roles/retrieve')
+
+
 class SysUser(WeCubeResource):
     def list(self, params):
-        params['filters'] = []
-        params['paging'] = False
-        return self.platform.get(self.server + '/platform/v1/roles/retrieve', params)
+        return self.platform.get(self.server + '/platform/v1/users/roles')
