@@ -1,4 +1,4 @@
-#@v0.1.0.1-begin@;
+#@v1.1.12.1-begin@;
 CREATE TABLE diff_conf_template (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     type VARCHAR(16) NOT NULL COMMENT '类型：应用-app,数据库-db',
@@ -24,6 +24,6 @@ CREATE TABLE diff_conf_template_role (
         ON DELETE CASCADE,
     INDEX (diff_conf_template_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-#@v0.1.0.1-end@;
+#@v1.1.12.1-end@;
 
 
