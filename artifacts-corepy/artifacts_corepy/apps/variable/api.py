@@ -30,9 +30,9 @@ class DiffConfTemplate(resource.DiffConfTemplate):
         """权限控制，角色数据过滤"""
         query = super()._addtional_list(query, filters)
         permission_filters = {"roles.role": {'in': list(GLOBALS.request.auth_permissions)}}
+        # print(f'permission_filters: {permission_filters}')
         query = self._apply_filters(query, self.orm_meta, permission_filters)
-        # print(str(query))
-        # print(query.statement.compile(), query.statement.compile().params)
+        # print(str(query), query.statement.compile(), query.statement.compile().params)
         return query
 
 
