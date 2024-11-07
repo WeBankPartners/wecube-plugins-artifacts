@@ -1,7 +1,7 @@
-#@v1.1.13.2-begin@;
+#@v1.1.13.3-begin@;
 CREATE TABLE diff_conf_template (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    type VARCHAR(16) NOT NULL COMMENT '类型：应用-app,数据库-db',
+    type VARCHAR(16) NOT NULL COMMENT '类型：app/db/xx',
     code VARCHAR(36) NOT NULL COMMENT '编码',
     value TEXT NULL COMMENT '文本值',
     description VARCHAR(128) DEFAULT '' COMMENT '描述',
@@ -15,7 +15,7 @@ CREATE TABLE diff_conf_template (
 
 CREATE TABLE diff_conf_template_role (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    permission VARCHAR(16) NOT NULL COMMENT '权限：MGMT,USE',
+    permission VARCHAR(16) NOT NULL COMMENT '权限：MGMT/USE/xx',
     role VARCHAR(64) NOT NULL COMMENT '角色',
     diff_conf_template_id BIGINT,
     CONSTRAINT fk_diff_conf_template
@@ -24,6 +24,6 @@ CREATE TABLE diff_conf_template_role (
         ON DELETE CASCADE,
     INDEX (diff_conf_template_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-#@v1.1.13.2-end@;
+#@v1.1.13.3-end@;
 
 
