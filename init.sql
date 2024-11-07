@@ -1,4 +1,10 @@
-#@v1.1.13.3-begin@;
+SET FOREIGN_KEY_CHECKS = 0;
+SET NAMES utf8;
+
+--
+-- Table structure initialize
+--
+
 CREATE TABLE diff_conf_template (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     type VARCHAR(16) NOT NULL COMMENT '类型：app/db/xx',
@@ -24,6 +30,5 @@ CREATE TABLE diff_conf_template_role (
         ON DELETE CASCADE,
     INDEX (diff_conf_template_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-#@v1.1.13.3-end@;
 
 
