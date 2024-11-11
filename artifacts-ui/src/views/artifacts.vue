@@ -37,8 +37,31 @@
             <Button icon="ios-apps" type="success" :disabled="!btnGroupControl.upload_from_nexus_enabled" @click="pkgUpload('online')">{{ $t('art_online_selection') }}</Button>
           </div>
         </div>
+        {{ searchConfig.hideIndex }}
         <div>
-          <Input v-model="tableFilter.key_name" @on-change="paramsChange(true)" :placeholder="$t('artifacts_package_name')" clearable style="width: 200px;margin-right: 8px;" />
+          <div ref="container" id="search-zone" style="display: flex;flex-wrap: wrap;">
+            <div style="width:200px">111111</div>
+            <div style="width:200px;margin-right: 8px;">
+              <Input v-model="tableFilter.key_name" @on-change="paramsChange(true)" :placeholder="$t('artifacts_package_name')" clearable />
+            </div>
+            <div :style="{ display: wrappedIndices.includes(2) ? 'none' : 'block', width: '200px', 'margin-right': '8px' }">
+              <Input v-model="tableFilter.guid" @on-change="paramsChange(true)" placeholder="GUID" clearable />
+            </div>
+            <!-- <div :style="{display: searchConfig.hideIndex <= 3 ? 'none' : 'block', width: '200px', 'margin-right': '8px', }" style="width:200px;margin-right: 8px;">
+              <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('package_type')" v-model="tableFilter.package_type">
+              <Option v-for="item in packageOptions" :value="item.value" :key="item.label">{{ item.label }}</Option>
+            </Select>
+            </div> -->
+            <div :style="{ display: searchConfig.hideIndex < 4 ? 'none' : 'block', width: '200px', 'margin-right': '8px' }" style="width:200px;margin-right: 8px;">
+              <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('baseline_package')" v-model="tableFilter.baseline_package">
+                <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
+              </Select>
+            </div>
+            <div :style="{ display: searchConfig.hideIndex < 5 ? 'none' : 'block', width: '200px', 'margin-right': '8px' }" style="width:200px;margin-right: 8px;">
+              <Input v-model="tableFilter.upload_user" @on-change="paramsChange(true)" :placeholder="$t('artifacts_uploaded_by')" clearable />
+            </div>
+          </div>
+          <!-- <Input v-model="tableFilter.key_name" @on-change="paramsChange(true)" :placeholder="$t('artifacts_package_name')" clearable style="width: 200px;margin-right: 8px;" />
           <Input v-model="tableFilter.guid" @on-change="paramsChange(true)" placeholder="GUID" clearable style="width: 200px;margin-right: 8px;" />
           <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('package_type')" style="width: 200px;margin-right: 8px" v-model="tableFilter.package_type">
             <Option v-for="item in packageOptions" :value="item.value" :key="item.label">{{ item.label }}</Option>
@@ -46,7 +69,7 @@
           <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('baseline_package')" style="width: 200px;margin-right: 8px" v-model="tableFilter.baseline_package">
             <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
           </Select>
-          <Input v-model="tableFilter.upload_user" @on-change="paramsChange(true)" :placeholder="$t('artifacts_uploaded_by')" clearable style="width: 200px;margin-right: 8px;" />
+          <Input v-model="tableFilter.upload_user" @on-change="paramsChange(true)" :placeholder="$t('artifacts_uploaded_by')" clearable style="width: 200px;margin-right: 8px;" /> -->
         </div>
       </div>
       <div class="artifact-management-content">
@@ -134,6 +157,11 @@ export default {
         upload_from_nexus_enabled: false, // 在线上传
         push_to_nexus_enabled: false // 推送
       },
+      searchConfig: {
+        needCheckWarp: false,
+        hideIndex: 5
+      },
+      wrappedIndices: [], // 存储换行元素的索引
       tableFilter: {
         key_name: '',
         package_type: '',
@@ -388,6 +416,42 @@ export default {
     }
   },
   methods: {
+    updateWrappedItems () {
+      this.wrappedIndices = []
+      if (document.getElementById('search-zone')) {
+        const widths = document.getElementById('search-zone').offsetWidth
+        console.log(1.1, widths)
+        this.searchConfig.hideIndex = Math.floor((widths - 200) / 200)
+      }
+    },
+    updateWrappedItems111 () {
+      this.wrappedIndices = []
+      let firstTop = null
+      const container = this.$refs.container
+      if (container) {
+        const items = container.children
+        Array.from(items).forEach((item, index) => {
+          const itemTop = item.getBoundingClientRect().top
+          if (firstTop === null) {
+            firstTop = itemTop // 第一个元素的顶部位置
+          }
+          if (itemTop > firstTop) {
+            // 若元素已换行，添加到 wrappedIndices
+            console.log('隐藏：' + index)
+            this.wrappedIndices.push(index)
+            // this.wrappedIndices = this.wrappedIndices.filter(i => i >= index)
+          } else {
+            console.log('显示：' + index)
+          }
+        })
+      }
+
+      console.log(document.getElementById('search-zone').style.width)
+    },
+    isWrapped (index) {
+      console.log(index, this.wrappedIndices)
+      return this.wrappedIndices.includes(index)
+    },
     // 获取基线列表
     async getbaselinePkg () {
       this.baselinePackageOptions = []
@@ -1046,6 +1110,15 @@ export default {
     PkgUpload,
     PkgConfig,
     PkgDiffVariableConfig
+  },
+  mounted () {
+    // 初始检查元素状态
+    this.updateWrappedItems()
+    // 添加窗口大小监听器
+    window.addEventListener('resize', this.updateWrappedItems)
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.updateWrappedItems)
   }
 }
 </script>
@@ -1120,5 +1193,9 @@ export default {
 }
 .custom-title ::v-deep .ivu-icon-md-arrow-dropdown {
   display: none;
+}
+
+div {
+  transition: display 0.3s ease; /* 为显示隐藏添加过渡效果 */
 }
 </style>

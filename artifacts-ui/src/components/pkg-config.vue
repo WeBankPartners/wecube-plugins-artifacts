@@ -484,13 +484,15 @@ export default {
         { label: 'APP', value: 'APP' },
         { label: 'DB', value: 'DB' },
         { label: 'APP&DB', value: 'APP&DB' },
-        { label: 'IMAGE', value: 'IMAGE' }
+        { label: 'IMAGE', value: 'IMAGE' },
+        { label: 'RULE', value: 'RULE' }
       ],
       constPackageOptions: {
         db: 'DB',
         app: 'APP',
         mixed: 'APP&DB',
-        image: 'IMAGE'
+        image: 'IMAGE',
+        rule: 'RULE'
       },
       oriPackageInput: {},
       packageInput: {
