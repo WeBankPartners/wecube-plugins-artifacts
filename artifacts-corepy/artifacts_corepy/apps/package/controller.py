@@ -53,6 +53,10 @@ class CollectionProcessDef(Collection):
     name = 'artifacts.process.defs'
     resource = package_api.ProcessDef
 
+class CollectionUser(Collection):
+    allow_methods = ('GET', )
+    name = 'artifacts.users.list'
+    resource = package_api.User
 
 class CollectionSystemDesign(Collection):
     allow_methods = ('GET', )
@@ -95,6 +99,14 @@ class CollectionUnitDesignPackages(POSTCollection):
     name = 'artifacts.unit-design.packages'
     resource = package_api.UnitDesignPackages
 
+
+class CollectionPackageStatistics(POSTCollection):
+    allow_methods = ('POST', )
+    name = 'artifacts.packages.statistics'
+    resource = package_api.UnitDesignPackages
+    
+    def list(self, req, criteria, **kwargs):
+        return self.make_resource(req).get_package_statistics(req.json, **kwargs)
 
 class CollectionUnitDesignNexusPackages(POSTCollection):
     allow_methods = ('POST', )

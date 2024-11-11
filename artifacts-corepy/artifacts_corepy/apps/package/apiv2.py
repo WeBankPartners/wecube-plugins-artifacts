@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import
 
+import copy
 import datetime
 import hashlib
 import fnmatch
@@ -189,6 +190,13 @@ class WeCubeResource(object):
         pass
 
 
+class User(WeCubeResource):
+    def list(self, params):
+        api_client = self.get_cmdb_client()
+        url = self.server + '/platform/v1/users/retrieve'
+        resp_json = api_client.get(url, {}, check_resp=False)
+        return resp_json.get('data', [])
+    
 class ProcessDef(WeCubeResource):
     def list(self, params):
         params['plugin'] = 'artifacts'
@@ -374,6 +382,23 @@ class UnitDesignPackages(WeCubeResource):
             for field in fields:
                 i[field] = self.build_file_object(i.get(field, None))
         return resp_json['data']
+
+    def get_package_statistics(self, post_data, unit_design_id):
+        cmdb_client = self.get_cmdb_client()
+        result = {}
+        query = {}
+        query.setdefault('dialect', {"queryMode": "new"})
+        query.setdefault('filters', [])
+        query.setdefault('paging', True)
+        query.setdefault('pageable', {'pageSize':1, 'startIndex': 1})
+        self.set_package_query_fields(query)
+        query['filters'].append({"name": "unit_design", "operator": "eq", "value": unit_design_id})
+        for t in  [constant.PackageType.app, constant.PackageType.db, constant.PackageType.mixed, constant.PackageType.image, constant.PackageType.rule]:
+            query_tmp = copy.deepcopy(query)
+            query_tmp['filters'].append({"name": field_pkg_package_type_name, "operator": "eq", "value": t})
+            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+            result[t] = resp_json['data']['pageInfo']['totalRows']
+        return result
 
     def build_file_object(self, filenames, spliter=None):
         if spliter is None:
