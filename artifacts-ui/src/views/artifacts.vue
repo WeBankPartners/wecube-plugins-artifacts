@@ -25,7 +25,7 @@
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
     </div>
-    <div v-if="guid" style="margin-left: 16px;border: 1px solid #e8eaec;padding: 8px;width: 74%;">
+    <div v-if="guid" class="right-zone">
       <div>
         <div style="display: flex;justify-content: space-between;">
           <CustomTitle :title="customTreePath"></CustomTitle>
@@ -37,39 +37,33 @@
             <Button icon="ios-apps" type="success" :disabled="!btnGroupControl.upload_from_nexus_enabled" @click="pkgUpload('online')">{{ $t('art_online_selection') }}</Button>
           </div>
         </div>
-        {{ searchConfig.hideIndex }}
         <div>
-          <div ref="container" id="search-zone" style="display: flex;flex-wrap: wrap;">
-            <div style="width:200px">111111</div>
-            <div style="width:200px;margin-right: 8px;">
+          <div ref="container" id="search-zone" style="display: flex;">
+            <div class="seearch-pkg-variable" style="margin-right: 8px;">
+              <RadioGroup v-model="tableFilter.package_type" type="button" button-style="solid" @on-change="paramsChange(true)">
+                <Radio v-for="pkg in packageOptions" :label="pkg.value" :key="pkg.value">{{ pkg.label }}({{ pkg.num }})</Radio>
+              </RadioGroup>
+            </div>
+            <div :style="{ display: searchConfig.hideIndex <= 2 ? 'none' : 'block', width: '200px', 'margin-right': '8px' }">
               <Input v-model="tableFilter.key_name" @on-change="paramsChange(true)" :placeholder="$t('artifacts_package_name')" clearable />
             </div>
-            <div :style="{ display: wrappedIndices.includes(2) ? 'none' : 'block', width: '200px', 'margin-right': '8px' }">
+            <div :style="{ display: searchConfig.hideIndex <= 3 ? 'none' : 'block', width: '200px', 'margin-right': '8px' }">
               <Input v-model="tableFilter.guid" @on-change="paramsChange(true)" placeholder="GUID" clearable />
             </div>
-            <!-- <div :style="{display: searchConfig.hideIndex <= 3 ? 'none' : 'block', width: '200px', 'margin-right': '8px', }" style="width:200px;margin-right: 8px;">
-              <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('package_type')" v-model="tableFilter.package_type">
-              <Option v-for="item in packageOptions" :value="item.value" :key="item.label">{{ item.label }}</Option>
-            </Select>
-            </div> -->
-            <div :style="{ display: searchConfig.hideIndex < 4 ? 'none' : 'block', width: '200px', 'margin-right': '8px' }" style="width:200px;margin-right: 8px;">
+            <div :style="{ display: searchConfig.hideIndex <= 4 ? 'none' : 'block', width: '200px', 'margin-right': '8px' }">
               <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('baseline_package')" v-model="tableFilter.baseline_package">
                 <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
               </Select>
             </div>
-            <div :style="{ display: searchConfig.hideIndex < 5 ? 'none' : 'block', width: '200px', 'margin-right': '8px' }" style="width:200px;margin-right: 8px;">
-              <Input v-model="tableFilter.upload_user" @on-change="paramsChange(true)" :placeholder="$t('artifacts_uploaded_by')" clearable />
+            <div :style="{ display: searchConfig.hideIndex <= 5 ? 'none' : 'block', width: '200px', 'margin-right': '8px' }">
+              <Select clearable filterable @on-change="paramsChange(true)" @on-clear="tableFilter.upload_user = ''" :placeholder="$t('artifacts_uploaded_by')" v-model="tableFilter.upload_user">
+                <Option v-for="user in userList" :value="user.username" :key="user.id">{{ user.username }}</Option>
+              </Select>
+              <!-- <Input v-model="tableFilter.upload_user" @on-change="paramsChange(true)" :placeholder="$t('artifacts_uploaded_by')" clearable /> -->
             </div>
+            <Icon v-if="searchConfig.expandSearch" @click="searchConfig.expandSearch = false" size="28" color="#2d8cf0" type="ios-arrow-down" style="cursor: pointer;" />
+            <Icon v-else @click="searchConfig.expandSearch = true" size="28" color="#2d8cf0" type="ios-arrow-up" style="cursor: pointer;" />
           </div>
-          <!-- <Input v-model="tableFilter.key_name" @on-change="paramsChange(true)" :placeholder="$t('artifacts_package_name')" clearable style="width: 200px;margin-right: 8px;" />
-          <Input v-model="tableFilter.guid" @on-change="paramsChange(true)" placeholder="GUID" clearable style="width: 200px;margin-right: 8px;" />
-          <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('package_type')" style="width: 200px;margin-right: 8px" v-model="tableFilter.package_type">
-            <Option v-for="item in packageOptions" :value="item.value" :key="item.label">{{ item.label }}</Option>
-          </Select>
-          <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('baseline_package')" style="width: 200px;margin-right: 8px" v-model="tableFilter.baseline_package">
-            <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
-          </Select>
-          <Input v-model="tableFilter.upload_user" @on-change="paramsChange(true)" :placeholder="$t('artifacts_uploaded_by')" clearable style="width: 200px;margin-right: 8px;" /> -->
         </div>
       </div>
       <div class="artifact-management-content">
@@ -94,7 +88,7 @@
         </div>
       </Modal>
       <!-- 部署包上传组件 -->
-      <PkgUpload ref="pkgUploadRef" @refreshTable="queryPackages"></PkgUpload>
+      <PkgUpload ref="pkgUploadRef" @refreshTable="refreshTable"></PkgUpload>
       <!-- 脚本配置组件 -->
       <PkgConfig ref="pkgConfigRef" @queryPackages="queryPackages" @syncPackageDetail="syncPackageDetail"></PkgConfig>
       <!-- 差异化变量配置组件 -->
@@ -118,7 +112,7 @@
 </template>
 
 <script>
-import { getCiTypeAttr, getFlowLists, pushPkg, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, queryPackages, queryHistoryPackages, getCITypeOperations, sysConfig } from '@/api/server.js'
+import { getCiTypeAttr, getFlowLists, pushPkg, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, queryPackages, queryHistoryPackages, getCITypeOperations, sysConfig, getPkgTypeNum, getUserList } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import axios from 'axios'
 import DisplayPath from './display-path'
@@ -158,13 +152,14 @@ export default {
         push_to_nexus_enabled: false // 推送
       },
       searchConfig: {
+        expandSearch: true,
         needCheckWarp: false,
         hideIndex: 5
       },
-      wrappedIndices: [], // 存储换行元素的索引
+      userList: [],
       tableFilter: {
         key_name: '',
-        package_type: '',
+        package_type: 'DB',
         guid: '',
         baseline_package: '',
         upload_user: ''
@@ -183,13 +178,15 @@ export default {
         db: 'DB',
         app: 'APP',
         mixed: 'APP&DB',
-        image: 'IMAGE'
+        image: 'IMAGE',
+        rule: 'RULE'
       },
       packageOptions: [
-        { label: this.$t('DB'), value: 'DB' },
-        { label: this.$t('APP'), value: 'APP' },
-        { label: this.$t('APP&DB'), value: 'APP&DB' },
-        { label: this.$t('IMAGE'), value: 'IMAGE' }
+        { label: this.$t('DB'), value: 'DB', num: 0 },
+        { label: this.$t('APP'), value: 'APP', num: 0 },
+        { label: this.$t('APP&DB'), value: 'APP&DB', num: 0 },
+        { label: this.$t('IMAGE'), value: 'IMAGE', num: 0 },
+        { label: this.$t('RULE'), value: 'RULE', num: 0 }
       ],
       remoteLoading: false,
       isFileSelect: false,
@@ -237,14 +234,6 @@ export default {
           title: 'GUID',
           width: 166,
           key: 'guid'
-        },
-        {
-          title: this.$t('package_type'),
-          key: 'package_type',
-          width: 120,
-          render: (h, params) => {
-            return <span>{this.$t(params.row.package_type)}</span>
-          }
         },
         {
           title: this.$t('baseline_package'),
@@ -417,45 +406,15 @@ export default {
   },
   methods: {
     updateWrappedItems () {
-      this.wrappedIndices = []
       if (document.getElementById('search-zone')) {
         const widths = document.getElementById('search-zone').offsetWidth
-        console.log(1.1, widths)
-        this.searchConfig.hideIndex = Math.floor((widths - 200) / 200)
+        this.searchConfig.hideIndex = Math.floor((widths - 100) / 200)
       }
-    },
-    updateWrappedItems111 () {
-      this.wrappedIndices = []
-      let firstTop = null
-      const container = this.$refs.container
-      if (container) {
-        const items = container.children
-        Array.from(items).forEach((item, index) => {
-          const itemTop = item.getBoundingClientRect().top
-          if (firstTop === null) {
-            firstTop = itemTop // 第一个元素的顶部位置
-          }
-          if (itemTop > firstTop) {
-            // 若元素已换行，添加到 wrappedIndices
-            console.log('隐藏：' + index)
-            this.wrappedIndices.push(index)
-            // this.wrappedIndices = this.wrappedIndices.filter(i => i >= index)
-          } else {
-            console.log('显示：' + index)
-          }
-        })
-      }
-
-      console.log(document.getElementById('search-zone').style.width)
-    },
-    isWrapped (index) {
-      console.log(index, this.wrappedIndices)
-      return this.wrappedIndices.includes(index)
     },
     // 获取基线列表
     async getbaselinePkg () {
       this.baselinePackageOptions = []
-      let { status, data } = await queryPackages(this.guid, {
+      let params = {
         resultColumns: ['guid', 'name', 'package_type', 'diff_conf_file', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'is_decompression', 'db_diff_conf_file', 'db_upgrade_directory', 'db_rollback_directory', 'db_deploy_file_path', 'db_upgrade_file_path', 'db_rollback_file_path'],
         sorting: {
           asc: false,
@@ -467,7 +426,15 @@ export default {
           pageSize: 1000,
           startIndex: 0
         }
-      })
+      }
+      if (this.tableFilter.package_type !== '') {
+        params.filters.push({
+          name: 'package_type',
+          operator: 'eq',
+          value: this.tableFilter.package_type
+        })
+      }
+      let { status, data } = await queryPackages(this.guid, params)
       if (status === 'OK') {
         this.baselinePackageOptions = data.contents.map(item => {
           return {
@@ -478,38 +445,9 @@ export default {
     },
     // #region 部署包上传
     pkgUpload (type) {
-      this.$refs.pkgUploadRef.openUploadDialog(type, this.guid)
+      this.$refs.pkgUploadRef.openUploadDialog(type, this.guid, this.tableFilter.package_type)
     },
     // #endregion
-    async getAllpkg () {
-      this.baselinePackageOptions = []
-      let { status, data } = await queryPackages(this.guid, {
-        resultColumns: ['guid', 'name', 'package_type', 'diff_conf_file', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'is_decompression', 'db_diff_conf_file', 'db_upgrade_directory', 'db_rollback_directory', 'db_deploy_file_path', 'db_upgrade_file_path', 'db_rollback_file_path'],
-        sorting: {
-          asc: false,
-          field: 'upload_time'
-        },
-        filters: [
-          {
-            name: 'guid',
-            operator: 'ne',
-            value: this.packageId
-          }
-        ],
-        paging: true,
-        pageable: {
-          pageSize: 1000,
-          startIndex: 0
-        }
-      })
-      if (status === 'OK') {
-        this.baselinePackageOptions = data.contents.map(item => {
-          return {
-            ...item
-          }
-        })
-      }
-    },
     zoomModalMax () {
       this.fileContentHeight = window.screen.availHeight - 310 + 'px'
       this.fullscreen = true
@@ -617,8 +555,30 @@ export default {
     },
     paramsChange: debounce(function (resetCurrentPage) {
       this.queryPackages(resetCurrentPage)
+      this.getbaselinePkg()
     }, 300),
+    // 包上传成功后刷新列表
+    refreshTable (packageType) {
+      this.tableFilter.package_type = packageType
+      this.queryPackages()
+    },
+    async getPkgTypeNum () {
+      let { status, data } = await getPkgTypeNum(this.guid)
+      if (status === 'OK') {
+        this.packageOptions.forEach(item => {
+          item.num = data[item.value]
+        })
+      }
+    },
+    async getUserList () {
+      let { status, data } = await getUserList()
+      if (status === 'OK') {
+        this.userList = data || []
+      }
+    },
     async queryPackages (resetCurrentPage = false) {
+      this.getPkgTypeNum()
+      this.getUserList()
       if (resetCurrentPage) {
         this.pageInfo.currentPage = 1
       }
@@ -662,7 +622,7 @@ export default {
           value: this.tableFilter.baseline_package
         })
       }
-      if (this.tableFilter.upload_user !== '') {
+      if (this.tableFilter.upload_user) {
         params.filters.push({
           name: 'upload_user',
           operator: 'contains',
@@ -695,6 +655,9 @@ export default {
         this.initPackageDetail()
         this.getbaselinePkg()
         this.btnControl()
+        this.$nextTick(() => {
+          this.updateWrappedItems()
+        })
       }
     },
     // 获取单元路径
@@ -974,7 +937,6 @@ export default {
 
       this.packageId = row.guid
       this.hideFooter = hideFooter
-      await this.getAllpkg()
     },
     async handleDelete (row) {
       this.$Modal.confirm({
@@ -1113,7 +1075,7 @@ export default {
   },
   mounted () {
     // 初始检查元素状态
-    this.updateWrappedItems()
+    // this.updateWrappedItems()
     // 添加窗口大小监听器
     window.addEventListener('resize', this.updateWrappedItems)
   },
@@ -1195,7 +1157,24 @@ export default {
   display: none;
 }
 
-div {
-  transition: display 0.3s ease; /* 为显示隐藏添加过渡效果 */
+.right-zone {
+  margin-left: 16px;
+  border: 1px solid #e8eaec;
+  padding: 8px;
+  width: 74%;
+  min-width: 500px;
+}
+</style>
+<style lang="scss">
+.seearch-pkg-variable {
+  min-width: 500px;
+  .ivu-radio-group-button .ivu-radio-wrapper-checked {
+    background: #2d8cf0;
+    color: #fff;
+  }
+  .ivu-radio-group-button .ivu-radio-wrapper-checked:hover {
+    border-color: #57a3f3;
+    color: white;
+  }
 }
 </style>

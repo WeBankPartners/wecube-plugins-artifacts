@@ -810,7 +810,6 @@ export default {
             })
           }
         }
-        console.log(1.1, value, this.customInputs)
         this.customInputs = temps
       }
     },
