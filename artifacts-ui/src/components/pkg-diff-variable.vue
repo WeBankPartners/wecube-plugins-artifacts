@@ -65,8 +65,8 @@
         <Input type="text" :placeholder="$t('artifacts_unselected')" v-model="customSearch"> </Input>
         <Button type="primary" @click="remoteConfigSearch" :loading="remoteLoading">{{ $t('search') }}</Button>
       </div>
-      <Select ref="ddrop" :disabled="!allDiffConfigs || allDiffConfigs.length === 0" filterable clearable v-model="currentConfigValue" style="margin-top: 10px">
-        <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value && conf.code !== currentConfigRow.key)" :value="conf.variable_value" :key="conf.key_name">{{ conf.key_name }}</Option>
+      <Select ref="ddrop" :disabled="!allDiffConfigs || allDiffConfigs.length === 0" filterable clearable v-model="currentConfigId" style="margin-top: 10px">
+        <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value && conf.code !== currentConfigRow.key)" :value="conf.id" :key="conf.key_name">{{ conf.key_name }}</Option>
       </Select>
     </Modal>
     <Modal :mask-closable="false" v-model="isShowBatchBindModal" :width="800" :title="$t('multi_bind_config')">
@@ -131,7 +131,8 @@ export default {
         db: 'DB',
         app: 'APP',
         mixed: 'APP&DB',
-        image: 'IMAGE'
+        image: 'IMAGE',
+        rule: 'RULE'
       },
       remoteLoading: false,
       isFileSelect: false,
@@ -215,6 +216,8 @@ export default {
       tabTableLoading: false,
       // 选择差异化变量临时保存值
       currentConfigValue: '',
+      // 选择模版时的临时变量
+      currentConfigId: '',
       isShowConfigKeyModal: false,
       isShowCiConfigModal: false,
       currentConfigRow: {},
@@ -807,7 +810,6 @@ export default {
             })
           }
         }
-        console.log(1.1, value, this.customInputs)
         this.customInputs = temps
       }
     },
@@ -835,12 +837,13 @@ export default {
       }
     },
     setConfigRowValue () {
-      if (this.currentConfigValue) {
+      if (this.currentConfigId) {
         const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
         this.packageDetail[tmp].forEach(elFile => {
           elFile.configKeyInfos.forEach(elFileVar => {
             if (this.currentConfigRow.key.toLowerCase() === elFileVar.key.toLowerCase()) {
-              elFileVar.conf_variable.diffExpr = this.currentConfigValue
+              const tmp = this.allDiffConfigs.find(item => item.id === this.currentConfigId)
+              elFileVar.conf_variable.diffExpr = tmp.variable_value
             }
           })
         })

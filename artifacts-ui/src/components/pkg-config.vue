@@ -30,7 +30,7 @@
           <i-switch v-model="packageInput.is_decompression" style="margin-left: 10px;" />
         </Col>
       </Row>
-      <Tabs :value="currentConfigTab" class="config-tab" @on-click="changeCurrentConfigTab">
+      <Tabs v-if="packageType !== 'RULE'" :value="currentConfigTab" class="config-tab" @on-click="changeCurrentConfigTab">
         <TabPane :disabled="disableAppCard" :label="$t('APP')" name="APP">
           <div class="tab-content">
             <div style="border:1px solid #e8eaec;">
@@ -484,8 +484,8 @@ export default {
         { label: 'APP', value: 'APP' },
         { label: 'DB', value: 'DB' },
         { label: 'APP&DB', value: 'APP&DB' },
-        { label: 'IMAGE', value: 'IMAGE' },
-        { label: 'RULE', value: 'RULE' }
+        { label: 'RULE', value: 'RULE' },
+        { label: 'IMAGE', value: 'IMAGE' }
       ],
       constPackageOptions: {
         db: 'DB',

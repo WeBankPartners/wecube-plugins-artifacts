@@ -9,7 +9,7 @@
         <Icon v-if="isfullscreen" @click="fullscreenChange" class="fullscreen-icon" type="ios-contract" />
         <Icon v-else @click="fullscreenChange" class="fullscreen-icon" type="ios-expand" />
       </div>
-      <Form :label-width="80" ref="onlineUploadRuleValidateRef" :model="onlineUploadParams" :rules="onlineUploadRuleValidate">
+      <Form :label-width="100" ref="onlineUploadRuleValidateRef" :model="onlineUploadParams" :rules="onlineUploadRuleValidate">
         <FormItem :label="$t('filterPath')">
           <span style="vertical-align: middle;">{{ onlineUploadParams.filterPath }}</span>
         </FormItem>
@@ -19,6 +19,11 @@
               <span>{{ conf.name }}</span>
               <span style="float:right;color:#ccc">{{ utcToLocal(conf.lastModified) }}</span>
             </Option>
+          </Select>
+        </FormItem>
+        <FormItem :label="$t('package_type')">
+          <Select filterable @on-change="getbaselinePkg('onlineUploadParams')" :placeholder="$t('package_type')" v-model="onlineUploadParams.package_type">
+            <Option v-for="item in packageOptions" :value="item.value" :key="item.label">{{ item.label }}</Option>
           </Select>
         </FormItem>
         <FormItem :label="$t('baseline_package')">
@@ -42,12 +47,17 @@
         <Icon v-if="isfullscreen" @click="fullscreenChange" class="fullscreen-icon" type="ios-contract" />
         <Icon v-else @click="fullscreenChange" class="fullscreen-icon" type="ios-expand" />
       </div>
-      <Form :label-width="80">
+      <Form :label-width="100">
         <FormItem :label="$t('art_package')">
           <Upload action="" :before-upload="handleUpload" :show-upload-list="false">
             <Button icon="ios-cloud-upload-outline">{{ $t('artifacts_upload_new_package') }}</Button>
           </Upload>
           <span>{{ localUploadParams.fileName }}</span>
+        </FormItem>
+        <FormItem :label="$t('package_type')">
+          <Select filterable @on-change="getbaselinePkg('localUploadParams')" :placeholder="$t('package_type')" v-model="localUploadParams.package_type">
+            <Option v-for="item in packageOptions" :value="item.value" :key="item.value">{{ item.label }}</Option>
+          </Select>
         </FormItem>
         <FormItem :label="$t('baseline_package')">
           <Select clearable filterable :placeholder="$t('baseline_package')" v-model="localUploadParams.baseline_package">
@@ -75,10 +85,12 @@ export default {
       isfullscreen: false,
       guid: '', // 当前单元
       uploadType: '', // uploadType: 'local' | 'online'
+      packageType: '', // 包类型，外部传入
       onlineModal: false,
       onlineUploadParams: {
         filterPath: '',
         downloadUrl: '',
+        package_type: '',
         baseline_package: ''
       },
       onlineUploadRuleValidate: {
@@ -89,9 +101,17 @@ export default {
       localModal: false,
       localUploadParams: {
         fileName: '',
+        package_type: '',
         baseline_package: ''
       },
-      formData: null
+      formData: null,
+      packageOptions: [
+        { label: this.$t('DB'), value: 'DB', num: 0 },
+        { label: this.$t('APP'), value: 'APP', num: 0 },
+        { label: this.$t('APP&DB'), value: 'APP&DB', num: 0 },
+        { label: this.$t('IMAGE'), value: 'IMAGE', num: 0 },
+        { label: this.$t('RULE'), value: 'RULE', num: 0 }
+      ]
     }
   },
   watch: {},
@@ -100,10 +120,12 @@ export default {
     utcToLocal (utcDate) {
       return dayjs(utcDate).format('YYYY-MM-DD HH:mm:ss')
     },
-    openUploadDialog (uploadType, guid) {
+    openUploadDialog (uploadType, guid, packageType) {
       this.isfullscreen = false
       this.uploadType = uploadType
       this.guid = guid
+      this.onlineUploadParams.package_type = packageType
+      this.localUploadParams.package_type = packageType
       if (uploadType === 'online') {
         this.onlineUpload()
       } else {
@@ -112,7 +134,7 @@ export default {
     },
     async localUpload () {
       this.emptyJsonKey('localUploadParams')
-      await this.getbaselinePkg()
+      await this.getbaselinePkg('localUploadParams')
       this.formData = new FormData()
       this.localModal = true
     },
@@ -122,7 +144,7 @@ export default {
       this.emptyJsonKey('onlineUploadParams')
       await this.getFilePath()
       await this.queryOnlinePackages()
-      await this.getbaselinePkg()
+      await this.getbaselinePkg('onlineUploadParams')
       this.onlineModal = true
     },
     async getFilePath () {
@@ -136,7 +158,9 @@ export default {
     emptyJsonKey (objName) {
       let obj = this[objName]
       Object.keys(obj).forEach(key => {
-        obj[key] = ''
+        if (key !== 'package_type') {
+          obj[key] = ''
+        }
       })
       return obj
     },
@@ -149,7 +173,8 @@ export default {
       }
     },
     // 获取基线列表
-    async getbaselinePkg () {
+    async getbaselinePkg (type) {
+      this[type].baseline_package = ''
       this.baselinePackageOptions = []
       let { status, data } = await queryPackages(this.guid, {
         resultColumns: ['guid', 'name', 'package_type', 'diff_conf_file', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'is_decompression', 'db_diff_conf_file', 'db_upgrade_directory', 'db_rollback_directory', 'db_deploy_file_path', 'db_upgrade_file_path', 'db_rollback_file_path'],
@@ -157,7 +182,13 @@ export default {
           asc: false,
           field: 'upload_time'
         },
-        filters: [],
+        filters: [
+          {
+            name: 'package_type',
+            operator: 'eq',
+            value: this[type].package_type
+          }
+        ],
         paging: true,
         pageable: {
           pageSize: 1000,
@@ -181,11 +212,11 @@ export default {
             title: this.$t('art_success'),
             desc: this.$t('art_need_time')
           })
-          const { status } = await uploadArtifact(this.guid, this.onlineUploadParams.downloadUrl, this.onlineUploadParams.baseline_package)
+          const { status } = await uploadArtifact(this.guid, this.onlineUploadParams.downloadUrl, this.onlineUploadParams.baseline_package, this.onlineUploadParams.package_type)
           if (status === 'OK') {
             this.loading = false
             this.onlineModal = false
-            this.$emit('refreshTable')
+            this.$emit('refreshTable', this.onlineUploadParams.package_type)
           } else {
             this.loading = false
           }
@@ -209,7 +240,9 @@ export default {
     // 本地上传
     async confirmLocalUpload () {
       this.removeFormDataKey('baseline_package')
+      this.removeFormDataKey('package_type')
       this.formData.append('baseline_package', this.localUploadParams.baseline_package || '')
+      this.formData.append('package_type', this.localUploadParams.package_type)
       this.loading = true
       this.$Notice.success({
         title: this.$t('art_success'),
@@ -219,7 +252,7 @@ export default {
       if (status === 'OK') {
         this.loading = false
         this.localModal = false
-        this.$emit('refreshTable')
+        this.$emit('refreshTable', this.localUploadParams.package_type)
       } else {
         this.loading = false
       }
