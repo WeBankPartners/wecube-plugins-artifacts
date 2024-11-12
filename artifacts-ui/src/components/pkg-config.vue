@@ -1481,7 +1481,6 @@ export default {
         })
       }
       this.$emit('queryPackages')
-      this.$emit('syncPackageDetail')
     },
     async getCompareFile (file) {
       const params = {
