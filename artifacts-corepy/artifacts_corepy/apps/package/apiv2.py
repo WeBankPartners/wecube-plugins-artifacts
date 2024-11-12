@@ -386,7 +386,8 @@ class UnitDesignPackages(WeCubeResource):
     def get_package_statistics(self, post_data, unit_design_id):
         cmdb_client = self.get_cmdb_client()
         result = {}
-        query = {}
+        post_data = post_data or {}
+        query = post_data
         query.setdefault('dialect', {"queryMode": "new"})
         query.setdefault('filters', [])
         query.setdefault('paging', True)
