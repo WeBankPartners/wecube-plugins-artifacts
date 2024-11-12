@@ -396,7 +396,7 @@ class UnitDesignPackages(WeCubeResource):
         for t in  [constant.PackageType.app, constant.PackageType.db, constant.PackageType.mixed, constant.PackageType.image, constant.PackageType.rule]:
             query_tmp = copy.deepcopy(query)
             query_tmp['filters'].append({"name": field_pkg_package_type_name, "operator": "eq", "value": t})
-            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query_tmp)
             result[t] = resp_json['data']['pageInfo']['totalRows']
         return result
 
@@ -840,7 +840,9 @@ class UnitDesignPackages(WeCubeResource):
             package_rows[0]['guid'] = exist_package['guid']
             package_result = self.pure_update(package_rows)
         new_package_guid = package_result['data'][0]['guid']
-        new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {})
+        new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
+            field_pkg_package_type_name: package_type
+        })
         # update 属性
         new_deploy_attrs['guid'] = new_package_guid
         self.pure_update([new_deploy_attrs])
@@ -916,7 +918,9 @@ class UnitDesignPackages(WeCubeResource):
                 package_rows[0]['guid'] = exist_package['guid']
                 package_result = self.pure_update(package_rows)
             new_package_guid = package_result['data'][0]['guid']
-            new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {})
+            new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
+                field_pkg_package_type_name: package_type
+            })
             # update 属性
             new_deploy_attrs['guid'] = new_package_guid
             self.pure_update([new_deploy_attrs])
@@ -968,7 +972,9 @@ class UnitDesignPackages(WeCubeResource):
                         package_rows[0]['guid'] = exist_package['guid']
                         package_result = self.pure_update(package_rows)
                     new_package_guid = package_result['data'][0]['guid']
-                    new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {})
+                    new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
+                        field_pkg_package_type_name: package_type
+                    })
                     # update 属性
                     new_deploy_attrs['guid'] = new_package_guid
                     self.pure_update([new_deploy_attrs])
@@ -1087,7 +1093,9 @@ class UnitDesignPackages(WeCubeResource):
                     unit_design = resp_json['data']['contents'][0]
                     if clean_data['package_guid']:
                         # 有package_guid，则更新
-                        new_deploy_attrs = self._analyze_package_attrs(clean_data['package_guid'], clean_data['baseline_package_guid'], {})
+                        new_deploy_attrs = self._analyze_package_attrs(clean_data['package_guid'], clean_data['baseline_package_guid'], {
+                            field_pkg_package_type_name: clean_data.get('package_type')
+                        })
                         # update 属性
                         new_deploy_attrs['guid'] = clean_data['package_guid']
                         self.pure_update([new_deploy_attrs])

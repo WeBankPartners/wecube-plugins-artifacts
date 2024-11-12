@@ -15,6 +15,7 @@ from talos.common import controller as base_controller
 from artifacts_corepy.common.controller import Collection, Item, POSTCollection
 from artifacts_corepy.common import exceptions
 from artifacts_corepy.apps.package import apiv2 as package_api
+from artifacts_corepy.common import constant
 
 CONF = config.CONF
 
@@ -129,6 +130,8 @@ class CollectionUnitDesignNexusPackageUpload(object):
         package_type = req.params.get('package_type', None)
         if not package_type:
             raise exceptions.ValidationError(message=_('missing query param: package_type'))
+        elif package_type not in [constant.PackageType.app, constant.PackageType.db, constant.PackageType.mixed, constant.PackageType.image, constant.PackageType.rule]:
+            raise exceptions.ValidationError(message=_('invalid package_type param value: %s') % package_type)
         if not download_url:
             raise exceptions.ValidationError(message=_('missing query param: downloadUrl'))
         # form = cgi.FieldStorage(fp=req.stream, environ=req.env)
@@ -157,6 +160,8 @@ class CollectionUnitDesignPackageUpload(object):
             package_type = form.getvalue('package_type', None)
         if not package_type:
             raise exceptions.ValidationError(message=_('missing form param: package_type'))
+        elif package_type not in [constant.PackageType.app, constant.PackageType.db, constant.PackageType.mixed, constant.PackageType.image, constant.PackageType.rule]:
+            raise exceptions.ValidationError(message=_('invalid package_type param value: %s') % package_type)
         resp.json = {
             'code': 200,
             'status': 'OK',
