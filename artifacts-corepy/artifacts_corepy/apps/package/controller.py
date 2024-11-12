@@ -15,6 +15,7 @@ from talos.common import controller as base_controller
 from artifacts_corepy.common.controller import Collection, Item, POSTCollection
 from artifacts_corepy.common import exceptions
 from artifacts_corepy.apps.package import apiv2 as package_api
+from artifacts_corepy.common import constant
 
 CONF = config.CONF
 
@@ -53,6 +54,10 @@ class CollectionProcessDef(Collection):
     name = 'artifacts.process.defs'
     resource = package_api.ProcessDef
 
+class CollectionUser(Collection):
+    allow_methods = ('GET', )
+    name = 'artifacts.users.list'
+    resource = package_api.User
 
 class CollectionSystemDesign(Collection):
     allow_methods = ('GET', )
@@ -96,6 +101,14 @@ class CollectionUnitDesignPackages(POSTCollection):
     resource = package_api.UnitDesignPackages
 
 
+class CollectionPackageStatistics(POSTCollection):
+    allow_methods = ('POST', )
+    name = 'artifacts.packages.statistics'
+    resource = package_api.UnitDesignPackages
+    
+    def list(self, req, criteria, **kwargs):
+        return self.make_resource(req).get_package_statistics(req.json, **kwargs)
+
 class CollectionUnitDesignNexusPackages(POSTCollection):
     allow_methods = ('POST', )
     name = 'artifacts.unit-design.nexus.packages'
@@ -114,18 +127,23 @@ class CollectionUnitDesignNexusPackageUpload(object):
     def on_post(self, req, resp, **kwargs):
         download_url = req.params.get('downloadUrl', None)
         baseline_package = req.params.get('baseline_package', None)
+        package_type = req.params.get('package_type', None)
+        if not package_type:
+            raise exceptions.ValidationError(message=_('missing query param: package_type'))
+        elif package_type not in [constant.PackageType.app, constant.PackageType.db, constant.PackageType.mixed, constant.PackageType.image, constant.PackageType.rule]:
+            raise exceptions.ValidationError(message=_('invalid package_type param value: %s') % package_type)
         if not download_url:
-            raise exceptions.ValidationError(message=_('missing query: downloadUrl'))
-        form = cgi.FieldStorage(fp=req.stream, environ=req.env)
+            raise exceptions.ValidationError(message=_('missing query param: downloadUrl'))
+        # form = cgi.FieldStorage(fp=req.stream, environ=req.env)
         resp.json = {
             'code': 200,
             'status': 'OK',
-            'data': self.upload(req, download_url, baseline_package, **kwargs),
+            'data': self.upload(req, download_url, baseline_package, package_type, **kwargs),
             'message': 'success'
         }
 
-    def upload(self, req, download_url, baseline_package, **kwargs):
-        return self.resource().upload_from_nexus(download_url, baseline_package, **kwargs)
+    def upload(self, req, download_url, baseline_package, package_type, **kwargs):
+        return self.resource().upload_from_nexus(download_url, baseline_package, package_type, **kwargs)
 
 
 class CollectionUnitDesignPackageUpload(object):
@@ -135,17 +153,24 @@ class CollectionUnitDesignPackageUpload(object):
     def on_post(self, req, resp, **kwargs):
         form = cgi.FieldStorage(fp=req.stream, environ=req.env)
         baseline_package = None
+        package_type = None
         if 'baseline_package' in form:
             baseline_package = form.getvalue('baseline_package', None)
+        if 'package_type' in form:
+            package_type = form.getvalue('package_type', None)
+        if not package_type:
+            raise exceptions.ValidationError(message=_('missing form param: package_type'))
+        elif package_type not in [constant.PackageType.app, constant.PackageType.db, constant.PackageType.mixed, constant.PackageType.image, constant.PackageType.rule]:
+            raise exceptions.ValidationError(message=_('invalid package_type param value: %s') % package_type)
         resp.json = {
             'code': 200,
             'status': 'OK',
-            'data': self.upload(req, form['file'].filename, form['file'].type, form['file'].file, baseline_package, **kwargs),
+            'data': self.upload(req, form['file'].filename, form['file'].type, form['file'].file, baseline_package, package_type, **kwargs),
             'message': 'success'
         }
 
-    def upload(self, req, filename, filetype, fileobj, baseline_package, **kwargs):
-        return self.resource().upload(filename, filetype, fileobj, baseline_package, **kwargs)
+    def upload(self, req, filename, filetype, fileobj, baseline_package, package_type, **kwargs):
+        return self.resource().upload(filename, filetype, fileobj, baseline_package, package_type, **kwargs)
 
 
 class ItemPackage(Item):

@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import
 
+import copy
 import datetime
 import hashlib
 import fnmatch
@@ -189,6 +190,13 @@ class WeCubeResource(object):
         pass
 
 
+class User(WeCubeResource):
+    def list(self, params):
+        api_client = self.get_cmdb_client()
+        url = self.server + '/platform/v1/users/retrieve'
+        resp_json = api_client.get(url, {}, check_resp=False)
+        return resp_json.get('data', [])
+    
 class ProcessDef(WeCubeResource):
     def list(self, params):
         params['plugin'] = 'artifacts'
@@ -374,6 +382,23 @@ class UnitDesignPackages(WeCubeResource):
             for field in fields:
                 i[field] = self.build_file_object(i.get(field, None))
         return resp_json['data']
+
+    def get_package_statistics(self, post_data, unit_design_id):
+        cmdb_client = self.get_cmdb_client()
+        result = {}
+        query = {}
+        query.setdefault('dialect', {"queryMode": "new"})
+        query.setdefault('filters', [])
+        query.setdefault('paging', True)
+        query.setdefault('pageable', {'pageSize':1, 'startIndex': 1})
+        self.set_package_query_fields(query)
+        query['filters'].append({"name": "unit_design", "operator": "eq", "value": unit_design_id})
+        for t in  [constant.PackageType.app, constant.PackageType.db, constant.PackageType.mixed, constant.PackageType.image, constant.PackageType.rule]:
+            query_tmp = copy.deepcopy(query)
+            query_tmp['filters'].append({"name": field_pkg_package_type_name, "operator": "eq", "value": t})
+            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query_tmp)
+            result[t] = resp_json['data']['pageInfo']['totalRows']
+        return result
 
     def build_file_object(self, filenames, spliter=None):
         if spliter is None:
@@ -773,7 +798,9 @@ class UnitDesignPackages(WeCubeResource):
                 tar.add(package_path_db_diffconfigs, arcname=os.path.basename(package_path_db_diffconfigs))
         return output_filename
 
-    def upload(self, filename, filetype, fileobj, baseline_package, unit_design_id):
+    def upload(self, filename, filetype, fileobj, baseline_package, package_type, unit_design_id):
+        if not package_type:
+            package_type = constant.PackageType.default
         if not is_upload_local_enabled():
             raise exceptions.PluginError(message=_("Package uploading is disabled!"))
         if self._is_compose_package(filename):
@@ -803,7 +830,8 @@ class UnitDesignPackages(WeCubeResource):
             field_pkg_is_decompression_name: field_pkg_is_decompression_default_value,
             'upload_user': scoped_globals.GLOBALS.request.auth_user,
             'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'unit_design': unit_design_id
+            'unit_design': unit_design_id,
+            field_pkg_package_type_name: package_type
         }]
         exist_package = self._get_deploy_package_by_name_unit(filename,unit_design_id)
         if exist_package is None:
@@ -812,13 +840,17 @@ class UnitDesignPackages(WeCubeResource):
             package_rows[0]['guid'] = exist_package['guid']
             package_result = self.pure_update(package_rows)
         new_package_guid = package_result['data'][0]['guid']
-        new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {})
+        new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
+            field_pkg_package_type_name: package_type
+        })
         # update 属性
         new_deploy_attrs['guid'] = new_package_guid
         self.pure_update([new_deploy_attrs])
         return [self._get_deploy_package_by_id(new_package_guid)]
 
-    def upload_from_nexus(self, download_url, baseline_package, unit_design_id):
+    def upload_from_nexus(self, download_url, baseline_package, package_type, unit_design_id):
+        if not package_type:
+            package_type = constant.PackageType.default
         if not is_upload_nexus_enabled():
             raise exceptions.PluginError(message=_("Package uploading is disabled!"))
         url_info = self.download_url_parse(download_url)
@@ -876,7 +908,8 @@ class UnitDesignPackages(WeCubeResource):
                 field_pkg_is_decompression_name: field_pkg_is_decompression_default_value,
                 'upload_user': scoped_globals.GLOBALS.request.auth_user,
                 'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'unit_design': unit_design_id
+                'unit_design': unit_design_id,
+                field_pkg_package_type_name:package_type
             }]
             exist_package = self._get_deploy_package_by_name_unit(url_info['filename'],unit_design_id)
             if exist_package is None:
@@ -885,7 +918,9 @@ class UnitDesignPackages(WeCubeResource):
                 package_rows[0]['guid'] = exist_package['guid']
                 package_result = self.pure_update(package_rows)
             new_package_guid = package_result['data'][0]['guid']
-            new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {})
+            new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
+                field_pkg_package_type_name: package_type
+            })
             # update 属性
             new_deploy_attrs['guid'] = new_package_guid
             self.pure_update([new_deploy_attrs])
@@ -927,7 +962,8 @@ class UnitDesignPackages(WeCubeResource):
                         'upload_time':
                         datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         'unit_design':
-                        unit_design_id
+                        unit_design_id,
+                        field_pkg_package_type_name:package_type
                     }]
                     exist_package = self._get_deploy_package_by_name_unit(filename,unit_design_id)
                     if exist_package is None:
@@ -936,7 +972,9 @@ class UnitDesignPackages(WeCubeResource):
                         package_rows[0]['guid'] = exist_package['guid']
                         package_result = self.pure_update(package_rows)
                     new_package_guid = package_result['data'][0]['guid']
-                    new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {})
+                    new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
+                        field_pkg_package_type_name: package_type
+                    })
                     # update 属性
                     new_deploy_attrs['guid'] = new_package_guid
                     self.pure_update([new_deploy_attrs])
@@ -958,6 +996,11 @@ class UnitDesignPackages(WeCubeResource):
                                  rule='1, 36',
                                  rule_type='length',
                                  nullable=False),
+            crud.ColumnValidator('packageType',
+                                 validate_on=['update:O'],
+                                 rule='1, 36',
+                                 rule_type='length',
+                                 nullable=True),
         ]
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
         baseline_package_id = clean_data.get('baselinePackage')
@@ -966,7 +1009,7 @@ class UnitDesignPackages(WeCubeResource):
         url = CONF.wecube.nexus.server.rstrip(
             '/') + '/repository/' + CONF.wecube.nexus.repository + '/' + clean_data['nexusUrl'].lstrip('/')
         unit_design_id = baseline_package['unit_design']['guid']
-        new_pakcage = self.upload_from_nexus(url, baseline_package_id, unit_design_id)[0]
+        new_pakcage = self.upload_from_nexus(url, baseline_package_id, clean_data.get('packageType'), unit_design_id)[0]
         return {'guid': new_pakcage['guid']}
 
     def upload_and_create2(self, data):
@@ -1009,6 +1052,10 @@ class UnitDesignPackages(WeCubeResource):
                                  rule=validator.LengthValidator(1, 255),
                                  validate_on=['check:M'],
                                  nullable=False),
+            crud.ColumnValidator(field='package_type',
+                                 rule=validator.LengthValidator(1, 255),
+                                 validate_on=['check:O'],
+                                 nullable=True),
         ]
 
         result = {'resultCode': '0', 'resultMessage': 'success', 'results': {'outputs': []}}
@@ -1046,7 +1093,9 @@ class UnitDesignPackages(WeCubeResource):
                     unit_design = resp_json['data']['contents'][0]
                     if clean_data['package_guid']:
                         # 有package_guid，则更新
-                        new_deploy_attrs = self._analyze_package_attrs(clean_data['package_guid'], clean_data['baseline_package_guid'], {})
+                        new_deploy_attrs = self._analyze_package_attrs(clean_data['package_guid'], clean_data['baseline_package_guid'], {
+                            field_pkg_package_type_name: clean_data.get('package_type')
+                        })
                         # update 属性
                         new_deploy_attrs['guid'] = clean_data['package_guid']
                         self.pure_update([new_deploy_attrs])
@@ -1059,7 +1108,7 @@ class UnitDesignPackages(WeCubeResource):
                             r_artifact_path = group
                         download_url = CONF.wecube.nexus.server.rstrip(
                             '/') + '/repository/' + CONF.wecube.nexus.repository + r_artifact_path + clean_data['package_name']
-                        self.upload_from_nexus(download_url, clean_data['baseline_package_guid'], clean_data['unit_design'])
+                        self.upload_from_nexus(download_url, clean_data['baseline_package_guid'], clean_data.get('package_type'), clean_data['unit_design'])
                     result['results']['outputs'].append(single_result)
                 except Exception as e:
                     single_result['errorCode'] = '1'
