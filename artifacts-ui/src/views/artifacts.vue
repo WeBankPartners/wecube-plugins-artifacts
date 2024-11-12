@@ -4,7 +4,6 @@
       <!-- 系统设计版本 -->
       <Card>
         <CustomTitle :title="$t('artifacts_system_design_version')"></CustomTitle>
-        <!-- <BaseHeaderTitle class="custom-title" :title="$t('artifacts_system_design_version')"></BaseHeaderTitle> -->
         <Select @on-change="selectSystemDesignVersion" @on-clear="clearSelectSystemDesign" label-in-name v-model="systemDesignVersion" filterable clearable>
           <Option v-for="version in systemDesignVersions" :value="version.guid || ''" :key="version.guid" :label="version.code + ' [' + version.name + '] ' + (version.confirm_time ? version.confirm_time : '')">
             {{ version.code }} [{{ version.name }}] <span style="float: right;color: #A7ACB5">{{ version.confirm_time ? version.confirm_time : '' }}</span></Option
@@ -29,7 +28,6 @@
       <div>
         <div style="display: flex;justify-content: space-between;">
           <CustomTitle :title="customTreePath"></CustomTitle>
-          <!-- <BaseHeaderTitle class="custom-title" :title="$t('art_sys_artch') + treePath.join(' / ')"></BaseHeaderTitle> -->
           <div>
             <!-- 本地上传 -->
             <Button icon="md-cloud-upload" style="background: #28aef3;border-color: #28aef3;margin-right: 8px;" type="info" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">{{ $t('art_upload_import') }}</Button>
@@ -38,29 +36,32 @@
           </div>
         </div>
         <div>
-          <div ref="container" id="search-zone" style="display: flex;">
-            <div class="seearch-pkg-variable" style="margin-right: 8px;">
-              <RadioGroup v-model="tableFilter.package_type" type="button" button-style="solid" @on-change="paramsChange(true)">
-                <Radio v-for="pkg in packageOptions" :label="pkg.value" :key="pkg.value">{{ pkg.label }}({{ pkg.num }})</Radio>
-              </RadioGroup>
+          <div class="search-box">
+            <div ref="container" id="search-zone" :style="{ display: 'flex', 'flex-wrap': searchConfig.expandSearch ? '' : 'wrap' }">
+              <div class="seearch-pkg-variable" style="margin-right: 8px;">
+                <RadioGroup v-model="tableFilter.package_type" type="button" button-style="solid" @on-change="paramsChange(true, true)">
+                  <Radio v-for="pkg in packageOptions" :label="pkg.value" :disabled="pkg.num === 0" :key="pkg.value">{{ pkg.label }}({{ pkg.num }})</Radio>
+                </RadioGroup>
+              </div>
+              <div :style="{ display: searchConfig.expandSearch && searchConfig.hideIndex <= 2 ? 'none' : 'block' }" class="search-item">
+                <Input v-model="tableFilter.key_name" @on-change="paramsChange(true)" :placeholder="$t('artifacts_package_name')" style="width:100%" clearable />
+              </div>
+              <div :style="{ display: searchConfig.expandSearch && searchConfig.hideIndex <= 3 ? 'none' : 'block' }" class="search-item">
+                <Input v-model="tableFilter.guid" @on-change="paramsChange(true)" placeholder="GUID" style="width:100%" clearable />
+              </div>
+              <div :style="{ display: searchConfig.expandSearch && searchConfig.hideIndex <= 4 ? 'none' : 'block' }" class="search-item">
+                <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('baseline_package')" style="width:100%" v-model="tableFilter.baseline_package">
+                  <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
+                </Select>
+              </div>
+              <div :style="{ display: searchConfig.expandSearch && searchConfig.hideIndex <= 5 ? 'none' : 'block' }" class="search-item">
+                <Select clearable filterable @on-change="paramsChange(true)" @on-clear="tableFilter.upload_user = ''" :placeholder="$t('artifacts_uploaded_by')" style="width:100%" v-model="tableFilter.upload_user">
+                  <Option v-for="user in userList" :value="user.username" :key="user.id">{{ user.username }}</Option>
+                </Select>
+              </div>
             </div>
-            <div :style="{ display: searchConfig.hideIndex <= 2 ? 'none' : 'block', width: '200px', 'margin-right': '8px' }">
-              <Input v-model="tableFilter.key_name" @on-change="paramsChange(true)" :placeholder="$t('artifacts_package_name')" clearable />
-            </div>
-            <div :style="{ display: searchConfig.hideIndex <= 3 ? 'none' : 'block', width: '200px', 'margin-right': '8px' }">
-              <Input v-model="tableFilter.guid" @on-change="paramsChange(true)" placeholder="GUID" clearable />
-            </div>
-            <div :style="{ display: searchConfig.hideIndex <= 4 ? 'none' : 'block', width: '200px', 'margin-right': '8px' }">
-              <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('baseline_package')" v-model="tableFilter.baseline_package">
-                <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
-              </Select>
-            </div>
-            <div :style="{ display: searchConfig.hideIndex <= 5 ? 'none' : 'block', width: '200px', 'margin-right': '8px' }">
-              <Select clearable filterable @on-change="paramsChange(true)" @on-clear="tableFilter.upload_user = ''" :placeholder="$t('artifacts_uploaded_by')" v-model="tableFilter.upload_user">
-                <Option v-for="user in userList" :value="user.username" :key="user.id">{{ user.username }}</Option>
-              </Select>
-              <!-- <Input v-model="tableFilter.upload_user" @on-change="paramsChange(true)" :placeholder="$t('artifacts_uploaded_by')" clearable /> -->
-            </div>
+          </div>
+          <div style="display: inline-block;width:30px;vertical-align: middle;">
             <Icon v-if="searchConfig.expandSearch" @click="searchConfig.expandSearch = false" size="28" color="#2d8cf0" type="ios-arrow-down" style="cursor: pointer;" />
             <Icon v-else @click="searchConfig.expandSearch = true" size="28" color="#2d8cf0" type="ios-arrow-up" style="cursor: pointer;" />
           </div>
@@ -159,7 +160,7 @@ export default {
       userList: [],
       tableFilter: {
         key_name: '',
-        package_type: 'DB',
+        package_type: '',
         guid: '',
         baseline_package: '',
         upload_user: ''
@@ -553,7 +554,10 @@ export default {
       this.systemDesignVersion = ''
       this.treeData = []
     },
-    paramsChange: debounce(function (resetCurrentPage) {
+    paramsChange: debounce(function (resetCurrentPage, clearBaseline = false) {
+      if (clearBaseline) {
+        this.tableFilter.baseline_package = ''
+      }
       this.queryPackages(resetCurrentPage)
       this.getbaselinePkg()
     }, 300),
@@ -568,6 +572,10 @@ export default {
         this.packageOptions.forEach(item => {
           item.num = data[item.value]
         })
+        if (this.tableFilter.package_type === '') {
+          const find = this.packageOptions.find(item => item.num > 0)
+          this.tableFilter.package_type = find ? find.value : 'DB'
+        }
       }
     },
     async getUserList () {
@@ -1101,7 +1109,6 @@ export default {
   // height: calc(100vh - 246px);
   // overflow-y: auto;
   padding-right: 8px;
-  margin-top: 8px;
   width: 100%;
 }
 .ivu-upload {
@@ -1163,6 +1170,16 @@ export default {
   padding: 8px;
   width: 74%;
   min-width: 500px;
+}
+
+.search-item {
+  width: 200px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+.search-box {
+  width: calc(100% - 40px);
+  display: inline-block;
 }
 </style>
 <style lang="scss">
