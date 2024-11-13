@@ -224,6 +224,7 @@ export default {
       })
     },
     handleUpload (file) {
+      this.removeFormDataKey('file')
       this.localUploadParams.fileName = file.name
       this.formData.append('file', file)
       return false

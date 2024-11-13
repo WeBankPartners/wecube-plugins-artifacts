@@ -2,35 +2,22 @@
   <div>
     <Drawer :title="pkgName" :mask-closable="false" :closable="true" v-model="openDrawer" :scrollable="false" width="1300">
       <Spin size="large" fix v-if="spinShow"></Spin>
-      <Row style="margin-bottom: 8px;">
-        <Col style="text-align: left; line-height: 32px;margin-left: 6px;" span="2">
-          <span style="margin-right: 8px">{{ $t('package_type') }}</span>
-        </Col>
-        <Col span="21">
-          <Select clearable :placeholder="$t('package_type')" v-model="packageType" @on-change="packageTypeChanged" style="margin-left: 10px;">
-            <Option v-for="pkt in packageTypeOptions" :value="pkt.value" :key="pkt.value" :disabled="pkt.value === 'IMAGE'">{{ $t(pkt.label) }}</Option>
+      <Form :label-width="120" class="pkg-config">
+        <FormItem :label="$t('package_type')">
+          <Select clearable :placeholder="$t('package_type')" v-model="packageType" @on-change="packageTypeChanged">
+            <Option v-for="pkt in packageTypeOptions" :value="pkt.value" :key="pkt.value">{{ $t(pkt.label) }}</Option>
           </Select>
-        </Col>
-      </Row>
-      <Row style="margin-bottom: 8px;">
-        <Col style="text-align: left; line-height: 32px;margin-left: 6px;" span="2">
-          <span style="margin-right: 8px">{{ $t('baseline_package') }}</span>
-        </Col>
-        <Col span="21">
-          <Select clearable filterable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" @on-clear="clearBaseline" v-model="packageInput.baseline_package" style="margin-left: 10px;">
+        </FormItem>
+        <FormItem :label="$t('baseline_package')">
+          <Select clearable filterable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" @on-clear="clearBaseline" v-model="packageInput.baseline_package">
             <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
           </Select>
-        </Col>
-      </Row>
-      <Row style="margin-bottom: 8px;">
-        <Col style="text-align: left;margin-left: 6px;" span="2">
-          <span style="margin-right: 8px">{{ $t('is_decompression') }}</span>
-        </Col>
-        <Col span="18">
-          <i-switch v-model="packageInput.is_decompression" style="margin-left: 10px;" />
-        </Col>
-      </Row>
-      <Tabs v-if="packageType !== 'RULE'" :value="currentConfigTab" class="config-tab" @on-click="changeCurrentConfigTab">
+        </FormItem>
+        <FormItem :label="$t('is_decompression')">
+          <i-switch v-model="packageInput.is_decompression" />
+        </FormItem>
+      </Form>
+      <Tabs v-if="!['IMAGE', 'RULE'].includes(packageType)" :value="currentConfigTab" class="config-tab" @on-click="changeCurrentConfigTab">
         <TabPane :disabled="disableAppCard" :label="$t('APP')" name="APP">
           <div class="tab-content">
             <div style="border:1px solid #e8eaec;">
@@ -606,6 +593,7 @@ export default {
         toTab = 'APP'
       }
       this.currentConfigTab = toTab
+      this.getbaselinePkg()
     },
     initSortable (key) {
       const $ul = document.getElementById(key + '_test')
@@ -670,7 +658,7 @@ export default {
         this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code || []))
       })
       this.hideFooter = hideFooter
-      await this.getAllpkg()
+      await this.getbaselinePkg()
       this.packageInput.baseline_package = this.packageDetail.baseline_package ? this.packageDetail.baseline_package : ''
       this.packageId = row.guid
       this.oriPackageInput = JSON.parse(JSON.stringify(this.packageInput))
@@ -900,7 +888,8 @@ export default {
       }
     },
     // 获取基线列表
-    async getAllpkg () {
+    async getbaselinePkg () {
+      this.packageInput.baseline_package = ''
       this.baselinePackageOptions = []
       // resultColumns: ['guid', 'name', 'package_type', 'diff_conf_file', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'is_decompression', 'db_diff_conf_file', 'db_upgrade_directory', 'db_rollback_directory', 'db_deploy_file_path', 'db_upgrade_file_path', 'db_rollback_file_path'],
       let { status, data } = await queryPackages(this.guid, {
@@ -913,6 +902,11 @@ export default {
             name: 'guid',
             operator: 'ne',
             value: this.packageId
+          },
+          {
+            name: 'package_type',
+            operator: 'eq',
+            value: this.packageType
           }
         ],
         paging: true,
@@ -1487,7 +1481,6 @@ export default {
         })
       }
       this.$emit('queryPackages')
-      this.$emit('syncPackageDetail')
     },
     async getCompareFile (file) {
       const params = {
@@ -1524,6 +1517,12 @@ export default {
     margin-right: 28px;
     font-size: 18px;
     cursor: pointer;
+  }
+}
+
+.pkg-config {
+  .ivu-form-item {
+    margin-bottom: 6px;
   }
 }
 </style>
@@ -1592,7 +1591,7 @@ export default {
 }
 
 .tab-content {
-  height: calc(100vh - 300px);
+  height: calc(100vh - 330px);
   overflow: auto;
 }
 .drawer-footer {

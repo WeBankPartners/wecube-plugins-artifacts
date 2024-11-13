@@ -121,11 +121,6 @@ export default {
       spinShow: false,
       pkgName: '',
       openDrawer: false,
-      treePath: [], // 节点路径
-      tableFilter: {
-        key_name: '',
-        guid: ''
-      },
       packageType: '',
       constPackageOptions: {
         db: 'DB',
@@ -135,14 +130,7 @@ export default {
         rule: 'RULE'
       },
       remoteLoading: false,
-      isFileSelect: false,
-      fullscreen: false,
-      fileContentHeight: window.screen.availHeight * 0.4 + 'px',
-      showFileCompare: false,
-      compareParams: {
-        originContent: '',
-        newContent: ''
-      },
+
       // ---------------
       // 系统设计树形数据
       // ---------------
@@ -152,17 +140,10 @@ export default {
       // ----------------
       // 系统设计物料包数据
       // ----------------
-      isShowOnlineModal: false,
-      onlinePackages: [],
+
       // 上传认证头
       headers: {},
       // 单元设计包列表table
-      pageInfo: {
-        pageSize: 5,
-        currentPage: 1,
-        total: 0
-      },
-      statusOperations: [],
       tableLoading: false,
       tableData: [],
       // ----------------
@@ -172,25 +153,9 @@ export default {
       // 包配置文件模态数据
       // ----------------
       packageId: '',
-      hideFooter: false,
+
       customInputs: [],
       customSearch: '',
-      packageInput: {
-        baseline_package: null,
-        diff_conf_file: [],
-        start_file_path: [],
-        stop_file_path: [],
-        deploy_file_path: [],
-        is_decompression: 'true',
-
-        db_diff_conf_file: [],
-        db_upgrade_directory: [],
-        db_rollback_directory: [],
-        db_upgrade_file_path: [],
-        db_rollback_file_path: [],
-        db_deploy_file_path: []
-      },
-      saveConfigLoading: false,
       // -------------------
       // 差异化变量数据
       // -------------------
