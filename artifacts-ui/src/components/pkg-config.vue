@@ -5,7 +5,7 @@
       <Form :label-width="120" class="pkg-config">
         <FormItem :label="$t('package_type')">
           <Select clearable :placeholder="$t('package_type')" v-model="packageType" @on-change="packageTypeChanged">
-            <Option v-for="pkt in packageTypeOptions" :value="pkt.value" :key="pkt.value">{{ $t(pkt.label) }}</Option>
+            <Option v-for="pkt in packageOptions" :value="pkt.value" :key="pkt.value">{{ pkt.label }}</Option>
           </Select>
         </FormItem>
         <FormItem :label="$t('baseline_package')">
@@ -467,12 +467,12 @@ export default {
       openDrawer: false,
       guid: '',
       packageId: '', // 当前选中的packageId
-      packageTypeOptions: [
-        { label: 'APP', value: 'APP' },
-        { label: 'DB', value: 'DB' },
-        { label: 'APP&DB', value: 'APP&DB' },
-        { label: 'RULE', value: 'RULE' },
-        { label: 'IMAGE', value: 'IMAGE' }
+      packageOptions: [
+        { label: this.$t('APP&DB'), value: 'APP&DB', num: 0 },
+        { label: this.$t('APP'), value: 'APP', num: 0 },
+        { label: this.$t('DB'), value: 'DB', num: 0 },
+        { label: this.$t('IMAGE'), value: 'IMAGE', num: 0 },
+        { label: this.$t('RULE'), value: 'RULE', num: 0 }
       ],
       constPackageOptions: {
         db: 'DB',
