@@ -52,7 +52,7 @@
           <Upload action="" :before-upload="handleUpload" :show-upload-list="false">
             <Button icon="ios-cloud-upload-outline">{{ $t('artifacts_upload_new_package') }}</Button>
           </Upload>
-          <span>{{ localUploadParams.fileName }}</span>
+          <span style="word-wrap: break-word;">{{ localUploadParams.fileName }}</span>
         </FormItem>
         <FormItem :label="$t('package_type')">
           <Select filterable @on-change="getbaselinePkg('localUploadParams')" :placeholder="$t('package_type')" v-model="localUploadParams.package_type">
@@ -106,9 +106,9 @@ export default {
       },
       formData: null,
       packageOptions: [
-        { label: this.$t('DB'), value: 'DB', num: 0 },
-        { label: this.$t('APP'), value: 'APP', num: 0 },
         { label: this.$t('APP&DB'), value: 'APP&DB', num: 0 },
+        { label: this.$t('APP'), value: 'APP', num: 0 },
+        { label: this.$t('DB'), value: 'DB', num: 0 },
         { label: this.$t('IMAGE'), value: 'IMAGE', num: 0 },
         { label: this.$t('RULE'), value: 'RULE', num: 0 }
       ]

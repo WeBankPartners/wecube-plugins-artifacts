@@ -2605,3 +2605,12 @@ class OnlyInRemoteNexusPackages(WeCubeResource):
             result.append({"id": item, "displayName": item, "unit_design_id": unit_design_id})
 
         return result
+
+class CiData(WeCubeResource):
+    def list_by_post(self, query, citype):
+        cmdb_client = self.get_cmdb_client()
+        query.setdefault('dialect', {"queryMode": "new"})
+        query.setdefault('filters', [])
+        query.setdefault('paging', False)
+        resp_json = cmdb_client.retrieve(citype, query)
+        return resp_json['data']
