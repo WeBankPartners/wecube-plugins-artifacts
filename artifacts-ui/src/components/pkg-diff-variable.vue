@@ -60,14 +60,20 @@
     <div class="drawer-footer">
       <Button @click="openDrawer = false" type="primary">{{ $t('art_close') }}</Button>
     </div>
-    <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setConfigRowValue" @on-cancel="closeConfigSelectModal">
-      <div style="display: flex">
+    <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :fullscreen="fullscreen" width="900" @on-ok="setConfigRowValue" @on-cancel="closeConfigSelectModal">
+      <p slot="header">
+        <span>{{ $t('artifacts_property_value_fill_rule') }}</span>
+        <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
+        <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
+      </p>
+      <RuleTable :data="tempCopyTableData" :columns="tempCopyColomns" :page="page" @reloadTableData="remoteConfigSearch"></RuleTable>
+      <!-- <div style="display: flex">
         <Input type="text" :placeholder="$t('artifacts_unselected')" v-model="customSearch"> </Input>
         <Button type="primary" @click="remoteConfigSearch" :loading="remoteLoading">{{ $t('search') }}</Button>
       </div>
-      <Select ref="ddrop" :disabled="!allDiffConfigs || allDiffConfigs.length === 0" filterable clearable v-model="currentConfigId" style="margin-top: 10px">
-        <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value && conf.code !== currentConfigRow.key)" :value="conf.id" :key="conf.key_name">{{ conf.key_name }}</Option>
-      </Select>
+      <Select ref="ddrop" :disabled="!tempCopyTableData || tempCopyTableData.length === 0" filterable clearable v-model="currentConfigId" style="margin-top: 10px">
+        <Option v-for="conf in tempCopyTableData.filter(conf => conf.variable_value && conf.code !== currentConfigRow.key)" :value="conf.id" :key="conf.key_name">{{ conf.key_name }}</Option>
+      </Select> -->
     </Modal>
     <Modal :mask-closable="false" v-model="isShowBatchBindModal" :width="800" :title="$t('multi_bind_config')">
       <Card>
@@ -103,10 +109,11 @@
 </template>
 
 <script>
-import { sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, getPackageDetail, updatePackage, getVariableRootCiTypeId, getEntitiesByCiType } from '@/api/server.js'
+import { sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, getPackageDetail, updatePackage, getVariableRootCiTypeId, getEntitiesByCiType, getDiffVariable } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import axios from 'axios'
 import { decode } from 'js-base64'
+import RuleTable from './rule-table.vue'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -186,7 +193,6 @@ export default {
       isShowConfigKeyModal: false,
       isShowCiConfigModal: false,
       currentConfigRow: {},
-      allDiffConfigs: [],
       allCIConfigs: [],
       attrsTableColomnOptions: [
         {
@@ -315,7 +321,31 @@ export default {
       ],
       prefixType: 'variable_prefix_default', // 前缀
       tempTableData: [], // 通过类型、文件、前缀过滤后的展示数据
-      currentFileIndex: -1 // 缓存单签文件顺序
+      currentFileIndex: -1, // 缓存单签文件顺序
+      // 选择已有模版-开始
+      tempCopyColomns: [
+        {
+          title: this.$t('art_variable_name'),
+          width: 200,
+          key: 'variable_name'
+        },
+        {
+          title: this.$t('art_value_rule'),
+          key: 'variable_value',
+          render: (h, params) => {
+            return <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.variable_value} cmdbPackageName={cmdbPackageName} />
+          }
+        }
+      ],
+      tempCopyTableData: [],
+      page: {
+        currentPage: 1,
+        pageSize: 10,
+        total: 0
+      },
+      // 选择已有模版-结束
+      fullscreen: false,
+      fileContentHeight: window.screen.availHeight * 0.4 + 'px'
     }
   },
   computed: {},
@@ -695,12 +725,6 @@ export default {
     renderConfigButton (params) {
       let row = params.row
       return [
-        // <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip')}>
-        //   <Button disabled={!!row.conf_variable.fixedDate} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showConfigKeyModal(row)}>
-        //     {this.$t('select_key')}
-        //   </Button>
-        // </Tooltip>,
-        // disable no dirty data or row is confirmed
         <Button disabled={!!(row.conf_variable.diffExpr === row.conf_variable.originDiffExpr || row.conf_variable.fixedDate)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveConfigVariableValue(row)}>
           {this.$t('artifacts_save')}
         </Button>
@@ -740,23 +764,37 @@ export default {
       this.isShowBatchBindModal = false
     },
     async showConfigKeyModal (row) {
+      await this.remoteConfigSearch({
+        pageSize: 10,
+        startIndex: 0
+      })
+      this.fullscreen = false
       this.isShowConfigKeyModal = true
       this.currentConfigRow = row
-      // }
     },
-    async remoteConfigSearch () {
-      const query = this.customSearch
-      if (typeof query === 'string' && query.trim().length > 0) {
-        this.remoteLoading = true
-        const diffConfigs = await getEntitiesByCiType(cmdbPackageName, DIFF_CONFIGURATION, { criteria: {}, additionalFilters: [{ attrName: 'code', op: 'like', condition: query.trim() }] })
-        if (diffConfigs) {
-          this.allDiffConfigs = diffConfigs.data
-          this.$nextTick(() => {
-            this.$refs['ddrop'].toggleMenu(null, true)
-          })
-        }
-        this.remoteLoading = false
+    async remoteConfigSearch (pageable) {
+      // const query = this.customSearch
+      this.remoteLoading = true
+      let params = {
+        dialect: {
+          queryMode: 'new'
+        },
+        filters: [],
+        pageable,
+        // sorting: {
+        //   asc: false,
+        //   field: 'update_time'
+        // },
+        paging: true
       }
+      const diffConfigs = await getDiffVariable(DIFF_CONFIGURATION, params)
+      if (diffConfigs) {
+        this.tempCopyTableData = diffConfigs.data.contents
+        this.page.total = diffConfigs.data.pageInfo.totalRows
+        this.page.pageSize = diffConfigs.data.pageInfo.pageSize
+        this.page.currentPage = diffConfigs.data.pageInfo.startIndex + 1
+      }
+      this.remoteLoading = false
     },
     handleCIConfigChange (code) {
       if (code === undefined) return
@@ -807,7 +845,7 @@ export default {
         this.packageDetail[tmp].forEach(elFile => {
           elFile.configKeyInfos.forEach(elFileVar => {
             if (this.currentConfigRow.key.toLowerCase() === elFileVar.key.toLowerCase()) {
-              const tmp = this.allDiffConfigs.find(item => item.id === this.currentConfigId)
+              const tmp = this.tempCopyTableData.find(item => item.id === this.currentConfigId)
               elFileVar.conf_variable.diffExpr = tmp.variable_value
             }
           })
@@ -839,7 +877,7 @@ export default {
       this.isShowConfigKeyModal = false
       this.currentConfigRow = {}
       this.customSearch = ''
-      this.allDiffConfigs = []
+      this.tempCopyTableData = []
     },
     closeCIConfigSelectModal () {
       this.currentConfigValue = ''
@@ -899,13 +937,25 @@ export default {
     },
     handleResize () {
       this.maxHeight = window.innerHeight - 290
+    },
+
+    // #endregion
+    zoomModalMax () {
+      this.fileContentHeight = window.screen.availHeight - 310 + 'px'
+      this.fullscreen = true
+    },
+    zoomModalMin () {
+      this.fileContentHeight = window.screen.availHeight * 0.4 + 'px'
+      this.fullscreen = false
     }
   },
   created () {
     this.fetchData()
     this.getSpecialConnector()
   },
-  components: {}
+  components: {
+    RuleTable
+  }
 }
 </script>
 

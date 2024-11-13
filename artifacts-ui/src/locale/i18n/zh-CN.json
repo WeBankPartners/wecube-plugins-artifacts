@@ -148,5 +148,7 @@
   "art_no_data": "暂无数据",
   "art_use_template": "使用模版",
   "art_copy_exist": "复制已有",
-  "art_no_template": "尚未配置模版"
+  "art_no_template": "尚未配置模版",
+  "art_variable_name": "变量名",
+  "art_value_rule": "取值规则"
 }
