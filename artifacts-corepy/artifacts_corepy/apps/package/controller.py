@@ -58,6 +58,11 @@ class CollectionUser(Collection):
     allow_methods = ('GET', )
     name = 'artifacts.users.list'
     resource = package_api.User
+    
+class CollectionCiData(POSTCollection):
+    allow_methods = ('POST',)
+    name = 'artifacts.diffconfigs'
+    resource = package_api.CiData
 
 class CollectionSystemDesign(Collection):
     allow_methods = ('GET', )

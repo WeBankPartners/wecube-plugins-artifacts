@@ -67,6 +67,7 @@ def add_routes(api):
     # process
     api.add_route('/artifacts/process/definitions', controller.CollectionProcessDef())
     api.add_route('/artifacts/users', controller.CollectionUser())
+    api.add_route('/artifacts/cidata/{citype}/query', controller.CollectionCiData())
     # cmdb api forward
     api.add_route('/artifacts/system-design-versions', controller.CollectionSystemDesign())
     api.add_route('/artifacts/system-design-versions/{rid}', controller.ItemSystemDesign())
