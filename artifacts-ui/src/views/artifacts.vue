@@ -183,9 +183,9 @@ export default {
         rule: 'RULE'
       },
       packageOptions: [
-        { label: this.$t('DB'), value: 'DB', num: 0 },
-        { label: this.$t('APP'), value: 'APP', num: 0 },
         { label: this.$t('APP&DB'), value: 'APP&DB', num: 0 },
+        { label: this.$t('APP'), value: 'APP', num: 0 },
+        { label: this.$t('DB'), value: 'DB', num: 0 },
         { label: this.$t('IMAGE'), value: 'IMAGE', num: 0 },
         { label: this.$t('RULE'), value: 'RULE', num: 0 }
       ],
