@@ -62,7 +62,7 @@
     </div>
     <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :fullscreen="fullscreen" width="900">
       <p slot="header">
-        <span>{{ $t('artifacts_property_value_fill_rule') }}</span>
+        <span>{{ $t('art_copy_exist') }}</span>
         <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
         <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
       </p>
@@ -79,7 +79,7 @@
           <Option v-for="user in userList" :value="user.username" :key="user.id">{{ user.username }}</Option>
         </Select>
       </div>
-      <RuleTable :data="tempCopyTableData" ref="tempCopyTableRef" :columns="tempCopyColomns" :page="page" @reloadTableData="remoteConfigSearch" :maxHeight="fileContentHeight"></RuleTable>
+      <RuleTable :data="tempCopyTableData" ref="tempCopyTableRef" :columns="tempCopyColomns" :page="page" @reloadTableData="remoteConfigSearch" :maxHeight="fileContentHeight" :loading="remoteLoading"></RuleTable>
     </Modal>
     <Modal :mask-closable="false" v-model="isShowBatchBindModal" :width="800" :title="$t('multi_bind_config')">
       <Card>

@@ -1,7 +1,7 @@
 <template>
   <div>
-    <Table :data="data" class="artifact-simple-table" ref="table" :columns="columns" :height="maxHeight" :max-height="maxHeight" size="small"> </Table>
-    <Page :current="page.currentPage" :page-size="page.pageSize" :page-size-opts="pageSizeOptions" :total="page.total" @on-change="onChange" @on-page-size-change="onPageSizeChange" show-sizer show-total style="position: absolute;right: 36px;bottom: 60px;z-index: 11" />
+    <Table :data="data" class="artifact-simple-table" ref="table" :loading="loading" :columns="columns" :height="maxHeight" :max-height="maxHeight" size="small"> </Table>
+    <Page :current="page.currentPage" :page-size="page.pageSize" :page-size-opts="pageSizeOptions" :total="page.total" @on-change="onChange" @on-page-size-change="onPageSizeChange" show-sizer show-total style="position: absolute;right: 0px;bottom: 60px;z-index: 11" />
   </div>
 </template>
 
