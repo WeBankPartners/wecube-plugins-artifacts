@@ -392,10 +392,10 @@ export default {
     },
     initVariableTableData (index) {
       this.currentFileIndex = index
-      if (this.currentDiffConfigTab === 'DB') {
+      if (this.currentDiffConfigTab === 'DB' && this.packageDetail.db_diff_conf_file.length > 0) {
         this.typeChange(this.packageDetail.db_diff_conf_file[index].configKeyInfos || [])
       }
-      if (this.currentDiffConfigTab === 'APP') {
+      if (this.currentDiffConfigTab === 'APP' && this.packageDetail.diff_conf_file.length > 0) {
         this.typeChange(this.packageDetail.diff_conf_file[index].configKeyInfos || [])
       }
     },
@@ -411,12 +411,15 @@ export default {
       this.prefixType = ''
       this.$nextTick(() => {
         const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-        const tmpData = this.packageDetail[tmp].find(item => item.filename === this.activeTab).configKeyInfos || []
-        for (let i = 0; i < this.variablePrefixType.length; i++) {
-          const res = this.getNum(tmpData, this.variablePrefixType[i].filterKey)
-          if (res > 0) {
-            this.prefixType = this.variablePrefixType[i].key
-            break
+        const find = this.packageDetail[tmp].find(item => item.filename === this.activeTab)
+        if (find) {
+          const tmpData = find.configKeyInfos || []
+          for (let i = 0; i < this.variablePrefixType.length; i++) {
+            const res = this.getNum(tmpData, this.variablePrefixType[i].filterKey)
+            if (res > 0) {
+              this.prefixType = this.variablePrefixType[i].key
+              break
+            }
           }
         }
       })
