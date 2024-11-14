@@ -66,6 +66,8 @@ class EntityAdapter(object):
 def add_routes(api):
     # process
     api.add_route('/artifacts/process/definitions', controller.CollectionProcessDef())
+    api.add_route('/artifacts/users', controller.CollectionUser())
+    api.add_route('/artifacts/cidata/{citype}/query', controller.CollectionCiData())
     # cmdb api forward
     api.add_route('/artifacts/system-design-versions', controller.CollectionSystemDesign())
     api.add_route('/artifacts/system-design-versions/{rid}', controller.ItemSystemDesign())
@@ -76,6 +78,7 @@ def add_routes(api):
     api.add_route('/artifacts/enum/system/codes/{cat_id}', controller.ItemEnumCodes())
     api.add_route('/artifacts/ci-types/{ci_type_id}/operations', controller.ItemCITypeOperations())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/query', controller.CollectionUnitDesignPackages())
+    api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/statistics', controller.CollectionPackageStatistics())
     api.add_route('/artifacts/ci-types/{ci_type_id}/references/by', controller.ItemCiReferences())
     api.add_route('/artifacts/ci-types/{ci_type_id}/attributes', controller.ItemCiAttributes())
     api.add_route('/artifacts/ci-types/{ci_type_id}/ci-data/batch-delete', controller.CiDelete())
