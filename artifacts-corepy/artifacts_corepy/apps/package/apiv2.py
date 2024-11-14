@@ -587,7 +587,7 @@ class UnitDesignPackages(WeCubeResource):
                     'variable_value': value['diffExpr']
                 } for key,value in update_diff_configs.items()])
             # 创建CMDB 包记录
-            deploy_package['baseline_package'] =  baseline_package or None,
+            deploy_package['baseline_package'] =  baseline_package or None
             deploy_package['unit_design'] = unit_design_id
             deploy_package['upload_user'] = force_operator or scoped_globals.GLOBALS.request.auth_user
             deploy_package['upload_time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
