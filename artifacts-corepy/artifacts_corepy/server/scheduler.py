@@ -36,7 +36,13 @@ job_defaults = {'coalesce': False, 'max_instances': 1}
 
 def cleanup_cached_dir():
     try:
-        max_delta = 1 * 60 * 60
+        interval_min = 10
+        try:
+            interval_min = int(CONF.pakcage_cache_cleanup_interval_min)
+        except Exception as e:
+            LOG.error("Invalid package_cache_cleanup_interval_min: %s",
+                      CONF.pakcage_cache_cleanup_interval_min)
+        max_delta = interval_min * 60
         base_dir = CONF.pakcage_cache_dir
         for name in list(os.listdir(base_dir)):
             fullpath = os.path.join(base_dir, name)

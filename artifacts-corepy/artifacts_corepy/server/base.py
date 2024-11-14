@@ -39,7 +39,7 @@ def decrypt_rsa(secret_key, encrypt_text):
                   'cleanup_keep_unit_field', 'delete_op', 'log_level','ci_typeid_app_root_ci', 'ci_typeid_db_root_ci',
                   'ci_typeid_app_template_ci', 'ci_typeid_db_template_ci', 'push_nexus_server',
                   'push_nexus_repository', 'push_nexus_username', 'push_nexus_password', 's3_server_url',
-                  'db_script_extension', 'global_variable_prefix')
+                  'db_script_extension', 'global_variable_prefix', 'cache_cleanup_interval_min')
 def get_env_value(value, origin_value):
     prefix = 'ENV@'
     encrypt_prefix = 'RSA@'
