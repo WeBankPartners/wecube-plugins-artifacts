@@ -150,5 +150,6 @@
   "art_copy_exist": "Copy Exist",
   "art_no_template": "Template not yet configured.",
   "art_variable_name": "Variable Name",
-  "art_value_rule": "Value Rule"
+  "art_value_rule": "Value Rule",
+  "art_creator": "Creator"
 }
