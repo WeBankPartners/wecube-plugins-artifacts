@@ -529,6 +529,12 @@ export default {
         if (this.tableFilter.package_type === '') {
           const find = this.packageOptions.find(item => item.num > 0)
           this.tableFilter.package_type = find ? find.value : 'DB'
+        } else {
+          const find = this.packageOptions.find(item => item.value === this.tableFilter.package_type)
+          if (find.num === 0) {
+            const find = this.packageOptions.find(item => item.num > 0)
+            this.tableFilter.package_type = find ? find.value : 'DB'
+          }
         }
       }
     },
