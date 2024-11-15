@@ -7,6 +7,7 @@ ADD artifacts-corepy/requirements.txt /tmp/requirements.txt
 ADD artifacts-corepy/dist/* /tmp/
 RUN mkdir -p /etc/artifacts_corepy/
 RUN mkdir -p /var/log/artifacts_corepy/
+RUN mkdir -p /tmp/artifacts/
 ADD artifacts-corepy/etc/* /etc/artifacts_corepy/
 ADD nexus-data.tar.gz /nexus-data-init
 

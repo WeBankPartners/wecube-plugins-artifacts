@@ -36,7 +36,13 @@ job_defaults = {'coalesce': False, 'max_instances': 1}
 
 def cleanup_cached_dir():
     try:
-        max_delta = 24 * 60 * 60
+        interval_min = 10
+        try:
+            interval_min = int(CONF.pakcage_cache_cleanup_interval_min)
+        except Exception as e:
+            LOG.error("Invalid package_cache_cleanup_interval_min: %s",
+                      CONF.pakcage_cache_cleanup_interval_min)
+        max_delta = interval_min * 60
         base_dir = CONF.pakcage_cache_dir
         for name in list(os.listdir(base_dir)):
             fullpath = os.path.join(base_dir, name)
@@ -145,36 +151,39 @@ def cleanup_deploy_package():
                 if deploy_package['state'] == 'deleted_0':
                     continue
                 if cnt > keep_topn:
-                    data = [{'guid': deploy_package["guid"]}]
-                    resp_json = cmdb_client.delete(CONF.wecube.wecmdb.citypes.deploy_package, data)
-                    if resp_json.get('statusCode', 'OK') == 'OK' and resp_json['data'][0].get('state',
-                                                                                              '') == 'deleted_0':
-                        LOG.info('delete package[%s] from ci data', deploy_package["guid"])
-                        cmdb_client.confirm(CONF.wecube.wecmdb.citypes.deploy_package, data)
-                    if resp_json.get('statusCode', 'OK') == 'OK':
-                        deploy_package_url = deploy_package.get("deploy_package_url", "")
-                        if deploy_package_url.startswith(CONF.wecube.server):
-                            # delete nexus package
-                            prefix = CONF.wecube.server.rstrip('/') + '/artifacts/repository/' + artifact_repository
-                            suffix = deploy_package_url[len(prefix):]
-                            suffix_list = suffix.split("/")
-                            if len(suffix_list) >= 2:
-                                filename = suffix_list[len(suffix_list) - 1]
-                                component_name = filename
-                                component_group = "/"
-                                if len(suffix_list) > 2:
-                                    component_group = suffix[:len(suffix) - len("/" + filename)]
-                                    component_name = suffix[1:]
-                                asset_info = nexus_client.get_asset(artifact_repository, component_group,
-                                                                    component_name)
-                                if asset_info:
-                                    asset_id = asset_info["id"]
-                                    nexus_client.delete_assets(artifact_repository,
-                                                               '/service/rest/v1/assets/' + asset_id)
-                                    LOG.info('delete package[%s] from local nexus: %s', deploy_package["guid"], suffix)
-                                else:
-                                    LOG.error('delete package[%s] from local nexus: %s failed, asset not found',
-                                              deploy_package["guid"], suffix)
+                    try:
+                        data = [{'guid': deploy_package["guid"]}]
+                        resp_json = cmdb_client.delete(CONF.wecube.wecmdb.citypes.deploy_package, data)
+                        if resp_json.get('statusCode', 'OK') == 'OK' and resp_json['data'][0].get('state',
+                                                                                                '') == 'deleted_0':
+                            LOG.info('delete package[%s] from ci data', deploy_package["guid"])
+                            cmdb_client.confirm(CONF.wecube.wecmdb.citypes.deploy_package, data)
+                        if resp_json.get('statusCode', 'OK') == 'OK':
+                            deploy_package_url = deploy_package.get("deploy_package_url", "")
+                            if deploy_package_url.startswith(CONF.wecube.server):
+                                # delete nexus package
+                                prefix = CONF.wecube.server.rstrip('/') + '/artifacts/repository/' + artifact_repository
+                                suffix = deploy_package_url[len(prefix):]
+                                suffix_list = suffix.split("/")
+                                if len(suffix_list) >= 2:
+                                    filename = suffix_list[len(suffix_list) - 1]
+                                    component_name = filename
+                                    component_group = "/"
+                                    if len(suffix_list) > 2:
+                                        component_group = suffix[:len(suffix) - len("/" + filename)]
+                                        component_name = suffix[1:]
+                                    asset_info = nexus_client.get_asset(artifact_repository, component_group,
+                                                                        component_name)
+                                    if asset_info:
+                                        asset_id = asset_info["id"]
+                                        nexus_client.delete_assets(artifact_repository,
+                                                                '/service/rest/v1/assets/' + asset_id)
+                                        LOG.info('delete package[%s] from local nexus: %s', deploy_package["guid"], suffix)
+                                    else:
+                                        LOG.error('delete package[%s] from local nexus: %s failed, asset not found',
+                                                deploy_package["guid"], suffix)
+                    except Exception as e:
+                        LOG.exception(e)
                 cnt += 1
         return
     except Exception as e:
@@ -189,7 +198,7 @@ def main():
     except Exception as e:
         LOG.exception(e)
     scheduler = BlockingScheduler(jobstores=jobstores, executors=executors, job_defaults=job_defaults, timezone=tz_info)
-    scheduler.add_job(cleanup_cached_dir, 'cron', hour='*')
+    scheduler.add_job(cleanup_cached_dir, 'cron', minute="*/5")
     scheduler.add_job(rotate_log, 'cron', hour=3, minute=5)
 
     cron_values = CONF.cleanup.cron.split()
