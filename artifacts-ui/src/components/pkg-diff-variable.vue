@@ -1,5 +1,6 @@
 <template>
   <Drawer :title="pkgName" v-model="openDrawer" class="custom-drawer" :scrollable="false" width="1300">
+    <Spin size="large" fix v-if="spinShow"></Spin>
     <div v-if="showDiffConfigTab">
       <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
@@ -59,14 +60,26 @@
     <div class="drawer-footer">
       <Button @click="openDrawer = false" type="primary">{{ $t('art_close') }}</Button>
     </div>
-    <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setConfigRowValue" @on-cancel="closeConfigSelectModal">
-      <div style="display: flex">
-        <Input type="text" :placeholder="$t('artifacts_unselected')" v-model="customSearch"> </Input>
-        <Button type="primary" @click="remoteConfigSearch" :loading="remoteLoading">{{ $t('search') }}</Button>
+    <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :fullscreen="fullscreen" width="900">
+      <p slot="header">
+        <span>{{ $t('art_copy_exist') }}</span>
+        <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
+        <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
+      </p>
+      <div slot="footer">
+        <Button type="text" @click="closeConfigSelectModal()">{{ $t('artifacts_cancel') }} </Button>
+        <Button type="primary" @click="setConfigRowValue()">{{ $t('art_ok') }} </Button>
       </div>
-      <Select ref="ddrop" :disabled="!allDiffConfigs || allDiffConfigs.length === 0" filterable clearable v-model="currentConfigValue" style="margin-top: 10px">
-        <Option v-for="conf in allDiffConfigs.filter(conf => conf.variable_value && conf.code !== currentConfigRow.key)" :value="conf.variable_value" :key="conf.key_name">{{ conf.key_name }}</Option>
-      </Select>
+      <div style="display: flex;gap: 8px;margin-bottom: 8px;">
+        <Select style="width: 200px;" @on-change="remoteConfigSearch()" :placeholder="$t('artifacts_uploaded_by')" v-model="tempCopyParams.variable_type">
+          <Option v-for="item in ['GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE']" :value="item" :key="item">{{ item }}</Option>
+        </Select>
+        <Input style="width: 200px;" v-model="tempCopyParams.variable_name" @on-change="remoteConfigSearch()" :placeholder="$t('art_variable_name')" clearable />
+        <Select style="width: 200px;" clearable filterable @on-change="remoteConfigSearch()" @on-clear="tempCopyParams.create_user = ''" :placeholder="$t('artifacts_uploaded_by')" v-model="tempCopyParams.create_user">
+          <Option v-for="user in userList" :value="user.username" :key="user.id">{{ user.username }}</Option>
+        </Select>
+      </div>
+      <RuleTable :data="tempCopyTableData" ref="tempCopyTableRef" :columns="tempCopyColomns" :page="page" @reloadTableData="remoteConfigSearch" :maxHeight="fileContentHeight" :loading="remoteLoading"></RuleTable>
     </Modal>
     <Modal :mask-closable="false" v-model="isShowBatchBindModal" :width="800" :title="$t('multi_bind_config')">
       <Card>
@@ -102,10 +115,12 @@
 </template>
 
 <script>
-import { sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, getPackageDetail, updatePackage, getVariableRootCiTypeId, getEntitiesByCiType } from '@/api/server.js'
+import { getUserList, sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, getPackageDetail, updatePackage, getVariableRootCiTypeId, getEntitiesByCiType, getDiffVariable } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import axios from 'axios'
 import { decode } from 'js-base64'
+import RuleTable from './rule-table.vue'
+import { debounce } from 'lodash'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -117,29 +132,19 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      spinShow: false,
       pkgName: '',
       openDrawer: false,
-      treePath: [], // 节点路径
-      tableFilter: {
-        key_name: '',
-        guid: ''
-      },
       packageType: '',
       constPackageOptions: {
         db: 'DB',
         app: 'APP',
         mixed: 'APP&DB',
-        image: 'IMAGE'
+        image: 'IMAGE',
+        rule: 'RULE'
       },
       remoteLoading: false,
-      isFileSelect: false,
-      fullscreen: false,
-      fileContentHeight: window.screen.availHeight * 0.4 + 'px',
-      showFileCompare: false,
-      compareParams: {
-        originContent: '',
-        newContent: ''
-      },
+
       // ---------------
       // 系统设计树形数据
       // ---------------
@@ -149,17 +154,10 @@ export default {
       // ----------------
       // 系统设计物料包数据
       // ----------------
-      isShowOnlineModal: false,
-      onlinePackages: [],
+
       // 上传认证头
       headers: {},
       // 单元设计包列表table
-      pageInfo: {
-        pageSize: 5,
-        currentPage: 1,
-        total: 0
-      },
-      statusOperations: [],
       tableLoading: false,
       tableData: [],
       // ----------------
@@ -169,25 +167,8 @@ export default {
       // 包配置文件模态数据
       // ----------------
       packageId: '',
-      hideFooter: false,
-      customInputs: [],
-      customSearch: '',
-      packageInput: {
-        baseline_package: null,
-        diff_conf_file: [],
-        start_file_path: [],
-        stop_file_path: [],
-        deploy_file_path: [],
-        is_decompression: 'true',
 
-        db_diff_conf_file: [],
-        db_upgrade_directory: [],
-        db_rollback_directory: [],
-        db_upgrade_file_path: [],
-        db_rollback_file_path: [],
-        db_deploy_file_path: []
-      },
-      saveConfigLoading: false,
+      customInputs: [],
       // -------------------
       // 差异化变量数据
       // -------------------
@@ -213,10 +194,11 @@ export default {
       tabTableLoading: false,
       // 选择差异化变量临时保存值
       currentConfigValue: '',
+      // 选择模版时的临时变量
+      currentConfigId: '',
       isShowConfigKeyModal: false,
       isShowCiConfigModal: false,
       currentConfigRow: {},
-      allDiffConfigs: [],
       allCIConfigs: [],
       attrsTableColomnOptions: [
         {
@@ -338,14 +320,67 @@ export default {
           filterKey: []
         },
         {
-          label: this.$t('art_variable_prefix_global'), // 全局变量
+          label: this.$t('art_variable_prefix_global'), // 公共变量
           key: 'variable_prefix_global',
           filterKey: []
         }
       ],
       prefixType: 'variable_prefix_default', // 前缀
       tempTableData: [], // 通过类型、文件、前缀过滤后的展示数据
-      currentFileIndex: -1 // 缓存单签文件顺序
+      currentFileIndex: -1, // 缓存单签文件顺序
+      tempCopySelectRow: {
+        guid: ''
+      },
+      // 选择已有模版-开始
+      tempCopyColomns: [
+        {
+          title: '',
+          align: 'center',
+          width: 30,
+          render: (h, params) => {
+            return (
+              <Radio
+                value={params.row.guid === this.tempCopySelectRow.guid}
+                onInput={value => {
+                  this.selectTemp(params.row)
+                }}
+              ></Radio>
+            )
+          }
+        },
+        {
+          title: this.$t('art_variable_name'),
+          width: 200,
+          key: 'variable_name'
+        },
+        {
+          title: this.$t('art_value_rule'),
+          key: 'variable_value',
+          render: (h, params) => {
+            return <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.variable_value} cmdbPackageName={cmdbPackageName} />
+          }
+        },
+        {
+          title: this.$t('art_creator'),
+          width: 120,
+          key: 'create_user'
+        }
+      ],
+      tempCopyTableData: [],
+      page: {
+        currentPage: 1,
+        pageSize: 10,
+        total: 0
+      },
+      tempCopyParams: {
+        variable_name: '',
+        create_user: '',
+        variable_type: 'GLOBAL'
+      },
+      userList: [],
+      // 选择已有模版-结束
+      fullscreen: false,
+      fileContentHeight: window.screen.availHeight * 0.4 + 100
     }
   },
   computed: {},
@@ -397,6 +432,8 @@ export default {
       this.tempTableData = configKeyInfos.filter(item => filterKey.includes(item.type))
     },
     async initDrawer (guid, row) {
+      this.openDrawer = true
+      this.spinShow = true
       await this.getAllCITypesWithAttr()
       this.currentDiffConfigTab = ''
       this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
@@ -416,14 +453,14 @@ export default {
       await this.getVariablePrefix()
       this.setPrefixType()
       this.initVariableTableData(0)
-      this.openDrawer = true
+      this.spinShow = false
     },
     initVariableTableData (index) {
       this.currentFileIndex = index
-      if (this.currentDiffConfigTab === 'DB') {
+      if (this.currentDiffConfigTab === 'DB' && this.packageDetail.db_diff_conf_file.length > 0) {
         this.typeChange(this.packageDetail.db_diff_conf_file[index].configKeyInfos || [])
       }
-      if (this.currentDiffConfigTab === 'APP') {
+      if (this.currentDiffConfigTab === 'APP' && this.packageDetail.diff_conf_file.length > 0) {
         this.typeChange(this.packageDetail.diff_conf_file[index].configKeyInfos || [])
       }
     },
@@ -439,12 +476,15 @@ export default {
       this.prefixType = ''
       this.$nextTick(() => {
         const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-        const tmpData = this.packageDetail[tmp].find(item => item.filename === this.activeTab).configKeyInfos || []
-        for (let i = 0; i < this.variablePrefixType.length; i++) {
-          const res = this.getNum(tmpData, this.variablePrefixType[i].filterKey)
-          if (res > 0) {
-            this.prefixType = this.variablePrefixType[i].key
-            break
+        const find = this.packageDetail[tmp].find(item => item.filename === this.activeTab)
+        if (find) {
+          const tmpData = find.configKeyInfos || []
+          for (let i = 0; i < this.variablePrefixType.length; i++) {
+            const res = this.getNum(tmpData, this.variablePrefixType[i].filterKey)
+            if (res > 0) {
+              this.prefixType = this.variablePrefixType[i].key
+              break
+            }
           }
         }
       })
@@ -723,12 +763,6 @@ export default {
     renderConfigButton (params) {
       let row = params.row
       return [
-        // <Tooltip placement="top" max-width="200" content={this.$t('variable_select_key_tooltip')}>
-        //   <Button disabled={!!row.conf_variable.fixedDate} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={async () => this.showConfigKeyModal(row)}>
-        //     {this.$t('select_key')}
-        //   </Button>
-        // </Tooltip>,
-        // disable no dirty data or row is confirmed
         <Button disabled={!!(row.conf_variable.diffExpr === row.conf_variable.originDiffExpr || row.conf_variable.fixedDate)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveConfigVariableValue(row)}>
           {this.$t('artifacts_save')}
         </Button>
@@ -767,23 +801,81 @@ export default {
     cancelBatchBindOperation () {
       this.isShowBatchBindModal = false
     },
+    selectTemp (val) {
+      this.tempCopySelectRow = val
+    },
     async showConfigKeyModal (row) {
+      this.tempCopyParams = {
+        variable_name: '',
+        create_user: '',
+        variable_type: 'GLOBAL'
+      }
+      this.getUserList()
+      await this.remoteConfigSearch()
+      this.tempCopySelectRow = {
+        guid: ''
+      }
+      this.fullscreen = false
       this.isShowConfigKeyModal = true
       this.currentConfigRow = row
-      // }
     },
-    async remoteConfigSearch () {
-      const query = this.customSearch
-      if (typeof query === 'string' && query.trim().length > 0) {
-        this.remoteLoading = true
-        const diffConfigs = await getEntitiesByCiType(cmdbPackageName, DIFF_CONFIGURATION, { criteria: {}, additionalFilters: [{ attrName: 'code', op: 'like', condition: query.trim() }] })
-        if (diffConfigs) {
-          this.allDiffConfigs = diffConfigs.data
-          this.$nextTick(() => {
-            this.$refs['ddrop'].toggleMenu(null, true)
-          })
-        }
-        this.remoteLoading = false
+    remoteConfigSearch: debounce(async function (
+      pageable = {
+        pageSize: 10,
+        currentPage: 1
+      }
+    ) {
+      this.remoteLoading = true
+      let params = {
+        dialect: {
+          queryMode: 'new'
+        },
+        filters: [],
+        pageable: {},
+        sorting: {
+          asc: false,
+          field: 'update_time'
+        },
+        paging: true
+      }
+      params.pageable.pageSize = pageable.pageSize
+      params.pageable.startIndex = (pageable.currentPage - 1) * this.page.pageSize
+
+      if (this.tempCopyParams.variable_name !== '') {
+        params.filters.push({
+          name: 'variable_name',
+          operator: 'contains',
+          value: this.tempCopyParams.variable_name
+        })
+      }
+      if (this.tempCopyParams.create_user) {
+        params.filters.push({
+          name: 'create_user',
+          operator: 'eq',
+          value: this.tempCopyParams.create_user
+        })
+      }
+      if (this.tempCopyParams.variable_type) {
+        params.filters.push({
+          name: 'variable_type',
+          operator: 'eq',
+          value: this.tempCopyParams.variable_type
+        })
+      }
+
+      const diffConfigs = await getDiffVariable(DIFF_CONFIGURATION, params)
+      if (diffConfigs) {
+        this.tempCopyTableData = diffConfigs.data.contents
+        this.page.total = diffConfigs.data.pageInfo.totalRows
+        this.page.currentPage = pageable.currentPage
+        this.$refs.tempCopyTableRef.setPage(this.page)
+      }
+      this.remoteLoading = false
+    }, 300),
+    async getUserList () {
+      let { status, data } = await getUserList()
+      if (status === 'OK') {
+        this.userList = data || []
       }
     },
     handleCIConfigChange (code) {
@@ -803,7 +895,6 @@ export default {
             })
           }
         }
-        console.log(1.1, value, this.customInputs)
         this.customInputs = temps
       }
     },
@@ -812,6 +903,10 @@ export default {
       if (res.status === 'OK') {
         const tab = this.currentDiffConfigTab.toLowerCase()
         const _template = res.data[`${tab}_template`]
+        if (_template === '') {
+          this.$Message.warning(this.$t('art_no_template'))
+          return
+        }
         const resp = await getEntitiesByCiType(cmdbPackageName, _template, {})
         if (resp.status === 'OK') {
           if (Array.isArray(resp.data)) {
@@ -827,17 +922,14 @@ export default {
       }
     },
     setConfigRowValue () {
-      if (this.currentConfigValue) {
-        const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-        this.packageDetail[tmp].forEach(elFile => {
-          elFile.configKeyInfos.forEach(elFileVar => {
-            if (this.currentConfigRow.key.toLowerCase() === elFileVar.key.toLowerCase()) {
-              elFileVar.conf_variable.diffExpr = this.currentConfigValue
-            }
-          })
+      const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
+      this.packageDetail[tmp].forEach(elFile => {
+        elFile.configKeyInfos.forEach(elFileVar => {
+          if (this.currentConfigRow.key.toLowerCase() === elFileVar.key.toLowerCase()) {
+            elFileVar.conf_variable.diffExpr = this.tempCopySelectRow.variable_value
+          }
         })
-        // this.$set(this.packageDetail.diff_conf_variable[this.currentConfigRow._index], 'diffExpr', this.currentConfigValue)
-      }
+      })
       this.closeConfigSelectModal()
     },
     setCIConfigRowValue () {
@@ -862,8 +954,7 @@ export default {
       this.currentConfigValue = ''
       this.isShowConfigKeyModal = false
       this.currentConfigRow = {}
-      this.customSearch = ''
-      this.allDiffConfigs = []
+      this.tempCopyTableData = []
     },
     closeCIConfigSelectModal () {
       this.currentConfigValue = ''
@@ -923,13 +1014,25 @@ export default {
     },
     handleResize () {
       this.maxHeight = window.innerHeight - 290
+    },
+
+    // #endregion
+    zoomModalMax () {
+      this.fileContentHeight = window.screen.availHeight - 410
+      this.fullscreen = true
+    },
+    zoomModalMin () {
+      this.fileContentHeight = window.screen.availHeight * 0.4 + 100
+      this.fullscreen = false
     }
   },
   created () {
     this.fetchData()
     this.getSpecialConnector()
   },
-  components: {}
+  components: {
+    RuleTable
+  }
 }
 </script>
 
@@ -948,15 +1051,12 @@ export default {
 }
 
 .drawer-footer {
-  width: 100%;
-  // position: relative;
-  // top: 33px;
-  // left: 0;
-  // border-top: 1px solid #e8e8e8;
-  // margin-top: 8px;
+  width: 1300px;
   padding: 10px 16px;
   text-align: center;
   background: #fff;
+  position: fixed;
+  bottom: 20px;
 }
 .btn-img {
   width: 16px;

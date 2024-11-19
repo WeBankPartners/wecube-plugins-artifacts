@@ -4,7 +4,6 @@
       <!-- 系统设计版本 -->
       <Card>
         <CustomTitle :title="$t('artifacts_system_design_version')"></CustomTitle>
-        <!-- <BaseHeaderTitle class="custom-title" :title="$t('artifacts_system_design_version')"></BaseHeaderTitle> -->
         <Select @on-change="selectSystemDesignVersion" @on-clear="clearSelectSystemDesign" label-in-name v-model="systemDesignVersion" filterable clearable>
           <Option v-for="version in systemDesignVersions" :value="version.guid || ''" :key="version.guid" :label="version.code + ' [' + version.name + '] ' + (version.confirm_time ? version.confirm_time : '')">
             {{ version.code }} [{{ version.name }}] <span style="float: right;color: #A7ACB5">{{ version.confirm_time ? version.confirm_time : '' }}</span></Option
@@ -25,11 +24,10 @@
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
     </div>
-    <div v-if="guid" style="margin-left: 16px;border: 1px solid #e8eaec;padding: 8px;width: 74%;">
+    <div v-if="guid" class="right-zone">
       <div>
         <div style="display: flex;justify-content: space-between;">
-          <CustomTitle :title="$t('art_sys_artch') + treePath.join(' / ')"></CustomTitle>
-          <!-- <BaseHeaderTitle class="custom-title" :title="$t('art_sys_artch') + treePath.join(' / ')"></BaseHeaderTitle> -->
+          <CustomTitle :title="customTreePath"></CustomTitle>
           <div>
             <!-- 本地上传 -->
             <Button icon="md-cloud-upload" style="background: #28aef3;border-color: #28aef3;margin-right: 8px;" type="info" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">{{ $t('art_upload_import') }}</Button>
@@ -38,15 +36,35 @@
           </div>
         </div>
         <div>
-          <Input v-model="tableFilter.key_name" @on-change="paramsChange(true)" :placeholder="$t('artifacts_package_name')" clearable style="width: 200px;margin-right: 8px;" />
-          <Input v-model="tableFilter.guid" @on-change="paramsChange(true)" placeholder="GUID" clearable style="width: 200px;margin-right: 8px;" />
-          <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('package_type')" style="width: 200px;margin-right: 8px" v-model="tableFilter.package_type">
-            <Option v-for="item in packageOptions" :value="item.value" :key="item.label">{{ item.label }}</Option>
-          </Select>
-          <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('baseline_package')" style="width: 200px;margin-right: 8px" v-model="tableFilter.baseline_package">
-            <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
-          </Select>
-          <Input v-model="tableFilter.upload_user" @on-change="paramsChange(true)" :placeholder="$t('artifacts_uploaded_by')" clearable style="width: 200px;margin-right: 8px;" />
+          <div class="search-box">
+            <div ref="container" id="search-zone" :style="{ display: 'flex', 'flex-wrap': searchConfig.expandSearch ? '' : 'wrap' }">
+              <div class="seearch-pkg-variable" style="margin-right: 8px;">
+                <RadioGroup v-model="tableFilter.package_type" type="button" button-style="solid" @on-change="paramsChange(true, true)">
+                  <Radio v-for="pkg in packageOptions" :label="pkg.value" :disabled="pkg.num === 0" :key="pkg.value">{{ pkg.label }}({{ pkg.num }})</Radio>
+                </RadioGroup>
+              </div>
+              <div :style="{ display: searchConfig.expandSearch && searchConfig.hideIndex <= 2 ? 'none' : 'block' }" class="search-item">
+                <Input v-model="tableFilter.key_name" @on-change="paramsChange(true)" :placeholder="$t('artifacts_package_name')" style="width:100%" clearable />
+              </div>
+              <div :style="{ display: searchConfig.expandSearch && searchConfig.hideIndex <= 3 ? 'none' : 'block' }" class="search-item">
+                <Input v-model="tableFilter.guid" @on-change="paramsChange(true)" placeholder="GUID" style="width:100%" clearable />
+              </div>
+              <div :style="{ display: searchConfig.expandSearch && searchConfig.hideIndex <= 4 ? 'none' : 'block' }" class="search-item">
+                <Select clearable filterable @on-change="paramsChange(true)" :placeholder="$t('baseline_package')" style="width:100%" v-model="tableFilter.baseline_package">
+                  <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
+                </Select>
+              </div>
+              <div :style="{ display: searchConfig.expandSearch && searchConfig.hideIndex <= 5 ? 'none' : 'block' }" class="search-item">
+                <Select clearable filterable @on-change="paramsChange(true)" @on-clear="tableFilter.upload_user = ''" :placeholder="$t('artifacts_uploaded_by')" style="width:100%" v-model="tableFilter.upload_user">
+                  <Option v-for="user in userList" :value="user.username" :key="user.id">{{ user.username }}</Option>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <div style="display: inline-block;width:30px;vertical-align: middle;">
+            <Icon v-if="searchConfig.expandSearch" @click="searchConfig.expandSearch = false" size="28" color="#2d8cf0" type="ios-arrow-down" style="cursor: pointer;" />
+            <Icon v-else @click="searchConfig.expandSearch = true" size="28" color="#2d8cf0" type="ios-arrow-up" style="cursor: pointer;" />
+          </div>
         </div>
       </div>
       <div class="artifact-management-content">
@@ -71,9 +89,9 @@
         </div>
       </Modal>
       <!-- 部署包上传组件 -->
-      <PkgUpload ref="pkgUploadRef" @refreshTable="queryPackages"></PkgUpload>
+      <PkgUpload ref="pkgUploadRef" @refreshTable="refreshTable"></PkgUpload>
       <!-- 脚本配置组件 -->
-      <PkgConfig ref="pkgConfigRef" @queryPackages="queryPackages" @syncPackageDetail="syncPackageDetail"></PkgConfig>
+      <PkgConfig ref="pkgConfigRef" @queryPackages="queryPackages"></PkgConfig>
       <!-- 差异化变量配置组件 -->
       <PkgDiffVariableConfig ref="pkgDiffVariableConfigRef"></PkgDiffVariableConfig>
       <!-- 发布物料包弹窗 -->
@@ -95,7 +113,7 @@
 </template>
 
 <script>
-import { getCiTypeAttr, getFlowLists, pushPkg, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, queryPackages, queryHistoryPackages, getCITypeOperations, sysConfig } from '@/api/server.js'
+import { getCiTypeAttr, getFlowLists, pushPkg, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, queryPackages, queryHistoryPackages, getCITypeOperations, sysConfig, getPkgTypeNum, getUserList } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import axios from 'axios'
 import DisplayPath from './display-path'
@@ -128,11 +146,18 @@ export default {
   data () {
     return {
       treePath: [], // 节点路径
+      customTreePath: '',
       btnGroupControl: {
         upload_enabled: false, // 本地上传
         upload_from_nexus_enabled: false, // 在线上传
         push_to_nexus_enabled: false // 推送
       },
+      searchConfig: {
+        expandSearch: true,
+        needCheckWarp: false,
+        hideIndex: 5
+      },
+      userList: [],
       tableFilter: {
         key_name: '',
         package_type: '',
@@ -154,23 +179,18 @@ export default {
         db: 'DB',
         app: 'APP',
         mixed: 'APP&DB',
-        image: 'IMAGE'
+        image: 'IMAGE',
+        rule: 'RULE'
       },
       packageOptions: [
-        { label: this.$t('DB'), value: 'DB' },
-        { label: this.$t('APP'), value: 'APP' },
-        { label: this.$t('APP&DB'), value: 'APP&DB' },
-        { label: this.$t('IMAGE'), value: 'IMAGE' }
+        { label: this.$t('APP&DB'), value: 'APP&DB', num: 0 },
+        { label: this.$t('APP'), value: 'APP', num: 0 },
+        { label: this.$t('DB'), value: 'DB', num: 0 },
+        { label: this.$t('IMAGE'), value: 'IMAGE', num: 0 },
+        { label: this.$t('RULE'), value: 'RULE', num: 0 }
       ],
-      remoteLoading: false,
-      isFileSelect: false,
       fullscreen: false,
       fileContentHeight: window.screen.availHeight * 0.4 + 'px',
-      showFileCompare: false,
-      compareParams: {
-        originContent: '',
-        newContent: ''
-      },
       // ---------------
       // 系统设计树形数据
       // ---------------
@@ -182,8 +202,6 @@ export default {
       // ----------------
       // 系统设计物料包数据
       // ----------------
-      isShowOnlineModal: false,
-      onlinePackages: [],
       // 上传认证头
       headers: {},
       // 单元设计包列表table
@@ -208,14 +226,6 @@ export default {
           title: 'GUID',
           width: 166,
           key: 'guid'
-        },
-        {
-          title: this.$t('package_type'),
-          key: 'package_type',
-          width: 120,
-          render: (h, params) => {
-            return <span>{this.$t(params.row.package_type)}</span>
-          }
         },
         {
           title: this.$t('baseline_package'),
@@ -266,11 +276,6 @@ export default {
             return (
               <div style="padding-top:5px">
                 <div>
-                  {!params.row.package_type && (
-                    <Button type="warning" onClick={() => this.showFilesModal(params.row, event, true)} size="small" style="margin-right: 5px;margin-bottom: 5px;">
-                      {this.$t('detail')}
-                    </Button>
-                  )}
                   <Tooltip content={this.$t('art_differentiated_variable_configuration')} placement="top" delay={500} transfer={true}>
                     <Button size="small" onClick={() => this.startConfigDiff(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#D87093', borderColor: '#D87093', marginBottom: '2px' }}>
                       <Icon type="ios-medical" color="white" size="16"></Icon>
@@ -316,26 +321,7 @@ export default {
       // 包配置文件模态数据
       // ----------------
       packageId: '',
-      isShowFilesModal: false,
       hideFooter: false,
-      customInputs: [],
-      customSearch: '',
-      packageInput: {
-        baseline_package: null,
-        diff_conf_file: [],
-        start_file_path: [],
-        stop_file_path: [],
-        deploy_file_path: [],
-        is_decompression: 'true',
-
-        db_diff_conf_file: [],
-        db_upgrade_directory: [],
-        db_rollback_directory: [],
-        db_upgrade_file_path: [],
-        db_rollback_file_path: [],
-        db_deploy_file_path: []
-      },
-      saveConfigLoading: false,
       // -------------------
       // 包配置文件选择模态数据
       // -------------------
@@ -362,8 +348,6 @@ export default {
         { value: defaultAppRootCiTypeId, label: this.$t('APP') },
         { value: defaultDBRootCiTypeId, label: this.$t('DB') }
       ],
-      activeTab: '',
-      activeTabData: null,
       treeNodeSty: {
         display: 'inline-block',
         marginRight: '4px',
@@ -372,25 +356,21 @@ export default {
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
         verticalAlign: 'top'
-      },
-      currentConfigTab: '', // 配置当前tab
-
-      showDiffConfigTab: false,
-      currentDiffConfigTab: '', // 差异化变量当前tab
-      packageName: ''
+      }
     }
   },
   computed: {},
-  watch: {
-    packageType: function (val) {
-      this.currentConfigTab = val === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
-    }
-  },
   methods: {
+    updateWrappedItems () {
+      if (document.getElementById('search-zone')) {
+        const widths = document.getElementById('search-zone').offsetWidth
+        this.searchConfig.hideIndex = Math.floor((widths - 100) / 200)
+      }
+    },
     // 获取基线列表
     async getbaselinePkg () {
       this.baselinePackageOptions = []
-      let { status, data } = await queryPackages(this.guid, {
+      let params = {
         resultColumns: ['guid', 'name', 'package_type', 'diff_conf_file', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'is_decompression', 'db_diff_conf_file', 'db_upgrade_directory', 'db_rollback_directory', 'db_deploy_file_path', 'db_upgrade_file_path', 'db_rollback_file_path'],
         sorting: {
           asc: false,
@@ -402,7 +382,15 @@ export default {
           pageSize: 1000,
           startIndex: 0
         }
-      })
+      }
+      if (this.tableFilter.package_type !== '') {
+        params.filters.push({
+          name: 'package_type',
+          operator: 'eq',
+          value: this.tableFilter.package_type
+        })
+      }
+      let { status, data } = await queryPackages(this.guid, params)
       if (status === 'OK') {
         this.baselinePackageOptions = data.contents.map(item => {
           return {
@@ -413,38 +401,9 @@ export default {
     },
     // #region 部署包上传
     pkgUpload (type) {
-      this.$refs.pkgUploadRef.openUploadDialog(type, this.guid)
+      this.$refs.pkgUploadRef.openUploadDialog(type, this.guid, this.tableFilter.package_type)
     },
     // #endregion
-    async getAllpkg () {
-      this.baselinePackageOptions = []
-      let { status, data } = await queryPackages(this.guid, {
-        resultColumns: ['guid', 'name', 'package_type', 'diff_conf_file', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'is_decompression', 'db_diff_conf_file', 'db_upgrade_directory', 'db_rollback_directory', 'db_deploy_file_path', 'db_upgrade_file_path', 'db_rollback_file_path'],
-        sorting: {
-          asc: false,
-          field: 'upload_time'
-        },
-        filters: [
-          {
-            name: 'guid',
-            operator: 'ne',
-            value: this.packageId
-          }
-        ],
-        paging: true,
-        pageable: {
-          pageSize: 1000,
-          startIndex: 0
-        }
-      })
-      if (status === 'OK') {
-        this.baselinePackageOptions = data.contents.map(item => {
-          return {
-            ...item
-          }
-        })
-      }
-    },
     zoomModalMax () {
       this.fileContentHeight = window.screen.availHeight - 310 + 'px'
       this.fullscreen = true
@@ -543,17 +502,51 @@ export default {
     selectSystemDesignVersion (guid) {
       this.getSystemDesignVersion(guid)
       this.guid = ''
-      this.initPackageDetail()
       this.uploaded = false
     },
     clearSelectSystemDesign () {
       this.systemDesignVersion = ''
       this.treeData = []
     },
-    paramsChange: debounce(function (resetCurrentPage) {
+    paramsChange: debounce(function (resetCurrentPage, clearBaseline = false) {
+      if (clearBaseline) {
+        this.tableFilter.baseline_package = ''
+      }
       this.queryPackages(resetCurrentPage)
+      this.getbaselinePkg()
     }, 300),
+    // 包上传成功后刷新列表
+    refreshTable (packageType) {
+      this.tableFilter.package_type = packageType
+      this.queryPackages()
+    },
+    async getPkgTypeNum () {
+      let { status, data } = await getPkgTypeNum(this.guid)
+      if (status === 'OK') {
+        this.packageOptions.forEach(item => {
+          item.num = data[item.value]
+        })
+        if (this.tableFilter.package_type === '') {
+          const find = this.packageOptions.find(item => item.num > 0)
+          this.tableFilter.package_type = find ? find.value : 'DB'
+        } else {
+          const find = this.packageOptions.find(item => item.value === this.tableFilter.package_type)
+          if (find.num === 0) {
+            const find = this.packageOptions.find(item => item.num > 0)
+            this.tableFilter.package_type = find ? find.value : 'DB'
+          }
+        }
+      }
+    },
+    async getUserList () {
+      let { status, data } = await getUserList()
+      if (status === 'OK') {
+        this.userList = data || []
+      }
+    },
     async queryPackages (resetCurrentPage = false) {
+      await this.getPkgTypeNum()
+      this.getUserList()
       if (resetCurrentPage) {
         this.pageInfo.currentPage = 1
       }
@@ -597,7 +590,7 @@ export default {
           value: this.tableFilter.baseline_package
         })
       }
-      if (this.tableFilter.upload_user !== '') {
+      if (this.tableFilter.upload_user) {
         params.filters.push({
           name: 'upload_user',
           operator: 'contains',
@@ -622,10 +615,17 @@ export default {
       if (node.length && node[0].level === 3) {
         this.guid = node[0].guid
         this.treePath = this.findPathByGuid(this.treeData, this.guid)
+        this.customTreePath = this.$t('art_sys_artch') + this.treePath.join(' / ')
+        if (this.customTreePath.length > 60) {
+          this.customTreePath = this.customTreePath.slice(0, 60) + '...'
+        }
+        this.tableFilter.package_type = ''
         this.queryPackages(true)
-        this.initPackageDetail()
         this.getbaselinePkg()
         this.btnControl()
+        this.$nextTick(() => {
+          this.updateWrappedItems()
+        })
       }
     },
     // 获取单元路径
@@ -654,38 +654,6 @@ export default {
       let { status, data } = await sysConfig()
       if (status === 'OK') {
         this.btnGroupControl = data
-      }
-    },
-    getHeaders () {
-      let refreshRequest = null
-      const currentTime = new Date().getTime()
-      const accessToken = getCookie('accessToken')
-      if (accessToken) {
-        const expiration = getCookie('accessTokenExpirationTime') * 1 - currentTime
-        if (expiration < 1 * 60 * 1000 && !refreshRequest) {
-          refreshRequest = axios.get('/auth/v1/api/token', {
-            headers: {
-              Authorization: 'Bearer ' + getCookie('refreshToken')
-            }
-          })
-          refreshRequest.then(
-            res => {
-              setCookie(res.data.data)
-              this.setUploadActionHeader()
-              this.$refs.uploadButton.handleClick()
-            },
-            // eslint-disable-next-line handle-callback-err
-            err => {
-              refreshRequest = null
-              window.location.href = window.location.origin + '/#/login'
-            }
-          )
-        } else {
-          this.setUploadActionHeader()
-          this.$refs.uploadButton.handleClick()
-        }
-      } else {
-        window.location.href = window.location.origin + '/#/login'
       }
     },
     setUploadActionHeader () {
@@ -764,23 +732,6 @@ export default {
           })
       }
     },
-    initPackageDetail () {
-      this.packageDetail = {
-        baseline_package: null,
-        diff_conf_file: [],
-        start_file_path: [],
-        stop_file_path: [],
-        deploy_file_path: [],
-        is_compress: null,
-
-        db_diff_conf_file: [],
-        db_upgrade_directory: [],
-        db_rollback_directory: [],
-        db_upgrade_file_path: [],
-        db_rollback_file_path: [],
-        db_deploy_file_path: []
-      }
-    },
     getRootCI (diffExpr, defaultRootCiTypeId, elVar) {
       let rootCI = defaultRootCiTypeId
       if (!diffExpr) {
@@ -798,7 +749,6 @@ export default {
         throw err
       }
     },
-    async syncPackageDetail () {},
     renderActionButton (params) {
       const row = params.row
       let operations = []
@@ -883,29 +833,6 @@ export default {
     async showFilesModal (row, event, hideFooter = false) {
       event.stopPropagation()
       this.$refs.pkgConfigRef.open(this.guid, row, hideFooter)
-      this.packageId = row.guid
-      await this.syncPackageDetail()
-      this.packageType = row.package_type || this.constPackageOptions.mixed
-      this.currentConfigTab = this.packageType === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
-      // 以下4个变量类型为字符串
-      // row从table数据中来，此时baseline_package为对象
-      this.packageInput.baseline_package = this.packageDetail.baseline_package ? this.packageDetail.baseline_package : null
-      this.packageInput.diff_conf_file = JSON.parse(JSON.stringify(this.packageDetail.diff_conf_file))
-      this.packageInput.start_file_path = JSON.parse(JSON.stringify(this.packageDetail.start_file_path))
-      this.packageInput.stop_file_path = JSON.parse(JSON.stringify(this.packageDetail.stop_file_path))
-      this.packageInput.deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.deploy_file_path))
-      this.packageInput.is_decompression = row.is_decompression || 'true'
-
-      this.packageInput.db_diff_conf_file = JSON.parse(JSON.stringify(this.packageDetail.db_diff_conf_file))
-      this.packageInput.db_upgrade_directory = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_directory || []))
-      this.packageInput.db_rollback_directory = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_directory || []))
-      this.packageInput.db_upgrade_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_file_path || []))
-      this.packageInput.db_rollback_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_file_path || []))
-      this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_path || []))
-
-      this.packageId = row.guid
-      this.hideFooter = hideFooter
-      await this.getAllpkg()
     },
     async handleDelete (row) {
       this.$Modal.confirm({
@@ -922,9 +849,6 @@ export default {
               desc: message
             })
             this.queryPackages()
-            if (this.packageId === row.guid) {
-              this.initPackageDetail()
-            }
           }
         }
       })
@@ -937,9 +861,6 @@ export default {
           desc: message
         })
         this.queryPackages()
-        if (this.packageId === row.guid) {
-          this.initPackageDetail()
-        }
       }
     },
     async toExportPkg (row, event) {
@@ -955,7 +876,6 @@ export default {
       a.click()
       document.body.removeChild(a)
     },
-
     async toPushPkg (row, event) {
       event.stopPropagation()
       this.$Notice.info({
@@ -1041,6 +961,15 @@ export default {
     PkgUpload,
     PkgConfig,
     PkgDiffVariableConfig
+  },
+  mounted () {
+    // 初始检查元素状态
+    // this.updateWrappedItems()
+    // 添加窗口大小监听器
+    window.addEventListener('resize', this.updateWrappedItems)
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.updateWrappedItems)
   }
 }
 </script>
@@ -1058,10 +987,7 @@ export default {
   overflow-y: auto;
 }
 .artifact-management-content {
-  // height: calc(100vh - 246px);
-  // overflow-y: auto;
   padding-right: 8px;
-  margin-top: 8px;
   width: 100%;
 }
 .ivu-upload {
@@ -1071,13 +997,6 @@ export default {
 .header-icon {
   float: right;
   margin: 3px 20px 0 0 !important;
-}
-.textarea-input {
-  display: inline-block;
-  width: 75%;
-}
-.artifact-management-files-card {
-  border-color: darkgrey;
 }
 
 .artifact-management {
@@ -1115,5 +1034,36 @@ export default {
 }
 .custom-title ::v-deep .ivu-icon-md-arrow-dropdown {
   display: none;
+}
+
+.right-zone {
+  margin-left: 16px;
+  border: 1px solid #e8eaec;
+  padding: 8px;
+  width: 74%;
+  min-width: 500px;
+}
+
+.search-item {
+  width: 200px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+.search-box {
+  width: calc(100% - 40px);
+  display: inline-block;
+}
+</style>
+<style lang="scss">
+.seearch-pkg-variable {
+  min-width: 500px;
+  .ivu-radio-group-button .ivu-radio-wrapper-checked {
+    background: #2d8cf0;
+    color: #fff;
+  }
+  .ivu-radio-group-button .ivu-radio-wrapper-checked:hover {
+    border-color: #57a3f3;
+    color: white;
+  }
 }
 </style>

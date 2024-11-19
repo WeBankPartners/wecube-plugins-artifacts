@@ -8,6 +8,7 @@ class PackageType(object):
     db = 'DB'
     mixed = 'APP&DB'
     image = 'IMAGE'
+    rule = 'RULE'
     default = 'APP&DB'
 
 

@@ -77,6 +77,7 @@
   "DB": "DB Instance",
   "IMAGE": "Docker Image",
   "APP&DB": "APP&DB",
+  "RULE": "RULE",
   "file_compare": "File Compare",
   "original_content": "Original Content",
   "new_content": "New Content",
@@ -146,5 +147,9 @@
   "art_variable_prefix_global": "Global Prefix",
   "art_no_data": "No data available.",
   "art_use_template": "Use Template",
-  "art_copy_exist": "Copy Exist"
+  "art_copy_exist": "Copy Exist",
+  "art_no_template": "Template not yet configured.",
+  "art_variable_name": "Variable Name",
+  "art_value_rule": "Value Rule",
+  "art_creator": "Creator"
 }
