@@ -27,41 +27,28 @@ class SysUser(db_resource.SysUser):
         refresh_token_exp = access_token_iat + CONF.refresh_token_exipres
         decoded_secret = terminal_utils.b64decode_key(CONF.jwt_signing_key)
         tokens.append({
-            "expiration":
-            str(current_time + CONF.access_token_exipres * 1000),
-            "token":
-            jwt.encode(
-                {
-                    "sub": rid,
-                    "iat": access_token_iat,
-                    "type": "accessToken",
-                    "clientType": "USER",
-                    "exp": access_token_exp,
-                    "authority": "[" + ','.join([r['id'] for r in roles]) + "]"
-                },
-                decoded_secret,
-                "HS512",
-            ).decode(),
-            "tokenType":
-            "accessToken"
+            "expiration": str(current_time + CONF.access_token_exipres * 1000),
+            "token": jwt.encode({
+                "sub": rid,
+                "iat": access_token_iat,
+                "type": "accessToken",
+                "clientType": "USER",
+                "exp": access_token_exp,
+                "authority": "[" + ','.join([r['id'] for r in roles]) + "]"
+            }, decoded_secret, "HS512").decode(),
+            "tokenType": "accessToken"
         })
         tokens.append({
-            "expiration":
-            str(current_time + CONF.refresh_token_exipres * 1000),
-            "token":
-            jwt.encode(
-                {
-                    "sub": rid,
-                    "iat": access_token_iat,
-                    "type": "refreshToken",
-                    "clientType": "USER",
-                    "exp": refresh_token_exp
-                },
-                decoded_secret,
-                "HS512",
+            "expiration": str(current_time + CONF.refresh_token_exipres * 1000),
+            "token": jwt.encode({
+                "sub": rid,
+                "iat": access_token_iat,
+                "type": "refreshToken",
+                "clientType": "USER",
+                "exp": refresh_token_exp
+            }, decoded_secret, "HS512",
             ).decode(),
-            "tokenType":
-            "refreshToken"
+            "tokenType": "refreshToken"
         })
         return tokens
 
