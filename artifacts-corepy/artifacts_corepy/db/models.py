@@ -25,7 +25,7 @@ class DiffConfTemplate(Base, DictBase):
     ]
 
     id = Column(BIGINT, primary_key=True, index=True)
-    type = Column(String(16), nullable=False, comment='类型：应用-app,数据库-db')
+    type = Column(String(16), nullable=True, comment='类型：应用-app,数据库-db')
     code = Column(String(36), nullable=False, comment='编码')
     value = Column(Text, comment='文本值')
     description = Column(String(128), server_default=text("''"))
