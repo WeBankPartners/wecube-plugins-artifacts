@@ -32,3 +32,10 @@ CREATE TABLE diff_conf_template_role (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
+#@v1.2.1.2-begin@;
+
+alter table diff_conf_template
+    modify type varchar(16) null comment '类型：应用-app,数据库-db';
+
+#@v1.2.1.2-end@;
+
