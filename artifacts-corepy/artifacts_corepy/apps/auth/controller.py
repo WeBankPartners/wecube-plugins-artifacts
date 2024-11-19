@@ -8,20 +8,6 @@ from artifacts_corepy.common import exceptions
 from artifacts_corepy.common.mixin import Controller, CollectionController as Collection, ItemController as Item
 from artifacts_corepy.apps.auth import api as auth_api
 
-# proxy mode to platform
-from artifacts_corepy.apps.auth import apiv2 as proxy_api
-
-
-class ProxyUserRole(Controller):
-    name = 'auth.proxy-users'
-    resource = proxy_api.SysUser
-    allow_methods = ('GET',)
-
-
-class ProxyRole(Controller):
-    name = 'auth.proxy-roles'
-    resource = proxy_api.SysRole
-
 
 class Token(Controller):
     name = 'auth.token'
