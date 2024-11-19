@@ -45,8 +45,11 @@ export const getCiTypeAttr = id => req.get(`/ci-types/${id}/attributes`)
 export const getSpecialConnector = () => req.get('/static-data/special-connector')
 export const getVariableRootCiTypeId = () => req.get('/getVariableRootCiTypeId')
 export const getEntitiesByCiType = (packageName, ci, data) => req.post(`/platform/v1/packages/${packageName}/entities/${ci}/retrieve`, data)
+// 获取cmdb中差异化变量
+export const getDiffVariable = (citype, data) => req.post(`/cidata/${citype}/query`, data)
+
 export const queryArtifactsList = (guid, data) => req.post(`/unit-designs/${guid}/packages/queryNexusDirectiry`, data)
-export const uploadArtifact = (guid, url, baselinePackage) => req.post(`/unit-designs/${guid}/packages/uploadNexusPackage?downloadUrl=${url}&&baseline_package=${baselinePackage}`)
+export const uploadArtifact = (guid, url, baselinePackage, packageType) => req.post(`/unit-designs/${guid}/packages/uploadNexusPackage?downloadUrl=${url}&baseline_package=${encodeURIComponent(baselinePackage)}&package_type=${encodeURIComponent(packageType)}`)
 
 export const uploadLocalArtifact = (guid, formData) => req.post(`/unit-designs/${guid}/packages/upload`, formData)
 
@@ -60,3 +63,7 @@ export const getFilePath = guid => req.get(`/unit-designs/${guid}/packages/query
 export const sysConfig = () => req.get(`/sysconfig`)
 // 获取可用编排
 export const getFlowLists = guid => req.get(`/process/definitions?rootEntityGuid=${guid}`)
+// 获取各包类型下数据的数量
+export const getPkgTypeNum = unitDesignId => req.post(`/unit-designs/${unitDesignId}/packages/statistics`, {})
+
+export const getUserList = guid => req.get(`/users`)

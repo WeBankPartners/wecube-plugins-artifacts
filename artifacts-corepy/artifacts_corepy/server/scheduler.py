@@ -36,7 +36,13 @@ job_defaults = {'coalesce': False, 'max_instances': 1}
 
 def cleanup_cached_dir():
     try:
-        max_delta = 24 * 60 * 60
+        interval_min = 10
+        try:
+            interval_min = int(CONF.pakcage_cache_cleanup_interval_min)
+        except Exception as e:
+            LOG.error("Invalid package_cache_cleanup_interval_min: %s",
+                      CONF.pakcage_cache_cleanup_interval_min)
+        max_delta = interval_min * 60
         base_dir = CONF.pakcage_cache_dir
         for name in list(os.listdir(base_dir)):
             fullpath = os.path.join(base_dir, name)
@@ -192,7 +198,7 @@ def main():
     except Exception as e:
         LOG.exception(e)
     scheduler = BlockingScheduler(jobstores=jobstores, executors=executors, job_defaults=job_defaults, timezone=tz_info)
-    scheduler.add_job(cleanup_cached_dir, 'cron', hour='*')
+    scheduler.add_job(cleanup_cached_dir, 'cron', minute="*/5")
     scheduler.add_job(rotate_log, 'cron', hour=3, minute=5)
 
     cron_values = CONF.cleanup.cron.split()
