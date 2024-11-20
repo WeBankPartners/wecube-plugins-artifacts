@@ -15,9 +15,9 @@ metadata = Base.metadata
 
 class DiffConfTemplate(Base, DictBase):
     __tablename__ = 'diff_conf_template'
-    __table_args__ = (
-        UniqueConstraint('type', 'code', name='uk_type_code'),
-    )
+    # __table_args__ = (
+    #     UniqueConstraint('type', 'code', name='uk_type_code'),
+    # )
 
     attributes = [
         'id', 'type', 'code', 'value', 'description', 'create_user', 'create_time', 'update_user', 'update_time',
@@ -26,7 +26,7 @@ class DiffConfTemplate(Base, DictBase):
 
     id = Column(BIGINT, primary_key=True, index=True)
     type = Column(String(16), nullable=True, comment='类型：应用-app,数据库-db')
-    code = Column(String(36), nullable=False, comment='编码')
+    code = Column(String(36), nullable=False, unique=True, comment='编码')
     value = Column(Text, comment='文本值')
     description = Column(String(128), server_default=text("''"))
     create_user = Column(String(36))
