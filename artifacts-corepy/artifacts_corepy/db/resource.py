@@ -44,7 +44,7 @@ class DiffConfTemplate(MetaCRUD):
     _validate = [
         crud.ColumnValidator(field='type',
                              # rule=my_validator.validator.InValidator(['app', 'db']),
-                             rule=my_validator.LengthValidator(1, 16),
+                             rule=my_validator.LengthValidator(0, 16),
                              validate_on=('create:M', 'update:O')),
         crud.ColumnValidator(field='code',
                              rule=my_validator.LengthValidator(1, 36),
