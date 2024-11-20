@@ -38,7 +38,7 @@ alter table diff_conf_template
 #@v1.2.1.3-end@;
 
 
-#@v1.2.1.4-begin@;
+#@v1.2.1.5-begin@;
 alter table diff_conf_template add constraint uk_is_deleted_code unique (code, is_deleted);
-#@v1.2.1.4-end@;
+#@v1.2.1.5-end@;
 
