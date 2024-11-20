@@ -15,9 +15,9 @@ metadata = Base.metadata
 
 class DiffConfTemplate(Base, DictBase):
     __tablename__ = 'diff_conf_template'
-    # __table_args__ = (
-    #     UniqueConstraint('type', 'code', name='uk_type_code'),
-    # )
+    __table_args__ = (
+        UniqueConstraint('code', 'is_deleted', name='uk_is_deleted_code'),
+    )
 
     attributes = [
         'id', 'type', 'code', 'value', 'description', 'create_user', 'create_time', 'update_user', 'update_time',
