@@ -6,7 +6,8 @@ if (window.request) {
     post: (url, ...params) => pluginErrorMessage(window.request.post(baseURL + url, ...params)),
     get: (url, ...params) => pluginErrorMessage(window.request.get(baseURL + url, ...params)),
     delete: (url, ...params) => pluginErrorMessage(window.request.delete(baseURL + url, ...params)),
-    put: (url, ...params) => pluginErrorMessage(window.request.put(baseURL + url, ...params))
+    put: (url, ...params) => pluginErrorMessage(window.request.put(baseURL + url, ...params)),
+    patch: (url, ...params) => pluginErrorMessage(window.request.put(baseURL + url, ...params))
   }
 }
 
@@ -67,3 +68,14 @@ export const getFlowLists = guid => req.get(`/process/definitions?rootEntityGuid
 export const getPkgTypeNum = unitDesignId => req.post(`/unit-designs/${unitDesignId}/packages/statistics`, {})
 
 export const getUserList = guid => req.get(`/users`)
+// 获取所有角色
+export const getRoleList = params => req.get('/platform/v1/roles/retrieve', { params })
+// 获取当前用户角色
+export const getCurrentUserRoles = () => req.get('/platform/v1/users/roles')
+// 保存模版
+export const saveTemplate = data => req.post(`/api/v1/diff-conf-templates`, data)
+export const updateTemplate = (data, id) => req.patch(`/api/v1/diff-conf-templates/${id}`, data)
+
+// 获取模版列表
+export const getTemplate = queryString => req.get(`/api/v1/diff-conf-templates?${queryString}`)
+export const deleteTemplate = id => req.delete(`/api/v1/diff-conf-templates/${id}`)
