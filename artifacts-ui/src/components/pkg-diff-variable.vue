@@ -60,6 +60,7 @@
     <div class="drawer-footer">
       <Button @click="openDrawer = false" type="primary">{{ $t('art_close') }}</Button>
     </div>
+    <!-- 复制已有模版 -->
     <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :fullscreen="fullscreen" width="900">
       <p slot="header">
         <span>{{ $t('art_copy_exist') }}</span>
@@ -68,7 +69,7 @@
       </p>
       <div slot="footer">
         <Button type="text" @click="closeConfigSelectModal()">{{ $t('artifacts_cancel') }} </Button>
-        <Button type="primary" @click="setConfigRowValue()">{{ $t('art_ok') }} </Button>
+        <Button type="primary" :disabled="tempCopySelectRow.guid === ''" @click="setConfigRowValue()">{{ $t('art_ok') }} </Button>
       </div>
       <div style="display: flex;gap: 8px;margin-bottom: 8px;">
         <Select style="width: 200px;" @on-change="remoteConfigSearch()" :placeholder="$t('artifacts_uploaded_by')" v-model="tempCopyParams.variable_type">
@@ -81,6 +82,27 @@
       </div>
       <RuleTable :data="tempCopyTableData" ref="tempCopyTableRef" :columns="tempCopyColomns" :page="page" @reloadTableData="remoteConfigSearch" :maxHeight="fileContentHeight" :loading="remoteLoading"></RuleTable>
     </Modal>
+
+    <!-- 使用模版 -->
+    <Modal :mask-closable="false" v-model="isShowUseTemplateModal" :fullscreen="fullscreen" width="1000">
+      <p slot="header">
+        <span>{{ $t('art_use_template') }}</span>
+        <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
+        <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
+      </p>
+      <div slot="footer">
+        <Button type="text" @click="closeUseTemplateModal()">{{ $t('artifacts_cancel') }} </Button>
+        <Button type="primary" :disabled="useTemplateSelectRow.id === ''" @click="setUseTemplateValue()">{{ $t('art_ok') }} </Button>
+      </div>
+      <div style="display: flex;gap: 8px;margin-bottom: 8px;">
+        <Input style="width: 200px;" v-model="useTemplateParams.code__icontains" @on-change="getAvailableTemplates()" :placeholder="$t('art_name')" clearable />
+        <Select style="width: 200px;" clearable filterable @on-change="getAvailableTemplates()" @on-clear="useTemplateParams.create_user = ''" :placeholder="$t('artifacts_uploaded_by')" v-model="useTemplateParams.create_user">
+          <Option v-for="user in userList" :value="user.username" :key="user.id">{{ user.username }}</Option>
+        </Select>
+      </div>
+      <RuleTable :data="useTemplateTableData" ref="useTemplateTableRef" :columns="useTemplateColomns" :page="page" @reloadTableData="getAvailableTemplates" :maxHeight="fileContentHeight" :loading="remoteLoading"></RuleTable>
+    </Modal>
+
     <Modal :mask-closable="false" v-model="isShowBatchBindModal" :width="800" :title="$t('multi_bind_config')">
       <Card>
         <div slot="title">
@@ -101,26 +123,24 @@
 
     <Modal :mask-closable="false" v-model="isShowCiConfigModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setCIConfigRowValue" @on-cancel="closeCIConfigSelectModal">
       <Form :label-width="120">
-        <FormItem :label="$t('root_ci')">
-          <Select filterable clearable v-model="currentConfigValue" @on-change="handleCIConfigChange">
-            <Option v-for="conf in allCIConfigs" :value="conf.code" :key="conf.code">{{ conf.code }}</Option>
-          </Select>
-        </FormItem>
-        <FormItem v-show="currentConfigValue" v-for="input in customInputs" :key="input.key" :label="input.key">
+        {{ customInputs }}
+        <FormItem v-for="input in customInputs" :key="input.key" :label="input.key">
           <Input type="text" v-model="input.value" />
         </FormItem>
       </Form>
     </Modal>
+    <TemplateAuth ref="templateAuthRef" :useRolesRequired="true" @reloadTableData="getAvailableTemplates"></TemplateAuth>
   </Drawer>
 </template>
 
 <script>
-import { getUserList, sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, getPackageDetail, updatePackage, getVariableRootCiTypeId, getEntitiesByCiType, getDiffVariable } from '@/api/server.js'
+import { getUserList, sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, getPackageDetail, updatePackage, getDiffVariable, getTemplate, deleteTemplate } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import axios from 'axios'
 import { decode } from 'js-base64'
 import RuleTable from './rule-table.vue'
 import { debounce } from 'lodash'
+import TemplateAuth from '@/components/auth'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -379,6 +399,86 @@ export default {
       },
       userList: [],
       // 选择已有模版-结束
+      // 使用模版-开始
+      isShowUseTemplateModal: false,
+      useTemplateSelectRow: {
+        id: ''
+      },
+      useTemplateColomns: [
+        {
+          title: '',
+          align: 'center',
+          width: 30,
+          render: (h, params) => {
+            return (
+              <Radio
+                value={params.row.id === this.useTemplateSelectRow.id}
+                onInput={value => {
+                  this.selectUseTemplate(params.row)
+                }}
+              ></Radio>
+            )
+          }
+        },
+        {
+          title: this.$t('art_name'),
+          width: 120,
+          key: 'code'
+        },
+        {
+          title: this.$t('art_value_rule'),
+          key: 'value',
+          render: (h, params) => {
+            return <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.value} cmdbPackageName={cmdbPackageName} />
+          }
+        },
+        {
+          title: this.$t('art_creator'),
+          width: 100,
+          key: 'create_user'
+        },
+        {
+          title: this.$t('art_create_time'),
+          width: 160,
+          key: 'create_time'
+        },
+        {
+          title: this.$t('artifacts_action'),
+          key: 'state',
+          fixed: 'right',
+          width: 120,
+          render: (h, params) => {
+            return (
+              <div style="padding-top:5px">
+                <div>
+                  <Tooltip content={this.$t('art_permissions')} placement="top" delay={500} transfer={true}>
+                    <Button size="small" type="warning" onClick={() => this.templateAuth(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
+                      <Icon type="ios-person" color="white" size="16"></Icon>
+                    </Button>
+                  </Tooltip>
+                  <Tooltip content={this.$t('art_delete')} placement="top" delay={500} transfer={true}>
+                    <Button size="small" type="error" onClick={() => this.templateDelete(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
+                      <Icon type="md-trash" color="white" size="16"></Icon>
+                    </Button>
+                  </Tooltip>
+                </div>
+              </div>
+            )
+          }
+        }
+      ],
+      useTemplateTableData: [],
+      // page: {
+      //   currentPage: 1,
+      //   pageSize: 10,
+      //   total: 0
+      // },
+      useTemplateParams: {
+        code__icontains: '',
+        create_user: ''
+      },
+      // userList: [],
+      //  使用模版-结束
       fullscreen: false,
       fileContentHeight: window.screen.availHeight * 0.4 + 100
     }
@@ -765,6 +865,9 @@ export default {
       return [
         <Button disabled={!!(row.conf_variable.diffExpr === row.conf_variable.originDiffExpr || row.conf_variable.fixedDate)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveConfigVariableValue(row)}>
           {this.$t('artifacts_save')}
+        </Button>,
+        <Button disabled={row.conf_variable.diffExpr === ''} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveAsTemplate(row)}>
+          {this.$t('art_save_as_template')}
         </Button>
       ]
     },
@@ -899,27 +1002,98 @@ export default {
       }
     },
     async showCIConfigModal (row) {
-      const res = await getVariableRootCiTypeId()
-      if (res.status === 'OK') {
-        const tab = this.currentDiffConfigTab.toLowerCase()
-        const _template = res.data[`${tab}_template`]
-        if (_template === '') {
-          this.$Message.warning(this.$t('art_no_template'))
-          return
-        }
-        const resp = await getEntitiesByCiType(cmdbPackageName, _template, {})
-        if (resp.status === 'OK') {
-          if (Array.isArray(resp.data)) {
-            this.allCIConfigs = resp.data.sort((first, second) => {
-              const firstCode = first.code.toLowerCase()
-              const secondCode = second.code.toLowerCase()
-              return firstCode.localeCompare(secondCode)
+      this.useTemplateParams.code__icontains = ''
+      this.useTemplateParams.create_user = ''
+      this.getUserList()
+      await this.getAvailableTemplates()
+      this.useTemplateSelectRow = {
+        id: ''
+      }
+      this.fullscreen = false
+      this.isShowUseTemplateModal = true
+      this.currentConfigRow = row
+      // const res = await getVariableRootCiTypeId()
+      // if (res.status === 'OK') {
+      //   const tab = this.currentDiffConfigTab.toLowerCase()
+      //   const _template = res.data[`${tab}_template`]
+      //   if (_template === '') {
+      //     this.$Message.warning(this.$t('art_no_template'))
+      //     return
+      //   }
+      //   const resp = await getEntitiesByCiType(cmdbPackageName, _template, {})
+      //   if (resp.status === 'OK') {
+      //     if (Array.isArray(resp.data)) {
+      //       this.allCIConfigs = resp.data.sort((first, second) => {
+      //         const firstCode = first.code.toLowerCase()
+      //         const secondCode = second.code.toLowerCase()
+      //         return firstCode.localeCompare(secondCode)
+      //       })
+      //       this.isShowCiConfigModal = true
+      //       this.currentConfigRow = row
+      //     }
+      //   }
+      // }
+    },
+    getAvailableTemplates: debounce(async function (
+      pageable = {
+        pageSize: 10,
+        currentPage: 1
+      }
+    ) {
+      this.useTemplateSelectRow = {
+        id: ''
+      }
+      this.remoteLoading = true
+      let params = {
+        __offset: (pageable.currentPage - 1) * pageable.pageSize,
+        __limit: pageable.pageSize
+      }
+      if (this.useTemplateParams.code__icontains) {
+        params.code__icontains = this.useTemplateParams.code__icontains
+      }
+      if (this.useTemplateParams.create_user) {
+        params.create_user = this.useTemplateParams.create_user
+      }
+      const queryString = new URLSearchParams(params).toString()
+      const res = await getTemplate(queryString)
+      if (res) {
+        this.useTemplateTableData = res.data.data
+        this.page.total = res.data.count
+        this.page.currentPage = pageable.currentPage
+        this.page.pageSize = pageable.pageSize
+        this.$refs.useTemplateTableRef.setPage(this.page)
+      }
+      this.remoteLoading = false
+    }, 300),
+    selectUseTemplate (row) {
+      this.useTemplateSelectRow = row
+    },
+    setUseTemplateValue () {
+      this.customInputs = []
+      const value = this.useTemplateSelectRow.value
+      const customRegex = /\$\^(\w*)\$\^/g
+      if (typeof value === 'string') {
+        const temps = []
+        let newSet = new Set()
+        for (const matched of value.matchAll(customRegex)) {
+          if (!newSet.has(matched[1])) {
+            newSet.add(matched[1])
+            temps.push({
+              origin: matched[0],
+              key: matched[1],
+              value: ''
             })
-            this.isShowCiConfigModal = true
-            this.currentConfigRow = row
           }
         }
+        this.customInputs = temps
       }
+      this.closeUseTemplateModal()
+      if (this.customInputs.length > 0) {
+        this.isShowCiConfigModal = true
+      }
+    },
+    closeUseTemplateModal () {
+      this.isShowUseTemplateModal = false
     },
     setConfigRowValue () {
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
@@ -933,7 +1107,7 @@ export default {
       this.closeConfigSelectModal()
     },
     setCIConfigRowValue () {
-      const currentConfigValueCodeTovalue = this.allCIConfigs.find(ci => ci.code === this.currentConfigValue).value
+      const currentConfigValueCodeTovalue = this.useTemplateSelectRow.value
       if (currentConfigValueCodeTovalue) {
         const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
         this.packageDetail[tmp].forEach(elFile => {
@@ -1012,6 +1186,31 @@ export default {
         }
       })
     },
+
+    saveAsTemplate (row) {
+      this.$refs.templateAuthRef.startAuth([], [], row.conf_variable.diffExpr)
+    },
+    // 模版授权
+    templateAuth (row) {
+      this.$refs.templateAuthRef.editAuth(row)
+    },
+    // 模版删除
+    templateDelete (row) {
+      this.$Modal.confirm({
+        title: this.$t('artifacts_delete_confirm'),
+        'z-index': 1000000,
+        onOk: async () => {
+          const { status, message } = await deleteTemplate(row.id)
+          if (status === 'OK') {
+            this.$Notice.success({
+              title: this.$t('artifacts_delete_success'),
+              desc: message
+            })
+            this.getAvailableTemplates()
+          }
+        }
+      })
+    },
     handleResize () {
       this.maxHeight = window.innerHeight - 290
     },
@@ -1031,7 +1230,8 @@ export default {
     this.getSpecialConnector()
   },
   components: {
-    RuleTable
+    RuleTable,
+    TemplateAuth
   }
 }
 </script>

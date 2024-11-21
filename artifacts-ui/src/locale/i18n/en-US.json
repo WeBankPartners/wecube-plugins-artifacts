@@ -151,5 +151,17 @@
   "art_no_template": "Template not yet configured.",
   "art_variable_name": "Variable Name",
   "art_value_rule": "Value Rule",
-  "art_creator": "Creator"
+  "art_creator": "Creator",
+  "art_name": "Name",
+  "selected_role": "Selected Role",
+  "unselected_role": "Unselected Role",
+  "role_drawer_title": "Select Roles",
+  "edit_config_role": "Select Configs Owner Roles And Use Roles",
+  "no_permission_to_mgmt": "You Don't Have Permission",
+  "mgmt_role": "Owner Role",
+  "mgmt_role_warning": "Owner Role Cannot Empty",
+  "use_role": "Use Role",
+  "art_permissions": "Permissions",
+  "art_save_as_template": "Save Template",
+  "art_create_time": "Create Time"
 }

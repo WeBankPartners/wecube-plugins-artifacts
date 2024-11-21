@@ -151,5 +151,17 @@
   "art_no_template": "尚未配置模版",
   "art_variable_name": "变量名",
   "art_value_rule": "取值规则",
-  "art_creator": "创建人"
+  "art_creator": "创建人",
+  "art_name": "名称",
+  "selected_role": "选中角色",
+  "unselected_role": "未选中角色",
+  "role_drawer_title": "选择角色",
+  "edit_config_role": "选择属主角色和使用角色",
+  "mgmt_role": "属主角色",
+  "mgmt_role_warning": "属主角色不能为空",
+  "no_permission_to_mgmt": "你没有操作权限",
+  "use_role": "使用角色",
+  "art_permissions": "权限",
+  "art_save_as_template": "存为模版",
+  "art_create_time": "创建时间"
 }
