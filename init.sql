@@ -32,3 +32,13 @@ CREATE TABLE diff_conf_template_role (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
+#@v1.2.1.3-begin@;
+alter table diff_conf_template
+    modify type varchar(16) null comment '类型：应用-app,数据库-db';
+#@v1.2.1.3-end@;
+
+
+#@v1.2.1.5-begin@;
+alter table diff_conf_template add constraint uk_is_deleted_code unique (code, is_deleted);
+#@v1.2.1.5-end@;
+
