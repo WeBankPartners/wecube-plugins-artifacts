@@ -123,13 +123,12 @@
 
     <Modal :mask-closable="false" v-model="isShowCiConfigModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setCIConfigRowValue" @on-cancel="closeCIConfigSelectModal">
       <Form :label-width="120">
-        {{ customInputs }}
         <FormItem v-for="input in customInputs" :key="input.key" :label="input.key">
           <Input type="text" v-model="input.value" />
         </FormItem>
       </Form>
     </Modal>
-    <TemplateAuth ref="templateAuthRef" :useRolesRequired="true" @reloadTableData="getAvailableTemplates"></TemplateAuth>
+    <DiffVariableTemplate ref="diffVariableTemplateRef" :useRolesRequired="true" @reloadTableData="getAvailableTemplates"></DiffVariableTemplate>
   </Drawer>
 </template>
 
@@ -140,7 +139,7 @@ import axios from 'axios'
 import { decode } from 'js-base64'
 import RuleTable from './rule-table.vue'
 import { debounce } from 'lodash'
-import TemplateAuth from '@/components/auth'
+import DiffVariableTemplate from '@/components/diff-variable-template'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -1116,7 +1115,7 @@ export default {
         this.packageDetail[tmp].forEach(elFile => {
           elFile.configKeyInfos.forEach(elFileVar => {
             if (this.currentConfigRow.key.toLowerCase() === elFileVar.key.toLowerCase()) {
-              let resultStr = currentConfigValueCodeTovalue.replaceAll(/\$&(\w)*\$&/g, elFileVar.key)
+              let resultStr = currentConfigValueCodeTovalue.replaceAll(/!&(\w)*!&/g, elFileVar.key)
               this.customInputs.forEach(item => {
                 resultStr = resultStr.replaceAll(item.origin, item.value)
               })
@@ -1191,11 +1190,11 @@ export default {
     },
 
     saveAsTemplate (row) {
-      this.$refs.templateAuthRef.startAuth([], [], row.conf_variable.diffExpr)
+      this.$refs.diffVariableTemplateRef.startAuth([], [], row.conf_variable.diffExpr, row.key)
     },
     // 模版授权
     templateAuth (row) {
-      this.$refs.templateAuthRef.editAuth(row)
+      this.$refs.diffVariableTemplateRef.editAuth(row)
     },
     // 模版删除
     templateDelete (row) {
@@ -1234,7 +1233,7 @@ export default {
   },
   components: {
     RuleTable,
-    TemplateAuth
+    DiffVariableTemplate
   }
 }
 </script>

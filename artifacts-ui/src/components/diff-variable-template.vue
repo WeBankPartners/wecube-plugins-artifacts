@@ -48,7 +48,8 @@ export default {
           MGMT: [],
           USE: []
         }
-      }
+      },
+      key: '' // 当前编辑行的属性名
     }
   },
   computed: {
@@ -86,8 +87,6 @@ export default {
         method = updateTemplate
         params = this.templateParams
       }
-      // const method = this.isAdd ? saveTemplate : updateTemplate
-      // let params = this.isAdd ? [this.templateParams] : this.templateParams
       const { status } = await method(params, this.templateParams.id)
       if (status === 'OK') {
         this.$Notice.success({
@@ -120,9 +119,10 @@ export default {
       }
     },
     // 启动入口
-    async startAuth (mgmtRolesKeyToFlow, useRolesKeyToFlow, diffExpr) {
+    async startAuth (mgmtRolesKeyToFlow, useRolesKeyToFlow, diffExpr, key) {
       this.isAdd = true
       this.templateParams.value = diffExpr
+      this.key = key
       this.templateParams.code = ''
       this.mgmtRolesKeyToFlow = mgmtRolesKeyToFlow
       this.useRolesKeyToFlow = useRolesKeyToFlow
@@ -132,14 +132,64 @@ export default {
     },
     // 启动入口
     valueMgmt (diffExpr) {
-      console.log(1.1, diffExpr)
-      const input = diffExpr
+      let input = diffExpr
+      // const input = `[{"type":"rule","value":"[{\\"ciTypeId\\":\\"app_instance\\",\\"filters\\":[{\\"name\\":\\"create_user\\",\\"operator\\":\\"eq\\",\\"type\\":\\"value\\",\\"value\\":\\"test\\"},{\\"name\\":\\"code\\",\\"operator\\":\\"eq\\",\\"type\\":\\"autoFill\\",\\"value\\":\\"[{\\\\\\"type\\\\\\":\\\\\\"rule\\\\\\",\\\\\\"value\\\\\\":\\\\\\"[{\\\\\\\\\\\\\\"ciTypeId\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"app_instance\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"filters\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"asset_id\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"operator\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"eq\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"123\\\\\\\\\\\\\\"}]},{\\\\\\\\\\\\\\"ciTypeId\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"app_instance\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"parentRs\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\"attrId\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"app_instance__create_user\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"isReferedFromParent\\\\\\\\\\\\\\":1}}]\\\\\\"}]\\"}]},{\\"ciTypeId\\":\\"app_instance\\",\\"parentRs\\":{\\"attrId\\":\\"app_instance__port\\",\\"isReferedFromParent\\":1}}]"}]`
+      // 将表达式转成json
       const result = this.deepParseJSON(input)
-      console.log(1.2, result)
-      // const ss = this.updateFilters(result)
-      // const result11 = this.stringifyDeepestFirst(ss)
-      // console.log(1.4, result11)
-      // return result11
+      // 找出 type: 'value' 的 JSON 对象中的 value 值
+      const res = this.extractValueByType(result)
+      // 在表达式中找出以"+value值开始，以"结束的字符串，中间可能包含多个转义符(\)
+      let targetStr = []
+      res.forEach(r => {
+        const pattern = new RegExp(`"${r}(?:\\\\)*?"`, 'g') // 动态创建正则表达式
+        const matches = input.match(pattern)
+        targetStr = targetStr.concat(matches)
+      })
+      targetStr.forEach((f, fIndex) => {
+        // 为待替换字符串增加参数标识
+        let replaceStr = ''
+        if (f.startsWith(`"${this.key}`)) {
+          replaceStr = f.replace(this.key, `!&dd!&`)
+        } else {
+          replaceStr = f.replace(res[fIndex], `$^${'params' + fIndex}$^`)
+        }
+        // 替换表达式中的目标字符串
+        input = input.replaceAll(f, replaceStr)
+      })
+      return input
+    },
+
+    extractValueByType (data, targetType = 'value') {
+      const result = [] // 存储所有匹配的 value 值
+      function traverse (node) {
+        if (Array.isArray(node)) {
+          node.forEach(traverse) // 遍历数组中的每个元素
+        } else if (node && typeof node === 'object') {
+          if (node.type === targetType && node.hasOwnProperty('value')) {
+            result.push(node.value) // 提取匹配的 value 值
+          }
+          // 遍历对象中的所有属性
+          Object.values(node).forEach(traverse)
+        }
+      }
+      traverse(data)
+      return result
+    },
+    stringifyFilters (obj) {
+      if (Array.isArray(obj)) {
+        return obj.map(item => this.stringifyFilters(item)) // 递归处理数组中的每个元素
+      } else if (typeof obj === 'object' && obj !== null) {
+        const newObj = {}
+        for (const key in obj) {
+          if (key === 'filters') {
+            newObj[key] = JSON.stringify(obj[key].map(this.stringifyFilters)) // 处理 filters 字段并转为字符串
+          } else {
+            newObj[key] = this.stringifyFilters(obj[key]) // 递归处理其他字段
+          }
+        }
+        return newObj
+      }
+      return obj // 基本类型直接返回
     },
     stringifyDeepestFirst (data) {
       // 递归处理对象
