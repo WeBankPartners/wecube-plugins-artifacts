@@ -1090,6 +1090,9 @@ export default {
       this.closeUseTemplateModal()
       if (this.customInputs.length > 0) {
         this.isShowCiConfigModal = true
+      } else {
+        // 直接替换
+        this.setCIConfigRowValue()
       }
     },
     closeUseTemplateModal () {
