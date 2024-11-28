@@ -80,12 +80,11 @@
           <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
         </p>
         <div v-if="isShowHistoryModal">
-          <Table :columns="historyTableColumns" :data="historyTableData" :max-height="fileContentHeight.slice(0, -2)" highlight-row @on-row-click="onHistoryRowClick"></Table>
-          <!-- <ArtifactsSimpleTable :loading="historyTableLoading" :columns="historyTableColumns" :data="historyTableData" :page="historyPageInfo" :pagable="false" @pageChange="historyPageChange" @pageSizeChange="historyPageSizeChange" @rowClick="onHistoryRowClick"> </ArtifactsSimpleTable> -->
+          <Table :columns="historyTableColumns" :data="historyTableData" :max-height="fileContentHeight.slice(0, -2)"></Table>
         </div>
         <div slot="footer">
           <Button type="text" @click="onHistoryCancel()" :loading="historyBtnLoading">{{ $t('artifacts_cancel') }} </Button>
-          <Button type="primary" @click="onHistoryConfirm()" :loading="historyBtnLoading">{{ $t('artifacts_save') }} </Button>
+          <Button type="primary" :disabled="tmpHistorySelected.id === ''" @click="onHistoryConfirm()" :loading="historyBtnLoading">{{ $t('artifacts_save') }} </Button>
         </div>
       </Modal>
       <!-- 部署包上传组件 -->
@@ -315,7 +314,9 @@ export default {
         currentPage: 1,
         total: 0
       },
-      tmpHistorySelected: null,
+      tmpHistorySelected: {
+        id: ''
+      },
       historyBtnLoading: false,
       // ----------------
       // 包配置文件模态数据
@@ -680,12 +681,11 @@ export default {
       this.historyPageInfo.pageSize = pageSize
     },
     onHistoryCancel () {
-      this.tmpHistorySelected = null
+      this.tmpHistorySelected = {
+        id: ''
+      }
       this.historyBtnLoading = false
       this.isShowHistoryModal = false
-    },
-    onHistoryRowClick (row) {
-      this.tmpHistorySelected = row
     },
     async onHistoryConfirm () {
       if (this.tmpHistorySelected) {
@@ -696,7 +696,9 @@ export default {
         const { status } = await operateCiStateWithData(this.packageCiType, rollBackData, 'Rollback')
         if (status === 'OK') {
           this.isShowHistoryModal = false
-          this.tmpHistorySelected = null
+          this.tmpHistorySelected = {
+            id: ''
+          }
           this.queryPackages()
         }
         this.historyBtnLoading = false
@@ -730,6 +732,22 @@ export default {
               ellipsis: true
             }
           })
+        this.historyTableColumns.unshift({
+          title: '',
+          align: 'center',
+          width: 30,
+          render: (h, params) => {
+            return (
+              <Radio
+                value={params.row.id === this.tmpHistorySelected.id}
+                onInput={value => {
+                  this.tmpHistorySelected = params.row
+                }}
+              ></Radio>
+            )
+          }
+        })
+        console.log(33, this.historyTableColumns)
       }
     },
     getRootCI (diffExpr, defaultRootCiTypeId, elVar) {
