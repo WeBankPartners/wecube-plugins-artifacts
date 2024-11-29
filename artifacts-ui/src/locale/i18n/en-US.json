@@ -151,5 +151,8 @@
   "art_no_template": "Template not yet configured.",
   "art_variable_name": "Variable Name",
   "art_value_rule": "Value Rule",
-  "art_creator": "Creator"
+  "art_creator": "Creator",
+  "art_save_now": "Save Now",
+  "art_discard": "Discard",
+  "art_change_is_not_saved": "Your changes have not been saved yet"
 }
