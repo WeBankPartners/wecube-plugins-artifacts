@@ -12,14 +12,16 @@ CONF = config.CONF
 
 
 class VariableAdapter(object):
+    """差异化变量试算查询"""
     def __call__(self, req, resp, action_name):
         server = CONF.wecube.server
         token = req.auth_token
         client = wecube.WeCubeClient(server, token)
         if action_name == 'render-variable-values':
-            url = '/wecmdb/api/v1/ci-data/do/Change/app_instance'
-            data = client.retrieve(url, req.json)
-            resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
+            url = '/wecmdb/api/v1/ci-data/do/Change/app_instance?onlyQuery=true'
+            ret = client.retrieve(url, req.json)
+            variable_values = ret['data'][0]['variable_values'] if ret['data'] else ""
+            resp.json = {'code': 200, 'status': 'OK', 'data': variable_values, 'message': 'success'}
         else:
             raise exceptions.NotFoundError(
                 _('%(action_name)s for variable not supported') % {
