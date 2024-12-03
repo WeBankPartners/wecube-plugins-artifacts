@@ -18,8 +18,7 @@ class VariableAdapter(object):
         token = req.auth_token
         client = wecube.WeCubeClient(server, token)
         if action_name == 'render-variable-values':
-            url = '/wecmdb/api/v1/ci-data/do/Change/app_instance?onlyQuery=true'
-            ret = client.retrieve(url, req.json)
+            ret = client.retrieve('/wecmdb/api/v1/ci-data/do/Change/app_instance?onlyQuery=true', req.json)
             variable_values = ret['data'][0]['variable_values'] if ret['data'] else ""
             resp.json = {'code': 200, 'status': 'OK', 'data': variable_values, 'message': 'success'}
         else:
