@@ -27,6 +27,7 @@
         <systemParameter name="UPLOAD_NEXUS_ENABLED" scopeType="plugins" defaultValue="true" />
         <systemParameter name="ARTIFACTS_CITYPE_SYSTEM_DESIGN" scopeType="plugins" defaultValue="app_system_design" />
         <systemParameter name="ARTIFACTS_CITYPE_UNIT_DESIGN" scopeType="plugins" defaultValue="unit_design" />
+        <systemParameter name="ARTIFACTS_CITYPE_APP_INSTANCE" scopeType="plugins" defaultValue="app_instance" />
         <systemParameter name="ARTIFACTS_CITYPE_DIFF_CONFIG" scopeType="plugins" defaultValue="diff_configuration" />
         <systemParameter name="ARTIFACTS_CITYPE_DEPLOY_PACKAGE" scopeType="plugins" defaultValue="deploy_package" />
 		<systemParameter name="ARTIFACTS_CITYPE_APP_ROOT_CI" scopeType="plugins" defaultValue="app_instance" />

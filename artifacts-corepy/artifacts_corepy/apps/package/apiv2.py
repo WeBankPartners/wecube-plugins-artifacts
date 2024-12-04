@@ -2618,9 +2618,16 @@ class CiData(WeCubeResource):
         return resp_json['data']
 
 
-class AppPackages(WeCubeResource):
+class AppInstancePackages(WeCubeResource):
     def get_variable_values(self, post_data):
         """差异化变量试算"""
         cmdb_client = self.get_cmdb_client()
         ret = cmdb_client.render_variable_values(post_data)
         return ret['data'][0]['variable_values'] if ret['data'] else ""
+
+    def get_app_instances(self, params):
+        """应用实例列表"""
+        cmdb_client = self.get_cmdb_client()
+        query = {"dialect": {"queryMode": "new"}, "filters": [], "paging": False}
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.app_instance, query)
+        return [i for i in resp_json['data']['contents']]
