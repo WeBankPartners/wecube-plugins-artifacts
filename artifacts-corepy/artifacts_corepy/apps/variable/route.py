@@ -7,6 +7,7 @@ from talos.core.i18n import _
 from artifacts_corepy.apps.variable import controller
 from artifacts_corepy.common import wecube
 from artifacts_corepy.common import exceptions
+from artifacts_corepy.common.wecmdbv2 import URL_PREFIX
 
 CONF = config.CONF
 
@@ -18,7 +19,7 @@ class VariableAdapter(object):
         token = req.auth_token
         client = wecube.WeCubeClient(server, token)
         if action_name == 'render-variable-values':
-            ret = client.retrieve('/wecmdb/api/v1/ci-data/do/Change/app_instance?onlyQuery=true', req.json)
+            ret = client.retrieve(f'{URL_PREFIX}/ci-data/do/Change/app_instance?onlyQuery=true', req.json)
             variable_values = ret['data'][0]['variable_values'] if ret['data'] else ""
             resp.json = {'code': 200, 'status': 'OK', 'data': variable_values, 'message': 'success'}
         else:

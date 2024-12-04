@@ -2620,8 +2620,8 @@ class CiData(WeCubeResource):
 
 class AppPackages(WeCubeResource):
     def get_variable_values(self, post_data):
-        """TODO: 差异化变量试算"""
+        """差异化变量试算"""
         cmdb_client = self.get_cmdb_client()
-        ret = cmdb_client.retrieve(f'{URL_PREFIX}/ci-data/do/Change/app_instance?onlyQuery=true', post_data)
+        ret = cmdb_client.post(f'{URL_PREFIX}/ci-data/do/Change/app_instance?onlyQuery=true', post_data)
         variable_values = ret['data'][0]['variable_values'] if ret['data'] else ""
         return variable_values
