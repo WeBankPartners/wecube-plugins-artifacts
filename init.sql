@@ -42,3 +42,10 @@ alter table diff_conf_template
 alter table diff_conf_template add constraint uk_is_deleted_code unique (code, is_deleted);
 #@v1.2.1.5-end@;
 
+
+#@v1.2.1.10-begin@;
+alter table diff_conf_template drop key uk_is_deleted_code;
+alter table diff_conf_template drop column is_deleted;
+alter table diff_conf_template add unique (code);
+#@v1.2.1.10-end@;
+
