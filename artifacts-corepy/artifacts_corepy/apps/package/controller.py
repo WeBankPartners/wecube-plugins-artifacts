@@ -58,7 +58,7 @@ class CollectionUser(Collection):
     allow_methods = ('GET', )
     name = 'artifacts.users.list'
     resource = package_api.User
-    
+
 class CollectionCiData(POSTCollection):
     allow_methods = ('POST',)
     name = 'artifacts.diffconfigs'
@@ -114,11 +114,22 @@ class CollectionPackageStatistics(POSTCollection):
     def list(self, req, criteria, **kwargs):
         return self.make_resource(req).get_package_statistics(req.json, **kwargs)
 
+
+class CollectionAppVariables(POSTCollection):
+    allow_methods = ('POST', )
+    name = 'artifacts.packages.variable-values'
+    resource = package_api.AppPackages
+
+    def list(self, req, criteria, **kwargs):
+        return self.make_resource(req).get_variable_values(req.json, **kwargs)
+
+
 class CollectionUnitDesignNexusPackages(POSTCollection):
     allow_methods = ('POST', )
     name = 'artifacts.unit-design.nexus.packages'
     resource = package_api.UnitDesignNexusPackages
-    
+
+
 class ItemUnitDesignNexusPackages(Item):
     allow_methods = ('GET', )
     name = 'artifacts.unit-design.nexus.path'
@@ -334,7 +345,7 @@ class PackageFromRemote(base_controller.Controller):
     def on_post(self, req, resp, **kwargs):
         resp.json = self.resource().upload_and_create2(req.json, **kwargs)
         resp.status = falcon.HTTP_200
-        
+
 class DownloadComposePackage(base_controller.Controller):
     allow_methods = ('GET',)
     name = 'artifacts.downloadcomposepackage'
@@ -346,7 +357,7 @@ class DownloadComposePackage(base_controller.Controller):
         resp.set_header('Content-Disposition', 'attachment;filename="%s"' % urllib.parse.quote(os.path.basename(filename)))
         resp.set_header('Content-Type', 'application/octet-stream')
         resp.status = falcon.HTTP_200
-        
+
 class PushComposePackage(base_controller.Controller):
     allow_methods = ('POST',)
     name = 'artifacts.pushcomposepackage'
@@ -363,7 +374,7 @@ class PushComposePackage(base_controller.Controller):
             'message': 'success'
         }
         resp.status = falcon.HTTP_200
-        
+
 class SystemConfig(base_controller.Controller):
     allow_methods = ('GET',)
     name = 'artifacts.systemconfig'
