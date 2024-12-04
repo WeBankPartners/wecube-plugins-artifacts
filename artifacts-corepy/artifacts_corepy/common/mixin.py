@@ -117,11 +117,11 @@ class CollectionController(BaseCollectionController):
         resp.status = falcon.HTTP_200
 
     def delete(self, req, **kwargs):
-        # return self.make_resource(req).delete(**kwargs)
-        before, after = self.make_resource(req).update(
-            rid=kwargs.get('rid'), resource={"is_deleted": 1}, validate=False
-        )
-        return 1 if before else 0, [after]
+        # before, after = self.make_resource(req).update(
+        #     rid=kwargs.get('rid'), resource={"is_deleted": 1}, validate=False
+        # )
+        # return 1 if before else 0, [after]
+        return self.make_resource(req).delete(**kwargs)
 
 
 class ItemController(BaseItemController):
@@ -154,8 +154,8 @@ class ItemController(BaseItemController):
         else:
             raise exceptions.NotFoundError(resource='%s[%s]' % (self.resource.__name__, kwargs.get('rid', '-')))
 
-    def delete(self, req, **kwargs):
-        before, after = self.make_resource(req).update(
-            rid=kwargs.get('rid'), resource={"is_deleted": 1}, validate=False
-        )
-        return 1 if before else 0, [after]
+    # def delete(self, req, **kwargs):
+    #     before, after = self.make_resource(req).update(
+    #         rid=kwargs.get('rid'), resource={"is_deleted": 1}, validate=False
+    #     )
+    #     return 1 if before else 0, [after]
