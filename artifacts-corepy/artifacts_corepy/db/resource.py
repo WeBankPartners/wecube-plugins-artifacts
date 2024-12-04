@@ -65,6 +65,11 @@ class DiffConfTemplate(MetaCRUD):
                              orm_required=False),
     ]
 
+    @classmethod
+    def validate(cls, data, situation, orm_required=False, validate=True, rule=None):
+        return super().validate(data, situation, orm_required, validate, rule)
+
+
 
 class DiffConfTemplateRole(crud.ResourceBase):
     orm_meta = models.DiffConfTemplateRole

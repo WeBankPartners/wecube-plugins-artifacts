@@ -31,6 +31,7 @@ from artifacts_corepy.common import s3
 from artifacts_corepy.common import wecmdbv2 as wecmdb
 from artifacts_corepy.common import utils as artifact_utils
 from artifacts_corepy.common import constant
+from artifacts_corepy.common.wecmdbv2 import URL_PREFIX
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -2615,3 +2616,12 @@ class CiData(WeCubeResource):
         query.setdefault('paging', False)
         resp_json = cmdb_client.retrieve(citype, query)
         return resp_json['data']
+
+
+class AppPackages(WeCubeResource):
+    def get_variable_values(self, post_data):
+        """TODO: 差异化变量试算"""
+        cmdb_client = self.get_cmdb_client()
+        ret = cmdb_client.retrieve(f'{URL_PREFIX}/ci-data/do/Change/app_instance?onlyQuery=true', post_data)
+        variable_values = ret['data'][0]['variable_values'] if ret['data'] else ""
+        return variable_values
