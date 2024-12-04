@@ -118,10 +118,19 @@ class CollectionPackageStatistics(POSTCollection):
 class CollectionAppVariables(POSTCollection):
     allow_methods = ('POST', )
     name = 'artifacts.packages.variable-values'
-    resource = package_api.AppPackages
+    resource = package_api.AppInstancePackages
 
     def list(self, req, criteria, **kwargs):
         return self.make_resource(req).get_variable_values(req.json, **kwargs)
+
+
+class CollectionAppInstances(POSTCollection):
+    allow_methods = ('POST', )
+    name = 'artifacts.packages.app-instances'
+    resource = package_api.AppInstancePackages
+
+    def list(self, req, criteria, **kwargs):
+        return self.make_resource(req).get_app_instances(req.json, **kwargs)
 
 
 class CollectionUnitDesignNexusPackages(POSTCollection):
