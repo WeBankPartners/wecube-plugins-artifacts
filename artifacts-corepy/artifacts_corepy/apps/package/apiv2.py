@@ -2623,5 +2623,4 @@ class AppPackages(WeCubeResource):
         """差异化变量试算"""
         cmdb_client = self.get_cmdb_client()
         ret = cmdb_client.render_variable_values(post_data)
-        variable_values = ret['data'][0]['variable_values'] if ret['data'] else ""
-        return variable_values
+        return ret['data'][0]['variable_values'] if ret['data'] else ""
