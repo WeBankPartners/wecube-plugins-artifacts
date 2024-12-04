@@ -16,15 +16,15 @@
         <!-- <BaseHeaderTitle class="custom-title" :title="$t('artifacts_system_design_list')"></BaseHeaderTitle> -->
         <div>
           <Tree :data="treeData" @on-select-change="selectTreeNode" class="tree-size"> </Tree>
-          <Spin size="large" fix v-if="treeLoading">
-            <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
-            <div>{{ $t('artifacts_loading') }}</div>
-          </Spin>
         </div>
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
     </div>
     <div v-if="guid" class="right-zone">
+      <Spin size="large" fix v-if="treeLoading">
+        <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
+        <div>{{ $t('artifacts_loading') }}</div>
+      </Spin>
       <div>
         <div style="display: flex;justify-content: space-between;">
           <CustomTitle :title="customTreePath"></CustomTitle>
@@ -612,8 +612,9 @@ export default {
         this.pageInfo = { currentPage, pageSize, total }
       }
     },
-    selectTreeNode (node) {
+    async selectTreeNode (node) {
       if (node.length && node[0].level === 3) {
+        this.treeLoading = true
         this.guid = node[0].guid
         this.treePath = this.findPathByGuid(this.treeData, this.guid)
         this.customTreePath = this.$t('art_sys_artch') + this.treePath.join(' / ')
@@ -621,12 +622,13 @@ export default {
           this.customTreePath = this.customTreePath.slice(0, 60) + '...'
         }
         this.tableFilter.package_type = ''
-        this.queryPackages(true)
+        await this.queryPackages(true)
         this.getbaselinePkg()
         this.btnControl()
         this.$nextTick(() => {
           this.updateWrappedItems()
         })
+        this.treeLoading = false
       }
     },
     // 获取单元路径
@@ -747,7 +749,6 @@ export default {
             )
           }
         })
-        console.log(33, this.historyTableColumns)
       }
     },
     getRootCI (diffExpr, defaultRootCiTypeId, elVar) {

@@ -72,7 +72,7 @@
         <Button type="primary" :disabled="tempCopySelectRow.guid === ''" @click="setConfigRowValue()">{{ $t('art_ok') }} </Button>
       </div>
       <div style="display: flex;gap: 8px;margin-bottom: 8px;">
-        <Select style="width: 200px;" @on-change="remoteConfigSearch()" :placeholder="$t('artifacts_uploaded_by')" v-model="tempCopyParams.variable_type">
+        <Select style="width: 200px;" @on-change="remoteConfigSearch()" :placeholder="$t('art_creator')" v-model="tempCopyParams.variable_type">
           <Option v-for="item in ['GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE']" :value="item" :key="item">{{ item }}</Option>
         </Select>
         <Input style="width: 200px;" v-model="tempCopyParams.variable_name" @on-change="remoteConfigSearch()" :placeholder="$t('art_variable_name')" clearable />
@@ -96,7 +96,7 @@
       </div>
       <div style="display: flex;gap: 8px;margin-bottom: 8px;">
         <Input style="width: 200px;" v-model="useTemplateParams.code__icontains" @on-change="getAvailableTemplates()" :placeholder="$t('art_name')" clearable />
-        <Select style="width: 200px;" clearable filterable @on-change="getAvailableTemplates()" @on-clear="useTemplateParams.create_user = ''" :placeholder="$t('artifacts_uploaded_by')" v-model="useTemplateParams.create_user">
+        <Select style="width: 200px;" clearable filterable @on-change="getAvailableTemplates()" @on-clear="useTemplateParams.create_user = ''" :placeholder="$t('art_creator')" v-model="useTemplateParams.create_user">
           <Option v-for="user in userList" :value="user.username" :key="user.id">{{ user.username }}</Option>
         </Select>
       </div>
@@ -121,12 +121,27 @@
       </div>
     </Modal>
 
-    <Modal :mask-closable="false" v-model="isShowCiConfigModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setCIConfigRowValue" @on-cancel="closeCIConfigSelectModal">
-      <Form :label-width="120">
-        <FormItem v-for="input in customInputs" :key="input.key" :label="input.key">
-          <Input type="text" v-model="input.value" />
-        </FormItem>
-      </Form>
+    <Modal :mask-closable="false" v-model="isShowCiConfigModal" :destroy-on-close="true" :width="700" :title="$t('artifacts_property_value_fill_rule')">
+      <div style="max-height: 500px;overflow-y: auto;">
+        <Form :label-width="100">
+          <FormItem :label="$t('art_value_rule')">
+            <div style="color:gray">
+              <ArtifactsAutoFill :allCiTypes="ciTypes" :specialDelimiters="specialDelimiters" rootCiTypeId="" :isReadOnly="true" v-model="useTemplateSelectRow.value" cmdbPackageName="wecmdb" />
+            </div>
+          </FormItem>
+          <FormItem v-for="input in customInputs" :key="input.key">
+            <template slot="label">
+              <span style="color: red;">*</span>
+              {{ input.key }}
+            </template>
+            <Input type="text" v-model="input.value" />
+          </FormItem>
+        </Form>
+      </div>
+      <div slot="footer">
+        <Button type="text" @click="closeCIConfigSelectModal()">{{ $t('artifacts_cancel') }} </Button>
+        <Button type="primary" :disabled="customInputs.some(input => input.value.trim() === '')" @click="setCIConfigRowValue()">{{ $t('art_ok') }} </Button>
+      </div>
     </Modal>
     <DiffVariableTemplate ref="diffVariableTemplateRef" :useRolesRequired="true" @reloadTableData="getAvailableTemplates"></DiffVariableTemplate>
   </Drawer>
@@ -437,9 +452,12 @@ export default {
           key: 'create_user'
         },
         {
-          title: this.$t('art_create_time'),
+          title: this.$t('artifacts_update_time'),
           width: 160,
-          key: 'create_time'
+          key: 'create_time',
+          render: (h, params) => {
+            return <div>{params.row.update_time || params.row.create_time}</div>
+          }
         },
         {
           title: this.$t('artifacts_action'),

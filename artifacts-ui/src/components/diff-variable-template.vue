@@ -149,9 +149,9 @@ export default {
         // 为待替换字符串增加参数标识
         let replaceStr = ''
         if (f.startsWith(`"${this.key}`)) {
-          replaceStr = f.replace(this.key, `!&dd!&`)
+          replaceStr = f.replace(this.key, `!&defaultParam!&`)
         } else {
-          replaceStr = f.replace(res[fIndex], `$^${'params' + fIndex}$^`)
+          replaceStr = f.replace(res[fIndex], `$^${'params_' + fIndex}$^`)
         }
         // 替换表达式中的目标字符串
         input = input.replaceAll(f, replaceStr)
@@ -246,7 +246,7 @@ export default {
     },
     async editAuth (row) {
       this.isAdd = false
-      this.templateParams = row
+      this.templateParams = JSON.parse(JSON.stringify(row))
       this.mgmtRolesKeyToFlow = row.roles.filter(r => r.permission === 'MGMT').map(r => r.role)
       this.useRolesKeyToFlow = row.roles.filter(r => r.permission === 'USE').map(r => r.role)
       this.templateParams.roles = {}
