@@ -497,7 +497,9 @@ export default {
       // userList: [],
       //  使用模版-结束
       fullscreen: false,
-      fileContentHeight: window.screen.availHeight * 0.4 + 100
+      fileContentHeight: window.screen.availHeight * 0.4 + 100,
+      ciTypes: [],
+      specialDelimiters: []
     }
   },
   computed: {},
