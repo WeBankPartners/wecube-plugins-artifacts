@@ -2748,9 +2748,7 @@ class UnitDesignApps(WeCubeResource):
 
     def list_by_post(self, query, unit_design_id):
         """应用实例列表"""
-        wecube_client = wecube.WeCubeClient(CONF.wecube.base_url, None)
-        wecube_client.token = cache.get_or_create(TOKEN_KEY, wecube_client.login_subsystem, expires=600)
-        # TODO -> system var
+        wecube_client = wecube.WeCubeClient(CONF.wecube.server, self.token)
         filter_expression = "wecmdb:unit_design~(unit_design)wecmdb:unit~(unit)wecmdb:app_instance"
         filters = [
             {
