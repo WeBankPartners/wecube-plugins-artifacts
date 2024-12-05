@@ -124,13 +124,10 @@ class CollectionAppVariables(POSTCollection):
         return self.make_resource(req).get_variable_values(req.json, **kwargs)
 
 
-class CollectionAppInstances(POSTCollection):
+class CollectionUnitDesignApps(POSTCollection):
     allow_methods = ('POST', )
-    name = 'artifacts.packages.app-instances'
-    resource = package_api.AppInstancePackages
-
-    def list(self, req, criteria, **kwargs):
-        return self.make_resource(req).get_app_instances(req.json, **kwargs)
+    name = 'artifacts.unit-design.app-instances'
+    resource = package_api.UnitDesignApps
 
 
 class CollectionUnitDesignNexusPackages(POSTCollection):
