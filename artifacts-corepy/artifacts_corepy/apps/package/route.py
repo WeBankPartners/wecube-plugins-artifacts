@@ -108,6 +108,8 @@ def add_routes(api):
     api.add_route('/artifacts/ci-types', controller.CollectionCiTypes())
     api.add_route('/artifacts/enum/system/codes/{cat_id}', controller.ItemEnumCodes())
     api.add_route('/artifacts/ci-types/{ci_type_id}/operations', controller.ItemCITypeOperations())
+    api.add_route('/artifacts/app-instances/variable-values', controller.CollectionAppVariables())
+    api.add_route('/artifacts/unit-designs/app-instances', controller.CollectionUnitDesignApps())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/query', controller.CollectionUnitDesignPackages())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/statistics', controller.CollectionPackageStatistics())
     api.add_route('/artifacts/ci-types/{ci_type_id}/references/by', controller.ItemCiReferences())

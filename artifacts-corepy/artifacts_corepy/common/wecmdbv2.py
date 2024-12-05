@@ -154,6 +154,10 @@ class WeCMDBClient(object):
         url = self.server + self.build_state_operation_url(operation, citype)
         return self.post(url, self.format(data))
 
+    def render_variable_values(self, data):
+        url = self.server + f'{URL_PREFIX}/ci-data/do/Change/app_instance?onlyQuery=true'
+        return self.post(url, data)
+
     def enumcodes(self, cat_id):
         url = self.server + self.build_enumcode_url(cat_id)
         return self.get(url)
