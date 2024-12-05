@@ -15,13 +15,10 @@ metadata = Base.metadata
 
 class DiffConfTemplate(Base, DictBase):
     __tablename__ = 'diff_conf_template'
-    __table_args__ = (
-        UniqueConstraint('code', 'is_deleted', name='uk_is_deleted_code'),
-    )
 
     attributes = [
         'id', 'type', 'code', 'value', 'description', 'create_user', 'create_time', 'update_user', 'update_time',
-        'is_deleted', 'roles',
+        'roles',
     ]
 
     id = Column(BIGINT, primary_key=True, index=True)
@@ -33,7 +30,7 @@ class DiffConfTemplate(Base, DictBase):
     create_time = Column(DateTime, default=func.now())
     update_user = Column(String(36))
     update_time = Column(DateTime, onupdate=func.now())
-    is_deleted = Column(TINYINT, nullable=False, default=0, comment='软删除:0,1')
+    # is_deleted = Column(TINYINT, nullable=False, default=0, comment='软删除:0,1')
 
     roles = relationship("DiffConfTemplateRole", back_populates="diff_conf_template")
 
