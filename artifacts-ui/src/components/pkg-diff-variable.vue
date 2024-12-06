@@ -2,7 +2,7 @@
   <Drawer :title="pkgName" v-model="openDrawer" class="custom-drawer" :scrollable="false" width="1300">
     <Spin size="large" fix v-if="spinShow"></Spin>
     <div v-if="showDiffConfigTab">
-      <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
+      <Tabs :value="currentDiffConfigTab" v-model="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
           <Upload :before-upload="handleUpload" action="">
             <Button type="primary" style="margin-right: 8px;">
@@ -23,7 +23,7 @@
           <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;margin-bottom: 12px">
             <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
           </Select>
-          <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
+          <Tabs :value="activeTab" v-model="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
             <Button type="primary" style="vertical-align: text-top;" size="small" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
             <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="APP">
               <div class="pkg-variable">
@@ -348,11 +348,14 @@ export default {
         { value: defaultDBRootCiTypeId, label: this.$t('DB') }
       ],
       activeTab: '',
+      activeTabTmp: '',
       activeTabData: null,
       currentConfigTab: '', // 配置当前tab
 
       showDiffConfigTab: false,
       currentDiffConfigTab: '', // 差异化变量当前tab
+      currentDiffConfigTabTmp: '', // 差异化变量当前tab
+      flag: true,
       packageName: '',
       maxHeight: 500,
       variablePrefixType: [
@@ -642,6 +645,7 @@ export default {
       this.spinShow = true
       await this.getAllCITypesWithAttr()
       this.currentDiffConfigTab = ''
+      this.currentDiffConfigTabTmp = ''
       this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
       this.packageName = row.code
       if (row.package_type === this.constPackageOptions.image) {
@@ -651,6 +655,7 @@ export default {
       }
       this.packageType = row.package_type
       this.currentDiffConfigTab = this.packageType === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
+      this.currentDiffConfigTabTmp = this.currentDiffConfigTab
       this.packageId = row.guid
       this.showDiffConfigTab = true
       // 获取包文件及差异化变量数据
@@ -762,23 +767,78 @@ export default {
         }
       }
     },
-    changeDiffConfigTab (tabName) {
-      this.currentDiffConfigTab = tabName
+    async changeDiffConfigTab (tabName) {
+      const flag = await this.isVariableChange() // 这里必须使用await
+      if (flag) {
+        this.currentDiffConfigTabTmp = tabName
+        this.currentDiffConfigTab = this.currentDiffConfigTabTmp
+      } else {
+        this.currentDiffConfigTab = this.currentDiffConfigTabTmp
+        this.$Modal.confirm({
+          title: this.$t('art_change_is_not_saved'),
+          'z-index': 1000000,
+          okText: this.$t('art_save_now'),
+          cancelText: this.$t('art_discard'),
+          onOk: async () => {
+            console.log('自我消失')
+          },
+          onCancel: async () => {
+            this.tempTableData.forEach(item => {
+              item.conf_variable.diffExpr = item.conf_variable.originDiffExpr
+            })
+            this.changeDiffConfigTab(tabName)
+          }
+        })
+        return
+      }
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
       if (this.packageDetail[tmp].length > 0) {
         this.activeTab = this.packageDetail[tmp][0].filename
+        this.activeTabTmp = this.activeTab
         this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
         this.setPrefixType()
         this.initVariableTableData(0)
       } else {
         this.activeTab = ''
+        this.activeTabTmp = this.activeTab
         this.activeTabData = {}
       }
     },
-    changeTab (tabName, tabs) {
-      this.activeTab = tabName
+    isVariableChange () {
+      let tmp = true
+      this.tempTableData.forEach(item => {
+        if (item.conf_variable.diffExpr !== item.conf_variable.originDiffExpr) {
+          tmp = false
+        }
+      })
+      return tmp
+    },
+    async changeTab (tabName, tabs) {
+      const flag = await this.isVariableChange() // 这里必须使用await
+      if (flag) {
+        this.activeTabTmp = tabName
+        this.activeTab = this.activeTabTmp
+      } else {
+        this.activeTab = this.activeTabTmp
+        this.$Modal.confirm({
+          title: this.$t('art_change_is_not_saved'),
+          'z-index': 1000000,
+          okText: this.$t('art_save_now'),
+          cancelText: this.$t('art_discard'),
+          onOk: async () => {
+            console.log('自我消失')
+          },
+          onCancel: async () => {
+            this.tempTableData.forEach(item => {
+              item.conf_variable.diffExpr = item.conf_variable.originDiffExpr
+            })
+            this.changeTab(tabName, tabs)
+          }
+        })
+        return
+      }
+
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-      // this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab).configKeyInfos
       this.activeTabData = this.packageDetail[tmp].find(item => item.filename === this.activeTab).configKeyInfos
       const index = tabs.findIndex(item => item.filename === tabName)
       this.setPrefixType()
@@ -958,9 +1018,11 @@ export default {
         this.packageDetail = this.formatPackageDetail(data)
         if (this.packageDetail[tmp].length > 0) {
           this.activeTab = this.packageDetail[tmp][0].filename
+          this.activeTabTmp = this.activeTab
           this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
         } else {
           this.activeTab = ''
+          this.activeTabTmp = this.activeTab
           this.activeTabData = {}
         }
       }

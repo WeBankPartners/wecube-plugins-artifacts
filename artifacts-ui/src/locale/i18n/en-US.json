@@ -165,5 +165,8 @@
   "art_save_as_template": "Save Template",
   "art_create_time": "Create Time",
   "art_trial_instance": "Please select a trial instance",
-  "art_trial_result": "Trial Result"
+  "art_trial_result": "Trial Result",
+  "art_save_now": "Save Now",
+  "art_discard": "Discard",
+  "art_change_is_not_saved": "Your changes have not been saved yet"
 }
