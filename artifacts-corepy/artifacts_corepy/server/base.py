@@ -39,8 +39,8 @@ def decrypt_rsa(secret_key, encrypt_text):
                   'nexus_sort_as_string', 'local_nexus_connector_port', 'nexus_connector_port', 'platform_timezone',
                   'system_design_view', 'sub_system_code', 'sub_system_key', 'cleanup_corn', 'cleanup_keep_topn',
                   'cleanup_keep_unit_field', 'delete_op', 'log_level', 'ci_typeid_app_root_ci', 'ci_typeid_db_root_ci',
-                  'ci_typeid_app_template_ci', 'ci_typeid_db_template_ci', 'app_filter_expression',
-                  'push_nexus_server', 'push_nexus_repository', 'push_nexus_username', 'push_nexus_password',
+                  'ci_typeid_app_template_ci', 'ci_typeid_db_template_ci', 'push_nexus_server', 'push_nexus_repository',
+                  'push_nexus_username', 'push_nexus_password', 'app_filter_expression', 'db_filter_expression',
                   's3_server_url', 'db_script_extension', 'global_variable_prefix', 'cache_cleanup_interval_min')
 def get_env_value(value, origin_value):
     prefix = 'ENV@'
