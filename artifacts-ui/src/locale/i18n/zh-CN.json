@@ -163,5 +163,7 @@
   "use_role": "使用角色",
   "art_permissions": "权限",
   "art_save_as_template": "存为模版",
-  "art_create_time": "创建时间"
+  "art_create_time": "创建时间",
+  "art_trial_instance": "请选择计算实例",
+  "art_trial_result": "试算结果"
 }
