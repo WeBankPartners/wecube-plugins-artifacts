@@ -2134,7 +2134,11 @@ class UnitDesignPackages(WeCubeResource):
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['name'], '*' + ext):
-                            filtered_file_objs.append(f)
+                            # 扫描每个文件，有差异化变量的才加入清单
+                            var_rets = self.update_file_variable(self.get_package_cached_path(package_id), [{'filename': f['path']}])
+                            if len(var_rets[0]['configKeyInfos']) > 0:
+                                filtered_file_objs.append(f)
+                
                 ret_data[field_pkg_diff_conf_file_name] = FilePathConcater().convert(filtered_file_objs)
                 if do_bind_vars:
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
@@ -2165,7 +2169,10 @@ class UnitDesignPackages(WeCubeResource):
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
                             if f['filename'] not in changed_file_objs_map:
-                                filtered_file_objs.append(f)
+                                # 扫描每个文件，有差异化变量的才加入清单
+                                var_rets = self.update_file_variable(self.get_package_cached_path(package_id), [{'filename': f['filename']}])
+                                if len(var_rets[0]['configKeyInfos']) > 0:
+                                    filtered_file_objs.append(f)
                 # filtered_file_objs.sort(key=lambda x: x['filename'], reverse=False)
                 ret_data[field_pkg_diff_conf_file_name] = FileNameConcater().convert(filtered_file_objs)
                 if do_bind_vars:
@@ -2187,7 +2194,10 @@ class UnitDesignPackages(WeCubeResource):
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['name'], '*' + ext):
-                            filtered_file_objs.append(f)
+                            # 扫描每个文件，有差异化变量的才加入清单
+                            var_rets = self.update_file_variable(self.get_package_cached_path(package_id), [{'filename': f['path']}])
+                            if len(var_rets[0]['configKeyInfos']) > 0:
+                                filtered_file_objs.append(f)
                 ret_data[field_pkg_diff_conf_file_name] = FilePathConcater().convert(filtered_file_objs)
                 if do_bind_vars:
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
@@ -2225,7 +2235,10 @@ class UnitDesignPackages(WeCubeResource):
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['filename'], '*' + ext):
                             if f['filename'] not in changed_file_objs_map:
-                                filtered_file_objs.append(f)
+                                # 扫描每个文件，有差异化变量的才加入清单
+                                var_rets = self.update_file_variable(self.get_package_cached_path(package_id), [{'filename': f['filename']}])
+                                if len(var_rets[0]['configKeyInfos']) > 0:
+                                    filtered_file_objs.append(f)
                 # filtered_file_objs.sort(key=lambda x: x['filename'], reverse=False)
                 ret_data[field_pkg_diff_conf_file_name] = FileNameConcater().convert(filtered_file_objs)
                 if do_bind_vars:
