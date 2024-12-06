@@ -162,8 +162,3 @@ class SysRoleUser(Base, DictBase):
 
     role = relationship('SysRole')
     user = relationship('SysUser')
-
-
-if __name__ == '__main__':
-    engine = create_engine("mysql+pymysql://root:miya.12345@127.0.0.1:3306/artifacts", encoding="utf-8")
-    Base.metadata.create_all(engine)

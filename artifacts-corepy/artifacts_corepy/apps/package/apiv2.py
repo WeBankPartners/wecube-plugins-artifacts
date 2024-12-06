@@ -2747,8 +2747,14 @@ class AppInstancePackages(WeCubeResource):
 class UnitDesignApps(WeCubeResource):
 
     def list_by_post(self, payload):
-        """应用实例列表"""
+        """应用/DB实例列表"""
         wecube_client = wecube.WeCubeClient(CONF.wecube.server, self.token)
+
+        if payload.get('type') == "db":
+            filter_expression = CONF.wecube.wecmdb.expressions.db_filter
+        else:
+            filter_expression = CONF.wecube.wecmdb.expressions.app_filter
+
         filters = [
             {
                 "index": 0,
@@ -2765,7 +2771,7 @@ class UnitDesignApps(WeCubeResource):
         ]
         ret = wecube_client.post(
             wecube_client.build_url('/platform/v1/data-model/dme/integrated-query'), {
-                'dataModelExpression': CONF.wecube.wecmdb.expressions.app_filter,
+                'dataModelExpression': filter_expression,
                 'filters': filters
             })
 
