@@ -163,5 +163,7 @@
   "use_role": "Use Role",
   "art_permissions": "Permissions",
   "art_save_as_template": "Save Template",
-  "art_create_time": "Create Time"
+  "art_create_time": "Create Time",
+  "art_trial_instance": "Please select a trial instance",
+  "art_trial_result": "Trial Result"
 }

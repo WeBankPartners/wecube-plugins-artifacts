@@ -79,3 +79,7 @@ export const updateTemplate = (data, id) => req.patch(`/api/v1/diff-conf-templat
 // 获取模版列表
 export const getTemplate = queryString => req.get(`/api/v1/diff-conf-templates?${queryString}`)
 export const deleteTemplate = id => req.delete(`/api/v1/diff-conf-templates/${id}`)
+// 获取差异化变量试算结果
+export const getVariableValue = data => req.post(`/app-instances/variable-values`, data)
+// 获取待试算实例
+export const getCalcInstance = data => req.post(`/unit-designs/app-instances`, data)

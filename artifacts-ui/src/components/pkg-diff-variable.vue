@@ -20,6 +20,9 @@
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
+          <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;margin-bottom: 12px">
+            <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+          </Select>
           <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
             <Button type="primary" style="vertical-align: text-top;" size="small" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
             <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="APP">
@@ -40,6 +43,9 @@
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
+          <Select clearable filterable @on-change="getVariableValue('db')" @on-open-change="getCalcInstance('db')" :placeholder="$t('art_trial_instance')" v-model="calcDBInstance" style="width:300px;margin-bottom: 12px">
+            <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+          </Select>
           <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.db_diff_conf_file)" name="DB">
             <Button type="primary" style="vertical-align: text-top;" size="small" :disabled="packageDetail.db_diff_conf_file.length === 0" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
             <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="DB">
@@ -148,7 +154,7 @@
 </template>
 
 <script>
-import { getUserList, sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, getPackageDetail, updatePackage, getDiffVariable, getTemplate, deleteTemplate } from '@/api/server.js'
+import { getCalcInstance, getVariableValue, getUserList, sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, getPackageDetail, updatePackage, getDiffVariable, getTemplate, deleteTemplate } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import axios from 'axios'
 import { decode } from 'js-base64'
@@ -257,11 +263,11 @@ export default {
         {
           title: this.$t('artifacts_property_seq'),
           key: 'index',
-          width: 70
+          width: 60
         },
         {
           title: this.$t('artifacts_line_number'),
-          width: 100,
+          width: 90,
           key: 'line'
         },
         {
@@ -314,6 +320,18 @@ export default {
                 </div>
               )
             }
+          }
+        },
+        {
+          title: this.$t('art_trial_result'),
+          width: 120,
+          render: (h, params) => {
+            const variableValue = this.currentDiffConfigTab === 'APP' ? this.variableAppValue : this.variableDBValue
+            return (
+              <Tooltip content={variableValue[params.row.key] || '-'} placement="top" delay={500} transfer={true} max-width="300">
+                <div style="width: 110px;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">{variableValue[params.row.key] || '-'}</div>
+              </Tooltip>
+            )
           }
         },
         {
@@ -499,7 +517,13 @@ export default {
       fullscreen: false,
       fileContentHeight: window.screen.availHeight * 0.4 + 100,
       ciTypes: [],
-      specialDelimiters: []
+      specialDelimiters: [],
+      calcAppInstance: '', // 待试算实例
+      calcAppInstanceOptions: [], // 待试算实例选项
+      variableAppValue: {}, // 缓存试算结果
+      calcDBInstance: '', // 待试算实例
+      calcDBInstanceOptions: [], // 待试算实例选项
+      variableDBValue: {} // 缓存试算结果
     }
   },
   computed: {},
@@ -532,6 +556,66 @@ export default {
     window.removeEventListener('resize', this.handleResize)
   },
   methods: {
+    clearCalcParams () {
+      this.calcAppInstance = ''
+      this.calcAppInstanceOptions = []
+      this.variableAppValue = {}
+      this.calcDBInstance = ''
+      this.calcDBInstanceOptions = []
+      this.variableDBValue = {}
+    },
+    async getVariableValue (type) {
+      if (type === 'app') {
+        this.variableAppValue = {}
+      }
+      if (type === 'db') {
+        this.variableDBValue = {}
+      }
+      const guid = type === 'app' ? this.calcAppInstance : this.calcDBInstance
+      if (!guid) return
+      const params = [
+        {
+          type,
+          guid,
+          deploy_package: this.packageId
+        }
+      ]
+      let { status, data } = await getVariableValue(params)
+      if (status === 'OK') {
+        const variableValue = this.formatVariabel(data)
+        if (type === 'app') {
+          this.variableAppValue = variableValue
+        }
+        if (type === 'db') {
+          this.variableDBValue = variableValue
+        }
+      }
+    },
+    formatVariabel (str) {
+      const vari = str.split('\u0001=\u0001')
+      const keys = vari[0].split(',\u0001')
+      const values = vari[1].split(',\u0001')
+      let res = {}
+      for (let i = 0; i < keys.length; i++) {
+        res[(keys[i] || '').replace('\u0001', '')] = (values[i] || '').replace('\u0001', '')
+      }
+      return res
+    },
+    async getCalcInstance (type) {
+      let params = {
+        guid: this.guid,
+        type
+      }
+      let { status, data } = await getCalcInstance(params)
+      if (status === 'OK') {
+        if (type === 'app') {
+          this.calcAppInstanceOptions = data || []
+        }
+        if (type === 'db') {
+          this.calcDBInstanceOptions = data || []
+        }
+      }
+    },
     typeChange (configKeyInfos) {
       this.tempTableData = []
       this.$nextTick(() => {
@@ -551,12 +635,14 @@ export default {
       this.tempTableData = configKeyInfos.filter(item => filterKey.includes(item.type))
     },
     async initDrawer (guid, row) {
+      this.clearCalcParams()
+      this.guid = guid
+      this.getCalcInstance()
       this.openDrawer = true
       this.spinShow = true
       await this.getAllCITypesWithAttr()
       this.currentDiffConfigTab = ''
       this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
-      this.guid = guid
       this.packageName = row.code
       if (row.package_type === this.constPackageOptions.image) {
         this.showDiffConfigTab = false
