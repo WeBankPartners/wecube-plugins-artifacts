@@ -78,11 +78,11 @@
         <Button type="primary" :disabled="tempCopySelectRow.guid === ''" @click="setConfigRowValue()">{{ $t('art_ok') }} </Button>
       </div>
       <div style="display: flex;gap: 8px;margin-bottom: 8px;">
-        <Select style="width: 200px;" @on-change="remoteConfigSearch()" :placeholder="$t('art_creator')" v-model="tempCopyParams.variable_type">
+        <Select style="width: 200px;" @on-change="remoteConfigSearch()" v-model="tempCopyParams.variable_type">
           <Option v-for="item in ['GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE']" :value="item" :key="item">{{ item }}</Option>
         </Select>
         <Input style="width: 200px;" v-model="tempCopyParams.variable_name" @on-change="remoteConfigSearch()" :placeholder="$t('art_variable_name')" clearable />
-        <Select style="width: 200px;" clearable filterable @on-change="remoteConfigSearch()" @on-clear="tempCopyParams.create_user = ''" :placeholder="$t('artifacts_uploaded_by')" v-model="tempCopyParams.create_user">
+        <Select style="width: 200px;" clearable filterable @on-change="remoteConfigSearch()" @on-clear="tempCopyParams.create_user = ''" :placeholder="$t('art_creator')" v-model="tempCopyParams.create_user">
           <Option v-for="user in userList" :value="user.username" :key="user.id">{{ user.username }}</Option>
         </Select>
       </div>
