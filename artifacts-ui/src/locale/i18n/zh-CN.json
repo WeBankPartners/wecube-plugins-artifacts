@@ -165,5 +165,8 @@
   "art_save_as_template": "存为模版",
   "art_create_time": "创建时间",
   "art_trial_instance": "请选择计算实例",
-  "art_trial_result": "试算结果"
+  "art_trial_result": "试算结果",
+  "art_save_now": "去保存",
+  "art_discard": "放弃",
+  "art_change_is_not_saved": "您的修改尚未保存，是否保存？"
 }

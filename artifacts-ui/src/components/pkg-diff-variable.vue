@@ -2,7 +2,7 @@
   <Drawer :title="pkgName" v-model="openDrawer" class="custom-drawer" :scrollable="false" width="1300">
     <Spin size="large" fix v-if="spinShow"></Spin>
     <div v-if="showDiffConfigTab">
-      <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
+      <Tabs :value="currentDiffConfigTab" v-model="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
           <Upload :before-upload="handleUpload" action="">
             <Button type="primary" style="margin-right: 8px;">
@@ -20,11 +20,11 @@
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
-          <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;margin-bottom: 12px">
+          <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;">
             <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
           </Select>
-          <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
-            <Button type="primary" style="vertical-align: text-top;" size="small" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
+          <Button type="primary" style="margin-left: 24px;" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+          <Tabs :value="activeTab" v-model="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
             <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="APP">
               <div class="pkg-variable">
                 <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
@@ -46,8 +46,8 @@
           <Select clearable filterable @on-change="getVariableValue('db')" @on-open-change="getCalcInstance('db')" :placeholder="$t('art_trial_instance')" v-model="calcDBInstance" style="width:300px;margin-bottom: 12px">
             <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
           </Select>
+          <Button type="primary" :disabled="packageDetail.db_diff_conf_file.length === 0" style="margin-left:24px" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
           <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.db_diff_conf_file)" name="DB">
-            <Button type="primary" style="vertical-align: text-top;" size="small" :disabled="packageDetail.db_diff_conf_file.length === 0" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
             <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="DB">
               <div class="pkg-variable">
                 <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
@@ -78,11 +78,11 @@
         <Button type="primary" :disabled="tempCopySelectRow.guid === ''" @click="setConfigRowValue()">{{ $t('art_ok') }} </Button>
       </div>
       <div style="display: flex;gap: 8px;margin-bottom: 8px;">
-        <Select style="width: 200px;" @on-change="remoteConfigSearch()" :placeholder="$t('art_creator')" v-model="tempCopyParams.variable_type">
+        <Select style="width: 200px;" @on-change="remoteConfigSearch()" v-model="tempCopyParams.variable_type">
           <Option v-for="item in ['GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE']" :value="item" :key="item">{{ item }}</Option>
         </Select>
         <Input style="width: 200px;" v-model="tempCopyParams.variable_name" @on-change="remoteConfigSearch()" :placeholder="$t('art_variable_name')" clearable />
-        <Select style="width: 200px;" clearable filterable @on-change="remoteConfigSearch()" @on-clear="tempCopyParams.create_user = ''" :placeholder="$t('artifacts_uploaded_by')" v-model="tempCopyParams.create_user">
+        <Select style="width: 200px;" clearable filterable @on-change="remoteConfigSearch()" @on-clear="tempCopyParams.create_user = ''" :placeholder="$t('art_creator')" v-model="tempCopyParams.create_user">
           <Option v-for="user in userList" :value="user.username" :key="user.id">{{ user.username }}</Option>
         </Select>
       </div>
@@ -326,10 +326,16 @@ export default {
           title: this.$t('art_trial_result'),
           width: 120,
           render: (h, params) => {
-            const variableValue = this.currentDiffConfigTab === 'APP' ? this.variableAppValue : this.variableDBValue
+            let content = ''
+            if (params.row.conf_variable.diffExpr !== params.row.conf_variable.originDiffExpr) {
+              content = '-'
+            } else {
+              const variableValue = this.currentDiffConfigTab === 'APP' ? this.variableAppValue : this.variableDBValue
+              content = variableValue[params.row.key] || '-'
+            }
             return (
-              <Tooltip content={variableValue[params.row.key] || '-'} placement="top" delay={500} transfer={true} max-width="300">
-                <div style="width: 110px;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">{variableValue[params.row.key] || '-'}</div>
+              <Tooltip content={content} placement="top" delay={500} transfer={true} max-width="300">
+                <div style="width: 110px;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">{content}</div>
               </Tooltip>
             )
           }
@@ -348,11 +354,14 @@ export default {
         { value: defaultDBRootCiTypeId, label: this.$t('DB') }
       ],
       activeTab: '',
+      activeTabTmp: '',
       activeTabData: null,
       currentConfigTab: '', // 配置当前tab
 
       showDiffConfigTab: false,
       currentDiffConfigTab: '', // 差异化变量当前tab
+      currentDiffConfigTabTmp: '', // 差异化变量当前tab
+      flag: true,
       packageName: '',
       maxHeight: 500,
       variablePrefixType: [
@@ -378,6 +387,7 @@ export default {
         }
       ],
       prefixType: 'variable_prefix_default', // 前缀
+      prefixTypeTmp: 'variable_prefix_default', // 前缀
       tempTableData: [], // 通过类型、文件、前缀过滤后的展示数据
       currentFileIndex: -1, // 缓存单签文件顺序
       tempCopySelectRow: {
@@ -616,11 +626,38 @@ export default {
         }
       }
     },
-    typeChange (configKeyInfos) {
-      this.tempTableData = []
-      this.$nextTick(() => {
-        this.getVariableTableData(configKeyInfos, this.variablePrefixType.find(item => item.key === this.prefixType).filterKey)
-      })
+    async typeChange (configKeyInfos) {
+      const flag = await this.isVariableChange() // 这里必须使用await
+      if (flag) {
+        this.prefixTypeTmp = this.prefixType
+        this.tempTableData = []
+        this.$nextTick(() => {
+          this.getVariableTableData(configKeyInfos, this.variablePrefixType.find(item => item.key === this.prefixType).filterKey)
+        })
+      } else {
+        const tmp = this.prefixType
+        this.prefixType = this.prefixTypeTmp
+        this.$Modal.confirm({
+          title: this.$t('art_change_is_not_saved'),
+          'z-index': 1000000,
+          okText: this.$t('art_save_now'),
+          cancelText: this.$t('art_discard'),
+          onOk: async () => {
+            console.log('自我消失')
+          },
+          onCancel: async () => {
+            this.prefixType = tmp
+            this.prefixTypeTmp = tmp
+            this.tempTableData = []
+            configKeyInfos.forEach(item => {
+              item.conf_variable.diffExpr = item.conf_variable.originDiffExpr
+            })
+            this.$nextTick(() => {
+              this.getVariableTableData(configKeyInfos, this.variablePrefixType.find(item => item.key === this.prefixType).filterKey)
+            })
+          }
+        })
+      }
     },
     getNum (configKeyInfos, filterKey) {
       let num = 0
@@ -642,6 +679,7 @@ export default {
       this.spinShow = true
       await this.getAllCITypesWithAttr()
       this.currentDiffConfigTab = ''
+      this.currentDiffConfigTabTmp = ''
       this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
       this.packageName = row.code
       if (row.package_type === this.constPackageOptions.image) {
@@ -651,6 +689,7 @@ export default {
       }
       this.packageType = row.package_type
       this.currentDiffConfigTab = this.packageType === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
+      this.currentDiffConfigTabTmp = this.currentDiffConfigTab
       this.packageId = row.guid
       this.showDiffConfigTab = true
       // 获取包文件及差异化变量数据
@@ -679,6 +718,7 @@ export default {
     },
     setPrefixType () {
       this.prefixType = ''
+      this.prefixTypeTmp = this.prefixType
       this.$nextTick(() => {
         const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
         const find = this.packageDetail[tmp].find(item => item.filename === this.activeTab)
@@ -688,6 +728,7 @@ export default {
             const res = this.getNum(tmpData, this.variablePrefixType[i].filterKey)
             if (res > 0) {
               this.prefixType = this.variablePrefixType[i].key
+              this.prefixTypeTmp = this.prefixType
               break
             }
           }
@@ -762,23 +803,78 @@ export default {
         }
       }
     },
-    changeDiffConfigTab (tabName) {
-      this.currentDiffConfigTab = tabName
+    async changeDiffConfigTab (tabName) {
+      const flag = await this.isVariableChange() // 这里必须使用await
+      if (flag) {
+        this.currentDiffConfigTabTmp = tabName
+        this.currentDiffConfigTab = this.currentDiffConfigTabTmp
+      } else {
+        this.currentDiffConfigTab = this.currentDiffConfigTabTmp
+        this.$Modal.confirm({
+          title: this.$t('art_change_is_not_saved'),
+          'z-index': 1000000,
+          okText: this.$t('art_save_now'),
+          cancelText: this.$t('art_discard'),
+          onOk: async () => {
+            console.log('自我消失')
+          },
+          onCancel: async () => {
+            this.tempTableData.forEach(item => {
+              item.conf_variable.diffExpr = item.conf_variable.originDiffExpr
+            })
+            this.changeDiffConfigTab(tabName)
+          }
+        })
+        return
+      }
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
       if (this.packageDetail[tmp].length > 0) {
         this.activeTab = this.packageDetail[tmp][0].filename
+        this.activeTabTmp = this.activeTab
         this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
         this.setPrefixType()
         this.initVariableTableData(0)
       } else {
         this.activeTab = ''
+        this.activeTabTmp = this.activeTab
         this.activeTabData = {}
       }
     },
-    changeTab (tabName, tabs) {
-      this.activeTab = tabName
+    isVariableChange () {
+      let tmp = true
+      this.tempTableData.forEach(item => {
+        if (item.conf_variable.diffExpr !== item.conf_variable.originDiffExpr) {
+          tmp = false
+        }
+      })
+      return tmp
+    },
+    async changeTab (tabName, tabs) {
+      const flag = await this.isVariableChange() // 这里必须使用await
+      if (flag) {
+        this.activeTabTmp = tabName
+        this.activeTab = this.activeTabTmp
+      } else {
+        this.activeTab = this.activeTabTmp
+        this.$Modal.confirm({
+          title: this.$t('art_change_is_not_saved'),
+          'z-index': 1000000,
+          okText: this.$t('art_save_now'),
+          cancelText: this.$t('art_discard'),
+          onOk: async () => {
+            console.log('自我消失')
+          },
+          onCancel: async () => {
+            this.tempTableData.forEach(item => {
+              item.conf_variable.diffExpr = item.conf_variable.originDiffExpr
+            })
+            this.changeTab(tabName, tabs)
+          }
+        })
+        return
+      }
+
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-      // this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab).configKeyInfos
       this.activeTabData = this.packageDetail[tmp].find(item => item.filename === this.activeTab).configKeyInfos
       const index = tabs.findIndex(item => item.filename === tabName)
       this.setPrefixType()
@@ -958,9 +1054,11 @@ export default {
         this.packageDetail = this.formatPackageDetail(data)
         if (this.packageDetail[tmp].length > 0) {
           this.activeTab = this.packageDetail[tmp][0].filename
+          this.activeTabTmp = this.activeTab
           this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
         } else {
           this.activeTab = ''
+          this.activeTabTmp = this.activeTab
           this.activeTabData = {}
         }
       }
@@ -1293,6 +1391,7 @@ export default {
           })
         }
       })
+      this.getVariableValue(this.currentDiffConfigTab.toLocaleLowerCase())
     },
 
     saveAsTemplate (row) {
