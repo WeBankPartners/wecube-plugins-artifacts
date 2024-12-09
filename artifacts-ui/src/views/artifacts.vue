@@ -216,7 +216,7 @@ export default {
         {
           title: this.$t('artifacts_package_name'),
           key: 'name',
-          minWidth: 160,
+          minWidth: 140,
           render: (h, params) => {
             return <span>{params.row.name}</span>
           }
