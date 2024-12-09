@@ -20,11 +20,11 @@
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
-          <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;margin-bottom: 12px">
+          <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;">
             <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
           </Select>
+          <Button type="primary" style="margin-left: 24px;" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
           <Tabs :value="activeTab" v-model="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
-            <Button type="primary" style="vertical-align: text-top;" size="small" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
             <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="APP">
               <div class="pkg-variable">
                 <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
@@ -46,8 +46,8 @@
           <Select clearable filterable @on-change="getVariableValue('db')" @on-open-change="getCalcInstance('db')" :placeholder="$t('art_trial_instance')" v-model="calcDBInstance" style="width:300px;margin-bottom: 12px">
             <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
           </Select>
+          <Button type="primary" :disabled="packageDetail.db_diff_conf_file.length === 0" style="margin-left:24px" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
           <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.db_diff_conf_file)" name="DB">
-            <Button type="primary" style="vertical-align: text-top;" size="small" :disabled="packageDetail.db_diff_conf_file.length === 0" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
             <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="DB">
               <div class="pkg-variable">
                 <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
@@ -326,10 +326,16 @@ export default {
           title: this.$t('art_trial_result'),
           width: 120,
           render: (h, params) => {
-            const variableValue = this.currentDiffConfigTab === 'APP' ? this.variableAppValue : this.variableDBValue
+            let content = ''
+            if (params.row.conf_variable.diffExpr !== params.row.conf_variable.originDiffExpr) {
+              content = '-'
+            } else {
+              const variableValue = this.currentDiffConfigTab === 'APP' ? this.variableAppValue : this.variableDBValue
+              content = variableValue[params.row.key] || '-'
+            }
             return (
-              <Tooltip content={variableValue[params.row.key] || '-'} placement="top" delay={500} transfer={true} max-width="300">
-                <div style="width: 110px;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">{variableValue[params.row.key] || '-'}</div>
+              <Tooltip content={content} placement="top" delay={500} transfer={true} max-width="300">
+                <div style="width: 110px;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">{content}</div>
               </Tooltip>
             )
           }
@@ -381,6 +387,7 @@ export default {
         }
       ],
       prefixType: 'variable_prefix_default', // 前缀
+      prefixTypeTmp: 'variable_prefix_default', // 前缀
       tempTableData: [], // 通过类型、文件、前缀过滤后的展示数据
       currentFileIndex: -1, // 缓存单签文件顺序
       tempCopySelectRow: {
@@ -619,11 +626,38 @@ export default {
         }
       }
     },
-    typeChange (configKeyInfos) {
-      this.tempTableData = []
-      this.$nextTick(() => {
-        this.getVariableTableData(configKeyInfos, this.variablePrefixType.find(item => item.key === this.prefixType).filterKey)
-      })
+    async typeChange (configKeyInfos) {
+      const flag = await this.isVariableChange() // 这里必须使用await
+      if (flag) {
+        this.prefixTypeTmp = this.prefixType
+        this.tempTableData = []
+        this.$nextTick(() => {
+          this.getVariableTableData(configKeyInfos, this.variablePrefixType.find(item => item.key === this.prefixType).filterKey)
+        })
+      } else {
+        const tmp = this.prefixType
+        this.prefixType = this.prefixTypeTmp
+        this.$Modal.confirm({
+          title: this.$t('art_change_is_not_saved'),
+          'z-index': 1000000,
+          okText: this.$t('art_save_now'),
+          cancelText: this.$t('art_discard'),
+          onOk: async () => {
+            console.log('自我消失')
+          },
+          onCancel: async () => {
+            this.prefixType = tmp
+            this.prefixTypeTmp = tmp
+            this.tempTableData = []
+            configKeyInfos.forEach(item => {
+              item.conf_variable.diffExpr = item.conf_variable.originDiffExpr
+            })
+            this.$nextTick(() => {
+              this.getVariableTableData(configKeyInfos, this.variablePrefixType.find(item => item.key === this.prefixType).filterKey)
+            })
+          }
+        })
+      }
     },
     getNum (configKeyInfos, filterKey) {
       let num = 0
@@ -684,6 +718,7 @@ export default {
     },
     setPrefixType () {
       this.prefixType = ''
+      this.prefixTypeTmp = this.prefixType
       this.$nextTick(() => {
         const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
         const find = this.packageDetail[tmp].find(item => item.filename === this.activeTab)
@@ -693,6 +728,7 @@ export default {
             const res = this.getNum(tmpData, this.variablePrefixType[i].filterKey)
             if (res > 0) {
               this.prefixType = this.variablePrefixType[i].key
+              this.prefixTypeTmp = this.prefixType
               break
             }
           }
@@ -1355,6 +1391,7 @@ export default {
           })
         }
       })
+      this.getVariableValue(this.currentDiffConfigTab.toLocaleLowerCase())
     },
 
     saveAsTemplate (row) {
