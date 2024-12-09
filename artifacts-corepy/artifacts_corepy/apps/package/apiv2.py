@@ -1512,9 +1512,12 @@ class UnitDesignPackages(WeCubeResource):
             }
             resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
             if not resp_json.get('data', {}).get('contents', []):
-                raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
-                                                       {'rid': baseline_package['guid']})
-            baseline_package = resp_json['data']['contents'][0]
+                LOG.warn("Can not find ci data for guid [%(rid)s]" % {'rid': baseline_package['guid']})
+                # raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
+                #                                        {'rid': baseline_package['guid']})
+                baseline_package = {}
+            else:
+                baseline_package = resp_json['data']['contents'][0]
         result = {}
         result['nextOperations'] = list(set(deploy_package.get('nextOperations', [])))
         result['packageId'] = deploy_package_id
@@ -1901,9 +1904,13 @@ class UnitDesignPackages(WeCubeResource):
             self.set_package_query_fields(query)
             resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
             if not resp_json.get('data', {}).get('contents', []):
-                raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
+                LOG.warn(_("Can not find ci data for guid [%(rid)s]") %
                                                        {'rid': baseline_package_id})
-            baseline_package = resp_json['data']['contents'][0]
+                # raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
+                #                                        {'rid': baseline_package_id})
+                baseline_package = {}
+            else:
+                baseline_package = resp_json['data']['contents'][0]
         baseline_cached_dir = None
         package_cached_dir = None
         if baseline_package:
