@@ -4,6 +4,9 @@
       <FormItem :label="$t('art_name')">
         <Input v-model="templateParams.code" @input="templateParams.code = templateParams.code.trim()" :placeholder="$t('art_name')" maxlength="30" show-word-limit></Input>
       </FormItem>
+      <FormItem label="" style="display: none;">
+        <Input v-model="templateParams.value" type="textarea"></Input>
+      </FormItem>
     </Form>
     <div class="content">
       <div>
