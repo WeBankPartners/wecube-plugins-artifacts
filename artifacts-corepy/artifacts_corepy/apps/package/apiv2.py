@@ -2010,6 +2010,7 @@ class UnitDesignPackages(WeCubeResource):
                     i['configKeyInfos'] = artifact_utils.variable_parse(content, spliters)
             else:
                 i['configKeyInfos'] = []
+        return files
 
     def update_diff_conf_variable(self, all_diff_configs, package_diff_configs, bounded_diff_configs):
         '''
