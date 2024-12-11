@@ -20,12 +20,14 @@
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
-          <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;">
-            <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
-          </Select>
-          <Button type="primary" style="margin-left: 24px;" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+          <div style="margin-bottom: 8px;">
+            <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;">
+              <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+            </Select>
+            <Button type="primary" style="margin-left: 24px;" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+          </div>
           <Tabs :value="activeTab" v-model="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
-            <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="APP">
+            <TabPane v-for="(item, index) in packageDetail.diff_conf_file" v-if="item.configKeyInfos.length !== 0" :label="renderLabel(item)" :name="item.filename" :key="index" tab="APP">
               <div class="pkg-variable">
                 <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
                   <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
@@ -43,12 +45,14 @@
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
-          <Select clearable filterable @on-change="getVariableValue('db')" @on-open-change="getCalcInstance('db')" :placeholder="$t('art_trial_instance')" v-model="calcDBInstance" style="width:300px;margin-bottom: 12px">
-            <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
-          </Select>
-          <Button type="primary" :disabled="packageDetail.db_diff_conf_file.length === 0" style="margin-left:24px" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+          <div style="margin-bottom: 8px;">
+            <Select clearable filterable @on-change="getVariableValue('db')" @on-open-change="getCalcInstance('db')" :placeholder="$t('art_trial_instance')" v-model="calcDBInstance" style="width:300px;">
+              <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+            </Select>
+            <Button type="primary" :disabled="packageDetail.db_diff_conf_file.length === 0" style="margin-left:24px" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+          </div>
           <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.db_diff_conf_file)" name="DB">
-            <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="DB">
+            <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" v-if="item.configKeyInfos.length !== 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="DB">
               <div class="pkg-variable">
                 <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
                   <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
@@ -566,6 +570,16 @@ export default {
     window.removeEventListener('resize', this.handleResize)
   },
   methods: {
+    renderLabel (item) {
+      return () => (
+        <tooltip placement="top" width={300} delay={500} transfer={true}>
+          <div style="white-space: normal" slot="content">
+            {item.filename}
+          </div>
+          {item.shorFileName + ' (' + item.configKeyInfos.length + ')'}
+        </tooltip>
+      )
+    },
     clearCalcParams () {
       this.calcAppInstance = ''
       this.calcAppInstanceOptions = []

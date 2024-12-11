@@ -133,7 +133,7 @@ export default {
       await this.getCurrentUserRoles()
       this.flowRoleManageModal = true
     },
-    // 启动入口
+    // 属性规则转换成模版
     valueMgmt (diffExpr) {
       let input = diffExpr
       // const input = `[{"type":"rule","value":"[{\\"ciTypeId\\":\\"app_instance\\",\\"filters\\":[{\\"name\\":\\"create_user\\",\\"operator\\":\\"eq\\",\\"type\\":\\"value\\",\\"value\\":\\"test\\"},{\\"name\\":\\"code\\",\\"operator\\":\\"eq\\",\\"type\\":\\"autoFill\\",\\"value\\":\\"[{\\\\\\"type\\\\\\":\\\\\\"rule\\\\\\",\\\\\\"value\\\\\\":\\\\\\"[{\\\\\\\\\\\\\\"ciTypeId\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"app_instance\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"filters\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"asset_id\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"operator\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"eq\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"123\\\\\\\\\\\\\\"}]},{\\\\\\\\\\\\\\"ciTypeId\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"app_instance\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"parentRs\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\"attrId\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"app_instance__create_user\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"isReferedFromParent\\\\\\\\\\\\\\":1}}]\\\\\\"}]\\"}]},{\\"ciTypeId\\":\\"app_instance\\",\\"parentRs\\":{\\"attrId\\":\\"app_instance__port\\",\\"isReferedFromParent\\":1}}]"}]`
@@ -142,22 +142,21 @@ export default {
       // 找出 type: 'value' 的 JSON 对象中的 value 值
       const res = this.extractValueByType(result)
       // 在表达式中找出以"+value值开始，以"结束的字符串，中间可能包含多个转义符(\)
-      let targetStr = []
-      res.forEach(r => {
-        const pattern = new RegExp(`"${r}(?:\\\\)*?"`, 'g') // 动态创建正则表达式
+      res.forEach((r, rIndex) => {
+        const pattern = new RegExp(`"${r}(?:\\\\)*?"`) // 动态创建正则表达式
         const matches = input.match(pattern)
-        targetStr = targetStr.concat(matches)
-      })
-      targetStr.forEach((f, fIndex) => {
-        // 为待替换字符串增加参数标识
+        if (!matches) {
+          return
+        }
+        const matchStr = matches[0]
         let replaceStr = ''
-        if (f.startsWith(`"${this.key}`)) {
-          replaceStr = f.replace(this.key, `!&defaultParam!&`)
+        if (matchStr.startsWith(`"${this.key}`)) {
+          replaceStr = matchStr.replace(this.key, `!&defaultParam!&`)
         } else {
-          replaceStr = f.replace(res[fIndex], `$^${'params_' + fIndex}$^`)
+          replaceStr = matchStr.replace(res[rIndex], `$^${'params_' + rIndex}$^`)
         }
         // 替换表达式中的目标字符串
-        input = input.replaceAll(f, replaceStr)
+        input = input.replace(matchStr, replaceStr)
       })
       return input
     },
