@@ -1150,7 +1150,18 @@ export default {
         dialect: {
           queryMode: 'new'
         },
-        filters: [],
+        filters: [
+          {
+            name: 'variable_value',
+            operator: 'neq',
+            value: ''
+          },
+          {
+            name: 'variable_value',
+            operator: 'notNull',
+            value: ''
+          }
+        ],
         pageable: {},
         sorting: {
           asc: false,
