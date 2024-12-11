@@ -272,14 +272,18 @@ export default {
           fixed: 'right',
           width: 230,
           render: (h, params) => {
+            // 镜像包不需要查看差异化配置
+            const showDiffEdit = params.row.package_type !== this.constPackageOptions.image
             return (
               <div style="padding-top:5px">
                 <div>
-                  <Tooltip content={this.$t('art_differentiated_variable_configuration')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" onClick={() => this.startConfigDiff(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#D87093', borderColor: '#D87093', marginBottom: '2px' }}>
-                      <Icon type="ios-medical" color="white" size="16"></Icon>
-                    </Button>
-                  </Tooltip>
+                  {showDiffEdit && (
+                    <Tooltip content={this.$t('art_differentiated_variable_configuration')} placement="top" delay={500} transfer={true}>
+                      <Button size="small" onClick={() => this.startConfigDiff(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#D87093', borderColor: '#D87093', marginBottom: '2px' }}>
+                        <Icon type="ios-medical" color="white" size="16"></Icon>
+                      </Button>
+                    </Tooltip>
+                  )}
                   <Tooltip content={this.$t('export')} placement="top" delay={500} transfer={true}>
                     <Button size="small" onClick={() => this.toExportPkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
                       <Icon type="md-cloud-download" color="white" size="16"></Icon>

@@ -696,11 +696,6 @@ export default {
       this.currentDiffConfigTabTmp = ''
       this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
       this.packageName = row.code
-      if (row.package_type === this.constPackageOptions.image) {
-        this.showDiffConfigTab = false
-        this.packageDetail = []
-        return
-      }
       this.packageType = row.package_type
       this.currentDiffConfigTab = this.packageType === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
       this.currentDiffConfigTabTmp = this.currentDiffConfigTab
