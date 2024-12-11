@@ -7,7 +7,7 @@ if (window.request) {
     get: (url, ...params) => pluginErrorMessage(window.request.get(baseURL + url, ...params)),
     delete: (url, ...params) => pluginErrorMessage(window.request.delete(baseURL + url, ...params)),
     put: (url, ...params) => pluginErrorMessage(window.request.put(baseURL + url, ...params)),
-    patch: (url, ...params) => pluginErrorMessage(window.request.put(baseURL + url, ...params))
+    patch: (url, ...params) => pluginErrorMessage(window.request.patch(baseURL + url, ...params))
   }
 }
 
