@@ -422,7 +422,10 @@ export default {
         {
           title: this.$t('art_variable_type'),
           width: 100,
-          key: 'variable_type'
+          key: 'variable_type',
+          render: (h, params) => {
+            return <div>{params.row.variable_type || '-'}</div>
+          }
         },
         {
           title: this.$t('art_value_rule'),
