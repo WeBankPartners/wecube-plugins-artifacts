@@ -83,7 +83,7 @@
       </div>
       <div style="display: flex;gap: 8px;margin-bottom: 8px;">
         <Select style="width: 200px;" @on-change="remoteConfigSearch()" v-model="tempCopyParams.variable_type">
-          <Option v-for="item in ['GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE']" :value="item" :key="item">{{ item }}</Option>
+          <Option v-for="item in ['ALL', 'GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE']" :value="item" :key="item">{{ item }}</Option>
         </Select>
         <Input style="width: 200px;" v-model="tempCopyParams.variable_name" @on-change="remoteConfigSearch()" :placeholder="$t('art_variable_name')" clearable />
         <Select style="width: 200px;" clearable filterable @on-change="remoteConfigSearch()" @on-clear="tempCopyParams.create_user = ''" :placeholder="$t('art_creator')" v-model="tempCopyParams.create_user">
@@ -1181,7 +1181,7 @@ export default {
           value: this.tempCopyParams.create_user
         })
       }
-      if (this.tempCopyParams.variable_type) {
+      if (['GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE'].includes(this.tempCopyParams.variable_type)) {
         params.filters.push({
           name: 'variable_type',
           operator: 'eq',
