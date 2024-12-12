@@ -168,5 +168,6 @@
   "art_trial_result": "Trial Result",
   "art_save_now": "Save Now",
   "art_discard": "Discard",
-  "art_change_is_not_saved": "Your changes have not been saved yet"
+  "art_change_is_not_saved": "Your changes have not been saved yet",
+  "art_variable_type": "Variable Type"
 }

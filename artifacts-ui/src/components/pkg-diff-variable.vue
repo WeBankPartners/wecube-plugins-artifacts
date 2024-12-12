@@ -71,7 +71,7 @@
       <Button @click="openDrawer = false" type="primary">{{ $t('art_close') }}</Button>
     </div>
     <!-- 复制已有模版 -->
-    <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :fullscreen="fullscreen" width="900">
+    <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :fullscreen="fullscreen" width="1000">
       <p slot="header">
         <span>{{ $t('art_copy_exist') }}</span>
         <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
@@ -416,8 +416,13 @@ export default {
         },
         {
           title: this.$t('art_variable_name'),
-          width: 200,
+          width: 160,
           key: 'variable_name'
+        },
+        {
+          title: this.$t('art_variable_type'),
+          width: 100,
+          key: 'variable_type'
         },
         {
           title: this.$t('art_value_rule'),
