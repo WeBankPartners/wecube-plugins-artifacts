@@ -571,7 +571,7 @@ export default {
     }
   },
   mounted () {
-    this.maxHeight = window.innerHeight - 290
+    this.maxHeight = window.innerHeight - 340
     window.addEventListener('resize', this.handleResize)
   },
   beforeDestroy () {
@@ -1447,7 +1447,7 @@ export default {
       })
     },
     handleResize () {
-      this.maxHeight = window.innerHeight - 290
+      this.maxHeight = window.innerHeight - 340
     },
 
     // #endregion
