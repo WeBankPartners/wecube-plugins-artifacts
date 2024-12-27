@@ -7,6 +7,8 @@
   "artifacts_attr_input_save_tips": "请保存填充规则",
   "artifacts_system_design_version": "系统设计版本",
   "artifacts_system_design_list": "系统设计列表",
+  "artifacts_please_select_system_design": "请先选择系统设计",
+  "artifacts_please_select_unit": "请先选择单元",
   "artifacts_upload_new_package": "上传新包",
   "artifacts_script_configuration": "脚本配置",
   "artifacts_save": "保存",

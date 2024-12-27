@@ -15,7 +15,7 @@
         <CustomTitle :title="$t('artifacts_system_design_list')"></CustomTitle>
         <!-- <BaseHeaderTitle class="custom-title" :title="$t('artifacts_system_design_list')"></BaseHeaderTitle> -->
         <div>
-          <Tree :data="treeData" @on-select-change="selectTreeNode" class="tree-size"> </Tree>
+          <Tree :data="treeData" @on-select-change="selectTreeNode" :empty-text="$t('artifacts_please_select_system_design')" class="tree-size"> </Tree>
         </div>
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
@@ -107,6 +107,9 @@
           <Button type="primary" @click="onReleaseConfirm()" :disabled="releaseParams.selectedFlow === ''">{{ $t('art_ok') }} </Button>
         </div>
       </Modal>
+    </div>
+    <div v-else class="right-zone-empty">
+      <div class="empty-text">{{ $t('artifacts_please_select_unit') }}</div>
     </div>
   </div>
 </template>
@@ -422,8 +425,14 @@ export default {
       if (sysData.status === 'OK' && sysData.data.contents instanceof Array) {
         this.systemDesignVersions = sysData.data.contents.map(_ => _)
         if (this.systemDesignVersions.length > 0) {
-          this.systemDesignVersion = this.systemDesignVersions[0].guid
-          this.selectSystemDesignVersion(this.systemDesignVersion)
+          const userName = localStorage.getItem('username')
+
+          const findVersion = this.systemDesignVersions.find(item => item.create_user === userName)
+
+          if (findVersion) {
+            this.systemDesignVersion = findVersion.guid
+            this.selectSystemDesignVersion(this.systemDesignVersion)
+          }
         }
       }
       if (packageCiType.status === 'OK') {
@@ -1002,7 +1011,12 @@ export default {
   font-size: 12px !important;
 }
 .tree-size ::v-deep .ivu-tree-empty {
-  font-size: 12px !important;
+  font-size: 18px !important;
+  text-align: center;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .tree-size {
@@ -1065,6 +1079,22 @@ export default {
   padding: 8px;
   width: 74%;
   min-width: 500px;
+}
+
+.right-zone-empty {
+  margin-left: 16px;
+  padding: 8px;
+  width: 74%;
+  min-width: 500px;
+  position: relative;
+  .empty-text {
+    font-size: 18px;
+    text-align: center;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
 }
 
 .search-item {

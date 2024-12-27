@@ -7,6 +7,8 @@
   "artifacts_attr_input_save_tips": "Please save the rule",
   "artifacts_system_design_version": "System Design Version",
   "artifacts_system_design_list": "System Design List",
+  "artifacts_please_select_system_design": "Please select system-design first",
+  "artifacts_please_select_unit": "Please select unit first",
   "artifacts_upload_new_package": "Upload New Package",
   "artifacts_script_configuration": "Script Configuration",
   "artifacts_save": "Save",
