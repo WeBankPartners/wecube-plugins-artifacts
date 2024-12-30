@@ -13,6 +13,7 @@
       <!-- 系统设计列表 -->
       <Card style="margin-top: 16px;">
         <CustomTitle :title="$t('artifacts_system_design_list')"></CustomTitle>
+        empty
         <!-- <BaseHeaderTitle class="custom-title" :title="$t('artifacts_system_design_list')"></BaseHeaderTitle> -->
         <div>
           <Tree :data="treeData" @on-select-change="selectTreeNode" :empty-text="$t('artifacts_please_select_system_design')" class="tree-size"> </Tree>
