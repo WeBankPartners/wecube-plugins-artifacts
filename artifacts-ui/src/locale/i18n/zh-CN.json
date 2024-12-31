@@ -171,5 +171,10 @@
   "art_save_now": "去保存",
   "art_discard": "放弃",
   "art_change_is_not_saved": "您的修改尚未保存，是否保存？",
-  "art_variable_type": "变量类型"
+  "art_variable_type": "变量类型",
+  "art_param_replace": "参数替换",
+  "art_param_replace_tip": "仅支持字母(开头）、数字、下划线'_'",
+  "art_replace_with": "替换为",
+  "art_add_template": "新增模版",
+  "art_edit_template": "编辑模版"
 }

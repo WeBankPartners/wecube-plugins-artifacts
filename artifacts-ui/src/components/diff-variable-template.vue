@@ -1,12 +1,27 @@
 <template>
-  <Modal v-model="flowRoleManageModal" width="720" :title="$t('role_drawer_title')" :mask-closable="false" class="platform-base-role-transfer">
-    <div v-if="flowRoleManageModal" style="min-width: 700px;">
+  <Modal v-model="flowRoleManageModal" width="800" :fullscreen="fullscreen" :mask-closable="false" class="platform-base-role-transfer">
+    <div slot="header">
+      <h6>{{ isAdd ? $t('art_add_template') : $t('art_edit_template') }}</h6>
+      <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
+      <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
+    </div>
+    <div v-if="flowRoleManageModal" class="flow-role-transfer-container" :style="{ height: fileContentHeight + 'px' }">
       <Form :label-width="100">
         <FormItem :label="$t('art_name')">
-          <Input v-model="templateParams.code" @input="templateParams.code = templateParams.code.trim()" :placeholder="$t('art_name')" maxlength="30" show-word-limit></Input>
+          <Input v-model="templateParams.code" @input="templateParams.code = templateParams.code.trim()" :placeholder="$t('art_name')" maxlength="30" show-word-limit style="width: 96%"></Input>
         </FormItem>
         <FormItem label="" style="display: none;">
           <Input v-model="templateParams.value" type="textarea"></Input>
+        </FormItem>
+        <FormItem v-if="isAdd" :label="$t('art_param_replace')">
+          <Row v-for="(item, index) in customParamsName" :key="index">
+            <Col span="9">{{ item.key }}</Col>
+            <Col span="4">{{ $t('art_replace_with') }}</Col>
+            <Col span="11">
+              <span style="color:red">*</span>
+              <Input v-model="item.newParam" :placeholder="$t('art_param_replace_tip')" :disabled="item.type === 'default'" style="width: 90%;" maxlength="30" show-word-limit></Input>
+            </Col>
+          </Row>
         </FormItem>
       </Form>
       <div class="content">
@@ -36,10 +51,12 @@ export default {
   },
   data () {
     return {
+      fileContentHeight: window.screen.availHeight * 0.4 + 140,
+      fullscreen: false,
       isAdd: false,
       flowRoleManageModal: false, // 权限弹窗控制
       transferTitles: [this.$t('unselected_role'), this.$t('selected_role')],
-      transferStyle: { width: '300px' },
+      transferStyle: { width: '300px', height: '300px' },
       allRoles: [],
       currentUserRoles: [],
       mgmtRolesKeyToFlow: [], // 管理角色
@@ -54,7 +71,9 @@ export default {
           USE: []
         }
       },
-      key: '' // 当前编辑行的属性名
+      key: '', // 当前编辑行的属性名
+      customParamsName: [], // 缓存格式化出的参数，供用户替换
+      diffVariable: ''
     }
   },
   computed: {
@@ -66,6 +85,14 @@ export default {
     }
   },
   methods: {
+    zoomModalMax () {
+      this.fileContentHeight = window.screen.availHeight - 260
+      this.fullscreen = true
+    },
+    zoomModalMin () {
+      this.fileContentHeight = window.screen.availHeight * 0.4 + 100
+      this.fullscreen = false
+    },
     renderRoleNameForTransfer (item) {
       return item.label
     },
@@ -86,7 +113,8 @@ export default {
       let params = null
       if (this.isAdd) {
         method = saveTemplate
-        this.templateParams.value = this.valueMgmt(this.templateParams.value)
+        if (!this.paramsReplace()) return
+        this.templateParams.value = this.diffVariable
         params = [this.templateParams]
       } else {
         method = updateTemplate
@@ -126,6 +154,7 @@ export default {
     // 启动入口
     async startAuth (mgmtRolesKeyToFlow, useRolesKeyToFlow, diffExpr, key) {
       this.isAdd = true
+      this.fullscreen = false
       this.templateParams.value = diffExpr
       this.key = key
       this.templateParams.code = ''
@@ -133,10 +162,32 @@ export default {
       this.useRolesKeyToFlow = useRolesKeyToFlow
       await this.getRoleList()
       await this.getCurrentUserRoles()
+      this.valueMgmt(this.templateParams.value)
       this.flowRoleManageModal = true
+    },
+    paramsReplace () {
+      const paramsValidate = this.customParamsName.every(item => {
+        return /^[a-zA-Z][a-zA-Z0-9_]{0,28}[a-zA-Z0-9]$/.test(item.newParam.trim())
+      })
+      if (!paramsValidate) {
+        this.$Notice.error({
+          title: 'Error',
+          desc: `${this.$t('art_param_replace')} ${this.$t('art_param_replace_tip')}`
+        })
+        return false
+      }
+      this.customParamsName.forEach(item => {
+        if (item.type === 'default') {
+          this.diffVariable = this.diffVariable.replace(item.defaultParam, `!&${item.newParam}!&`)
+        } else if (item.type === 'custom') {
+          this.diffVariable = this.diffVariable.replace(item.defaultParam, `$^${item.newParam}$^`)
+        }
+      })
+      return true
     },
     // 属性规则转换成模版
     valueMgmt (diffExpr) {
+      this.customParamsName = []
       let input = diffExpr
       // const input = `[{"type":"rule","value":"[{\\"ciTypeId\\":\\"app_instance\\",\\"filters\\":[{\\"name\\":\\"create_user\\",\\"operator\\":\\"eq\\",\\"type\\":\\"value\\",\\"value\\":\\"test\\"},{\\"name\\":\\"code\\",\\"operator\\":\\"eq\\",\\"type\\":\\"autoFill\\",\\"value\\":\\"[{\\\\\\"type\\\\\\":\\\\\\"rule\\\\\\",\\\\\\"value\\\\\\":\\\\\\"[{\\\\\\\\\\\\\\"ciTypeId\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"app_instance\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"filters\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"asset_id\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"operator\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"eq\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"123\\\\\\\\\\\\\\"}]},{\\\\\\\\\\\\\\"ciTypeId\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"app_instance\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"parentRs\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\"attrId\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"app_instance__create_user\\\\\\\\\\\\\\",\\\\\\\\\\\\\\"isReferedFromParent\\\\\\\\\\\\\\":1}}]\\\\\\"}]\\"}]},{\\"ciTypeId\\":\\"app_instance\\",\\"parentRs\\":{\\"attrId\\":\\"app_instance__port\\",\\"isReferedFromParent\\":1}}]"}]`
       // 将表达式转成json
@@ -145,21 +196,36 @@ export default {
       const res = this.extractValueByType(result)
       // 在表达式中找出以"+value值开始，以"结束的字符串，中间可能包含多个转义符(\)
       res.forEach((r, rIndex) => {
-        const pattern = new RegExp(`"${r}(?:\\\\)*?"`) // 动态创建正则表达式
+        const pattern = new RegExp(`"${r.value}(?:\\\\)*?"`) // 动态创建正则表达式
         const matches = input.match(pattern)
         if (!matches) {
           return
         }
         const matchStr = matches[0]
         let replaceStr = ''
+        let defaultParam = 'defaultParam'
         if (matchStr.startsWith(`"${this.key}`)) {
           replaceStr = matchStr.replace(this.key, `!&defaultParam!&`)
+          this.customParamsName.push({
+            type: 'default',
+            key: res[rIndex].value,
+            defaultParam: `!&${defaultParam}!&`,
+            newParam: defaultParam
+          })
         } else {
-          replaceStr = matchStr.replace(res[rIndex], `$^${'params_' + rIndex}$^`)
+          defaultParam = r.name
+          replaceStr = matchStr.replace(res[rIndex].value, `$^${defaultParam}$^`)
+          this.customParamsName.push({
+            type: 'custom',
+            key: res[rIndex].value,
+            defaultParam: `$^${defaultParam}$^`,
+            newParam: defaultParam
+          })
         }
         // 替换表达式中的目标字符串
         input = input.replace(matchStr, replaceStr)
       })
+      this.diffVariable = input
       return input
     },
 
@@ -170,7 +236,10 @@ export default {
           node.forEach(traverse) // 遍历数组中的每个元素
         } else if (node && typeof node === 'object') {
           if (node.type === targetType && node.hasOwnProperty('value')) {
-            result.push(node.value) // 提取匹配的 value 值
+            result.push({
+              name: node.name,
+              value: node.value
+            }) // 提取匹配的 value 值
           }
           // 遍历对象中的所有属性
           Object.values(node).forEach(traverse)
@@ -250,6 +319,7 @@ export default {
     },
     async editAuth (row) {
       this.isAdd = false
+      this.fullscreen = false
       this.templateParams = JSON.parse(JSON.stringify(row))
       this.mgmtRolesKeyToFlow = row.roles.filter(r => r.permission === 'MGMT').map(r => r.role)
       this.useRolesKeyToFlow = row.roles.filter(r => r.permission === 'USE').map(r => r.role)
@@ -268,5 +338,14 @@ export default {
     flex-direction: column;
     align-items: center;
   }
+}
+.flow-role-transfer-container {
+  min-width: 700px;
+  overflow-y: auto;
+}
+.header-icon {
+  float: right;
+  font-size: 16px;
+  margin: -25px 20px 0 0 !important;
 }
 </style>

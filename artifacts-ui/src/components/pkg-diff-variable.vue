@@ -133,7 +133,7 @@
 
     <Modal :mask-closable="false" v-model="isShowCiConfigModal" :destroy-on-close="true" :width="700" :title="$t('artifacts_property_value_fill_rule')">
       <div style="max-height: 500px;overflow-y: auto;">
-        <Form :label-width="100">
+        <Form :label-width="160">
           <FormItem :label="$t('art_value_rule')">
             <div style="color:gray">
               <ArtifactsAutoFill :allCiTypes="ciTypes" :specialDelimiters="specialDelimiters" rootCiTypeId="" :isReadOnly="true" v-model="useTemplateSelectRow.value" cmdbPackageName="wecmdb" />
