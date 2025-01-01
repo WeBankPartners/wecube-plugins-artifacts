@@ -11,19 +11,6 @@ from talos.core.i18n import _
 from talos.core import exceptions as core_ex
 
 
-class BatchPartialError(core_ex.Error):
-    """批量数据操作异常"""
-    code = 400
-
-    @property
-    def title(self):
-        return _('Batch Operation Partial Error')
-
-    @property
-    def message_format(self):
-        return _('Fail to %(action)s [%(num)s] record, detail error in the data block')
-
-
 class PluginError(core_ex.Error):
     """基础异常"""
     code = 200
@@ -81,3 +68,31 @@ class NotFoundError(PluginError):
     """查找系统间数据异常"""
     code = 200
     error_code = 40004
+
+
+class BatchPartialError(PluginError):
+    """批量数据操作异常"""
+    code = 200
+    error_code = 40005
+
+    @property
+    def title(self):
+        return _('Batch Operation Partial Error')
+
+    @property
+    def message_format(self):
+        return _('fail to %(action)s [%(num)s] record, detail error in the data block')
+
+
+class ConflictError(PluginError):
+    """约束冲突错误异常"""
+    code = 200
+    error_code = 40009
+
+    @property
+    def title(self):
+        return _('Conflict')
+
+    @property
+    def message_format(self):
+        return _('object[%(oid)s] is used by %(name)s')
