@@ -173,8 +173,10 @@
   "art_change_is_not_saved": "Your changes have not been saved yet",
   "art_variable_type": "Variable Type",
   "art_param_replace": "Param Replace",
+  "art_replace_value": "Replace Value",
   "art_param_replace_tip": "Only English (at the beginning), numbers, and underscores '_' are supported",
   "art_replace_with": "Replace With",
   "art_add_template": "Add Template",
-  "art_edit_template": "Edit Template"
+  "art_edit_template": "Edit Template",
+  "art_cannot_be_repeated": " cannot be repeated"
 }

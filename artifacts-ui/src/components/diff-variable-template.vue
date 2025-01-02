@@ -14,7 +14,7 @@
           <Input v-model="templateParams.value" type="textarea"></Input>
         </FormItem>
         <FormItem v-if="isAdd" :label="$t('art_param_replace')">
-          <Row v-for="(item, index) in customParamsName" :key="index">
+          <Row v-for="(item, index) in customParamsName" :key="index" style="margin-bottom: 4px;">
             <Col span="9">{{ item.key }}</Col>
             <Col span="4">{{ $t('art_replace_with') }}</Col>
             <Col span="11">
@@ -86,7 +86,7 @@ export default {
   },
   methods: {
     zoomModalMax () {
-      this.fileContentHeight = window.screen.availHeight - 260
+      this.fileContentHeight = window.screen.availHeight - 290
       this.fullscreen = true
     },
     zoomModalMin () {
@@ -151,7 +151,7 @@ export default {
         }))
       }
     },
-    // 启动入口
+    // 新增入口
     async startAuth (mgmtRolesKeyToFlow, useRolesKeyToFlow, diffExpr, key) {
       this.isAdd = true
       this.fullscreen = false
@@ -165,6 +165,18 @@ export default {
       this.valueMgmt(this.templateParams.value)
       this.flowRoleManageModal = true
     },
+    // 检测替换名是否相同
+    hasDuplicateValue (array, key) {
+      const seen = new Set()
+      for (const item of array) {
+        if (seen.has(item[key])) {
+          return true // 找到重复值
+        }
+        seen.add(item[key])
+      }
+      return false // 没有重复值
+    },
+    // 将默认的参数替换成用户自定义的参数
     paramsReplace () {
       const paramsValidate = this.customParamsName.every(item => {
         return /^[a-zA-Z][a-zA-Z0-9_]{0,28}[a-zA-Z0-9]$/.test(item.newParam.trim())
@@ -172,7 +184,16 @@ export default {
       if (!paramsValidate) {
         this.$Notice.error({
           title: 'Error',
-          desc: `${this.$t('art_param_replace')} ${this.$t('art_param_replace_tip')}`
+          desc: `${this.$t('art_replace_value')} ${this.$t('art_param_replace_tip')}`
+        })
+        return false
+      }
+
+      const hasDuplicateValue = this.hasDuplicateValue(this.customParamsName, 'newParam')
+      if (hasDuplicateValue) {
+        this.$Notice.error({
+          title: 'Error',
+          desc: `${this.$t('art_replace_value')} ${this.$t('art_cannot_be_repeated')}`
         })
         return false
       }
@@ -317,6 +338,7 @@ export default {
       }
       return input
     },
+    // 编辑入口
     async editAuth (row) {
       this.isAdd = false
       this.fullscreen = false

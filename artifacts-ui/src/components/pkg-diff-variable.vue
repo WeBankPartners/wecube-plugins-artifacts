@@ -139,7 +139,7 @@
               <ArtifactsAutoFill :allCiTypes="ciTypes" :specialDelimiters="specialDelimiters" rootCiTypeId="" :isReadOnly="true" v-model="useTemplateSelectRow.value" cmdbPackageName="wecmdb" />
             </div>
           </FormItem>
-          <FormItem v-for="input in customInputs" :key="input.key">
+          <FormItem v-for="input in customInputs" :key="input.key" style="margin-bottom: 0;">
             <template slot="label">
               <span style="color: red;">*</span>
               {{ input.key }}
@@ -493,7 +493,7 @@ export default {
         },
         {
           title: this.$t('artifacts_update_time'),
-          width: 160,
+          width: 170,
           key: 'create_time',
           render: (h, params) => {
             return <div>{params.row.update_time || params.row.create_time}</div>
