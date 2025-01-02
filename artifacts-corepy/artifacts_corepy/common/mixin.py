@@ -61,7 +61,8 @@ class CollectionController(BaseCollectionController):
             try:
                 rets.append(self.create(req, data, **kwargs))
             except base_ex.Error as e:
-                ex_rets.append({'index': idx + 1, 'message': str(e)})
+                # 添加 errorMessage，使其匹配前端错误解析协议
+                ex_rets.append({'index': idx + 1, 'message': str(e), 'errorMessage': str(e)})
         if len(ex_rets):
             raise exceptions.BatchPartialError(num=len(ex_rets), action='create', exception_data={'data': ex_rets})
         resp.json = {'code': 200, 'status': 'OK', 'data': rets, 'message': 'success'}
