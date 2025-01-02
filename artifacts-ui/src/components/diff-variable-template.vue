@@ -7,21 +7,26 @@
     </div>
     <div v-if="flowRoleManageModal" class="flow-role-transfer-container" :style="{ height: fileContentHeight + 'px' }">
       <Form :label-width="100">
-        <FormItem :label="$t('art_name')">
+        <FormItem :label="$t('art_name')" style="margin-bottom: 0;">
           <Input v-model="templateParams.code" @input="templateParams.code = templateParams.code.trim()" :placeholder="$t('art_name')" maxlength="30" show-word-limit style="width: 96%"></Input>
         </FormItem>
         <FormItem label="" style="display: none;">
           <Input v-model="templateParams.value" type="textarea"></Input>
         </FormItem>
-        <FormItem v-if="isAdd" :label="$t('art_param_replace')">
-          <Row v-for="(item, index) in customParamsName" :key="index" style="margin-bottom: 4px;">
-            <Col span="9">{{ item.key }}</Col>
-            <Col span="4">{{ $t('art_replace_with') }}</Col>
-            <Col span="11">
-              <span style="color:red">*</span>
-              <Input v-model="item.newParam" :placeholder="$t('art_param_replace_tip')" :disabled="item.type === 'default'" style="width: 90%;" maxlength="30" show-word-limit></Input>
-            </Col>
-          </Row>
+        <FormItem v-if="isAdd" :label="$t('art_param_replace')" style="margin-bottom: 0;">
+          <template v-if="customParamsName.length > 0">
+            <Row v-for="(item, index) in customParamsName" :key="index" style="margin-bottom: 4px;">
+              <Col span="9">{{ item.key }}</Col>
+              <Col span="4">{{ $t('art_replace_with') }}</Col>
+              <Col span="11">
+                <span style="color:red">*</span>
+                <Input v-model="item.newParam" :placeholder="$t('art_param_replace_tip')" :disabled="item.type === 'default'" style="width: 90%;" maxlength="30" show-word-limit></Input>
+              </Col>
+            </Row>
+          </template>
+          <template v-else>
+            <span>-</span>
+          </template>
         </FormItem>
       </Form>
       <div class="content">
