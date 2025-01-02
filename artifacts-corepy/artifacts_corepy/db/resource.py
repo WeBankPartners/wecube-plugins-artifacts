@@ -8,6 +8,7 @@ from talos.utils import scoped_globals
 
 from artifacts_corepy.db import validator as my_validator
 from artifacts_corepy.db import models
+from artifacts_corepy.common import exceptions
 
 
 class MetaCRUD(crud.ResourceBase):
@@ -49,6 +50,7 @@ class DiffConfTemplate(MetaCRUD):
         crud.ColumnValidator(field='code',
                              rule=my_validator.LengthValidator(1, 36),
                              validate_on=('create:M', 'update:M'),
+                             # error_msg='%(result)s exist error, please check',
                              nullable=False),
         crud.ColumnValidator(field='value',
                              rule=my_validator.LengthValidator(1, 40960),
@@ -65,6 +67,14 @@ class DiffConfTemplate(MetaCRUD):
                              orm_required=False),
     ]
 
+    def _before_create(self, resource, validate):
+        if 'id' not in resource and self._id_prefix:
+            resource['id'] = utils.generate_prefix_uuid(self._id_prefix)
+        resource['create_user'] = scoped_globals.GLOBALS.request.auth_user or None
+
+        # 单独校验 code，返回人性化报错信息
+        if self.list({'code': resource['code']}):
+            raise exceptions.ValidationError('code: %s exist error, please check' % resource['code'])
 
 class DiffConfTemplateRole(crud.ResourceBase):
     orm_meta = models.DiffConfTemplateRole

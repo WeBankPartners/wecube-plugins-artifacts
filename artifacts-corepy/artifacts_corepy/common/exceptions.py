@@ -73,7 +73,8 @@ class NotFoundError(PluginError):
 class BatchPartialError(PluginError):
     """批量数据操作异常"""
     code = 200
-    error_code = 40005
+    # 统一走cmdb接口规范，code统一返回200
+    error_code = code
 
     @property
     def title(self):
@@ -87,7 +88,9 @@ class BatchPartialError(PluginError):
 class ConflictError(PluginError):
     """约束冲突错误异常"""
     code = 200
-    error_code = 40009
+    # error_code = 40009
+    # 统一走cmdb接口规范，code统一返回200
+    error_code = code
 
     @property
     def title(self):
