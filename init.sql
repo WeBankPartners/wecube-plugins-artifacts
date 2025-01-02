@@ -50,8 +50,6 @@ alter table diff_conf_template add unique (code);
 #@v1.2.1.10-end@;
 
 
-#@v1.2.1.11-begin@;
-alter table diff_conf_template modify column create_time datetime default current_timestamp;
-alter table diff_conf_template modify column update_time datetime default current_timestamp on update current_timestamp;
-#@v1.2.1.11-end@;
+-- alter table diff_conf_template modify column create_time datetime default current_timestamp;
+-- alter table diff_conf_template modify column update_time datetime default current_timestamp on update current_timestamp;
 
