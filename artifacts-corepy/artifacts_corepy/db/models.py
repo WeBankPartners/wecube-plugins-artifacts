@@ -29,7 +29,7 @@ class DiffConfTemplate(Base, DictBase):
     create_user = Column(String(36))
     create_time = Column(DateTime, default=func.now())
     update_user = Column(String(36))
-    update_time = Column(DateTime, onupdate=func.now())
+    update_time = Column(DateTime, default=func.now(), onupdate=func.now())
     # is_deleted = Column(TINYINT, nullable=False, default=0, comment='软删除:0,1')
 
     roles = relationship("DiffConfTemplateRole", back_populates="diff_conf_template")
