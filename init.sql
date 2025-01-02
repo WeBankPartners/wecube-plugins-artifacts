@@ -49,3 +49,7 @@ alter table diff_conf_template drop column is_deleted;
 alter table diff_conf_template add unique (code);
 #@v1.2.1.10-end@;
 
+
+-- alter table diff_conf_template modify column create_time datetime default current_timestamp;
+-- alter table diff_conf_template modify column update_time datetime default current_timestamp on update current_timestamp;
+
