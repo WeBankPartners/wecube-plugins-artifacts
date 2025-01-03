@@ -181,5 +181,7 @@
   "art_cannot_be_repeated": " cannot be repeated",
   "art_template_parameter": "Template Parameter",
   "art_parameter_name": "Parameter Name",
-  "art_parameter_value": "Parameter Value"
+  "art_parameter_value": "Parameter Value",
+  "art_parameter": "Parameter",
+  "art_constant": "Constant"
 }

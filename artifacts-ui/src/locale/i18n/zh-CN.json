@@ -181,5 +181,7 @@
   "art_cannot_be_repeated": "不能重复",
   "art_template_parameter": "模版参数",
   "art_parameter_name": "参数名",
-  "art_parameter_value": "参数值(参考值，可替换)"
+  "art_parameter_value": "参数值(参考值，可替换)",
+  "art_parameter": "参数",
+  "art_constant": "常量"
 }

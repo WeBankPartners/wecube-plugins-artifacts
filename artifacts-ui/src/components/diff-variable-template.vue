@@ -1,38 +1,47 @@
 <template>
-  <Modal v-model="flowRoleManageModal" width="800" :fullscreen="fullscreen" :mask-closable="false" class="platform-base-role-transfer">
+  <Modal v-model="flowRoleManageModal" width="1000" :fullscreen="fullscreen" :mask-closable="false" class="platform-base-role-transfer">
     <div slot="header" style="display: flex;align-items: center;justify-content: space-between;">
       <h6>{{ isAdd ? $t('art_add_template') : $t('art_edit_template') }}</h6>
-      <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
-      <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
+      <!-- <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
+      <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" /> -->
     </div>
     <div v-if="flowRoleManageModal" class="flow-role-transfer-container" :style="{ height: fileContentHeight + 'px' }">
-      <Form :label-width="100">
+      <Form :label-width="90">
         <FormItem :label="$t('art_name')" style="margin-bottom: 0;">
           <Input v-model="templateParams.code" @input="templateParams.code = templateParams.code.trim()" :placeholder="$t('art_name')" maxlength="30" show-word-limit style="width: 96%"></Input>
         </FormItem>
         <FormItem label="" style="display: none;">
           <Input v-model="templateParams.value" type="textarea"></Input>
         </FormItem>
-        <FormItem v-if="isAdd" style="margin-bottom: 0;">
-          <template v-if="customParamsName.length > 0">
-            <Row>
-              <Col span="4">{{ $t('art_template_parameter') }}</Col>
-              <Col span="11">{{ $t('art_parameter_name') }}</Col>
-              <Col span="9">{{ $t('art_parameter_value') }}</Col>
-            </Row>
-            <Row v-for="(item, index) in customParamsName" :key="index" style="margin-bottom: 4px;">
-              <Col span="4">
-                <Checkbox v-model="item.isReplace" @on-change="item.newParam = item.newParamOrigin"></Checkbox>
-              </Col>
-              <Col span="11">
-                <span style="color:red">*</span>
-                <Input v-model="item.newParam" :placeholder="$t('art_param_replace_tip')" :disabled="item.type === 'default' || !item.isReplace" style="width: 90%;" maxlength="30" show-word-limit></Input>
-              </Col>
-              <Col span="9">{{ item.key }}</Col>
-            </Row>
-          </template>
-        </FormItem>
       </Form>
+      <div v-if="isAdd" style="margin-bottom: 0;margin: 0 50px;">
+        <template v-if="customParamsName.length > 0">
+          <div>
+            <div style="width: 100px;display: inline-block;">{{ $t('art_template_parameter') }}</div>
+            <div style="width: 320px;display: inline-block;">{{ $t('art_parameter_name') }}</div>
+            <div style="width: 380px;margin-left: 40px;display: inline-block;">{{ $t('art_parameter_value') }}</div>
+          </div>
+          <div v-for="(item, index) in customParamsName" :key="index" style="margin-bottom: 4px;">
+            <div style="width: 100px;display: inline-block;">
+              <Checkbox v-model="item.isReplace" @on-change="item.newParam = item.newParamOrigin">
+                {{ item.isReplace ? $t('art_parameter') : $t('art_constant') }}
+              </Checkbox>
+            </div>
+            <div style="width: 320px;display: inline-block;">
+              <span style="color:red">*</span>
+              <Input v-model="item.newParam" :placeholder="$t('art_param_replace_tip')" :disabled="item.type === 'default' || !item.isReplace" style="width: 90%;" maxlength="30" show-word-limit></Input>
+            </div>
+            <Tooltip>
+              <div slot="content" style="white-space: normal;word-break: break-all;">
+                {{ item.key }}
+              </div>
+              <div style="width: 380px;margin-left: 40px;display: inline-block;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">
+                {{ item.key }}
+              </div>
+            </Tooltip>
+          </div>
+        </template>
+      </div>
       <div class="content">
         <div>
           <div class="role-transfer-title">{{ $t('mgmt_role') }}</div>
@@ -65,7 +74,7 @@ export default {
       isAdd: false,
       flowRoleManageModal: false, // 权限弹窗控制
       transferTitles: [this.$t('unselected_role'), this.$t('selected_role')],
-      transferStyle: { width: '300px', height: '300px' },
+      transferStyle: { width: '400px', height: '300px' },
       allRoles: [],
       currentUserRoles: [],
       mgmtRolesKeyToFlow: [], // 管理角色
@@ -195,7 +204,7 @@ export default {
       if (!paramsValidate) {
         this.$Notice.error({
           title: 'Error',
-          desc: `${this.$t('art_replace_value')} ${this.$t('art_param_replace_tip')}`
+          desc: `${this.$t('art_parameter_name')} ${this.$t('art_param_replace_tip')}`
         })
         return false
       }
@@ -204,7 +213,7 @@ export default {
       if (hasDuplicateValue) {
         this.$Notice.error({
           title: 'Error',
-          desc: `${this.$t('art_replace_value')} ${this.$t('art_cannot_be_repeated')}`
+          desc: `${this.$t('art_parameter_name')} ${this.$t('art_cannot_be_repeated')}`
         })
         return false
       }

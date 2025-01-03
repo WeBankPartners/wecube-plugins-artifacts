@@ -133,17 +133,17 @@
 
     <Modal :mask-closable="false" v-model="isShowCiConfigModal" :destroy-on-close="true" :width="700" :title="$t('artifacts_property_value_fill_rule')">
       <div style="max-height: 500px;overflow-y: auto;">
-        <Form :label-width="160">
+        <Form :label-width="120">
           <FormItem :label="$t('art_value_rule')">
             <div style="color:gray">
               <ArtifactsAutoFill :allCiTypes="ciTypes" :specialDelimiters="specialDelimiters" rootCiTypeId="" :isReadOnly="true" v-model="useTemplateSelectRow.value" cmdbPackageName="wecmdb" />
             </div>
           </FormItem>
           <FormItem v-for="input in customInputs" :key="input.key" style="margin-bottom: 0;">
-            <template slot="label">
+            <div slot="label" style="width: 120px;padding-right:8px;word-break: break-all;">
               <span style="color: red;">*</span>
               {{ input.key }}
-            </template>
+            </div>
             <Input type="text" v-model="input.value" />
           </FormItem>
         </Form>
