@@ -13,19 +13,23 @@
         <FormItem label="" style="display: none;">
           <Input v-model="templateParams.value" type="textarea"></Input>
         </FormItem>
-        <FormItem v-if="isAdd" :label="$t('art_param_replace')" style="margin-bottom: 0;">
+        <FormItem v-if="isAdd" style="margin-bottom: 0;">
           <template v-if="customParamsName.length > 0">
+            <Row>
+              <Col span="4">{{ $t('art_template_parameter') }}</Col>
+              <Col span="11">{{ $t('art_parameter_name') }}</Col>
+              <Col span="9">{{ $t('art_parameter_value') }}</Col>
+            </Row>
             <Row v-for="(item, index) in customParamsName" :key="index" style="margin-bottom: 4px;">
-              <Col span="9">{{ item.key }}</Col>
-              <Col span="4">{{ $t('art_replace_with') }}</Col>
+              <Col span="4">
+                <Checkbox v-model="item.isReplace" @on-change="item.newParam = item.newParamOrigin"></Checkbox>
+              </Col>
               <Col span="11">
                 <span style="color:red">*</span>
-                <Input v-model="item.newParam" :placeholder="$t('art_param_replace_tip')" :disabled="item.type === 'default'" style="width: 90%;" maxlength="30" show-word-limit></Input>
+                <Input v-model="item.newParam" :placeholder="$t('art_param_replace_tip')" :disabled="item.type === 'default' || !item.isReplace" style="width: 90%;" maxlength="30" show-word-limit></Input>
               </Col>
+              <Col span="9">{{ item.key }}</Col>
             </Row>
-          </template>
-          <template v-else>
-            <span>-</span>
           </template>
         </FormItem>
       </Form>
@@ -183,7 +187,9 @@ export default {
     },
     // 将默认的参数替换成用户自定义的参数
     paramsReplace () {
-      const paramsValidate = this.customParamsName.every(item => {
+      const customParamsName = this.customParamsName.filter(item => item.isReplace)
+      // 格式校验
+      const paramsValidate = customParamsName.every(item => {
         return /^[a-zA-Z][a-zA-Z0-9_]{0,28}[a-zA-Z0-9]$/.test(item.newParam.trim())
       })
       if (!paramsValidate) {
@@ -193,8 +199,8 @@ export default {
         })
         return false
       }
-
-      const hasDuplicateValue = this.hasDuplicateValue(this.customParamsName, 'newParam')
+      // 重名校验
+      const hasDuplicateValue = this.hasDuplicateValue(customParamsName, 'newParam')
       if (hasDuplicateValue) {
         this.$Notice.error({
           title: 'Error',
@@ -204,9 +210,17 @@ export default {
       }
       this.customParamsName.forEach(item => {
         if (item.type === 'default') {
-          this.diffVariable = this.diffVariable.replace(item.defaultParam, `!&${item.newParam}!&`)
+          if (item.isReplace) {
+            this.diffVariable = this.diffVariable.replace(item.defaultParam, `!&${item.newParam}!&`)
+          } else {
+            this.diffVariable = this.diffVariable.replace(`!&${item.newParam}!&`, item.key)
+          }
         } else if (item.type === 'custom') {
-          this.diffVariable = this.diffVariable.replace(item.defaultParam, `$^${item.newParam}$^`)
+          if (item.isReplace) {
+            this.diffVariable = this.diffVariable.replace(item.defaultParam, `$^${item.newParam}$^`)
+          } else {
+            this.diffVariable = this.diffVariable.replace(`$^${item.newParamOrigin}$^`, item.key)
+          }
         }
       })
       return true
@@ -233,19 +247,23 @@ export default {
         if (matchStr.startsWith(`"${this.key}`)) {
           replaceStr = matchStr.replace(this.key, `!&defaultParam!&`)
           this.customParamsName.push({
+            isReplace: true,
             type: 'default',
             key: res[rIndex].value,
             defaultParam: `!&${defaultParam}!&`,
-            newParam: defaultParam
+            newParam: defaultParam,
+            newParamOrigin: defaultParam
           })
         } else {
           defaultParam = r.name
           replaceStr = matchStr.replace(res[rIndex].value, `$^${defaultParam}$^`)
           this.customParamsName.push({
+            isReplace: true,
             type: 'custom',
             key: res[rIndex].value,
             defaultParam: `$^${defaultParam}$^`,
-            newParam: defaultParam
+            newParam: defaultParam,
+            newParamOrigin: defaultParam
           })
         }
         // 替换表达式中的目标字符串
@@ -373,6 +391,9 @@ export default {
 .header-icon {
   float: right;
   font-size: 16px;
-  margin: -25px 20px 0 0 !important;
+  //margin: -25px 20px 0 0 !important;
+  position: relative;
+  top: -24px;
+  right: 24px;
 }
 </style>
