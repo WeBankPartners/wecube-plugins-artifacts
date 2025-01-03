@@ -1,6 +1,6 @@
 <template>
   <Modal v-model="flowRoleManageModal" width="800" :fullscreen="fullscreen" :mask-closable="false" class="platform-base-role-transfer">
-    <div slot="header">
+    <div slot="header" style="display: flex;align-items: center;justify-content: space-between;">
       <h6>{{ isAdd ? $t('art_add_template') : $t('art_edit_template') }}</h6>
       <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
       <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
@@ -389,11 +389,8 @@ export default {
   overflow-y: auto;
 }
 .header-icon {
-  float: right;
   font-size: 16px;
-  //margin: -25px 20px 0 0 !important;
-  position: relative;
-  top: -24px;
-  right: 24px;
+  margin-right: 24px;
+  margin-bottom: 4px;
 }
 </style>
