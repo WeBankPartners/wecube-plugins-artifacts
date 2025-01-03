@@ -29,13 +29,13 @@
             </div>
             <div style="width: 320px;display: inline-block;">
               <span style="color:red">*</span>
-              <Input v-model="item.newParam" :placeholder="$t('art_param_replace_tip')" :disabled="item.type === 'default' || !item.isReplace" style="width: 90%;" maxlength="30" show-word-limit></Input>
+              <Input v-model="item.newParam" :placeholder="$t('art_param_replace_tip')" :disabled="!item.isReplace" style="width: 90%;" maxlength="30" show-word-limit></Input>
             </div>
             <Tooltip>
               <div slot="content" style="white-space: normal;word-break: break-all;">
                 {{ item.key }}
               </div>
-              <div style="width: 380px;margin-left: 40px;display: inline-block;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">
+              <div :style="item.type === 'default' ? 'font-weight: 600;' : ''" style="width: 380px;margin-left: 40px;display: inline-block;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;vertical-align: middle;">
                 {{ item.key }}
               </div>
             </Tooltip>
