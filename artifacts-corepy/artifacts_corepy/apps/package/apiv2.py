@@ -335,9 +335,64 @@ class CiTypes(WeCubeResource):
     def batch_delete(self, data, ci_type_id):
         cmdb_client = self.get_cmdb_client()
         data = [{'guid': item} for item in data]
+        refs = []
+        subsys_cmdb_client = None
+        if ci_type_id == CONF.wecube.wecmdb.citypes.deploy_package:
+            wecube_client = wecube.WeCubeClient(CONF.wecube.server, "")
+            wecube_client.login_subsystem()
+            subsys_cmdb_client = wecmdb.WeCMDBClient(CONF.wecube.server, wecube_client.token)
+            refs = self._list_deploy_package_by_ids(subsys_cmdb_client,  [item['guid'] for item in data])
         result = cmdb_client.delete(ci_type_id, data)
+        if ci_type_id == CONF.wecube.wecmdb.citypes.deploy_package:
+            # deploy package should delete nexus package file && confirm
+            nexus_client = None
+            if utils.bool_from_string(CONF.use_remote_nexus_only):
+                nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
+                                                    CONF.wecube.nexus.password)
+            else:
+                nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
+            to_confirm_ids = []
+            for ref in refs:
+                self._cleanup_nexus_package(nexus_client, ref.get("deploy_package_url", ""))
+                if ref['state'] != 'added_0':
+                    to_confirm_ids.append(ref['guid'])
+            if len(to_confirm_ids)>0:
+                subsys_cmdb_client.confirm(ci_type_id,
+                                            [{'guid': item} for item in to_confirm_ids])
         return result['data']
 
+    def _cleanup_nexus_package(self, nexus_client, deploy_package_url):
+        if deploy_package_url.startswith(CONF.wecube.server):
+            parsed_result = UnitDesignPackages().download_url_parse(deploy_package_url)
+            # delete nexus package
+            component_group = parsed_result['group']
+            component_name = parsed_result['group'].rstrip('/') + '/' + parsed_result['filename'].lstrip('/')
+            asset_info = nexus_client.get_asset(parsed_result['repository'], component_group,
+                                                    component_name)
+            if asset_info:
+                asset_id = asset_info["id"]
+                nexus_client.delete_assets(parsed_result['repository'],
+                                        '/service/rest/v1/assets/' + asset_id)
+                LOG.info('delete package[%s-%s] from local nexus: %s', asset_info["id"], parsed_result['filename'], deploy_package_url)
+            else:
+                LOG.warn('delete package from local nexus: %s failed, asset not found', deploy_package_url)
+            return True
+        return False
+
+    def _list_deploy_package_by_ids(self, cmdb_client, deploy_package_ids):
+        query = {
+            "dialect": {
+                "queryMode": "new"
+            },
+            "filters": [{
+                "name": "guid",
+                "operator": "in",
+                "value": deploy_package_ids
+            }],
+            "paging": False
+        }
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+        return resp_json['data']['contents']
 
 class EnumCodes(WeCubeResource):
     def get(self, cat_id):
