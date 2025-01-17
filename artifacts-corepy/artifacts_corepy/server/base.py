@@ -14,6 +14,7 @@ from Crypto import Random
 from Crypto.Cipher import PKCS1_v1_5 as Cipher_pkcs1_v1_5
 from Crypto.PublicKey import RSA
 from talos.core import config
+from urllib.parse import quote_plus
 
 from artifacts_corepy.common import utils as plugin_utils
 
@@ -28,7 +29,8 @@ def decrypt_rsa(secret_key, encrypt_text):
     return text.decode('utf-8')
 
 
-@config.intercept('upload_enabled', 'upload_nexus_enabled', 'ci_typeid_system_design', 'ci_typeid_unit_design',
+@config.intercept('db_username', 'db_hostip', 'db_hostport', 'db_schema',
+                  'upload_enabled', 'upload_nexus_enabled', 'ci_typeid_system_design', 'ci_typeid_unit_design',
                   'ci_typeid_diff_config', 'ci_typeid_deploy_package', 'encrypt_variable_prefix',
                   'file_variable_prefix', 'default_special_replace', 'artifact_field', 's3_access_key', 's3_secret_key',
                   'nexus_server', 'nexus_repository', 'nexus_username', 'nexus_password', 'local_nexus_server',
@@ -36,10 +38,10 @@ def decrypt_rsa(secret_key, encrypt_text):
                   'diff_conf_extension', 'variable_expression', 'jwt_signing_key', 'use_remote_nexus_only',
                   'nexus_sort_as_string', 'local_nexus_connector_port', 'nexus_connector_port', 'platform_timezone',
                   'system_design_view', 'sub_system_code', 'sub_system_key', 'cleanup_corn', 'cleanup_keep_topn',
-                  'cleanup_keep_unit_field', 'delete_op', 'log_level','ci_typeid_app_root_ci', 'ci_typeid_db_root_ci',
-                  'ci_typeid_app_template_ci', 'ci_typeid_db_template_ci', 'push_nexus_server',
-                  'push_nexus_repository', 'push_nexus_username', 'push_nexus_password', 's3_server_url',
-                  'db_script_extension', 'global_variable_prefix', 'cache_cleanup_interval_min')
+                  'cleanup_keep_unit_field', 'delete_op', 'log_level', 'ci_typeid_app_root_ci', 'ci_typeid_db_root_ci',
+                  'ci_typeid_app_template_ci', 'ci_typeid_db_template_ci', 'push_nexus_server', 'push_nexus_repository',
+                  'push_nexus_username', 'push_nexus_password', 'app_filter_expression', 'db_filter_expression',
+                  's3_server_url', 'db_script_extension', 'global_variable_prefix', 'cache_cleanup_interval_min')
 def get_env_value(value, origin_value):
     prefix = 'ENV@'
     encrypt_prefix = 'RSA@'
@@ -54,4 +56,24 @@ def get_env_value(value, origin_value):
             else:
                 raise ValueError('keys with "RSA@", but rsa_key file not exists')
         return new_value
+    return value
+
+
+@config.intercept('db_password')
+def get_env_value(value, origin_value):
+    prefix = 'ENV@'
+    encrypt_prefix = 'RSA@'
+    if value.startswith(prefix):
+        env_name = value[len(prefix):]
+        new_value = os.getenv(env_name, default='')
+        if new_value.startswith(encrypt_prefix):
+            certs_path = RSA_KEY_PATH
+            if os.path.exists(certs_path) and os.path.isfile(certs_path):
+                with open(certs_path) as f:
+                    new_value = decrypt_rsa(f.read(), new_value[len(encrypt_prefix):])
+            else:
+                raise ValueError('keys with "RSA@", but rsa_key file not exists')
+        new_value = quote_plus(new_value)
+        return new_value
+    value = quote_plus(value)
     return value

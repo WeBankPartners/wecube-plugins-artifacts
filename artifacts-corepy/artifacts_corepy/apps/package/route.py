@@ -24,6 +24,7 @@ class DownloadAdapter(object):
             resp.set_header('Content-Disposition', stream.headers.get('Content-Disposition'))
             resp.set_header('Content-Type', stream.headers.get('Content-Type'))
 
+
 class EntityAdapter(object):
     def __call__(self, req, resp, package_name, entity_name, action_name):
         server = CONF.wecube.server
@@ -63,6 +64,36 @@ class EntityAdapter(object):
                 })
 
 
+class RoleAdapter(object):
+    def __call__(self, req, resp, action_name):
+        server = CONF.wecube.server
+        token = req.auth_token
+        client = wecube.WeCubeClient(server, token)
+        if action_name == 'retrieve':
+            data = client.get('/platform/v1/roles/retrieve')
+            resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
+        else:
+            raise exceptions.NotFoundError(
+                _('%(action_name)s for role not supported') % {
+                    'action_name': action_name,
+                })
+
+
+class UserAdapter(object):
+    def __call__(self, req, resp, action_name):
+        server = CONF.wecube.server
+        token = req.auth_token
+        client = wecube.WeCubeClient(server, token)
+        if action_name == 'roles':
+            data = client.get('/platform/v1/users/roles')
+            resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
+        else:
+            raise exceptions.NotFoundError(
+                _('%(action_name)s for user not supported') % {
+                    'action_name': action_name,
+                })
+
+
 def add_routes(api):
     # process
     api.add_route('/artifacts/process/definitions', controller.CollectionProcessDef())
@@ -77,6 +108,8 @@ def add_routes(api):
     api.add_route('/artifacts/ci-types', controller.CollectionCiTypes())
     api.add_route('/artifacts/enum/system/codes/{cat_id}', controller.ItemEnumCodes())
     api.add_route('/artifacts/ci-types/{ci_type_id}/operations', controller.ItemCITypeOperations())
+    api.add_route('/artifacts/app-instances/variable-values', controller.CollectionAppVariables())
+    api.add_route('/artifacts/unit-designs/app-instances', controller.CollectionUnitDesignApps())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/query', controller.CollectionUnitDesignPackages())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/statistics', controller.CollectionPackageStatistics())
     api.add_route('/artifacts/ci-types/{ci_type_id}/references/by', controller.ItemCiReferences())
@@ -87,6 +120,14 @@ def add_routes(api):
     api.add_sink(
         EntityAdapter(),
         r'/artifacts/platform/v1/packages/(?P<package_name>[-_A-Za-z0-9]+)/entities/(?P<entity_name>[-_A-Za-z0-9]+)/(?P<action_name>[-_A-Za-z0-9]+)'
+    )
+    api.add_sink(
+        RoleAdapter(),
+        r'/artifacts/platform/v1/roles/(?P<action_name>[-_A-Za-z0-9]+)'
+    )
+    api.add_sink(
+        UserAdapter(),
+        r'/artifacts/platform/v1/users/(?P<action_name>[-_A-Za-z0-9]+)'
     )
     # nexus query
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/queryNexusDirectiry',
@@ -123,13 +164,13 @@ def add_routes(api):
 
     # packages exist in remote nexus but not in cmdb
     api.add_route('/artifacts/entities/packages/query', controller.CollectionOnlyInRemoteNexusPackages())
-    
+
     # compose package
     api.add_route('/artifacts/packages/{deploy_package_id}/download',
                   controller.DownloadComposePackage())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/push',
                   controller.PushComposePackage())
-    
+
     # system config
     api.add_route('/artifacts/sysconfig',
                   controller.SystemConfig())
