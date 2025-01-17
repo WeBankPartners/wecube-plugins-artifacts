@@ -29,7 +29,7 @@
     "js-base64": "^3.7.5",
     "lodash": "^4.17.21",
     "view-design": "4.4.0",
-    "vue": "^2.6.10",
+    "vue": "^3.0.0",
     "vue-i18n": "^5.0.3",
     "vue-router": "^3.0.3",
     "wecube-common-ui": "^1.0.11"
