@@ -32,7 +32,8 @@
     "vue": "^2.6.10",
     "vue-i18n": "^5.0.3",
     "vue-router": "^3.0.3",
-    "wecube-common-ui": "^1.0.11"
+    "wecube-common-ui": "^1.0.11",
+    "less-loader": "^4.1.0"
   },
   "autor": "zhangsenfeng",
   "description": "artifacts-ui",

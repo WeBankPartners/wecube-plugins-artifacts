@@ -2,7 +2,9 @@ import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
 import ViewUI from 'view-design'
-import 'view-design/dist/styles/iview.css'
+
+import './styles/index.less'
+
 import ArtifactsSimpleTable from '../src/components/simple-table.vue'
 import ArtifactsAutoFill from '../src/components/auto-fill.js'
 import VueI18n from 'vue-i18n'

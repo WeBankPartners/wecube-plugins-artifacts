@@ -51,5 +51,13 @@ module.exports = {
     if (process.env.APP_TYPE === 'plugin') {
       config.optimization.splitChunks = {}
     }
+  },
+  css: {
+    loaderOptions: {
+      less: {
+        // 启用内联 JavaScript
+        javascriptEnabled: true
+      }
+    }
   }
 }
