@@ -34,7 +34,6 @@ export default {
     .title {
       font-size: 16px;
       font-weight: 700;
-      color: #515a6e;
       margin: 0 6px;
       .underline {
         display: block;
