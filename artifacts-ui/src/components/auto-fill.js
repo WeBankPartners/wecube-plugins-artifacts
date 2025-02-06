@@ -1,5 +1,5 @@
+import { getAllSystemEnumCodes, getCiTypeAttr, getEntitiesByCiType, getRefCiTypeFrom } from '@/api/server.js'
 import './auto-fill.scss'
-import { getRefCiTypeFrom, getCiTypeAttr, getEntitiesByCiType, getAllSystemEnumCodes } from '@/api/server.js'
 
 export default {
   name: 'AutoFill',
