@@ -50,7 +50,10 @@
       <Form :label-width="100">
         <FormItem :label="$t('art_package')">
           <Upload action="" :before-upload="handleUpload" :show-upload-list="false">
-            <Button icon="ios-cloud-upload-outline">{{ $t('artifacts_upload_new_package') }}</Button>
+            <Button class="btn-upload">
+              <img src="@/styles/icon/UploadOutlined.svg" class="upload-icon" />
+              {{ $t('artifacts_upload_new_package') }}
+            </Button>
           </Upload>
           <span style="word-wrap: break-word;">{{ localUploadParams.fileName }}</span>
         </FormItem>
@@ -75,8 +78,8 @@
 
 <script>
 // eslint-disable-next-line no-unused-vars
+import { getFilePath, queryArtifactsList, queryPackages, uploadArtifact, uploadLocalArtifact } from '@/api/server.js'
 import dayjs from 'dayjs'
-import { queryArtifactsList, queryPackages, uploadArtifact, uploadLocalArtifact, getFilePath } from '@/api/server.js'
 export default {
   name: '',
   data () {

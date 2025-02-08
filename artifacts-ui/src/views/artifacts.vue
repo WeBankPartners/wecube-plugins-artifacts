@@ -30,7 +30,10 @@
           <CustomTitle :title="customTreePath"></CustomTitle>
           <div>
             <!-- 本地上传 -->
-            <Button icon="md-cloud-upload" style="background: #28aef3;border-color: #28aef3;margin-right: 8px;" type="info" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">{{ $t('art_upload_import') }}</Button>
+            <Button style="margin-right: 8px;" class="btn-upload" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">
+              <img src="@/styles/icon/UploadOutlined.svg" class="upload-icon" />
+              {{ $t('art_upload_import') }}
+            </Button>
             <!-- 在线选择 -->
             <Button icon="ios-apps" type="success" :disabled="!btnGroupControl.upload_from_nexus_enabled" @click="pkgUpload('online')">{{ $t('art_online_selection') }}</Button>
           </div>
@@ -115,15 +118,15 @@
 </template>
 
 <script>
-import { getCiTypeAttr, getFlowLists, pushPkg, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, queryPackages, queryHistoryPackages, getCITypeOperations, sysConfig, getPkgTypeNum, getUserList } from '@/api/server.js'
-import { setCookie, getCookie } from '../util/cookie.js'
+import { deleteCiDatas, getAllCITypesWithAttr, getCiTypeAttr, getCITypeOperations, getFlowLists, getPackageCiTypeId, getPkgTypeNum, getSystemDesignVersion, getSystemDesignVersions, getUserList, operateCiState, operateCiStateWithData, pushPkg, queryHistoryPackages, queryPackages, sysConfig } from '@/api/server.js'
 import axios from 'axios'
-import DisplayPath from './display-path'
+import { debounce } from 'lodash'
 import CustomTitle from '../components/custom-title.vue'
-import PkgUpload from '../components/pkg-upload.vue'
 import PkgConfig from '../components/pkg-config.vue'
 import PkgDiffVariableConfig from '../components/pkg-diff-variable.vue'
-import { debounce } from 'lodash'
+import PkgUpload from '../components/pkg-upload.vue'
+import { getCookie, setCookie } from '../util/cookie.js'
+import DisplayPath from './display-path'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -1007,6 +1010,15 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+// .upload-icon {
+//   width: 14px;
+//   margin-bottom: 2px;
+// }
+
+// .btn-upload:hover .upload-icon {
+//   filter: brightness(0) saturate(100%) invert(50%) sepia(100%) saturate(1000%) hue-rotate(200deg);
+// }
+
 .tree-size ::v-deep .ivu-tree-title {
   font-size: 12px !important;
 }
