@@ -28,18 +28,18 @@ export default {
   display: inline-block;
 }
 .baseline-cmp-new {
-  color: #19be6b;
+  color: #00cb91;
   @extend .common-position;
 }
 .baseline-cmp-same {
   @extend .common-position;
 }
 .baseline-cmp-changed {
-  color: #2d8cf0;
+  color: #5384ff;
   @extend .common-position;
 }
 .baseline-cmp-deleted {
-  color: #ed4014;
+  color: #ff4d4f;
   @extend .common-position;
 }
 </style>

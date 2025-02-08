@@ -400,7 +400,7 @@
       <CheckboxGroup v-if="packageInput.baseline_package">
         <Button :style="toggleCheckFileTreeNew" type="dashed" size="small" @click="checkConfigFileTreeVis('new')"><span style="color: #18b566">new</span></Button>
         <Button :style="toggleCheckFileTreeSame" type="dashed" size="small" @click="checkConfigFileTreeVis('same')"><span>same</span></Button>
-        <Button :style="toggleCheckFileTreeChanged" type="dashed" size="small" @click="checkConfigFileTreeVis('changed')"><span style="color: #2d8cf0">changed</span></Button>
+        <Button :style="toggleCheckFileTreeChanged" type="dashed" size="small" @click="checkConfigFileTreeVis('changed')"><span style="color: #5384FF">changed</span></Button>
         <Button :style="toggleCheckFileTreeDeleted" type="dashed" size="small" @click="checkConfigFileTreeVis('deleted')"><span style="color: #cccccc">deleted</span></Button>
       </CheckboxGroup>
       <div style="height: 450px; overflow-y: auto">
@@ -1202,7 +1202,7 @@ export default {
             return (
               <span>
                 <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
-                <span style="color: #19be6b;">
+                <span style="color: #00CB91;">
                   {params.data.title}
                   <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                 </span>
@@ -1212,7 +1212,7 @@ export default {
             return (
               <span>
                 <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
-                <span style="color: #2d8cf0;">
+                <span style="color: #5384FF">
                   {params.data.title}
                   <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                 </span>
@@ -1254,7 +1254,7 @@ export default {
               return (
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #19be6b;">
+                  <span style="color: #00CB91;">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                     <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
@@ -1265,7 +1265,7 @@ export default {
               return (
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #2d8cf0;">
+                  <span style="color: #5384FF">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                     <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
@@ -1299,7 +1299,7 @@ export default {
               return (
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #19be6b;">{params.data.title}</span>
+                  <span style="color: #00CB91;">{params.data.title}</span>
                   <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
@@ -1307,7 +1307,7 @@ export default {
               return (
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #2d8cf0;">{params.data.title}</span>
+                  <span style="color: #5384FF">{params.data.title}</span>
                   <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )

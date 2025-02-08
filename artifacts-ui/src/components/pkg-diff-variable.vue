@@ -252,7 +252,7 @@ export default {
             if (params.row.conf_variable.bound) {
               return (
                 <span>
-                  <Icon type="md-checkmark-circle" color="#2d8cf0" style="font-size: 16px;" />
+                  <Icon type="md-checkmark-circle" color="#5384FF" style="font-size: 16px;" />
                 </span>
               )
             } else {
@@ -1502,7 +1502,7 @@ export default {
 .pkg-variable {
   margin-bottom: 16px;
   .ivu-radio-group-button .ivu-radio-wrapper-checked {
-    background: #2d8cf0;
+    background: #5384ff;
     color: #fff;
   }
   .ivu-radio-group-button .ivu-radio-wrapper-checked:hover {
