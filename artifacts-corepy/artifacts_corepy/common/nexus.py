@@ -53,7 +53,8 @@ class NeuxsClient(object):
             'name': i['path'].split('/')[-1],
             'downloadUrl': i['downloadUrl'],
             'md5': i.get('checksum', {}).get('md5', None) or i.get('checksum', {}).get('sha1', None) or 'N/A',
-            'lastModified': i['lastModified'][:19]+'Z' if i.get('lastModified', None) else None
+            'lastModified': i['lastModified'][:19]+'Z' if i.get('lastModified', None) else None,
+            'fileSize': i.get('fileSize', 0) or 0
         } for i in filtered_items])
         if resp_json['continuationToken']:
             results.extend(self.list(repository, path, extensions, continue_token=resp_json['continuationToken'], filename=filename))

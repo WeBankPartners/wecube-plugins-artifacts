@@ -62,11 +62,13 @@ field_pkg_log_file_trade_name = 'log_file_trade'
 field_pkg_log_file_keyword_name = 'log_file_keyword'
 field_pkg_log_file_metric_name = 'log_file_metric'
 field_pkg_log_file_trace_name = 'log_file_trace'
+field_pkg_upgrade_cleanup_file_path_name = 'upgrade_cleanup_file_path'
+field_pkg_package_size_name = 'package_size'
 fields_pkg_app = [field_pkg_diff_conf_directory_name, field_pkg_diff_conf_file_name,
                   field_pkg_script_file_directory_name,
                   field_pkg_deploy_file_path_name, field_pkg_start_file_path_name, field_pkg_stop_file_path_name,
                   field_pkg_log_file_directory_name, field_pkg_log_file_trade_name, field_pkg_log_file_keyword_name,
-                  field_pkg_log_file_metric_name, field_pkg_log_file_trace_name]
+                  field_pkg_log_file_metric_name, field_pkg_log_file_trace_name, field_pkg_upgrade_cleanup_file_path_name]
 field_pkg_diff_conf_directory_default_value = 'conf'
 field_pkg_diff_conf_file_default_value = ''
 field_pkg_script_file_directory_default_value = 'bin'
@@ -81,6 +83,7 @@ field_pkg_log_file_trade_default_value = 'logs/trade.log'
 field_pkg_log_file_keyword_default_value = 'logs/keyword.log'
 field_pkg_log_file_metric_default_value = 'logs/metric.log'
 field_pkg_log_file_trace_default_value = 'logs/trace.log'
+field_pkg_upgrade_cleanup_file_path_default_value = ''
 
 # DB
 field_pkg_db_deploy_file_directory_name = 'db_deploy_file_directory'
@@ -437,6 +440,8 @@ class UnitDesignPackages(WeCubeResource):
         for i in resp_json['data']['contents']:
             i[field_pkg_package_type_name] = i.get(field_pkg_package_type_name,
                                                    constant.PackageType.default) or constant.PackageType.default
+            i[field_pkg_package_size_name] = i.get(field_pkg_package_size_name, 0) or 0
+            i[field_pkg_package_size_name] = int(i[field_pkg_package_size_name])
             i[field_pkg_is_decompression_name] = i.get(field_pkg_is_decompression_name,
                                                        field_pkg_is_decompression_default_value) or field_pkg_is_decompression_default_value
             i[field_pkg_key_service_code_name] = i.get(field_pkg_key_service_code_name,
@@ -445,7 +450,8 @@ class UnitDesignPackages(WeCubeResource):
                       field_pkg_script_file_directory_name, field_pkg_deploy_file_path_name,
                       field_pkg_start_file_path_name, field_pkg_stop_file_path_name,
                       field_pkg_log_file_directory_name, field_pkg_log_file_trade_name,
-                      field_pkg_log_file_keyword_name, field_pkg_log_file_metric_name, field_pkg_log_file_trace_name,)
+                      field_pkg_log_file_keyword_name, field_pkg_log_file_metric_name, field_pkg_log_file_trace_name,
+                      field_pkg_upgrade_cleanup_file_path_name)
             for field in fields:
                 i[field] = self.build_file_object(i.get(field, None))
             # db部署支持
@@ -915,10 +921,13 @@ class UnitDesignPackages(WeCubeResource):
         upload_result = nexus_client.upload(artifact_repository, artifact_path, filename, filetype, fileobj)
         new_download_url = upload_result['downloadUrl'].replace(nexus_server,
                                                                 CONF.wecube.server.rstrip('/') + '/artifacts')
+        fileobj.seek(0, os.SEEK_END)  # 移动到文件末尾
+        filesize = fileobj.tell()  # 获取当前位置，即文件大小
         package_rows = [{
             'baseline_package': baseline_package or None,
             'name': filename,
             'code': filename,
+            field_pkg_package_size_name: filesize,
             'deploy_package_url': new_download_url,
             'md5_value': calculate_md5(fileobj),
             field_pkg_is_decompression_name: field_pkg_is_decompression_default_value,
@@ -986,9 +995,11 @@ class UnitDesignPackages(WeCubeResource):
                                                CONF.wecube.nexus.password)
             nexus_files = r_nexus_client.list(url_info['repository'], url_info['group'])
             nexus_md5 = None
+            nexus_filesize = 0
             for f in nexus_files:
                 if f['name'] == url_info['filename']:
                     nexus_md5 = f['md5']
+                    nexus_filesize = f['fileSize']
             # ignore unit_design.artifact_path update
             # update_unit_design = {}
             # update_unit_design['guid'] = unit_design['data']['guid']
@@ -998,6 +1009,7 @@ class UnitDesignPackages(WeCubeResource):
                 'baseline_package': baseline_package or None,
                 'name': url_info['filename'],
                 'code': url_info['filename'],
+                field_pkg_package_size_name: nexus_filesize,
                 'deploy_package_url': CONF.wecube.server.rstrip('/') + '/artifacts' + url_info['fullpath'],
                 'md5_value': nexus_md5,
                 field_pkg_is_decompression_name: field_pkg_is_decompression_default_value,
@@ -1034,6 +1046,8 @@ class UnitDesignPackages(WeCubeResource):
                     while chunk:
                         tmp_file.write(chunk)
                         chunk = stream.read(chunk_size)
+                    tmp_file.flush()
+                    filesize = tmp_file.tell()
                     tmp_file.seek(0)
                     filetype = resp.headers.get('Content-Type', 'application/octet-stream')
                     fileobj = tmp_file
@@ -1046,6 +1060,7 @@ class UnitDesignPackages(WeCubeResource):
                             filename,
                         'code':
                             filename,
+                        field_pkg_package_size_name: filesize,
                         'deploy_package_url':
                             upload_result['downloadUrl'].replace(CONF.nexus.server.rstrip('/'),
                                                                  CONF.wecube.server.rstrip('/') + '/artifacts'),
@@ -1291,6 +1306,10 @@ class UnitDesignPackages(WeCubeResource):
             crud.ColumnValidator(field_pkg_log_file_trace_name, validate_on=['update:O'], rule=(list, tuple),
                                  rule_type='type',
                                  converter=FileNameConcater(), nullable=False),
+            # app cleanup
+            crud.ColumnValidator(field_pkg_upgrade_cleanup_file_path_name, validate_on=['update:O'], rule=(list, tuple),
+                                 rule_type='type',
+                                 converter=FileNameConcater(), nullable=False),
             # db diff conf
             crud.ColumnValidator(field_pkg_db_diff_conf_directory_name, validate_on=['update:O'], rule=(list, tuple),
                                  rule_type='type',
@@ -1376,6 +1395,23 @@ class UnitDesignPackages(WeCubeResource):
                             'field': field_pkg_db_diff_conf_file_name,
                             'options': available_extensions
                         })
+        # 校验升级清理目录/文件，不能是/开始，并且不能包含../
+        if field_pkg_db_upgrade_file_path_name in data:
+            for item in data[field_pkg_db_upgrade_file_path_name]:
+                if item['filename'].startswith('/'):
+                    raise exceptions.ValidationError(
+                        message=_('invalid filename: %(filename)s from %(field)s, must not start with /') % {
+                            'filename': item['filename'],
+                            'field': field_pkg_db_upgrade_file_path_name,
+                        }
+                    )
+                if '../' in item['filename']:
+                    raise exceptions.ValidationError(
+                        message=_('invalid filename: %(filename)s from %(field)s, must not contains ../') % {
+                            'filename': item['filename'],
+                            'field': field_pkg_db_upgrade_file_path_name,
+                        }
+                    )
         # 兼容提取baseline_package值
         if 'baseline_package' in clean_data:
             # 兼容旧接口传{}/''/null代表清空的情况
@@ -1592,6 +1628,8 @@ class UnitDesignPackages(WeCubeResource):
         result[field_pkg_is_decompression_name] = utils.bool_from_string(
             deploy_package[field_pkg_is_decompression_name], default=True)
         result[field_pkg_package_type_name] = deploy_package[field_pkg_package_type_name]
+        result[field_pkg_package_size_name] = deploy_package.get(field_pkg_package_size_name, 0) or 0
+        result[field_pkg_package_size_name] = int(result[field_pkg_package_size_name])
         result[field_pkg_key_service_code_name] = deploy_package[field_pkg_key_service_code_name]
         # var 字段
         result[field_pkg_diff_conf_var_name] = deploy_package[field_pkg_diff_conf_var_name]
@@ -1600,7 +1638,7 @@ class UnitDesignPackages(WeCubeResource):
         fields = (field_pkg_diff_conf_directory_name, field_pkg_diff_conf_file_name,
                   field_pkg_script_file_directory_name, field_pkg_deploy_file_path_name,
                   field_pkg_start_file_path_name, field_pkg_stop_file_path_name,
-                  field_pkg_log_file_directory_name)
+                  field_pkg_log_file_directory_name, field_pkg_upgrade_cleanup_file_path_name)
         for field in fields:
             result[field] = self.build_file_object(deploy_package[field])
             if result[field_pkg_package_type_name] in (constant.PackageType.app, constant.PackageType.mixed):
@@ -1695,7 +1733,7 @@ class UnitDesignPackages(WeCubeResource):
             fields = (field_pkg_diff_conf_directory_name, field_pkg_diff_conf_file_name,
                       field_pkg_script_file_directory_name, field_pkg_deploy_file_path_name,
                       field_pkg_start_file_path_name, field_pkg_stop_file_path_name,
-                      field_pkg_log_file_directory_name)
+                      field_pkg_log_file_directory_name,field_pkg_upgrade_cleanup_file_path_name)
             for field in fields:
                 result[field] = self.build_file_object(new_deploy_package_attrs.get(field, None))
                 if package_type in (constant.PackageType.app, constant.PackageType.mixed):
@@ -2410,6 +2448,24 @@ class UnitDesignPackages(WeCubeResource):
                 ret_data[field_pkg_log_file_keyword_name] = baseline_package[field_pkg_log_file_keyword_name]
                 ret_data[field_pkg_log_file_metric_name] = baseline_package[field_pkg_log_file_metric_name]
                 ret_data[field_pkg_log_file_trace_name] = baseline_package[field_pkg_log_file_trace_name]
+        # app upgrade cleanup 
+        fset = FieldSetting(name=field_pkg_upgrade_cleanup_file_path_name,
+                            default_value=field_pkg_upgrade_cleanup_file_path_default_value)
+        if input_attrs.get(fset.name, None):
+            if not baseline_package:
+                # 无输入则填充默认，否则使用输入值
+                ret_data[fset.name] = input_attrs.get(fset.name,None) or fset.default_value
+            else:
+                # 无输入则仅继承，否则使用输入值
+                ret_data[fset.name] = input_attrs.get(fset.name, None) or \
+                                                          baseline_package[fset.name]
+        else:
+            if not baseline_package:
+                # 填充默认目录值，清单填充默认
+                ret_data[fset.name] = fset.default_value
+            else:
+                # 目录值仅继承，清单仅继承
+                ret_data[fset.name] = baseline_package[fset.name]     
         # db diff 数据库差异化文件不继承
         fset = FieldSetting(name=field_pkg_db_diff_conf_directory_name,
                             default_value=field_pkg_db_diff_conf_directory_default_value)
