@@ -119,13 +119,14 @@
 
 <script>
 import { deleteCiDatas, getAllCITypesWithAttr, getCiTypeAttr, getCITypeOperations, getFlowLists, getPackageCiTypeId, getPkgTypeNum, getSystemDesignVersion, getSystemDesignVersions, getUserList, operateCiState, operateCiStateWithData, pushPkg, queryHistoryPackages, queryPackages, sysConfig } from '@/api/server.js'
+import CustomTitle from '@/components/custom-title.vue'
+import PkgConfig from '@/components/pkg-config.vue'
+import PkgDiffVariableConfig from '@/components/pkg-diff-variable.vue'
+import PkgUpload from '@/components/pkg-upload.vue'
+import { getCookie, setCookie } from '@/util/cookie.js'
+import { formatFileSize } from '@/util/tool.js'
 import axios from 'axios'
 import { debounce } from 'lodash'
-import CustomTitle from '../components/custom-title.vue'
-import PkgConfig from '../components/pkg-config.vue'
-import PkgDiffVariableConfig from '../components/pkg-diff-variable.vue'
-import PkgUpload from '../components/pkg-upload.vue'
-import { getCookie, setCookie } from '../util/cookie.js'
 import DisplayPath from './display-path'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
@@ -239,6 +240,14 @@ export default {
           render: (h, params) => {
             const baseLine = params.row.baseline_package ? params.row.baseline_package.key_name : '-'
             return <span>{baseLine}</span>
+          }
+        },
+        {
+          title: this.$t('大小'),
+          key: 'package_size',
+          width: 120,
+          render: (h, params) => {
+            return <span>{formatFileSize(params.row.package_size)}</span>
           }
         },
         {
@@ -1010,15 +1019,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-// .upload-icon {
-//   width: 14px;
-//   margin-bottom: 2px;
-// }
-
-// .btn-upload:hover .upload-icon {
-//   filter: brightness(0) saturate(100%) invert(50%) sepia(100%) saturate(1000%) hue-rotate(200deg);
-// }
-
 .tree-size ::v-deep .ivu-tree-title {
   font-size: 12px !important;
 }

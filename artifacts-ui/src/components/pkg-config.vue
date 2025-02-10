@@ -441,11 +441,11 @@
 
 <script>
 import { compareBaseLineFiles, getCompareContent, getFiles, getPackageDetail, queryPackages, updatePackage } from '@/api/server.js'
+import iconFile from '@/assets/file.png'
+import iconFolder from '@/assets/folder.png'
+import CompareFile from '@/views/compare-file.vue'
+import DisplayPath from '@/views/display-path.vue'
 import Sortable from 'sortablejs'
-import iconFile from '../assets/file.png'
-import iconFolder from '../assets/folder.png'
-import CompareFile from '../views/compare-file.vue'
-import DisplayPath from '../views/display-path.vue'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
