@@ -5,13 +5,13 @@
       <Tabs :value="currentDiffConfigTab" v-model="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
           <Upload :before-upload="handleUpload" action="">
-            <Button type="primary" style="margin-right: 8px;">
-              <img src="../assets/import.png" class="btn-img" alt="" />
+            <Button class="btn-upload" style="margin-right: 8px;">
+              <img src="@/styles/icon/UploadOutlined.svg" class="upload-icon" />
               {{ $t('import') }}
             </Button>
           </Upload>
-          <Button type="info" class="btn-right" @click="exportData">
-            <img src="../assets/export.png" class="btn-img" alt="" />
+          <Button class="btn-upload" @click="exportData">
+            <img src="@/styles/icon/DownloadOutlined.svg" class="upload-icon" />
             {{ $t('export') }}
           </Button>
         </div>
