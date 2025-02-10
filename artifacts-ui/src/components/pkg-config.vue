@@ -195,6 +195,23 @@
                 </div>
               </div>
             </div>
+            <!-- 升级清理目录 -->
+            <div style="display: flex;align-items: flex-start;border: 1px solid #e8e8e8;padding: 8px 4px;margin-top: 12px;">
+              <div style="width: 160px; margin-right: 8px">
+                {{ $t('art_upgrade_and_clean_up') }}
+                <Tooltip :content="$t('art_upgrade_and_clean_up_select')" placement="top">
+                  <Icon type="md-document" style="margin-right: 12px;" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(107, packageInput.upgrade_cleanup_file_path || [])" />
+                </Tooltip>
+              </div>
+              <div id="upgrade_and_clean_up_test" style="display: inline-block;">
+                <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.upgrade_cleanup_file_path" :key="index">
+                  <Input class="textarea-input" :rows="1" :placeholder="$t('art_upgrade_and_clean_up')" type="textarea" v-model="packageInput.upgrade_cleanup_file_path[index].filename" />
+                  <Button style="margin-left:20px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'upgrade_cleanup_file_path')"></Button>
+                </div>
+              </div>
+              <Button style="margin: 4px" size="small" type="success" icon="md-add" ghost @click="addFilePath('upgrade_cleanup_file_path')"></Button>
+            </div>
+
             <!-- 关键交易服务码 -->
             <div style="margin-top: 16px;" v-if="isShowKeyServiceCode">
               <Row>
@@ -423,12 +440,12 @@
 </template>
 
 <script>
-import { getPackageDetail, queryPackages, getFiles, compareBaseLineFiles, updatePackage, getCompareContent } from '@/api/server.js'
+import { compareBaseLineFiles, getCompareContent, getFiles, getPackageDetail, queryPackages, updatePackage } from '@/api/server.js'
 import Sortable from 'sortablejs'
-import DisplayPath from '../views/display-path.vue'
 import iconFile from '../assets/file.png'
 import iconFolder from '../assets/folder.png'
 import CompareFile from '../views/compare-file.vue'
+import DisplayPath from '../views/display-path.vue'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -505,7 +522,9 @@ export default {
         db_rollback_directory: [], // DB回滚脚本
         db_rollback_file_path: [],
         db_deploy_file_directory: [], // DB部署脚本
-        db_deploy_file_path: []
+        db_deploy_file_path: [],
+
+        upgrade_cleanup_file_path: [] // 升级清理目录
       },
       packageDetail: {
         baseline_package: null,
@@ -530,7 +549,9 @@ export default {
         db_rollback_directory: [], // DB回滚脚本
         db_rollback_file_path: [],
         db_deploy_file_directory: [], // DB部署脚本
-        db_deploy_file_path: []
+        db_deploy_file_path: [],
+
+        upgrade_cleanup_file_path: [] // 升级清理目录
       },
       packageType: '', // 包类型
       baselinePackageOptions: [], // 基线包下拉框数据
@@ -653,6 +674,20 @@ export default {
       this.packageInput.db_rollback_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_file_path || []))
       this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_directory || []))
       this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_path || []))
+      this.packageInput.upgrade_cleanup_file_path = JSON.parse(
+        JSON.stringify(
+          this.packageDetail.upgrade_cleanup_file_path || [
+            {
+              comparisonResult: '',
+              configKeyInfos: [],
+              filename: '',
+              isDir: false,
+              md5: '',
+              exists: false
+            }
+          ]
+        )
+      )
 
       this.$nextTick(() => {
         this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code || []))
@@ -711,6 +746,20 @@ export default {
         this.packageInput.db_rollback_file_path = JSON.parse(JSON.stringify(data.db_rollback_file_path || []))
         this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(data.db_deploy_file_directory || []))
         this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(data.db_deploy_file_path || []))
+        this.packageInput.upgrade_cleanup_file_path = JSON.parse(
+          JSON.stringify(
+            data.upgrade_cleanup_file_path || [
+              {
+                comparisonResult: '',
+                configKeyInfos: [],
+                filename: '',
+                isDir: false,
+                md5: '',
+                exists: false
+              }
+            ]
+          )
+        )
 
         this.$nextTick(() => {
           this.packageInput.key_service_code = JSON.parse(JSON.stringify(data.key_service_code || []))
@@ -765,6 +814,18 @@ export default {
         this.packageInput.db_rollback_file_path = []
         this.packageInput.db_deploy_file_directory = found.db_deploy_file_directory ? JSON.parse(JSON.stringify(found.db_deploy_file_directory)) : []
         this.packageInput.db_deploy_file_path = found.db_deploy_file_path ? JSON.parse(JSON.stringify(found.db_deploy_file_path)) : []
+        this.packageInput.upgrade_cleanup_file_path = found.upgrade_cleanup_file_path
+          ? JSON.parse(JSON.stringify(found.upgrade_cleanup_file_path))
+          : [
+              {
+                comparisonResult: '',
+                configKeyInfos: [],
+                filename: '',
+                isDir: false,
+                md5: '',
+                exists: false
+              }
+            ]
         this.$nextTick(() => {
           this.packageInput.key_service_code = found.key_service_code ? JSON.parse(JSON.stringify(found.key_service_code)) : []
         })
@@ -884,7 +945,9 @@ export default {
         db_rollback_directory: [], // DB回滚脚本
         db_rollback_file_path: [],
         db_deploy_file_directory: [], // DB部署脚本
-        db_deploy_file_path: []
+        db_deploy_file_path: [],
+
+        upgrade_cleanup_file_path: [] // 升级清理目录
       }
     },
     // 获取基线列表
@@ -987,6 +1050,10 @@ export default {
         this.configFileTreeTitle = this.$t('artifacts_config_files')
         queryFiles = this.packageInput.db_diff_conf_file.map(_ => _.filename)
         queryFilesParent = this.packageInput.db_diff_conf_directory.map(_ => _.filename)
+      } else if (type === 107) {
+        this.configFileTreeTitle = this.$t('art_upgrade_and_clean_up')
+        queryFiles = this.packageInput.upgrade_cleanup_file_path.map(_ => _.filename)
+        // queryFilesParent = this.packageInput.db_diff_conf_directory.map(_ => _.filename)
       } else if (type === 0.3) {
         this.isFileSelect = true
         this.configFileTreeTitle = this.$t('art_log')
@@ -1123,6 +1190,8 @@ export default {
         this.packageInput.db_deploy_file_path = saveData
       } else if (this.configFileTree.treeType === 106) {
         this.packageInput.db_diff_conf_file = saveData
+      } else if (this.configFileTree.treeType === 107) {
+        this.packageInput.upgrade_cleanup_file_path = saveData
       } else if (this.configFileTree.treeType === 0.3) {
         if (saveData.length > 1) {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
@@ -1429,6 +1498,12 @@ export default {
         this.$Message.warning(this.$t('art_service_code_tip'))
         canSave = false
       }
+      // 清理目录中不能包含../
+      const res = this.packageInput.upgrade_cleanup_file_path.filter(obj => obj.filename).some(item => item.filename.includes('../'))
+      if (res) {
+        this.$Message.warning(this.$t('art_path_warn'))
+        canSave = false
+      }
       return canSave
     },
     isLogFileStartWidthLogDir (key) {
@@ -1468,6 +1543,7 @@ export default {
         db_rollback_file_path: this.packageInput.db_rollback_file_path,
         db_deploy_file_directory: this.packageInput.db_deploy_file_directory,
         db_deploy_file_path: this.packageInput.db_deploy_file_path,
+        upgrade_cleanup_file_path: this.packageInput.upgrade_cleanup_file_path,
 
         key_service_code: this.packageInput.key_service_code
       }
