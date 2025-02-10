@@ -51,7 +51,7 @@
         <FormItem :label="$t('art_package')">
           <Upload action="" :before-upload="handleUpload" :show-upload-list="false">
             <Button class="btn-upload">
-              <img src="@/styles/icon/UploadOutlined.svg" class="upload-icon" />
+              <img src="@/styles/icon/UploadOutlined.png" class="upload-icon" />
               {{ $t('artifacts_upload_new_package') }}
             </Button>
           </Upload>

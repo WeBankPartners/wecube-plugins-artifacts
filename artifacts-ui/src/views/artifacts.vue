@@ -31,7 +31,7 @@
           <div>
             <!-- 本地上传 -->
             <Button style="margin-right: 8px;" class="btn-upload" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">
-              <img src="@/styles/icon/UploadOutlined.svg" class="upload-icon" />
+              <img src="@/styles/icon/UploadOutlined.png" class="upload-icon" />
               {{ $t('art_upload_import') }}
             </Button>
             <!-- 在线选择 -->
