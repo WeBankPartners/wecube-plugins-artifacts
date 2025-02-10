@@ -16,6 +16,7 @@ import datetime
 import logging
 from pytz import timezone
 from talos.core import config
+from talos.core import utils
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.jobstores.memory import MemoryJobStore
@@ -99,6 +100,56 @@ def rotate_log():
         LOG.exception(e)
 
 
+def download_url_parse(url):
+    ret = {}
+    results = url.split('/repository/', 1)
+    ret['server'] = results[0]
+    ret['fullpath'] = '/repository/' + results[1]
+    results = results[1].split('/', 1)
+    ret['repository'] = results[0]
+    ret['filename'] = results[1].split('/')[-1]
+    if results[1].count('/') >= 1:
+        ret['group'] = '/' + results[1].rsplit('/', 1)[0]
+    else:
+        ret['group'] = '/'
+    return ret
+
+def delete_nexus_package(nexus_client, deploy_package_url):
+    if deploy_package_url.startswith(CONF.wecube.server):
+        # delete nexus package
+        parsed_result = download_url_parse(deploy_package_url)
+        # delete nexus package
+        component_group = parsed_result['group']
+        component_name = parsed_result['group'].rstrip('/') + '/' + parsed_result['filename'].lstrip('/')
+        asset_info = nexus_client.get_asset(parsed_result['repository'], component_group,
+                                                component_name)
+        if asset_info:
+            asset_id = asset_info["id"]
+            nexus_client.delete_assets(parsed_result['repository'],
+                                    '/service/rest/v1/assets/' + asset_id)
+            LOG.info('delete package[%s-%s] from local nexus: %s', asset_info["id"], parsed_result['filename'], deploy_package_url)
+        else:
+            LOG.warn('delete package from local nexus: %s failed, asset not found', deploy_package_url)
+        return True
+    return False
+
+def get_deploy_package_by_id(cmdb_client, deploy_package_id):
+    query = {
+        "dialect": {
+            "queryMode": "new"
+        },
+        "filters": [{
+            "name": "guid",
+            "operator": "eq",
+            "value": deploy_package_id
+        }],
+        "paging": False
+    }
+    resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+    if not resp_json.get('data', {}).get('contents', []):
+        return None
+    return resp_json['data']['contents'][0]
+
 def cleanup_deploy_package():
     try:
         wecube_client = wecube.WeCubeClient(CONF.wecube.server, "")
@@ -120,8 +171,11 @@ def cleanup_deploy_package():
             return
         unit_design_list = resp_json['data']['contents']
 
-        nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
-        artifact_repository = CONF.nexus.repository
+        if utils.bool_from_string(CONF.use_remote_nexus_only):
+            nexus_client = nexus.NeuxsClient(CONF.wecube.nexus.server, CONF.wecube.nexus.username,
+                                                CONF.wecube.nexus.password)
+        else:
+            nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
 
         for unit_design in unit_design_list:
             query = {
@@ -148,40 +202,23 @@ def cleanup_deploy_package():
             deploy_package_list = resp_json['data']['contents']
             cnt = 1
             for deploy_package in deploy_package_list:
-                if deploy_package['state'] == 'deleted_0':
-                    continue
                 if cnt > keep_topn:
                     try:
                         data = [{'guid': deploy_package["guid"]}]
-                        resp_json = cmdb_client.delete(CONF.wecube.wecmdb.citypes.deploy_package, data)
-                        if resp_json.get('statusCode', 'OK') == 'OK' and resp_json['data'][0].get('state',
-                                                                                                '') == 'deleted_0':
-                            LOG.info('delete package[%s] from ci data', deploy_package["guid"])
+                        deploy_package_url = deploy_package.get("deploy_package_url", "")
+                        if deploy_package['state'] == 'deleted_0':
+                            delete_nexus_package(nexus_client, deploy_package_url)
+                            # do confirm
                             cmdb_client.confirm(CONF.wecube.wecmdb.citypes.deploy_package, data)
-                        if resp_json.get('statusCode', 'OK') == 'OK':
-                            deploy_package_url = deploy_package.get("deploy_package_url", "")
-                            if deploy_package_url.startswith(CONF.wecube.server):
-                                # delete nexus package
-                                prefix = CONF.wecube.server.rstrip('/') + '/artifacts/repository/' + artifact_repository
-                                suffix = deploy_package_url[len(prefix):]
-                                suffix_list = suffix.split("/")
-                                if len(suffix_list) >= 2:
-                                    filename = suffix_list[len(suffix_list) - 1]
-                                    component_name = filename
-                                    component_group = "/"
-                                    if len(suffix_list) > 2:
-                                        component_group = suffix[:len(suffix) - len("/" + filename)]
-                                        component_name = suffix[1:]
-                                    asset_info = nexus_client.get_asset(artifact_repository, component_group,
-                                                                        component_name)
-                                    if asset_info:
-                                        asset_id = asset_info["id"]
-                                        nexus_client.delete_assets(artifact_repository,
-                                                                '/service/rest/v1/assets/' + asset_id)
-                                        LOG.info('delete package[%s] from local nexus: %s', deploy_package["guid"], suffix)
-                                    else:
-                                        LOG.error('delete package[%s] from local nexus: %s failed, asset not found',
-                                                deploy_package["guid"], suffix)
+                        else:
+                            resp_json = cmdb_client.delete(CONF.wecube.wecmdb.citypes.deploy_package, data)
+                            if resp_json.get('statusCode', 'OK') == 'OK':
+                                LOG.info('delete package[%s] from ci data', deploy_package["guid"])
+                                delete_nexus_package(nexus_client, deploy_package_url)
+                                requery_deploy_package = get_deploy_package_by_id(cmdb_client, deploy_package["guid"])
+                                # do confirm if needed 
+                                if requery_deploy_package is not None and requery_deploy_package.get('state','') == 'deleted_0':
+                                    cmdb_client.confirm(CONF.wecube.wecmdb.citypes.deploy_package, data)
                     except Exception as e:
                         LOG.exception(e)
                 cnt += 1
