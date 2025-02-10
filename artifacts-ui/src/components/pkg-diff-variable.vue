@@ -5,13 +5,13 @@
       <Tabs :value="currentDiffConfigTab" v-model="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
           <Upload :before-upload="handleUpload" action="">
-            <Button type="primary" style="margin-right: 8px;">
-              <img src="../assets/import.png" class="btn-img" alt="" />
+            <Button class="btn-upload" style="margin-right: 8px;">
+              <img src="@/styles/icon/UploadOutlined.svg" class="upload-icon" />
               {{ $t('import') }}
             </Button>
           </Upload>
-          <Button type="info" class="btn-right" @click="exportData">
-            <img src="../assets/export.png" class="btn-img" alt="" />
+          <Button class="btn-upload" @click="exportData">
+            <img src="@/styles/icon/DownloadOutlined.svg" class="upload-icon" />
             {{ $t('export') }}
           </Button>
         </div>
@@ -252,7 +252,7 @@ export default {
             if (params.row.conf_variable.bound) {
               return (
                 <span>
-                  <Icon type="md-checkmark-circle" color="#2d8cf0" style="font-size: 16px;" />
+                  <Icon type="md-checkmark-circle" color="#5384FF" style="font-size: 16px;" />
                 </span>
               )
             } else {
@@ -1502,7 +1502,7 @@ export default {
 .pkg-variable {
   margin-bottom: 16px;
   .ivu-radio-group-button .ivu-radio-wrapper-checked {
-    background: #2d8cf0;
+    background: #5384ff;
     color: #fff;
   }
   .ivu-radio-group-button .ivu-radio-wrapper-checked:hover {
