@@ -183,5 +183,8 @@
   "art_parameter_name": "Parameter Name",
   "art_parameter_value": "Parameter Value",
   "art_parameter": "Parameter",
-  "art_constant": "Constant"
+  "art_constant": "Constant",
+  "art_upgrade_and_clean_up": "Upgrade and clean up directories/files",
+  "art_upgrade_and_clean_up_select": "Select upgrade and clean up directories/files",
+  "art_path_warn": "The file path must not contain '../'."
 }

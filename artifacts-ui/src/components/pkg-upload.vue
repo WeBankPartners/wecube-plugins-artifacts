@@ -55,7 +55,7 @@
               {{ $t('artifacts_upload_new_package') }}
             </Button>
           </Upload>
-          <span style="word-wrap: break-word;">{{ localUploadParams.fileName }}</span>
+          <span style="word-wrap: break-word;">{{ localUploadParams.fileName }} {{ localUploadParams.size }} </span>
         </FormItem>
         <FormItem :label="$t('package_type')">
           <Select filterable @on-change="getbaselinePkg('localUploadParams')" :placeholder="$t('package_type')" v-model="localUploadParams.package_type">
@@ -104,6 +104,7 @@ export default {
       localModal: false,
       localUploadParams: {
         fileName: '',
+        size: '',
         package_type: '',
         baseline_package: ''
       },
@@ -229,8 +230,16 @@ export default {
     handleUpload (file) {
       this.removeFormDataKey('file')
       this.localUploadParams.fileName = file.name
+      this.localUploadParams.size = this.formatFileSize(file.size)
       this.formData.append('file', file)
       return false
+    },
+    formatFileSize (bytes) {
+      if (bytes === 0) return '0 Bytes'
+      const units = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+      const unitIndex = Math.floor(Math.log(bytes) / Math.log(1024))
+      const size = (bytes / Math.pow(1024, unitIndex)).toFixed(2)
+      return `${size} ${units[unitIndex]}`
     },
     removeFormDataKey (keyToRemove) {
       let newFormData = new FormData()
