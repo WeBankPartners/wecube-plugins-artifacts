@@ -92,7 +92,7 @@ class NeuxsClient(object):
         # group必须以/开头且结尾不包含/
         group = group.lstrip('/')
         group = '/' + group.rstrip('/')
-        query = {'repository': repository, 'group': group, 'name': name}
+        query = {'repository': repository, 'group': group, 'name': name.lstrip('/')}
         LOG.info('GET %s', url)
         LOG.debug('Request: %s', str(query))
         resp_json = http.RestfulJson.get(url,
