@@ -669,29 +669,28 @@ export default {
 
       this.packageInput.db_diff_conf_directory = JSON.parse(JSON.stringify(this.packageDetail.db_diff_conf_directory))
       this.packageInput.db_diff_conf_file = JSON.parse(JSON.stringify(this.packageDetail.db_diff_conf_file))
-      this.packageInput.db_upgrade_directory = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_directory || []))
-      this.packageInput.db_upgrade_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_file_path || []))
-      this.packageInput.db_rollback_directory = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_directory || []))
-      this.packageInput.db_rollback_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_file_path || []))
-      this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_directory || []))
-      this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_path || []))
-      this.packageInput.upgrade_cleanup_file_path = JSON.parse(
-        JSON.stringify(
-          this.packageDetail.upgrade_cleanup_file_path || [
-            {
-              comparisonResult: '',
-              configKeyInfos: [],
-              filename: '',
-              isDir: false,
-              md5: '',
-              exists: false
-            }
-          ]
-        )
-      )
+      this.packageInput.db_upgrade_directory = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_directory))
+      this.packageInput.db_upgrade_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_file_path))
+      this.packageInput.db_rollback_directory = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_directory))
+      this.packageInput.db_rollback_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_file_path))
+      this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_directory))
+      this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_path))
+      this.packageInput.upgrade_cleanup_file_path =
+        this.packageDetail.upgrade_cleanup_file_path.length === 0
+          ? [
+              {
+                comparisonResult: '',
+                configKeyInfos: [],
+                filename: '',
+                isDir: false,
+                md5: '',
+                exists: false
+              }
+            ]
+          : JSON.parse(JSON.stringify(this.packageDetail.upgrade_cleanup_file_path))
 
       this.$nextTick(() => {
-        this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code || []))
+        this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code))
       })
       this.hideFooter = hideFooter
       await this.getbaselinePkg()
@@ -747,20 +746,19 @@ export default {
         this.packageInput.db_rollback_file_path = JSON.parse(JSON.stringify(data.db_rollback_file_path || []))
         this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(data.db_deploy_file_directory || []))
         this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(data.db_deploy_file_path || []))
-        this.packageInput.upgrade_cleanup_file_path = JSON.parse(
-          JSON.stringify(
-            data.upgrade_cleanup_file_path || [
-              {
-                comparisonResult: '',
-                configKeyInfos: [],
-                filename: '',
-                isDir: false,
-                md5: '',
-                exists: false
-              }
-            ]
-          )
-        )
+        this.packageInput.upgrade_cleanup_file_path =
+          this.packageDetail.upgrade_cleanup_file_path.length === 0
+            ? [
+                {
+                  comparisonResult: '',
+                  configKeyInfos: [],
+                  filename: '',
+                  isDir: false,
+                  md5: '',
+                  exists: false
+                }
+              ]
+            : JSON.parse(JSON.stringify(this.packageDetail.upgrade_cleanup_file_path))
 
         this.$nextTick(() => {
           this.packageInput.key_service_code = JSON.parse(JSON.stringify(data.key_service_code || []))
