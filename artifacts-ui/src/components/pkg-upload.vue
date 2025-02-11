@@ -51,7 +51,7 @@
         <FormItem :label="$t('art_package')">
           <Upload action="" :before-upload="handleUpload" :show-upload-list="false">
             <Button class="btn-upload">
-              <img src="@/styles/icon/UploadOutlined.svg" class="upload-icon" />
+              <img src="@/styles/icon/UploadOutlined.png" class="upload-icon" />
               {{ $t('artifacts_upload_new_package') }}
             </Button>
           </Upload>
@@ -80,6 +80,7 @@
 // eslint-disable-next-line no-unused-vars
 import { getFilePath, queryArtifactsList, queryPackages, uploadArtifact, uploadLocalArtifact } from '@/api/server.js'
 import dayjs from 'dayjs'
+import { formatFileSize } from '@/util/tool.js'
 export default {
   name: '',
   data () {
@@ -230,16 +231,9 @@ export default {
     handleUpload (file) {
       this.removeFormDataKey('file')
       this.localUploadParams.fileName = file.name
-      this.localUploadParams.size = this.formatFileSize(file.size)
+      this.localUploadParams.size = formatFileSize(file.size)
       this.formData.append('file', file)
       return false
-    },
-    formatFileSize (bytes) {
-      if (bytes === 0) return '0 Bytes'
-      const units = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-      const unitIndex = Math.floor(Math.log(bytes) / Math.log(1024))
-      const size = (bytes / Math.pow(1024, unitIndex)).toFixed(2)
-      return `${size} ${units[unitIndex]}`
     },
     removeFormDataKey (keyToRemove) {
       let newFormData = new FormData()

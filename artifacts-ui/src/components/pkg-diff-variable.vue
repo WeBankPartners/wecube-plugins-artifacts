@@ -6,12 +6,12 @@
         <div slot="extra">
           <Upload :before-upload="handleUpload" action="">
             <Button class="btn-upload" style="margin-right: 8px;">
-              <img src="@/styles/icon/UploadOutlined.svg" class="upload-icon" />
+              <img src="@/styles/icon/UploadOutlined.png" class="upload-icon" />
               {{ $t('import') }}
             </Button>
           </Upload>
           <Button class="btn-upload" @click="exportData">
-            <img src="@/styles/icon/DownloadOutlined.svg" class="upload-icon" />
+            <img src="@/styles/icon/DownloadOutlined.png" class="upload-icon" />
             {{ $t('export') }}
           </Button>
         </div>
@@ -158,13 +158,13 @@
 </template>
 
 <script>
-import { getCalcInstance, getVariableValue, getUserList, sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, getPackageDetail, updatePackage, getDiffVariable, getTemplate, deleteTemplate } from '@/api/server.js'
-import { setCookie, getCookie } from '../util/cookie.js'
+import { deleteTemplate, getAllCITypesWithAttr, getCalcInstance, getDiffVariable, getPackageCiTypeId, getPackageDetail, getSpecialConnector, getSystemDesignVersions, getTemplate, getUserList, getVariableValue, sysConfig, updateEntity, updatePackage } from '@/api/server.js'
+import DiffVariableTemplate from '@/components/diff-variable-template'
+import { getCookie, setCookie } from '@/util/cookie.js'
 import axios from 'axios'
 import { decode } from 'js-base64'
-import RuleTable from './rule-table.vue'
 import { debounce } from 'lodash'
-import DiffVariableTemplate from '@/components/diff-variable-template'
+import RuleTable from './rule-table.vue'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -664,9 +664,7 @@ export default {
           'z-index': 1000000,
           okText: this.$t('art_save_now'),
           cancelText: this.$t('art_discard'),
-          onOk: async () => {
-            console.log('自我消失')
-          },
+          onOk: async () => {},
           onCancel: async () => {
             this.prefixType = tmp
             this.prefixTypeTmp = tmp
@@ -832,9 +830,7 @@ export default {
           'z-index': 1000000,
           okText: this.$t('art_save_now'),
           cancelText: this.$t('art_discard'),
-          onOk: async () => {
-            console.log('自我消失')
-          },
+          onOk: async () => {},
           onCancel: async () => {
             this.tempTableData.forEach(item => {
               item.conf_variable.diffExpr = item.conf_variable.originDiffExpr
@@ -878,9 +874,7 @@ export default {
           'z-index': 1000000,
           okText: this.$t('art_save_now'),
           cancelText: this.$t('art_discard'),
-          onOk: async () => {
-            console.log('自我消失')
-          },
+          onOk: async () => {},
           onCancel: async () => {
             this.tempTableData.forEach(item => {
               item.conf_variable.diffExpr = item.conf_variable.originDiffExpr

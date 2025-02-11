@@ -1,17 +1,17 @@
+import ViewUI from 'view-design'
 import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
-import ViewUI from 'view-design'
 
 import './styles/index.less'
 
-import ArtifactsSimpleTable from '../src/components/simple-table.vue'
-import ArtifactsAutoFill from '../src/components/auto-fill.js'
-import VueI18n from 'vue-i18n'
 import locale from 'view-design/dist/locale/en-US'
-import './locale/i18n'
+import VueI18n from 'vue-i18n'
 import commonUI from 'wecube-common-ui'
 import 'wecube-common-ui/lib/wecube-common-ui.css'
+import ArtifactsAutoFill from '../src/components/auto-fill.js'
+import ArtifactsSimpleTable from '../src/components/simple-table.vue'
+import './locale/i18n'
 Vue.use(commonUI)
 Vue.component('ArtifactsSimpleTable', ArtifactsSimpleTable)
 Vue.component('ArtifactsAutoFill', ArtifactsAutoFill)

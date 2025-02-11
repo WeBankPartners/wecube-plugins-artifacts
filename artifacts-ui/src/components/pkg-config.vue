@@ -441,11 +441,11 @@
 
 <script>
 import { compareBaseLineFiles, getCompareContent, getFiles, getPackageDetail, queryPackages, updatePackage } from '@/api/server.js'
+import iconFile from '@/assets/file.png'
+import iconFolder from '@/assets/folder.png'
+import CompareFile from '@/views/compare-file.vue'
+import DisplayPath from '@/views/display-path.vue'
 import Sortable from 'sortablejs'
-import iconFile from '../assets/file.png'
-import iconFolder from '../assets/folder.png'
-import CompareFile from '../views/compare-file.vue'
-import DisplayPath from '../views/display-path.vue'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -462,7 +462,8 @@ export default {
       fullscreen: false,
       fileContentHeight: window.screen.availHeight * 0.4 + 'px',
       pkgName: '', // 当前选中的包名
-      isFileSelect: false,
+      isFileSelect: false, // 是否选择文件 适配文件夹和文件二选一场景
+      isFileAndFolderSelectable: false, // 适配文件夹和文件都可选场景
       isShowKeyServiceCode: false,
       columns: [
         {
@@ -668,29 +669,28 @@ export default {
 
       this.packageInput.db_diff_conf_directory = JSON.parse(JSON.stringify(this.packageDetail.db_diff_conf_directory))
       this.packageInput.db_diff_conf_file = JSON.parse(JSON.stringify(this.packageDetail.db_diff_conf_file))
-      this.packageInput.db_upgrade_directory = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_directory || []))
-      this.packageInput.db_upgrade_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_file_path || []))
-      this.packageInput.db_rollback_directory = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_directory || []))
-      this.packageInput.db_rollback_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_file_path || []))
-      this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_directory || []))
-      this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_path || []))
-      this.packageInput.upgrade_cleanup_file_path = JSON.parse(
-        JSON.stringify(
-          this.packageDetail.upgrade_cleanup_file_path || [
-            {
-              comparisonResult: '',
-              configKeyInfos: [],
-              filename: '',
-              isDir: false,
-              md5: '',
-              exists: false
-            }
-          ]
-        )
-      )
+      this.packageInput.db_upgrade_directory = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_directory))
+      this.packageInput.db_upgrade_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_file_path))
+      this.packageInput.db_rollback_directory = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_directory))
+      this.packageInput.db_rollback_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_file_path))
+      this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_directory))
+      this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_path))
+      this.packageInput.upgrade_cleanup_file_path =
+        this.packageDetail.upgrade_cleanup_file_path.length === 0
+          ? [
+              {
+                comparisonResult: '',
+                configKeyInfos: [],
+                filename: '',
+                isDir: false,
+                md5: '',
+                exists: false
+              }
+            ]
+          : JSON.parse(JSON.stringify(this.packageDetail.upgrade_cleanup_file_path))
 
       this.$nextTick(() => {
-        this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code || []))
+        this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code))
       })
       this.hideFooter = hideFooter
       await this.getbaselinePkg()
@@ -746,20 +746,19 @@ export default {
         this.packageInput.db_rollback_file_path = JSON.parse(JSON.stringify(data.db_rollback_file_path || []))
         this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(data.db_deploy_file_directory || []))
         this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(data.db_deploy_file_path || []))
-        this.packageInput.upgrade_cleanup_file_path = JSON.parse(
-          JSON.stringify(
-            data.upgrade_cleanup_file_path || [
-              {
-                comparisonResult: '',
-                configKeyInfos: [],
-                filename: '',
-                isDir: false,
-                md5: '',
-                exists: false
-              }
-            ]
-          )
-        )
+        this.packageInput.upgrade_cleanup_file_path =
+          this.packageDetail.upgrade_cleanup_file_path.length === 0
+            ? [
+                {
+                  comparisonResult: '',
+                  configKeyInfos: [],
+                  filename: '',
+                  isDir: false,
+                  md5: '',
+                  exists: false
+                }
+              ]
+            : JSON.parse(JSON.stringify(this.packageDetail.upgrade_cleanup_file_path))
 
         this.$nextTick(() => {
           this.packageInput.key_service_code = JSON.parse(JSON.stringify(data.key_service_code || []))
@@ -992,6 +991,7 @@ export default {
     async showTreeModal (type, files) {
       this.initTreeConfig(type)
       this.isFileSelect = false
+      this.isFileAndFolderSelectable = false
       let queryFiles = []
       let queryFilesParent = []
       if (type === 0) {
@@ -1051,6 +1051,8 @@ export default {
         queryFiles = this.packageInput.db_diff_conf_file.map(_ => _.filename)
         queryFilesParent = this.packageInput.db_diff_conf_directory.map(_ => _.filename)
       } else if (type === 107) {
+        this.isFileSelect = true
+        this.isFileAndFolderSelectable = true
         this.configFileTreeTitle = this.$t('art_upgrade_and_clean_up')
         queryFiles = this.packageInput.upgrade_cleanup_file_path.map(_ => _.filename)
         // queryFilesParent = this.packageInput.db_diff_conf_directory.map(_ => _.filename)
@@ -1121,22 +1123,18 @@ export default {
     saveConfigFileTree () {
       let saveData = []
       this.$refs.configTree.getCheckedNodes().forEach(_ => {
-        if (this.isFileSelect) {
-          if (_.isDir) {
-            saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-            // if (_.children) {
-            //   const isReal = _.children.every(item => item.isDir !== true)
-            //   if (isReal) {
-            //     saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-            //   }
-            // } else {
-            //   saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-            // }
-          }
-          saveData = this.cleanData(saveData)
+        if (this.isFileAndFolderSelectable) {
+          saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
         } else {
-          if (!_.isDir) {
-            saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
+          if (this.isFileSelect) {
+            if (_.isDir) {
+              saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
+            }
+            saveData = this.cleanData(saveData)
+          } else {
+            if (!_.isDir) {
+              saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
+            }
           }
         }
       })
@@ -1255,7 +1253,7 @@ export default {
       let children = element.children || []
       let treeNode = {
         title: element.name,
-        disableCheckbox: this.isFileSelect ? !element.isDir : false,
+        disableCheckbox: this.isFileAndFolderSelectable ? false : this.isFileSelect ? !element.isDir : false,
         path: element.path,
         isDir: element.isDir,
         exists: element.exists,
@@ -1499,7 +1497,7 @@ export default {
         canSave = false
       }
       // 清理目录中不能包含../
-      const res = this.packageInput.upgrade_cleanup_file_path.filter(obj => obj.filename).some(item => item.filename.includes('../'))
+      const res = this.packageInput.upgrade_cleanup_file_path.filter(obj => obj.filename).some(item => item.filename.includes('../') || item.filename.startsWith('/'))
       if (res) {
         this.$Message.warning(this.$t('art_path_warn'))
         canSave = false
