@@ -6,12 +6,12 @@
         <div slot="extra">
           <Upload :before-upload="handleUpload" action="">
             <Button class="btn-upload" style="margin-right: 8px;">
-              <img src="@/styles/icon/UploadOutlined.svg" class="upload-icon" />
+              <img src="@/styles/icon/UploadOutlined.png" class="upload-icon" />
               {{ $t('import') }}
             </Button>
           </Upload>
           <Button class="btn-upload" @click="exportData">
-            <img src="@/styles/icon/DownloadOutlined.svg" class="upload-icon" />
+            <img src="@/styles/icon/DownloadOutlined.png" class="upload-icon" />
             {{ $t('export') }}
           </Button>
         </div>
