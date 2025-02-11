@@ -462,7 +462,8 @@ export default {
       fullscreen: false,
       fileContentHeight: window.screen.availHeight * 0.4 + 'px',
       pkgName: '', // 当前选中的包名
-      isFileSelect: false,
+      isFileSelect: false, // 是否选择文件 适配文件夹和文件二选一场景
+      isFileAndFolderSelectable: false, // 适配文件夹和文件都可选场景
       isShowKeyServiceCode: false,
       columns: [
         {
@@ -992,6 +993,7 @@ export default {
     async showTreeModal (type, files) {
       this.initTreeConfig(type)
       this.isFileSelect = false
+      this.isFileAndFolderSelectable = false
       let queryFiles = []
       let queryFilesParent = []
       if (type === 0) {
@@ -1051,6 +1053,8 @@ export default {
         queryFiles = this.packageInput.db_diff_conf_file.map(_ => _.filename)
         queryFilesParent = this.packageInput.db_diff_conf_directory.map(_ => _.filename)
       } else if (type === 107) {
+        this.isFileSelect = true
+        this.isFileAndFolderSelectable = true
         this.configFileTreeTitle = this.$t('art_upgrade_and_clean_up')
         queryFiles = this.packageInput.upgrade_cleanup_file_path.map(_ => _.filename)
         // queryFilesParent = this.packageInput.db_diff_conf_directory.map(_ => _.filename)
@@ -1121,22 +1125,18 @@ export default {
     saveConfigFileTree () {
       let saveData = []
       this.$refs.configTree.getCheckedNodes().forEach(_ => {
-        if (this.isFileSelect) {
-          if (_.isDir) {
-            saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-            // if (_.children) {
-            //   const isReal = _.children.every(item => item.isDir !== true)
-            //   if (isReal) {
-            //     saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-            //   }
-            // } else {
-            //   saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-            // }
-          }
-          saveData = this.cleanData(saveData)
+        if (this.isFileAndFolderSelectable) {
+          saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
         } else {
-          if (!_.isDir) {
-            saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
+          if (this.isFileSelect) {
+            if (_.isDir) {
+              saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
+            }
+            saveData = this.cleanData(saveData)
+          } else {
+            if (!_.isDir) {
+              saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
+            }
           }
         }
       })
@@ -1255,7 +1255,7 @@ export default {
       let children = element.children || []
       let treeNode = {
         title: element.name,
-        disableCheckbox: this.isFileSelect ? !element.isDir : false,
+        disableCheckbox: this.isFileAndFolderSelectable ? false : this.isFileSelect ? !element.isDir : false,
         path: element.path,
         isDir: element.isDir,
         exists: element.exists,
@@ -1499,7 +1499,7 @@ export default {
         canSave = false
       }
       // 清理目录中不能包含../
-      const res = this.packageInput.upgrade_cleanup_file_path.filter(obj => obj.filename).some(item => item.filename.includes('../'))
+      const res = this.packageInput.upgrade_cleanup_file_path.filter(obj => obj.filename).some(item => item.filename.includes('../') || item.filename.startsWith('/'))
       if (res) {
         this.$Message.warning(this.$t('art_path_warn'))
         canSave = false
