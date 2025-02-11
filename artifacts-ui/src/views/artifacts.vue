@@ -243,11 +243,12 @@ export default {
           }
         },
         {
-          title: this.$t('大小'),
+          title: this.$t('art_size'),
           key: 'package_size',
           width: 120,
           render: (h, params) => {
-            return <span>{formatFileSize(params.row.package_size)}</span>
+            let res = params.row.package_size === 0 ? '-' : formatFileSize(params.row.package_size)
+            return <span>{res}</span>
           }
         },
         {

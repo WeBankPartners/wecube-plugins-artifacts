@@ -186,5 +186,6 @@
   "art_constant": "Constant",
   "art_upgrade_and_clean_up": "Upgrade and clean up directories/files",
   "art_upgrade_and_clean_up_select": "Select upgrade and clean up directories/files",
-  "art_path_warn": "The cleanup path must not contain '../' or start with '/'."
+  "art_path_warn": "The cleanup path must not contain '../' or start with '/'.",
+  "art_size": "Size"
 }
