@@ -413,7 +413,7 @@
       </div>
     </Drawer>
     <!-- 包配置文件选择 -->
-    <Modal :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" draggable width="700">
+    <Modal :styles="{ top: '60px' }" footer-hide :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" draggable width="700">
       <CheckboxGroup v-if="packageInput.baseline_package">
         <Button :style="toggleCheckFileTreeNew" type="dashed" size="small" @click="checkConfigFileTreeVis('new')"><span style="color: #18b566">new</span></Button>
         <Button :style="toggleCheckFileTreeSame" type="dashed" size="small" @click="checkConfigFileTreeVis('same')"><span>same</span></Button>
