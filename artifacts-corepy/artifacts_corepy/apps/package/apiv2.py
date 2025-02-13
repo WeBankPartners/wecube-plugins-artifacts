@@ -1699,7 +1699,7 @@ class UnitDesignPackages(WeCubeResource):
                         'name': e.name,
                         'path': e.path[len(basepath) + 1:],
                     })
-        results.sort(key=lambda x: x['name'], reverse=False)
+        results.sort(key=lambda x: x['path'], reverse=False)
         return results
 
     def filetree(self,
