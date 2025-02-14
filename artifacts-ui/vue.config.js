@@ -1,10 +1,13 @@
+const dotenv = require('dotenv')
+dotenv.config()
+
 module.exports = {
   devServer: {
     open: true,
     port: 3000,
     proxy: {
       '/artifacts': {
-        target: 'http://127.0.0.1:19090'
+        target: process.env.ARTIFACTS_TARGET
       }
     }
   },

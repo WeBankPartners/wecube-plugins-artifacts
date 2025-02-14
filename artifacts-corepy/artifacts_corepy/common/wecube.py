@@ -62,7 +62,11 @@ class WeCubeClient(utils.ClientMixin):
         url = self.server + url_path
         return self.post(url, data)
 
-    def retrieve(self, url_path, data=None):
+    def get(self, url_path, param=None):
+        url = self.server + url_path
+        return super().get(url, param)
+
+    def retrieve(self, url_path, data=None, check=True):
         # op：eq-等于；neq-不等于；in-范围过滤；like-模糊过滤；gt-大于；lt-小于；is - NULL ； isnot - NULL；  
         # {
         #     "criteria": {
@@ -80,4 +84,4 @@ class WeCubeClient(utils.ClientMixin):
         #     }]
         # }
         url = self.server + url_path
-        return self.post(url, data or {})
+        return self.post(url, data or {}, check=check)

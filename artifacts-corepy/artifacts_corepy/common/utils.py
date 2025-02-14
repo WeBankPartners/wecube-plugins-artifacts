@@ -295,10 +295,11 @@ class ClientMixin:
         self.check_response(resp_json)
         return resp_json
 
-    def post(self, url, data, param=None):
+    def post(self, url, data, param=None, check=True):
         LOG.info('POST %s', url)
         LOG.debug('Request: query - %s, data - %s', str(param), str(data))
         resp_json = RestfulJson.post(url, headers=self.build_headers(), params=param, json=data)
         LOG.debug('Response: %s', str(resp_json))
-        self.check_response(resp_json)
+        if check:
+            self.check_response(resp_json)
         return resp_json
