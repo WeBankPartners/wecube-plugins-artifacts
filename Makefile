@@ -27,6 +27,7 @@ package_py: image_py
 	mkdir -p package
 	cd package && docker save $(project_name):$(version) -o image.tar
 	cd package && cp ../register.xml .
+	cd package && cp ../init.sql ./init.sql
 	cd package && sed -i "s~{{REPOSITORY}}~$(project_name)~g" register.xml
 	cd package && sed -i "s~{{VERSION}}~$(version)~g" register.xml
 	cd artifacts-ui/dist && zip -r ui.zip .

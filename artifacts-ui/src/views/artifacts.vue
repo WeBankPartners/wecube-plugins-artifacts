@@ -15,16 +15,16 @@
         <CustomTitle :title="$t('artifacts_system_design_list')"></CustomTitle>
         <!-- <BaseHeaderTitle class="custom-title" :title="$t('artifacts_system_design_list')"></BaseHeaderTitle> -->
         <div>
-          <Tree :data="treeData" @on-select-change="selectTreeNode" class="tree-size"> </Tree>
-          <Spin size="large" fix v-if="treeLoading">
-            <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
-            <div>{{ $t('artifacts_loading') }}</div>
-          </Spin>
+          <Tree :data="treeData" @on-select-change="selectTreeNode" :empty-text="$t('artifacts_please_select_system_design')" class="tree-size"> </Tree>
         </div>
       </Card>
       <!-- eslint-disable-next-line vue/no-parsing-error -->
     </div>
     <div v-if="guid" class="right-zone">
+      <Spin size="large" fix v-if="treeLoading">
+        <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
+        <div>{{ $t('artifacts_loading') }}</div>
+      </Spin>
       <div>
         <div style="display: flex;justify-content: space-between;">
           <CustomTitle :title="customTreePath"></CustomTitle>
@@ -80,12 +80,11 @@
           <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
         </p>
         <div v-if="isShowHistoryModal">
-          <Table :columns="historyTableColumns" :data="historyTableData" :max-height="fileContentHeight.slice(0, -2)" highlight-row @on-row-click="onHistoryRowClick"></Table>
-          <!-- <ArtifactsSimpleTable :loading="historyTableLoading" :columns="historyTableColumns" :data="historyTableData" :page="historyPageInfo" :pagable="false" @pageChange="historyPageChange" @pageSizeChange="historyPageSizeChange" @rowClick="onHistoryRowClick"> </ArtifactsSimpleTable> -->
+          <Table :columns="historyTableColumns" :data="historyTableData" :max-height="fileContentHeight.slice(0, -2)"></Table>
         </div>
         <div slot="footer">
           <Button type="text" @click="onHistoryCancel()" :loading="historyBtnLoading">{{ $t('artifacts_cancel') }} </Button>
-          <Button type="primary" @click="onHistoryConfirm()" :loading="historyBtnLoading">{{ $t('artifacts_save') }} </Button>
+          <Button type="primary" :disabled="tmpHistorySelected.id === ''" @click="onHistoryConfirm()" :loading="historyBtnLoading">{{ $t('artifacts_save') }} </Button>
         </div>
       </Modal>
       <!-- 部署包上传组件 -->
@@ -108,6 +107,9 @@
           <Button type="primary" @click="onReleaseConfirm()" :disabled="releaseParams.selectedFlow === ''">{{ $t('art_ok') }} </Button>
         </div>
       </Modal>
+    </div>
+    <div v-else class="right-zone-empty">
+      <div class="empty-text">{{ $t('artifacts_please_select_unit') }}</div>
     </div>
   </div>
 </template>
@@ -217,7 +219,7 @@ export default {
         {
           title: this.$t('artifacts_package_name'),
           key: 'name',
-          minWidth: 160,
+          minWidth: 140,
           render: (h, params) => {
             return <span>{params.row.name}</span>
           }
@@ -273,14 +275,18 @@ export default {
           fixed: 'right',
           width: 230,
           render: (h, params) => {
+            // 镜像包不需要查看差异化配置
+            const showDiffEdit = params.row.package_type !== this.constPackageOptions.image
             return (
               <div style="padding-top:5px">
                 <div>
-                  <Tooltip content={this.$t('art_differentiated_variable_configuration')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" onClick={() => this.startConfigDiff(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#D87093', borderColor: '#D87093', marginBottom: '2px' }}>
-                      <Icon type="ios-medical" color="white" size="16"></Icon>
-                    </Button>
-                  </Tooltip>
+                  {showDiffEdit && (
+                    <Tooltip content={this.$t('art_differentiated_variable_configuration')} placement="top" delay={500} transfer={true}>
+                      <Button size="small" onClick={() => this.startConfigDiff(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#D87093', borderColor: '#D87093', marginBottom: '2px' }}>
+                        <Icon type="ios-medical" color="white" size="16"></Icon>
+                      </Button>
+                    </Tooltip>
+                  )}
                   <Tooltip content={this.$t('export')} placement="top" delay={500} transfer={true}>
                     <Button size="small" onClick={() => this.toExportPkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
                       <Icon type="md-cloud-download" color="white" size="16"></Icon>
@@ -315,7 +321,9 @@ export default {
         currentPage: 1,
         total: 0
       },
-      tmpHistorySelected: null,
+      tmpHistorySelected: {
+        id: ''
+      },
       historyBtnLoading: false,
       // ----------------
       // 包配置文件模态数据
@@ -417,8 +425,14 @@ export default {
       if (sysData.status === 'OK' && sysData.data.contents instanceof Array) {
         this.systemDesignVersions = sysData.data.contents.map(_ => _)
         if (this.systemDesignVersions.length > 0) {
-          this.systemDesignVersion = this.systemDesignVersions[0].guid
-          this.selectSystemDesignVersion(this.systemDesignVersion)
+          const userName = localStorage.getItem('username')
+
+          const findVersion = this.systemDesignVersions.find(item => item.create_user === userName)
+
+          if (findVersion) {
+            this.systemDesignVersion = findVersion.guid
+            this.selectSystemDesignVersion(this.systemDesignVersion)
+          }
         }
       }
       if (packageCiType.status === 'OK') {
@@ -611,8 +625,9 @@ export default {
         this.pageInfo = { currentPage, pageSize, total }
       }
     },
-    selectTreeNode (node) {
+    async selectTreeNode (node) {
       if (node.length && node[0].level === 3) {
+        this.treeLoading = true
         this.guid = node[0].guid
         this.treePath = this.findPathByGuid(this.treeData, this.guid)
         this.customTreePath = this.$t('art_sys_artch') + this.treePath.join(' / ')
@@ -620,12 +635,13 @@ export default {
           this.customTreePath = this.customTreePath.slice(0, 60) + '...'
         }
         this.tableFilter.package_type = ''
-        this.queryPackages(true)
+        await this.queryPackages(true)
         this.getbaselinePkg()
         this.btnControl()
         this.$nextTick(() => {
           this.updateWrappedItems()
         })
+        this.treeLoading = false
       }
     },
     // 获取单元路径
@@ -680,12 +696,11 @@ export default {
       this.historyPageInfo.pageSize = pageSize
     },
     onHistoryCancel () {
-      this.tmpHistorySelected = null
+      this.tmpHistorySelected = {
+        id: ''
+      }
       this.historyBtnLoading = false
       this.isShowHistoryModal = false
-    },
-    onHistoryRowClick (row) {
-      this.tmpHistorySelected = row
     },
     async onHistoryConfirm () {
       if (this.tmpHistorySelected) {
@@ -696,7 +711,9 @@ export default {
         const { status } = await operateCiStateWithData(this.packageCiType, rollBackData, 'Rollback')
         if (status === 'OK') {
           this.isShowHistoryModal = false
-          this.tmpHistorySelected = null
+          this.tmpHistorySelected = {
+            id: ''
+          }
           this.queryPackages()
         }
         this.historyBtnLoading = false
@@ -730,6 +747,21 @@ export default {
               ellipsis: true
             }
           })
+        this.historyTableColumns.unshift({
+          title: '',
+          align: 'center',
+          width: 30,
+          render: (h, params) => {
+            return (
+              <Radio
+                value={params.row.id === this.tmpHistorySelected.id}
+                onInput={value => {
+                  this.tmpHistorySelected = params.row
+                }}
+              ></Radio>
+            )
+          }
+        })
       }
     },
     getRootCI (diffExpr, defaultRootCiTypeId, elVar) {
@@ -979,7 +1011,12 @@ export default {
   font-size: 12px !important;
 }
 .tree-size ::v-deep .ivu-tree-empty {
-  font-size: 12px !important;
+  font-size: 18px !important;
+  text-align: center;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .tree-size {
@@ -1042,6 +1079,22 @@ export default {
   padding: 8px;
   width: 74%;
   min-width: 500px;
+}
+
+.right-zone-empty {
+  margin-left: 16px;
+  padding: 8px;
+  width: 74%;
+  min-width: 500px;
+  position: relative;
+  .empty-text {
+    font-size: 18px;
+    text-align: center;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
 }
 
 .search-item {

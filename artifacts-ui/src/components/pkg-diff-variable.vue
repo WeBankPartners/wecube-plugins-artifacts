@@ -2,7 +2,7 @@
   <Drawer :title="pkgName" v-model="openDrawer" class="custom-drawer" :scrollable="false" width="1300">
     <Spin size="large" fix v-if="spinShow"></Spin>
     <div v-if="showDiffConfigTab">
-      <Tabs :value="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
+      <Tabs :value="currentDiffConfigTab" v-model="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
           <Upload :before-upload="handleUpload" action="">
             <Button type="primary" style="margin-right: 8px;">
@@ -20,9 +20,14 @@
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
-          <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
-            <Button type="primary" style="vertical-align: text-top;" size="small" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
-            <TabPane v-for="(item, index) in packageDetail.diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="APP">
+          <div style="margin-bottom: 8px;">
+            <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;">
+              <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+            </Select>
+            <Button type="primary" style="margin-left: 24px;" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+          </div>
+          <Tabs :value="activeTab" v-model="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
+            <TabPane v-for="(item, index) in packageDetail.diff_conf_file" v-if="item.configKeyInfos.length !== 0" :label="renderLabel(item)" :name="item.filename" :key="index" tab="APP">
               <div class="pkg-variable">
                 <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
                   <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
@@ -40,9 +45,14 @@
             <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
             <div>{{ $t('artifacts_loading') }}</div>
           </Spin>
+          <div style="margin-bottom: 8px;">
+            <Select clearable filterable @on-change="getVariableValue('db')" @on-open-change="getCalcInstance('db')" :placeholder="$t('art_trial_instance')" v-model="calcDBInstance" style="width:300px;">
+              <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+            </Select>
+            <Button type="primary" :disabled="packageDetail.db_diff_conf_file.length === 0" style="margin-left:24px" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+          </div>
           <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.db_diff_conf_file)" name="DB">
-            <Button type="primary" style="vertical-align: text-top;" size="small" :disabled="packageDetail.db_diff_conf_file.length === 0" @click="showBatchBindModal" slot="extra">{{ $t('multi_bind_config') }}</Button>
-            <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" :disabled="item.configKeyInfos.length === 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="DB">
+            <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" v-if="item.configKeyInfos.length !== 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="DB">
               <div class="pkg-variable">
                 <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
                   <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
@@ -60,7 +70,8 @@
     <div class="drawer-footer">
       <Button @click="openDrawer = false" type="primary">{{ $t('art_close') }}</Button>
     </div>
-    <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :fullscreen="fullscreen" width="900">
+    <!-- 复制已有模版 -->
+    <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :fullscreen="fullscreen" width="1000">
       <p slot="header">
         <span>{{ $t('art_copy_exist') }}</span>
         <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
@@ -68,19 +79,40 @@
       </p>
       <div slot="footer">
         <Button type="text" @click="closeConfigSelectModal()">{{ $t('artifacts_cancel') }} </Button>
-        <Button type="primary" @click="setConfigRowValue()">{{ $t('art_ok') }} </Button>
+        <Button type="primary" :disabled="tempCopySelectRow.guid === ''" @click="setConfigRowValue()">{{ $t('art_ok') }} </Button>
       </div>
       <div style="display: flex;gap: 8px;margin-bottom: 8px;">
-        <Select style="width: 200px;" @on-change="remoteConfigSearch()" :placeholder="$t('artifacts_uploaded_by')" v-model="tempCopyParams.variable_type">
-          <Option v-for="item in ['GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE']" :value="item" :key="item">{{ item }}</Option>
+        <Select style="width: 200px;" @on-change="remoteConfigSearch()" v-model="tempCopyParams.variable_type">
+          <Option v-for="item in ['ALL', 'GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE']" :value="item" :key="item">{{ item }}</Option>
         </Select>
         <Input style="width: 200px;" v-model="tempCopyParams.variable_name" @on-change="remoteConfigSearch()" :placeholder="$t('art_variable_name')" clearable />
-        <Select style="width: 200px;" clearable filterable @on-change="remoteConfigSearch()" @on-clear="tempCopyParams.create_user = ''" :placeholder="$t('artifacts_uploaded_by')" v-model="tempCopyParams.create_user">
+        <Select style="width: 200px;" clearable filterable @on-change="remoteConfigSearch()" @on-clear="tempCopyParams.create_user = ''" :placeholder="$t('art_creator')" v-model="tempCopyParams.create_user">
           <Option v-for="user in userList" :value="user.username" :key="user.id">{{ user.username }}</Option>
         </Select>
       </div>
       <RuleTable :data="tempCopyTableData" ref="tempCopyTableRef" :columns="tempCopyColomns" :page="page" @reloadTableData="remoteConfigSearch" :maxHeight="fileContentHeight" :loading="remoteLoading"></RuleTable>
     </Modal>
+
+    <!-- 使用模版 -->
+    <Modal :mask-closable="false" v-model="isShowUseTemplateModal" :fullscreen="fullscreen" width="1000">
+      <p slot="header">
+        <span>{{ $t('art_use_template') }}</span>
+        <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
+        <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
+      </p>
+      <div slot="footer">
+        <Button type="text" @click="closeUseTemplateModal()">{{ $t('artifacts_cancel') }} </Button>
+        <Button type="primary" :disabled="useTemplateSelectRow.id === ''" @click="setUseTemplateValue()">{{ $t('art_ok') }} </Button>
+      </div>
+      <div style="display: flex;gap: 8px;margin-bottom: 8px;">
+        <Input style="width: 200px;" v-model="useTemplateParams.code__icontains" @on-change="getAvailableTemplates()" :placeholder="$t('art_name')" clearable />
+        <Select style="width: 200px;" clearable filterable @on-change="getAvailableTemplates()" @on-clear="useTemplateParams.create_user = ''" :placeholder="$t('art_creator')" v-model="useTemplateParams.create_user">
+          <Option v-for="user in userList" :value="user.username" :key="user.id">{{ user.username }}</Option>
+        </Select>
+      </div>
+      <RuleTable :data="useTemplateTableData" ref="useTemplateTableRef" :columns="useTemplateColomns" :page="page" @reloadTableData="getAvailableTemplates" :maxHeight="fileContentHeight" :loading="remoteLoading"></RuleTable>
+    </Modal>
+
     <Modal :mask-closable="false" v-model="isShowBatchBindModal" :width="800" :title="$t('multi_bind_config')">
       <Card>
         <div slot="title">
@@ -99,28 +131,40 @@
       </div>
     </Modal>
 
-    <Modal :mask-closable="false" v-model="isShowCiConfigModal" :title="$t('artifacts_property_value_fill_rule')" @on-ok="setCIConfigRowValue" @on-cancel="closeCIConfigSelectModal">
-      <Form :label-width="120">
-        <FormItem :label="$t('root_ci')">
-          <Select filterable clearable v-model="currentConfigValue" @on-change="handleCIConfigChange">
-            <Option v-for="conf in allCIConfigs" :value="conf.code" :key="conf.code">{{ conf.code }}</Option>
-          </Select>
-        </FormItem>
-        <FormItem v-show="currentConfigValue" v-for="input in customInputs" :key="input.key" :label="input.key">
-          <Input type="text" v-model="input.value" />
-        </FormItem>
-      </Form>
+    <Modal :mask-closable="false" v-model="isShowCiConfigModal" :destroy-on-close="true" :width="700" :title="$t('artifacts_property_value_fill_rule')">
+      <div style="max-height: 500px;overflow-y: auto;">
+        <Form :label-width="120">
+          <FormItem :label="$t('art_value_rule')">
+            <div style="color:gray">
+              <ArtifactsAutoFill :allCiTypes="ciTypes" :specialDelimiters="specialDelimiters" rootCiTypeId="" :isReadOnly="true" v-model="useTemplateSelectRow.value" cmdbPackageName="wecmdb" />
+            </div>
+          </FormItem>
+          <FormItem v-for="input in customInputs" :key="input.key" style="margin-bottom: 0;">
+            <div slot="label" style="width: 120px;padding-right:8px;word-break: break-all;">
+              <span style="color: red;">*</span>
+              {{ input.key }}
+            </div>
+            <Input type="text" v-model="input.value" />
+          </FormItem>
+        </Form>
+      </div>
+      <div slot="footer">
+        <Button type="text" @click="closeCIConfigSelectModal()">{{ $t('artifacts_cancel') }} </Button>
+        <Button type="primary" :disabled="customInputs.some(input => input.value.trim() === '')" @click="setCIConfigRowValue()">{{ $t('art_ok') }} </Button>
+      </div>
     </Modal>
+    <DiffVariableTemplate ref="diffVariableTemplateRef" :useRolesRequired="true" @reloadTableData="getAvailableTemplates"></DiffVariableTemplate>
   </Drawer>
 </template>
 
 <script>
-import { getUserList, sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, getPackageDetail, updatePackage, getVariableRootCiTypeId, getEntitiesByCiType, getDiffVariable } from '@/api/server.js'
+import { getCalcInstance, getVariableValue, getUserList, sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, getPackageDetail, updatePackage, getDiffVariable, getTemplate, deleteTemplate } from '@/api/server.js'
 import { setCookie, getCookie } from '../util/cookie.js'
 import axios from 'axios'
 import { decode } from 'js-base64'
 import RuleTable from './rule-table.vue'
 import { debounce } from 'lodash'
+import DiffVariableTemplate from '@/components/diff-variable-template'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -223,11 +267,11 @@ export default {
         {
           title: this.$t('artifacts_property_seq'),
           key: 'index',
-          width: 70
+          width: 60
         },
         {
           title: this.$t('artifacts_line_number'),
-          width: 100,
+          width: 90,
           key: 'line'
         },
         {
@@ -283,6 +327,24 @@ export default {
           }
         },
         {
+          title: this.$t('art_trial_result'),
+          width: 120,
+          render: (h, params) => {
+            let content = ''
+            if (params.row.conf_variable.diffExpr !== params.row.conf_variable.originDiffExpr) {
+              content = '-'
+            } else {
+              const variableValue = this.currentDiffConfigTab === 'APP' ? this.variableAppValue : this.variableDBValue
+              content = variableValue[params.row.key] || '-'
+            }
+            return (
+              <Tooltip content={content} placement="top" delay={500} transfer={true} max-width="300">
+                <div style="width: 110px;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">{content}</div>
+              </Tooltip>
+            )
+          }
+        },
+        {
           title: this.$t('artifacts_action'),
           key: 'state',
           width: 100,
@@ -296,11 +358,14 @@ export default {
         { value: defaultDBRootCiTypeId, label: this.$t('DB') }
       ],
       activeTab: '',
+      activeTabTmp: '',
       activeTabData: null,
       currentConfigTab: '', // 配置当前tab
 
       showDiffConfigTab: false,
       currentDiffConfigTab: '', // 差异化变量当前tab
+      currentDiffConfigTabTmp: '', // 差异化变量当前tab
+      flag: true,
       packageName: '',
       maxHeight: 500,
       variablePrefixType: [
@@ -326,6 +391,7 @@ export default {
         }
       ],
       prefixType: 'variable_prefix_default', // 前缀
+      prefixTypeTmp: 'variable_prefix_default', // 前缀
       tempTableData: [], // 通过类型、文件、前缀过滤后的展示数据
       currentFileIndex: -1, // 缓存单签文件顺序
       tempCopySelectRow: {
@@ -350,8 +416,16 @@ export default {
         },
         {
           title: this.$t('art_variable_name'),
-          width: 200,
+          width: 160,
           key: 'variable_name'
+        },
+        {
+          title: this.$t('art_variable_type'),
+          width: 100,
+          key: 'variable_type',
+          render: (h, params) => {
+            return <div>{params.row.variable_type || '-'}</div>
+          }
         },
         {
           title: this.$t('art_value_rule'),
@@ -379,8 +453,99 @@ export default {
       },
       userList: [],
       // 选择已有模版-结束
+      // 使用模版-开始
+      isShowUseTemplateModal: false,
+      useTemplateSelectRow: {
+        id: ''
+      },
+      useTemplateColomns: [
+        {
+          title: '',
+          align: 'center',
+          width: 30,
+          render: (h, params) => {
+            return (
+              <Radio
+                value={params.row.id === this.useTemplateSelectRow.id}
+                onInput={value => {
+                  this.selectUseTemplate(params.row)
+                }}
+              ></Radio>
+            )
+          }
+        },
+        {
+          title: this.$t('art_name'),
+          width: 120,
+          key: 'code'
+        },
+        {
+          title: this.$t('art_value_rule'),
+          key: 'value',
+          render: (h, params) => {
+            return <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.value} cmdbPackageName={cmdbPackageName} />
+          }
+        },
+        {
+          title: this.$t('art_creator'),
+          width: 100,
+          key: 'create_user'
+        },
+        {
+          title: this.$t('artifacts_update_time'),
+          width: 170,
+          key: 'create_time',
+          render: (h, params) => {
+            return <div>{params.row.update_time || params.row.create_time}</div>
+          }
+        },
+        {
+          title: this.$t('artifacts_action'),
+          key: 'state',
+          fixed: 'right',
+          width: 120,
+          render: (h, params) => {
+            return (
+              <div style="padding-top:5px">
+                <div>
+                  <Tooltip content={this.$t('art_permissions')} placement="top" delay={500} transfer={true}>
+                    <Button size="small" type="warning" onClick={() => this.templateAuth(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
+                      <Icon type="ios-person" color="white" size="16"></Icon>
+                    </Button>
+                  </Tooltip>
+                  <Tooltip content={this.$t('art_delete')} placement="top" delay={500} transfer={true}>
+                    <Button size="small" type="error" onClick={() => this.templateDelete(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
+                      <Icon type="md-trash" color="white" size="16"></Icon>
+                    </Button>
+                  </Tooltip>
+                </div>
+              </div>
+            )
+          }
+        }
+      ],
+      useTemplateTableData: [],
+      // page: {
+      //   currentPage: 1,
+      //   pageSize: 10,
+      //   total: 0
+      // },
+      useTemplateParams: {
+        code__icontains: '',
+        create_user: ''
+      },
+      // userList: [],
+      //  使用模版-结束
       fullscreen: false,
-      fileContentHeight: window.screen.availHeight * 0.4 + 100
+      fileContentHeight: window.screen.availHeight * 0.4 + 100,
+      ciTypes: [],
+      specialDelimiters: [],
+      calcAppInstance: '', // 待试算实例
+      calcAppInstanceOptions: [], // 待试算实例选项
+      variableAppValue: {}, // 缓存试算结果
+      calcDBInstance: '', // 待试算实例
+      calcDBInstanceOptions: [], // 待试算实例选项
+      variableDBValue: {} // 缓存试算结果
     }
   },
   computed: {},
@@ -406,18 +571,115 @@ export default {
     }
   },
   mounted () {
-    this.maxHeight = window.innerHeight - 290
+    this.maxHeight = window.innerHeight - 340
     window.addEventListener('resize', this.handleResize)
   },
   beforeDestroy () {
     window.removeEventListener('resize', this.handleResize)
   },
   methods: {
-    typeChange (configKeyInfos) {
-      this.tempTableData = []
-      this.$nextTick(() => {
-        this.getVariableTableData(configKeyInfos, this.variablePrefixType.find(item => item.key === this.prefixType).filterKey)
-      })
+    renderLabel (item) {
+      return () => (
+        <tooltip placement="top" width={300} delay={500} transfer={true}>
+          <div style="white-space: normal" slot="content">
+            {item.filename}
+          </div>
+          {item.shorFileName + ' (' + item.configKeyInfos.length + ')'}
+        </tooltip>
+      )
+    },
+    clearCalcParams () {
+      this.calcAppInstance = ''
+      this.calcAppInstanceOptions = []
+      this.variableAppValue = {}
+      this.calcDBInstance = ''
+      this.calcDBInstanceOptions = []
+      this.variableDBValue = {}
+    },
+    async getVariableValue (type) {
+      if (type === 'app') {
+        this.variableAppValue = {}
+      }
+      if (type === 'db') {
+        this.variableDBValue = {}
+      }
+      const guid = type === 'app' ? this.calcAppInstance : this.calcDBInstance
+      if (!guid) return
+      const params = [
+        {
+          type,
+          guid,
+          deploy_package: this.packageId
+        }
+      ]
+      let { status, data } = await getVariableValue(params)
+      if (status === 'OK') {
+        const variableValue = this.formatVariabel(data)
+        if (type === 'app') {
+          this.variableAppValue = variableValue
+        }
+        if (type === 'db') {
+          this.variableDBValue = variableValue
+        }
+      }
+    },
+    formatVariabel (str) {
+      const vari = str.split('\u0001=\u0001')
+      const keys = vari[0].split(',\u0001')
+      const values = vari[1].split(',\u0001')
+      let res = {}
+      for (let i = 0; i < keys.length; i++) {
+        res[(keys[i] || '').replace('\u0001', '')] = (values[i] || '').replace('\u0001', '')
+      }
+      return res
+    },
+    async getCalcInstance (type) {
+      let params = {
+        guid: this.guid,
+        type
+      }
+      let { status, data } = await getCalcInstance(params)
+      if (status === 'OK') {
+        if (type === 'app') {
+          this.calcAppInstanceOptions = data || []
+        }
+        if (type === 'db') {
+          this.calcDBInstanceOptions = data || []
+        }
+      }
+    },
+    async typeChange (configKeyInfos) {
+      const flag = await this.isVariableChange() // 这里必须使用await
+      if (flag) {
+        this.prefixTypeTmp = this.prefixType
+        this.tempTableData = []
+        this.$nextTick(() => {
+          this.getVariableTableData(configKeyInfos, this.variablePrefixType.find(item => item.key === this.prefixType).filterKey)
+        })
+      } else {
+        const tmp = this.prefixType
+        this.prefixType = this.prefixTypeTmp
+        this.$Modal.confirm({
+          title: this.$t('art_change_is_not_saved'),
+          'z-index': 1000000,
+          okText: this.$t('art_save_now'),
+          cancelText: this.$t('art_discard'),
+          onOk: async () => {
+            console.log('自我消失')
+          },
+          onCancel: async () => {
+            this.prefixType = tmp
+            this.prefixTypeTmp = tmp
+            this.tempTableData = []
+            configKeyInfos.forEach(item => {
+              item.conf_variable.diffExpr = item.conf_variable.originDiffExpr
+            })
+            this.$nextTick(() => {
+              this.getVariableTableData(configKeyInfos, this.variablePrefixType.find(item => item.key === this.prefixType).filterKey)
+            })
+          }
+        })
+      }
     },
     getNum (configKeyInfos, filterKey) {
       let num = 0
@@ -432,20 +694,19 @@ export default {
       this.tempTableData = configKeyInfos.filter(item => filterKey.includes(item.type))
     },
     async initDrawer (guid, row) {
+      this.clearCalcParams()
+      this.guid = guid
+      this.getCalcInstance()
       this.openDrawer = true
       this.spinShow = true
       await this.getAllCITypesWithAttr()
       this.currentDiffConfigTab = ''
+      this.currentDiffConfigTabTmp = ''
       this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
-      this.guid = guid
       this.packageName = row.code
-      if (row.package_type === this.constPackageOptions.image) {
-        this.showDiffConfigTab = false
-        this.packageDetail = []
-        return
-      }
       this.packageType = row.package_type
       this.currentDiffConfigTab = this.packageType === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
+      this.currentDiffConfigTabTmp = this.currentDiffConfigTab
       this.packageId = row.guid
       this.showDiffConfigTab = true
       // 获取包文件及差异化变量数据
@@ -474,6 +735,7 @@ export default {
     },
     setPrefixType () {
       this.prefixType = ''
+      this.prefixTypeTmp = this.prefixType
       this.$nextTick(() => {
         const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
         const find = this.packageDetail[tmp].find(item => item.filename === this.activeTab)
@@ -483,6 +745,7 @@ export default {
             const res = this.getNum(tmpData, this.variablePrefixType[i].filterKey)
             if (res > 0) {
               this.prefixType = this.variablePrefixType[i].key
+              this.prefixTypeTmp = this.prefixType
               break
             }
           }
@@ -557,23 +820,78 @@ export default {
         }
       }
     },
-    changeDiffConfigTab (tabName) {
-      this.currentDiffConfigTab = tabName
+    async changeDiffConfigTab (tabName) {
+      const flag = await this.isVariableChange() // 这里必须使用await
+      if (flag) {
+        this.currentDiffConfigTabTmp = tabName
+        this.currentDiffConfigTab = this.currentDiffConfigTabTmp
+      } else {
+        this.currentDiffConfigTab = this.currentDiffConfigTabTmp
+        this.$Modal.confirm({
+          title: this.$t('art_change_is_not_saved'),
+          'z-index': 1000000,
+          okText: this.$t('art_save_now'),
+          cancelText: this.$t('art_discard'),
+          onOk: async () => {
+            console.log('自我消失')
+          },
+          onCancel: async () => {
+            this.tempTableData.forEach(item => {
+              item.conf_variable.diffExpr = item.conf_variable.originDiffExpr
+            })
+            this.changeDiffConfigTab(tabName)
+          }
+        })
+        return
+      }
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
       if (this.packageDetail[tmp].length > 0) {
         this.activeTab = this.packageDetail[tmp][0].filename
+        this.activeTabTmp = this.activeTab
         this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
         this.setPrefixType()
         this.initVariableTableData(0)
       } else {
         this.activeTab = ''
+        this.activeTabTmp = this.activeTab
         this.activeTabData = {}
       }
     },
-    changeTab (tabName, tabs) {
-      this.activeTab = tabName
+    isVariableChange () {
+      let tmp = true
+      this.tempTableData.forEach(item => {
+        if (item.conf_variable.diffExpr !== item.conf_variable.originDiffExpr) {
+          tmp = false
+        }
+      })
+      return tmp
+    },
+    async changeTab (tabName, tabs) {
+      const flag = await this.isVariableChange() // 这里必须使用await
+      if (flag) {
+        this.activeTabTmp = tabName
+        this.activeTab = this.activeTabTmp
+      } else {
+        this.activeTab = this.activeTabTmp
+        this.$Modal.confirm({
+          title: this.$t('art_change_is_not_saved'),
+          'z-index': 1000000,
+          okText: this.$t('art_save_now'),
+          cancelText: this.$t('art_discard'),
+          onOk: async () => {
+            console.log('自我消失')
+          },
+          onCancel: async () => {
+            this.tempTableData.forEach(item => {
+              item.conf_variable.diffExpr = item.conf_variable.originDiffExpr
+            })
+            this.changeTab(tabName, tabs)
+          }
+        })
+        return
+      }
+
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-      // this.activeTabData = this.packageDetail.diff_conf_file.find(item => item.shorFileName === this.activeTab).configKeyInfos
       this.activeTabData = this.packageDetail[tmp].find(item => item.filename === this.activeTab).configKeyInfos
       const index = tabs.findIndex(item => item.filename === tabName)
       this.setPrefixType()
@@ -753,9 +1071,11 @@ export default {
         this.packageDetail = this.formatPackageDetail(data)
         if (this.packageDetail[tmp].length > 0) {
           this.activeTab = this.packageDetail[tmp][0].filename
+          this.activeTabTmp = this.activeTab
           this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
         } else {
           this.activeTab = ''
+          this.activeTabTmp = this.activeTab
           this.activeTabData = {}
         }
       }
@@ -765,6 +1085,9 @@ export default {
       return [
         <Button disabled={!!(row.conf_variable.diffExpr === row.conf_variable.originDiffExpr || row.conf_variable.fixedDate)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveConfigVariableValue(row)}>
           {this.$t('artifacts_save')}
+        </Button>,
+        <Button disabled={row.conf_variable.diffExpr === ''} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveAsTemplate(row)}>
+          {this.$t('art_save_as_template')}
         </Button>
       ]
     },
@@ -830,7 +1153,18 @@ export default {
         dialect: {
           queryMode: 'new'
         },
-        filters: [],
+        filters: [
+          {
+            name: 'variable_value',
+            operator: 'neq',
+            value: ''
+          },
+          {
+            name: 'variable_value',
+            operator: 'notNull',
+            value: ''
+          }
+        ],
         pageable: {},
         sorting: {
           asc: false,
@@ -855,7 +1189,7 @@ export default {
           value: this.tempCopyParams.create_user
         })
       }
-      if (this.tempCopyParams.variable_type) {
+      if (['GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE'].includes(this.tempCopyParams.variable_type)) {
         params.filters.push({
           name: 'variable_type',
           operator: 'eq',
@@ -899,27 +1233,101 @@ export default {
       }
     },
     async showCIConfigModal (row) {
-      const res = await getVariableRootCiTypeId()
-      if (res.status === 'OK') {
-        const tab = this.currentDiffConfigTab.toLowerCase()
-        const _template = res.data[`${tab}_template`]
-        if (_template === '') {
-          this.$Message.warning(this.$t('art_no_template'))
-          return
-        }
-        const resp = await getEntitiesByCiType(cmdbPackageName, _template, {})
-        if (resp.status === 'OK') {
-          if (Array.isArray(resp.data)) {
-            this.allCIConfigs = resp.data.sort((first, second) => {
-              const firstCode = first.code.toLowerCase()
-              const secondCode = second.code.toLowerCase()
-              return firstCode.localeCompare(secondCode)
+      this.useTemplateParams.code__icontains = ''
+      this.useTemplateParams.create_user = ''
+      this.getUserList()
+      await this.getAvailableTemplates()
+      this.useTemplateSelectRow = {
+        id: ''
+      }
+      this.fullscreen = false
+      this.isShowUseTemplateModal = true
+      this.currentConfigRow = row
+      // const res = await getVariableRootCiTypeId()
+      // if (res.status === 'OK') {
+      //   const tab = this.currentDiffConfigTab.toLowerCase()
+      //   const _template = res.data[`${tab}_template`]
+      //   if (_template === '') {
+      //     this.$Message.warning(this.$t('art_no_template'))
+      //     return
+      //   }
+      //   const resp = await getEntitiesByCiType(cmdbPackageName, _template, {})
+      //   if (resp.status === 'OK') {
+      //     if (Array.isArray(resp.data)) {
+      //       this.allCIConfigs = resp.data.sort((first, second) => {
+      //         const firstCode = first.code.toLowerCase()
+      //         const secondCode = second.code.toLowerCase()
+      //         return firstCode.localeCompare(secondCode)
+      //       })
+      //       this.isShowCiConfigModal = true
+      //       this.currentConfigRow = row
+      //     }
+      //   }
+      // }
+    },
+    getAvailableTemplates: debounce(async function (
+      pageable = {
+        pageSize: 10,
+        currentPage: 1
+      }
+    ) {
+      this.useTemplateSelectRow = {
+        id: ''
+      }
+      this.remoteLoading = true
+      let params = {
+        __offset: (pageable.currentPage - 1) * pageable.pageSize,
+        __limit: pageable.pageSize
+      }
+      if (this.useTemplateParams.code__icontains) {
+        params.code__icontains = this.useTemplateParams.code__icontains
+      }
+      if (this.useTemplateParams.create_user) {
+        params.create_user = this.useTemplateParams.create_user
+      }
+      const queryString = new URLSearchParams(params).toString()
+      const res = await getTemplate(queryString)
+      if (res) {
+        this.useTemplateTableData = res.data.data
+        this.page.total = res.data.count
+        this.page.currentPage = pageable.currentPage
+        this.page.pageSize = pageable.pageSize
+        this.$refs.useTemplateTableRef.setPage(this.page)
+      }
+      this.remoteLoading = false
+    }, 300),
+    selectUseTemplate (row) {
+      this.useTemplateSelectRow = row
+    },
+    setUseTemplateValue () {
+      this.customInputs = []
+      const value = this.useTemplateSelectRow.value
+      const customRegex = /\$\^(\w*)\$\^/g
+      if (typeof value === 'string') {
+        const temps = []
+        let newSet = new Set()
+        for (const matched of value.matchAll(customRegex)) {
+          if (!newSet.has(matched[1])) {
+            newSet.add(matched[1])
+            temps.push({
+              origin: matched[0],
+              key: matched[1],
+              value: ''
             })
-            this.isShowCiConfigModal = true
-            this.currentConfigRow = row
           }
         }
+        this.customInputs = temps
       }
+      this.closeUseTemplateModal()
+      if (this.customInputs.length > 0) {
+        this.isShowCiConfigModal = true
+      } else {
+        // 直接替换
+        this.setCIConfigRowValue()
+      }
+    },
+    closeUseTemplateModal () {
+      this.isShowUseTemplateModal = false
     },
     setConfigRowValue () {
       const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
@@ -933,13 +1341,13 @@ export default {
       this.closeConfigSelectModal()
     },
     setCIConfigRowValue () {
-      const currentConfigValueCodeTovalue = this.allCIConfigs.find(ci => ci.code === this.currentConfigValue).value
+      const currentConfigValueCodeTovalue = this.useTemplateSelectRow.value
       if (currentConfigValueCodeTovalue) {
         const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
         this.packageDetail[tmp].forEach(elFile => {
           elFile.configKeyInfos.forEach(elFileVar => {
             if (this.currentConfigRow.key.toLowerCase() === elFileVar.key.toLowerCase()) {
-              let resultStr = currentConfigValueCodeTovalue.replaceAll(/\$&(\w)*\$&/g, elFileVar.key)
+              let resultStr = currentConfigValueCodeTovalue.replaceAll(/!&(\w)*!&/g, elFileVar.key)
               this.customInputs.forEach(item => {
                 resultStr = resultStr.replaceAll(item.origin, item.value)
               })
@@ -1011,9 +1419,35 @@ export default {
           })
         }
       })
+      this.getVariableValue(this.currentDiffConfigTab.toLocaleLowerCase())
+    },
+
+    saveAsTemplate (row) {
+      this.$refs.diffVariableTemplateRef.startAuth([], [], row.conf_variable.diffExpr, row.key)
+    },
+    // 模版授权
+    templateAuth (row) {
+      this.$refs.diffVariableTemplateRef.editAuth(row)
+    },
+    // 模版删除
+    templateDelete (row) {
+      this.$Modal.confirm({
+        title: this.$t('artifacts_delete_confirm'),
+        'z-index': 1000000,
+        onOk: async () => {
+          const { status, message } = await deleteTemplate(row.id)
+          if (status === 'OK') {
+            this.$Notice.success({
+              title: this.$t('artifacts_delete_success'),
+              desc: message
+            })
+            this.getAvailableTemplates()
+          }
+        }
+      })
     },
     handleResize () {
-      this.maxHeight = window.innerHeight - 290
+      this.maxHeight = window.innerHeight - 340
     },
 
     // #endregion
@@ -1031,7 +1465,8 @@ export default {
     this.getSpecialConnector()
   },
   components: {
-    RuleTable
+    RuleTable,
+    DiffVariableTemplate
   }
 }
 </script>
