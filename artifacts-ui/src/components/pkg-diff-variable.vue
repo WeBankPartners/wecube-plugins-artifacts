@@ -78,7 +78,7 @@
         <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
       </p>
       <div slot="footer">
-        <Button type="text" @click="closeConfigSelectModal()">{{ $t('artifacts_cancel') }} </Button>
+        <Button @click="closeConfigSelectModal()">{{ $t('artifacts_cancel') }} </Button>
         <Button type="primary" :disabled="tempCopySelectRow.guid === ''" @click="setConfigRowValue()">{{ $t('art_ok') }} </Button>
       </div>
       <div style="display: flex;gap: 8px;margin-bottom: 8px;">
@@ -100,8 +100,8 @@
         <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
         <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
       </p>
-      <div slot="footer">
-        <Button type="text" @click="closeUseTemplateModal()">{{ $t('artifacts_cancel') }} </Button>
+      <div slot="footer" class="margin-top:12px">
+        <Button @click="closeUseTemplateModal()">{{ $t('artifacts_cancel') }} </Button>
         <Button type="primary" :disabled="useTemplateSelectRow.id === ''" @click="setUseTemplateValue()">{{ $t('art_ok') }} </Button>
       </div>
       <div style="display: flex;gap: 8px;margin-bottom: 8px;">
