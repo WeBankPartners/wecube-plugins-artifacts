@@ -648,15 +648,15 @@ export default {
       }
       const propsWithBraces = props
         ? {
-          ...props,
-          class: [...props.class, 'auto-fill-key-word']
-        }
-        : {
-          class: this.formatClassName(bracesClassList),
-          attrs: {
-            index: i
+            ...props,
+            class: [...props.class, 'auto-fill-key-word']
           }
-        }
+        : {
+            class: this.formatClassName(bracesClassList),
+            attrs: {
+              index: i
+            }
+          }
       return [<span {...propsWithBraces}>{' { '}</span>, ...result, <span {...propsWithBraces}>{' } '}</span>]
     },
     renderDelimiter (val, i) {
@@ -945,7 +945,9 @@ export default {
         this.$emit('input', JSON.stringify(this.autoFillArray))
       }
     },
-    copy () {
+    copy (event) {
+      event.stopPropagation()
+
       let inputElement = document.createElement('input')
       inputElement.value = this.value
       document.body.appendChild(inputElement)
