@@ -945,9 +945,13 @@ export default {
         this.$emit('input', JSON.stringify(this.autoFillArray))
       }
     },
-    copy (event) {
-      event.stopPropagation()
-
+    copy () {
+      setTimeout(() => {
+        const element = document.querySelector('.content-pop')
+        if (element) {
+          element.style.display = 'none'
+        }
+      }, 20)
       let inputElement = document.createElement('input')
       inputElement.value = this.value
       document.body.appendChild(inputElement)
@@ -1032,7 +1036,9 @@ export default {
           this.renderEditor()
         ) : (
           // 可编辑状态
-          <Poptip v-model={this.optionsDisplay}>{this.renderEditor()}</Poptip>
+          <Poptip popper-class="content-pop" v-model={this.optionsDisplay}>
+            {this.renderEditor()}
+          </Poptip>
         )}
       </div>
     )
