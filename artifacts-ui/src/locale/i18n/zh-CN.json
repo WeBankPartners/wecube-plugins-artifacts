@@ -183,5 +183,9 @@
   "art_parameter_name": "参数名",
   "art_parameter_value": "参数值(参考值，可替换)",
   "art_parameter": "参数",
-  "art_constant": "常量"
+  "art_constant": "常量",
+  "art_upgrade_and_clean_up": "升级清理目录/文件",
+  "art_upgrade_and_clean_up_select": "选择升级清理目录/文件",
+  "art_path_warn": "清理路径中不能包含'../'或以'/'开头",
+  "art_size": "大小"
 }

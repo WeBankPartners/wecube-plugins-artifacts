@@ -1,5 +1,5 @@
+import { getAllSystemEnumCodes, getCiTypeAttr, getEntitiesByCiType, getRefCiTypeFrom } from '@/api/server.js'
 import './auto-fill.scss'
-import { getRefCiTypeFrom, getCiTypeAttr, getEntitiesByCiType, getAllSystemEnumCodes } from '@/api/server.js'
 
 export default {
   name: 'AutoFill',
@@ -648,15 +648,15 @@ export default {
       }
       const propsWithBraces = props
         ? {
-          ...props,
-          class: [...props.class, 'auto-fill-key-word']
-        }
-        : {
-          class: this.formatClassName(bracesClassList),
-          attrs: {
-            index: i
+            ...props,
+            class: [...props.class, 'auto-fill-key-word']
           }
-        }
+        : {
+            class: this.formatClassName(bracesClassList),
+            attrs: {
+              index: i
+            }
+          }
       return [<span {...propsWithBraces}>{' { '}</span>, ...result, <span {...propsWithBraces}>{' } '}</span>]
     },
     renderDelimiter (val, i) {
@@ -946,6 +946,12 @@ export default {
       }
     },
     copy () {
+      setTimeout(() => {
+        const element = document.querySelector('.content-pop')
+        if (element) {
+          element.style.display = 'none'
+        }
+      }, 20)
       let inputElement = document.createElement('input')
       inputElement.value = this.value
       document.body.appendChild(inputElement)
@@ -1030,7 +1036,9 @@ export default {
           this.renderEditor()
         ) : (
           // 可编辑状态
-          <Poptip v-model={this.optionsDisplay}>{this.renderEditor()}</Poptip>
+          <Poptip popper-class="content-pop" v-model={this.optionsDisplay}>
+            {this.renderEditor()}
+          </Poptip>
         )}
       </div>
     )

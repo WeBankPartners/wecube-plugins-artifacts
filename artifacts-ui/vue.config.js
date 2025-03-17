@@ -1,3 +1,4 @@
+const { codeInspectorPlugin } = require('code-inspector-plugin')
 const dotenv = require('dotenv')
 dotenv.config()
 
@@ -31,6 +32,12 @@ module.exports = {
         .options({
           limit: 1000000
         })
+    } else {
+      config.plugin('code-inspector-plugin').use(
+        codeInspectorPlugin({
+          bundler: 'webpack'
+        })
+      )
     }
 
     config.when(process.env.APP_TYPE === 'plugin', config => {
@@ -50,6 +57,14 @@ module.exports = {
   configureWebpack: config => {
     if (process.env.APP_TYPE === 'plugin') {
       config.optimization.splitChunks = {}
+    }
+  },
+  css: {
+    loaderOptions: {
+      less: {
+        // 启用内联 JavaScript
+        javascriptEnabled: true
+      }
     }
   }
 }

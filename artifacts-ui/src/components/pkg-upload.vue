@@ -50,9 +50,12 @@
       <Form :label-width="100">
         <FormItem :label="$t('art_package')">
           <Upload action="" :before-upload="handleUpload" :show-upload-list="false">
-            <Button icon="ios-cloud-upload-outline">{{ $t('artifacts_upload_new_package') }}</Button>
+            <Button class="btn-upload">
+              <img src="@/styles/icon/UploadOutlined.png" class="upload-icon" />
+              {{ $t('artifacts_upload_new_package') }}
+            </Button>
           </Upload>
-          <span style="word-wrap: break-word;">{{ localUploadParams.fileName }}</span>
+          <span style="word-wrap: break-word;">{{ localUploadParams.fileName }} {{ localUploadParams.size }} </span>
         </FormItem>
         <FormItem :label="$t('package_type')">
           <Select filterable @on-change="getbaselinePkg('localUploadParams')" :placeholder="$t('package_type')" v-model="localUploadParams.package_type">
@@ -75,8 +78,9 @@
 
 <script>
 // eslint-disable-next-line no-unused-vars
+import { getFilePath, queryArtifactsList, queryPackages, uploadArtifact, uploadLocalArtifact } from '@/api/server.js'
 import dayjs from 'dayjs'
-import { queryArtifactsList, queryPackages, uploadArtifact, uploadLocalArtifact, getFilePath } from '@/api/server.js'
+import { formatFileSize } from '@/util/tool.js'
 export default {
   name: '',
   data () {
@@ -101,6 +105,7 @@ export default {
       localModal: false,
       localUploadParams: {
         fileName: '',
+        size: '',
         package_type: '',
         baseline_package: ''
       },
@@ -226,6 +231,7 @@ export default {
     handleUpload (file) {
       this.removeFormDataKey('file')
       this.localUploadParams.fileName = file.name
+      this.localUploadParams.size = formatFileSize(file.size)
       this.formData.append('file', file)
       return false
     },

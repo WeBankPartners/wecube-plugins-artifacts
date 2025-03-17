@@ -30,7 +30,10 @@
           <CustomTitle :title="customTreePath"></CustomTitle>
           <div>
             <!-- 本地上传 -->
-            <Button icon="md-cloud-upload" style="background: #28aef3;border-color: #28aef3;margin-right: 8px;" type="info" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">{{ $t('art_upload_import') }}</Button>
+            <Button style="margin-right: 8px;" class="btn-upload" :disabled="!btnGroupControl.upload_enabled" @click="pkgUpload('local')">
+              <img src="@/styles/icon/UploadOutlined.png" class="upload-icon" />
+              {{ $t('art_upload_import') }}
+            </Button>
             <!-- 在线选择 -->
             <Button icon="ios-apps" type="success" :disabled="!btnGroupControl.upload_from_nexus_enabled" @click="pkgUpload('online')">{{ $t('art_online_selection') }}</Button>
           </div>
@@ -62,8 +65,8 @@
             </div>
           </div>
           <div style="display: inline-block;width:30px;vertical-align: middle;">
-            <Icon v-if="searchConfig.expandSearch" @click="searchConfig.expandSearch = false" size="28" color="#2d8cf0" type="ios-arrow-down" style="cursor: pointer;" />
-            <Icon v-else @click="searchConfig.expandSearch = true" size="28" color="#2d8cf0" type="ios-arrow-up" style="cursor: pointer;" />
+            <Icon v-if="searchConfig.expandSearch" @click="searchConfig.expandSearch = false" size="28" color="#5384FF" type="ios-arrow-down" style="cursor: pointer;" />
+            <Icon v-else @click="searchConfig.expandSearch = true" size="28" color="#5384FF" type="ios-arrow-up" style="cursor: pointer;" />
           </div>
         </div>
       </div>
@@ -115,15 +118,16 @@
 </template>
 
 <script>
-import { getCiTypeAttr, getFlowLists, pushPkg, getAllCITypesWithAttr, deleteCiDatas, operateCiState, operateCiStateWithData, getPackageCiTypeId, getSystemDesignVersion, getSystemDesignVersions, queryPackages, queryHistoryPackages, getCITypeOperations, sysConfig, getPkgTypeNum, getUserList } from '@/api/server.js'
-import { setCookie, getCookie } from '../util/cookie.js'
+import { deleteCiDatas, getAllCITypesWithAttr, getCiTypeAttr, getCITypeOperations, getFlowLists, getPackageCiTypeId, getPkgTypeNum, getSystemDesignVersion, getSystemDesignVersions, getUserList, operateCiState, operateCiStateWithData, pushPkg, queryHistoryPackages, queryPackages, sysConfig } from '@/api/server.js'
+import CustomTitle from '@/components/custom-title.vue'
+import PkgConfig from '@/components/pkg-config.vue'
+import PkgDiffVariableConfig from '@/components/pkg-diff-variable.vue'
+import PkgUpload from '@/components/pkg-upload.vue'
+import { getCookie, setCookie } from '@/util/cookie.js'
+import { formatFileSize } from '@/util/tool.js'
 import axios from 'axios'
-import DisplayPath from './display-path'
-import CustomTitle from '../components/custom-title.vue'
-import PkgUpload from '../components/pkg-upload.vue'
-import PkgConfig from '../components/pkg-config.vue'
-import PkgDiffVariableConfig from '../components/pkg-diff-variable.vue'
 import { debounce } from 'lodash'
+import DisplayPath from './display-path'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -133,14 +137,14 @@ const UNIT_DESIGN = 'unit_design'
 // const DEPLOY_PACKAGE = 'deploy_package'
 
 const stateColor = {
-  added_0: '#19be6b',
-  added_1: '#19be6b',
+  added_0: '#00CB91',
+  added_1: '#00CB91',
   updated_0: '#5cadff',
   updated_1: '#5cadff',
-  delete: '#ed4014',
+  delete: '#FF4D4F',
   created: '#2b85e4',
   changed: 'purple',
-  destroyed: '#ff9900'
+  destroyed: '#F29360'
 }
 
 export default {
@@ -239,6 +243,15 @@ export default {
           }
         },
         {
+          title: this.$t('art_size'),
+          key: 'package_size',
+          width: 120,
+          render: (h, params) => {
+            let res = params.row.package_size === 0 ? '-' : formatFileSize(params.row.package_size)
+            return <span>{res}</span>
+          }
+        },
+        {
           title: this.$t('art_status'),
           key: 'state',
           width: 100,
@@ -288,12 +301,12 @@ export default {
                     </Tooltip>
                   )}
                   <Tooltip content={this.$t('export')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" onClick={() => this.toExportPkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
+                    <Button size="small" onClick={() => this.toExportPkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#5384FF', borderColor: '#5384FF', marginBottom: '2px' }}>
                       <Icon type="md-cloud-download" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
                   <Tooltip content={this.$t('push')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#2db7f5', borderColor: '#2db7f5', marginBottom: '2px' }}>
+                    <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#5384FF', borderColor: '#5384FF', marginBottom: '2px' }}>
                       <Icon type="md-cloud-upload" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
@@ -792,12 +805,12 @@ export default {
       let typeToBtn = {
         Delete: {
           tip: this.$t('art_delete'),
-          color: '#ed4014',
+          color: '#FF4D4F',
           icon: 'md-trash'
         },
         Update: {
           tip: this.$t('art_update'),
-          color: '#2d8cf0',
+          color: '#5384FF',
           icon: 'md-create'
         },
         Rollback: {
@@ -1111,7 +1124,7 @@ export default {
 .seearch-pkg-variable {
   min-width: 500px;
   .ivu-radio-group-button .ivu-radio-wrapper-checked {
-    background: #2d8cf0;
+    background: #5384ff;
     color: #fff;
   }
   .ivu-radio-group-button .ivu-radio-wrapper-checked:hover {

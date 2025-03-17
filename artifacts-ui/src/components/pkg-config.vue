@@ -195,6 +195,23 @@
                 </div>
               </div>
             </div>
+            <!-- 升级清理目录 -->
+            <div style="display: flex;align-items: flex-start;border: 1px solid #e8e8e8;padding: 8px 4px;margin-top: 12px;">
+              <div style="width: 160px; margin-right: 8px">
+                {{ $t('art_upgrade_and_clean_up') }}
+                <Tooltip :content="$t('art_upgrade_and_clean_up_select')" placement="top">
+                  <Icon type="md-document" style="margin-right: 12px;" size="16" color="white" class="ios-doc-upload" @click="() => showTreeModal(107, packageInput.upgrade_cleanup_file_path || [])" />
+                </Tooltip>
+              </div>
+              <div id="upgrade_and_clean_up_test" style="display: inline-block;">
+                <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.upgrade_cleanup_file_path" :key="index">
+                  <Input class="textarea-input" :rows="1" :placeholder="$t('art_upgrade_and_clean_up')" type="textarea" v-model="packageInput.upgrade_cleanup_file_path[index].filename" />
+                  <Button style="margin-left:20px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'upgrade_cleanup_file_path')"></Button>
+                </div>
+              </div>
+              <Button style="margin: 4px" size="small" type="success" icon="md-add" ghost @click="addFilePath('upgrade_cleanup_file_path')"></Button>
+            </div>
+
             <!-- 关键交易服务码 -->
             <div style="margin-top: 16px;" v-if="isShowKeyServiceCode">
               <Row>
@@ -396,11 +413,11 @@
       </div>
     </Drawer>
     <!-- 包配置文件选择 -->
-    <Modal :styles="{ top: '60px' }" :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" draggable width="700">
+    <Modal :styles="{ top: '60px' }" footer-hide :mask-closable="false" v-model="isShowTreeModal" :title="configFileTreeTitle" draggable width="700">
       <CheckboxGroup v-if="packageInput.baseline_package">
         <Button :style="toggleCheckFileTreeNew" type="dashed" size="small" @click="checkConfigFileTreeVis('new')"><span style="color: #18b566">new</span></Button>
         <Button :style="toggleCheckFileTreeSame" type="dashed" size="small" @click="checkConfigFileTreeVis('same')"><span>same</span></Button>
-        <Button :style="toggleCheckFileTreeChanged" type="dashed" size="small" @click="checkConfigFileTreeVis('changed')"><span style="color: #2d8cf0">changed</span></Button>
+        <Button :style="toggleCheckFileTreeChanged" type="dashed" size="small" @click="checkConfigFileTreeVis('changed')"><span style="color: #5384FF">changed</span></Button>
         <Button :style="toggleCheckFileTreeDeleted" type="dashed" size="small" @click="checkConfigFileTreeVis('deleted')"><span style="color: #cccccc">deleted</span></Button>
       </CheckboxGroup>
       <div style="height: 450px; overflow-y: auto">
@@ -423,12 +440,12 @@
 </template>
 
 <script>
-import { getPackageDetail, queryPackages, getFiles, compareBaseLineFiles, updatePackage, getCompareContent } from '@/api/server.js'
+import { compareBaseLineFiles, getCompareContent, getFiles, getPackageDetail, queryPackages, updatePackage } from '@/api/server.js'
+import iconFile from '@/assets/file.png'
+import iconFolder from '@/assets/folder.png'
+import CompareFile from '@/views/compare-file.vue'
+import DisplayPath from '@/views/display-path.vue'
 import Sortable from 'sortablejs'
-import DisplayPath from '../views/display-path.vue'
-import iconFile from '../assets/file.png'
-import iconFolder from '../assets/folder.png'
-import CompareFile from '../views/compare-file.vue'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -445,7 +462,8 @@ export default {
       fullscreen: false,
       fileContentHeight: window.screen.availHeight * 0.4 + 'px',
       pkgName: '', // 当前选中的包名
-      isFileSelect: false,
+      isFileSelect: false, // 是否选择文件 适配文件夹和文件二选一场景
+      isFileAndFolderSelectable: false, // 适配文件夹和文件都可选场景
       isShowKeyServiceCode: false,
       columns: [
         {
@@ -505,7 +523,9 @@ export default {
         db_rollback_directory: [], // DB回滚脚本
         db_rollback_file_path: [],
         db_deploy_file_directory: [], // DB部署脚本
-        db_deploy_file_path: []
+        db_deploy_file_path: [],
+
+        upgrade_cleanup_file_path: [] // 升级清理目录
       },
       packageDetail: {
         baseline_package: null,
@@ -530,7 +550,9 @@ export default {
         db_rollback_directory: [], // DB回滚脚本
         db_rollback_file_path: [],
         db_deploy_file_directory: [], // DB部署脚本
-        db_deploy_file_path: []
+        db_deploy_file_path: [],
+
+        upgrade_cleanup_file_path: [] // 升级清理目录
       },
       packageType: '', // 包类型
       baselinePackageOptions: [], // 基线包下拉框数据
@@ -647,15 +669,28 @@ export default {
 
       this.packageInput.db_diff_conf_directory = JSON.parse(JSON.stringify(this.packageDetail.db_diff_conf_directory))
       this.packageInput.db_diff_conf_file = JSON.parse(JSON.stringify(this.packageDetail.db_diff_conf_file))
-      this.packageInput.db_upgrade_directory = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_directory || []))
-      this.packageInput.db_upgrade_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_file_path || []))
-      this.packageInput.db_rollback_directory = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_directory || []))
-      this.packageInput.db_rollback_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_file_path || []))
-      this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_directory || []))
-      this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_path || []))
+      this.packageInput.db_upgrade_directory = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_directory))
+      this.packageInput.db_upgrade_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_upgrade_file_path))
+      this.packageInput.db_rollback_directory = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_directory))
+      this.packageInput.db_rollback_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_rollback_file_path))
+      this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_directory))
+      this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(this.packageDetail.db_deploy_file_path))
+      this.packageInput.upgrade_cleanup_file_path =
+        this.packageDetail.upgrade_cleanup_file_path.length === 0
+          ? [
+              {
+                comparisonResult: '',
+                configKeyInfos: [],
+                filename: '',
+                isDir: false,
+                md5: '',
+                exists: false
+              }
+            ]
+          : JSON.parse(JSON.stringify(this.packageDetail.upgrade_cleanup_file_path))
 
       this.$nextTick(() => {
-        this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code || []))
+        this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code))
       })
       this.hideFooter = hideFooter
       await this.getbaselinePkg()
@@ -711,6 +746,19 @@ export default {
         this.packageInput.db_rollback_file_path = JSON.parse(JSON.stringify(data.db_rollback_file_path || []))
         this.packageInput.db_deploy_file_directory = JSON.parse(JSON.stringify(data.db_deploy_file_directory || []))
         this.packageInput.db_deploy_file_path = JSON.parse(JSON.stringify(data.db_deploy_file_path || []))
+        this.packageInput.upgrade_cleanup_file_path =
+          this.packageDetail.upgrade_cleanup_file_path.length === 0
+            ? [
+                {
+                  comparisonResult: '',
+                  configKeyInfos: [],
+                  filename: '',
+                  isDir: false,
+                  md5: '',
+                  exists: false
+                }
+              ]
+            : JSON.parse(JSON.stringify(this.packageDetail.upgrade_cleanup_file_path))
 
         this.$nextTick(() => {
           this.packageInput.key_service_code = JSON.parse(JSON.stringify(data.key_service_code || []))
@@ -765,6 +813,18 @@ export default {
         this.packageInput.db_rollback_file_path = []
         this.packageInput.db_deploy_file_directory = found.db_deploy_file_directory ? JSON.parse(JSON.stringify(found.db_deploy_file_directory)) : []
         this.packageInput.db_deploy_file_path = found.db_deploy_file_path ? JSON.parse(JSON.stringify(found.db_deploy_file_path)) : []
+        this.packageInput.upgrade_cleanup_file_path = found.upgrade_cleanup_file_path
+          ? JSON.parse(JSON.stringify(found.upgrade_cleanup_file_path))
+          : [
+              {
+                comparisonResult: '',
+                configKeyInfos: [],
+                filename: '',
+                isDir: false,
+                md5: '',
+                exists: false
+              }
+            ]
         this.$nextTick(() => {
           this.packageInput.key_service_code = found.key_service_code ? JSON.parse(JSON.stringify(found.key_service_code)) : []
         })
@@ -884,7 +944,9 @@ export default {
         db_rollback_directory: [], // DB回滚脚本
         db_rollback_file_path: [],
         db_deploy_file_directory: [], // DB部署脚本
-        db_deploy_file_path: []
+        db_deploy_file_path: [],
+
+        upgrade_cleanup_file_path: [] // 升级清理目录
       }
     },
     // 获取基线列表
@@ -929,6 +991,7 @@ export default {
     async showTreeModal (type, files) {
       this.initTreeConfig(type)
       this.isFileSelect = false
+      this.isFileAndFolderSelectable = false
       let queryFiles = []
       let queryFilesParent = []
       if (type === 0) {
@@ -987,6 +1050,12 @@ export default {
         this.configFileTreeTitle = this.$t('artifacts_config_files')
         queryFiles = this.packageInput.db_diff_conf_file.map(_ => _.filename)
         queryFilesParent = this.packageInput.db_diff_conf_directory.map(_ => _.filename)
+      } else if (type === 107) {
+        this.isFileSelect = true
+        this.isFileAndFolderSelectable = true
+        this.configFileTreeTitle = this.$t('art_upgrade_and_clean_up')
+        queryFiles = this.packageInput.upgrade_cleanup_file_path.map(_ => _.filename)
+        // queryFilesParent = this.packageInput.db_diff_conf_directory.map(_ => _.filename)
       } else if (type === 0.3) {
         this.isFileSelect = true
         this.configFileTreeTitle = this.$t('art_log')
@@ -1054,22 +1123,18 @@ export default {
     saveConfigFileTree () {
       let saveData = []
       this.$refs.configTree.getCheckedNodes().forEach(_ => {
-        if (this.isFileSelect) {
-          if (_.isDir) {
-            saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-            // if (_.children) {
-            //   const isReal = _.children.every(item => item.isDir !== true)
-            //   if (isReal) {
-            //     saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-            //   }
-            // } else {
-            //   saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
-            // }
-          }
-          saveData = this.cleanData(saveData)
+        if (this.isFileAndFolderSelectable) {
+          saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
         } else {
-          if (!_.isDir) {
-            saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
+          if (this.isFileSelect) {
+            if (_.isDir) {
+              saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
+            }
+            saveData = this.cleanData(saveData)
+          } else {
+            if (!_.isDir) {
+              saveData.push({ filename: _.path, isDir: _.isDir, comparisonResult: _.comparisonResult })
+            }
           }
         }
       })
@@ -1123,6 +1188,8 @@ export default {
         this.packageInput.db_deploy_file_path = saveData
       } else if (this.configFileTree.treeType === 106) {
         this.packageInput.db_diff_conf_file = saveData
+      } else if (this.configFileTree.treeType === 107) {
+        this.packageInput.upgrade_cleanup_file_path = saveData
       } else if (this.configFileTree.treeType === 0.3) {
         if (saveData.length > 1) {
           this.$Message.warning(this.$t('art_multi_dir_warn'))
@@ -1186,7 +1253,7 @@ export default {
       let children = element.children || []
       let treeNode = {
         title: element.name,
-        disableCheckbox: this.isFileSelect ? !element.isDir : false,
+        disableCheckbox: this.isFileAndFolderSelectable ? false : this.isFileSelect ? !element.isDir : false,
         path: element.path,
         isDir: element.isDir,
         exists: element.exists,
@@ -1202,7 +1269,7 @@ export default {
             return (
               <span>
                 <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
-                <span style="color: #19be6b;">
+                <span style="color: #00CB91;">
                   {params.data.title}
                   <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                 </span>
@@ -1212,7 +1279,7 @@ export default {
             return (
               <span>
                 <img height="16" width="16" src={iconFolder} style="position:relative;top:3px;margin:0 3px;" />
-                <span style="color: #2d8cf0;">
+                <span style="color: #5384FF">
                   {params.data.title}
                   <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                 </span>
@@ -1254,7 +1321,7 @@ export default {
               return (
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #19be6b;">
+                  <span style="color: #00CB91;">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                     <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
@@ -1265,7 +1332,7 @@ export default {
               return (
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #2d8cf0;">
+                  <span style="color: #5384FF">
                     {params.data.title}
                     <span style="font-size:10px;padding-left:4px">[{params.data.comparisonResult}]</span>
                     <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
@@ -1299,7 +1366,7 @@ export default {
               return (
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #19be6b;">{params.data.title}</span>
+                  <span style="color: #00CB91;">{params.data.title}</span>
                   <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
@@ -1307,7 +1374,7 @@ export default {
               return (
                 <span>
                   <img height="16" width="16" src={iconFile} style="position:relative;top:3px;margin:0 3px;" />
-                  <span style="color: #2d8cf0;">{params.data.title}</span>
+                  <span style="color: #5384FF">{params.data.title}</span>
                   <Button onClick={() => this.getCompareFile(params.data)} size="small" style="margin-left:8px" icon="ios-git-compare"></Button>
                 </span>
               )
@@ -1429,6 +1496,12 @@ export default {
         this.$Message.warning(this.$t('art_service_code_tip'))
         canSave = false
       }
+      // 清理目录中不能包含../
+      const res = this.packageInput.upgrade_cleanup_file_path.filter(obj => obj.filename).some(item => item.filename.includes('../') || item.filename.startsWith('/'))
+      if (res) {
+        this.$Message.warning(this.$t('art_path_warn'))
+        canSave = false
+      }
       return canSave
     },
     isLogFileStartWidthLogDir (key) {
@@ -1468,6 +1541,7 @@ export default {
         db_rollback_file_path: this.packageInput.db_rollback_file_path,
         db_deploy_file_directory: this.packageInput.db_deploy_file_directory,
         db_deploy_file_path: this.packageInput.db_deploy_file_path,
+        upgrade_cleanup_file_path: this.packageInput.upgrade_cleanup_file_path,
 
         key_service_code: this.packageInput.key_service_code
       }

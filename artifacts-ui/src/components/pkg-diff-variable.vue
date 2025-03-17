@@ -5,13 +5,13 @@
       <Tabs :value="currentDiffConfigTab" v-model="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
           <Upload :before-upload="handleUpload" action="">
-            <Button type="primary" style="margin-right: 8px;">
-              <img src="../assets/import.png" class="btn-img" alt="" />
+            <Button class="btn-upload" style="margin-right: 8px;">
+              <img src="@/styles/icon/UploadOutlined.png" class="upload-icon" />
               {{ $t('import') }}
             </Button>
           </Upload>
-          <Button type="info" class="btn-right" @click="exportData">
-            <img src="../assets/export.png" class="btn-img" alt="" />
+          <Button class="btn-upload" @click="exportData">
+            <img src="@/styles/icon/DownloadOutlined.png" class="upload-icon" />
             {{ $t('export') }}
           </Button>
         </div>
@@ -78,7 +78,7 @@
         <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
       </p>
       <div slot="footer">
-        <Button type="text" @click="closeConfigSelectModal()">{{ $t('artifacts_cancel') }} </Button>
+        <Button @click="closeConfigSelectModal()">{{ $t('artifacts_cancel') }} </Button>
         <Button type="primary" :disabled="tempCopySelectRow.guid === ''" @click="setConfigRowValue()">{{ $t('art_ok') }} </Button>
       </div>
       <div style="display: flex;gap: 8px;margin-bottom: 8px;">
@@ -100,8 +100,8 @@
         <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
         <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" />
       </p>
-      <div slot="footer">
-        <Button type="text" @click="closeUseTemplateModal()">{{ $t('artifacts_cancel') }} </Button>
+      <div slot="footer" class="margin-top:12px">
+        <Button @click="closeUseTemplateModal()">{{ $t('artifacts_cancel') }} </Button>
         <Button type="primary" :disabled="useTemplateSelectRow.id === ''" @click="setUseTemplateValue()">{{ $t('art_ok') }} </Button>
       </div>
       <div style="display: flex;gap: 8px;margin-bottom: 8px;">
@@ -158,13 +158,13 @@
 </template>
 
 <script>
-import { getCalcInstance, getVariableValue, getUserList, sysConfig, getSpecialConnector, getAllCITypesWithAttr, getPackageCiTypeId, getSystemDesignVersions, updateEntity, getPackageDetail, updatePackage, getDiffVariable, getTemplate, deleteTemplate } from '@/api/server.js'
-import { setCookie, getCookie } from '../util/cookie.js'
+import { deleteTemplate, getAllCITypesWithAttr, getCalcInstance, getDiffVariable, getPackageCiTypeId, getPackageDetail, getSpecialConnector, getSystemDesignVersions, getTemplate, getUserList, getVariableValue, sysConfig, updateEntity, updatePackage } from '@/api/server.js'
+import DiffVariableTemplate from '@/components/diff-variable-template'
+import { getCookie, setCookie } from '@/util/cookie.js'
 import axios from 'axios'
 import { decode } from 'js-base64'
-import RuleTable from './rule-table.vue'
 import { debounce } from 'lodash'
-import DiffVariableTemplate from '@/components/diff-variable-template'
+import RuleTable from './rule-table.vue'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
 const defaultDBRootCiTypeId = 'rdb_instance'
@@ -252,7 +252,7 @@ export default {
             if (params.row.conf_variable.bound) {
               return (
                 <span>
-                  <Icon type="md-checkmark-circle" color="#2d8cf0" style="font-size: 16px;" />
+                  <Icon type="md-checkmark-circle" color="#5384FF" style="font-size: 16px;" />
                 </span>
               )
             } else {
@@ -664,9 +664,7 @@ export default {
           'z-index': 1000000,
           okText: this.$t('art_save_now'),
           cancelText: this.$t('art_discard'),
-          onOk: async () => {
-            console.log('自我消失')
-          },
+          onOk: async () => {},
           onCancel: async () => {
             this.prefixType = tmp
             this.prefixTypeTmp = tmp
@@ -832,9 +830,7 @@ export default {
           'z-index': 1000000,
           okText: this.$t('art_save_now'),
           cancelText: this.$t('art_discard'),
-          onOk: async () => {
-            console.log('自我消失')
-          },
+          onOk: async () => {},
           onCancel: async () => {
             this.tempTableData.forEach(item => {
               item.conf_variable.diffExpr = item.conf_variable.originDiffExpr
@@ -878,9 +874,7 @@ export default {
           'z-index': 1000000,
           okText: this.$t('art_save_now'),
           cancelText: this.$t('art_discard'),
-          onOk: async () => {
-            console.log('自我消失')
-          },
+          onOk: async () => {},
           onCancel: async () => {
             this.tempTableData.forEach(item => {
               item.conf_variable.diffExpr = item.conf_variable.originDiffExpr
@@ -1502,7 +1496,7 @@ export default {
 .pkg-variable {
   margin-bottom: 16px;
   .ivu-radio-group-button .ivu-radio-wrapper-checked {
-    background: #2d8cf0;
+    background: #5384ff;
     color: #fff;
   }
   .ivu-radio-group-button .ivu-radio-wrapper-checked:hover {

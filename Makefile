@@ -11,7 +11,7 @@ clean_py:
 build_py: clean_py
 	pip3 install wheel
 	cd artifacts-corepy && python3 setup.py bdist_wheel
-	cd artifacts-ui && npm run plugin
+	cd artifacts-ui &&  npm install --force && npm run plugin
 
 image_py: build_py
 	wget -O nexus-data.tar.gz https://wecube-1259801214.cos.ap-guangzhou.myqcloud.com/nexus-data/nexus-data.tar.gz
