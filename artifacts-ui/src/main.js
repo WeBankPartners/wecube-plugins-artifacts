@@ -7,7 +7,7 @@ import ArtifactsSimpleTable from '../src/components/simple-table.vue'
 import ArtifactsAutoFill from '../src/components/auto-fill.js'
 import VueI18n from 'vue-i18n'
 import locale from 'view-design/dist/locale/en-US'
-import './locale/i18n'
+import i18n from './locale/i18n'
 
 Vue.component('ArtifactsSimpleTable', ArtifactsSimpleTable)
 Vue.component('ArtifactsAutoFill', ArtifactsAutoFill)
@@ -22,5 +22,6 @@ Vue.use(ViewUI, {
 })
 new Vue({
   router,
-  render: h => h(App)
+  render: h => h(App),
+  i18n
 }).$mount('#app')
