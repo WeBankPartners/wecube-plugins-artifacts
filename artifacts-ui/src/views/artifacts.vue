@@ -1044,8 +1044,10 @@ export default {
       let refreshRequest = null
       const currentTime = new Date().getTime()
       const accessToken = getCookie('accessToken')
+      console.log(1.1, accessToken)
       if (accessToken) {
         const expiration = getCookie('accessTokenExpirationTime') * 1 - currentTime
+        console.log(1.2, expiration)
         if (expiration < 1 * 60 * 1000 && !refreshRequest) {
           refreshRequest = axios.get('/auth/v1/api/token', {
             headers: {
@@ -1054,22 +1056,27 @@ export default {
           })
           refreshRequest.then(
             res => {
+              console.log(1.3, res)
               setCookie(res.data.data)
               this.setUploadActionHeader()
+              console.log(1.4)
               this.$refs.uploadButton.handleClick()
             },
             // eslint-disable-next-line handle-callback-err
             err => {
-              refreshRequest = null
-              window.location.href = window.location.origin + '/#/login'
+              console.log(1.4, err)
+              // refreshRequest = null
+              // window.location.href = window.location.origin + '/#/login'
             }
           )
         } else {
+          console.log(1.6)
           this.setUploadActionHeader()
           this.$refs.uploadButton.handleClick()
         }
       } else {
-        window.location.href = window.location.origin + '/#/login'
+        console.log(1.7)
+        // window.location.href = window.location.origin + '/#/login'
       }
     },
     onSuccess (response, file, fileList) {
