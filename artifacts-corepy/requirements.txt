@@ -9,7 +9,7 @@ pyjwt<2.0.0
 minio==7.1.13
 pycrypto==2.6.1
 gevent==21.12.0
-gunicorn==21.2.0
+gunicorn==23.0.0
 apscheduler==3.10.4
 pytz==2023.3.post1
 # for platform login encryption, apt install swig
