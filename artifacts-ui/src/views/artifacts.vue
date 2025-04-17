@@ -777,23 +777,6 @@ export default {
         })
       }
     },
-    getRootCI (diffExpr, defaultRootCiTypeId, elVar) {
-      let rootCI = defaultRootCiTypeId
-      if (!diffExpr) {
-        return rootCI
-      }
-      try {
-        const de = JSON.parse(diffExpr)
-        const rootItem = de.find(item => item.type === 'rule')
-        if (rootItem) {
-          const val = JSON.parse(rootItem.value)
-          rootCI = val[0].ciTypeId || defaultRootCiTypeId
-        }
-        return rootCI
-      } catch (err) {
-        throw err
-      }
-    },
     renderActionButton (params) {
       const row = params.row
       let operations = []

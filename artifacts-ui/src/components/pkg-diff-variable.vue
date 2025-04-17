@@ -1,6 +1,7 @@
 <template>
   <Drawer :title="pkgName" v-model="openDrawer" class="custom-drawer" :scrollable="false" width="1300">
     <Spin size="large" fix v-if="spinShow"></Spin>
+    <ParseFail v-if="showParseFail" @close="showParseFail = false" :parseFailMsg="parseFailMsg"></ParseFail>
     <div v-if="showDiffConfigTab">
       <Tabs :value="currentDiffConfigTab" v-model="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
@@ -68,7 +69,7 @@
       </Tabs>
     </div>
     <div class="drawer-footer">
-      <Button @click="openDrawer = false" type="primary">{{ $t('art_close') }}</Button>
+      <Button @click="closeDrawer" type="primary">{{ $t('art_close') }}</Button>
     </div>
     <!-- 复制已有模版 -->
     <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :fullscreen="fullscreen" width="1000">
@@ -160,6 +161,7 @@
 <script>
 import { deleteTemplate, getAllCITypesWithAttr, getCalcInstance, getDiffVariable, getPackageCiTypeId, getPackageDetail, getSpecialConnector, getSystemDesignVersions, getTemplate, getUserList, getVariableValue, sysConfig, updateEntity, updatePackage } from '@/api/server.js'
 import DiffVariableTemplate from '@/components/diff-variable-template'
+import ParseFail from '@/components/parse-fail'
 import { getCookie, setCookie } from '@/util/cookie.js'
 import axios from 'axios'
 import { decode } from 'js-base64'
@@ -176,6 +178,8 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      showParseFail: false,
+      parseFailMsg: [],
       spinShow: false,
       pkgName: '',
       openDrawer: false,
@@ -695,6 +699,7 @@ export default {
       this.clearCalcParams()
       this.guid = guid
       this.getCalcInstance()
+      this.showParseFail = false
       this.openDrawer = true
       this.spinShow = true
       await this.getAllCITypesWithAttr()
@@ -708,8 +713,8 @@ export default {
       this.packageId = row.guid
       this.showDiffConfigTab = true
       // 获取包文件及差异化变量数据
-      await this.syncPackageDetail()
       await this.getVariablePrefix()
+      await this.syncPackageDetail()
       this.setPrefixType()
       this.initVariableTableData(0)
       this.spinShow = false
@@ -980,7 +985,8 @@ export default {
         }
         return rootCI
       } catch (err) {
-        throw err
+        return 'parseFail'
+        // throw err
       }
     },
     formatPackageDetail (data) {
@@ -988,10 +994,17 @@ export default {
       let copyData = JSON.parse(dataString)
       let diffConfVariable = copyData.diff_conf_variable || []
       let dbDiffConfVariable = copyData.db_diff_conf_variable || []
+      this.parseFailMsg = []
+      let appParseFailVariable = []
+      let dbParseFailVariable = []
       diffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        const rootCI = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
+        const res = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
+        if (res === 'parseFail') {
+          appParseFailVariable.push(elVar)
+        }
+        const rootCI = res === 'parseFail' ? defaultAppRootCiTypeId : ''
         elVar.originRootCI = rootCI
         elVar.tempRootCI = rootCI
         elVar.withinFiles = []
@@ -1025,7 +1038,12 @@ export default {
       dbDiffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        const rootCI = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId)
+        const res = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId, elVar)
+        if (res === 'parseFail') {
+          dbParseFailVariable.push(elVar)
+        }
+        const rootCI = res === 'parseFail' ? defaultDBRootCiTypeId : ''
+
         elVar.originRootCI = rootCI
         elVar.tempRootCI = rootCI
         elVar.withinFiles = []
@@ -1055,7 +1073,21 @@ export default {
         })
       })
       copyData.db_diff_conf_file.sort((a, b) => (a.configKeyInfos.length === 0 ? 1 : -1))
+      this.parseFailMsg = this.parseFailMsg.concat(this.parseFailTip('APP', appParseFailVariable)).concat(this.parseFailTip('DB', dbParseFailVariable))
+      if (this.parseFailMsg.length > 0) {
+        this.showParseFail = true
+      }
       return copyData
+    },
+    parseFailTip (type, msg) {
+      return msg.map(item => {
+        return {
+          fileType: this.$t(type),
+          fileName: item.fileNames,
+          varType: this.variablePrefixType.find(prefix => prefix.filterKey.includes(item.type)).label,
+          key: item.key
+        }
+      })
     },
     async syncPackageDetail () {
       this.initPackageDetail()
@@ -1443,7 +1475,10 @@ export default {
     handleResize () {
       this.maxHeight = window.innerHeight - 340
     },
-
+    closeDrawer () {
+      this.openDrawer = false
+      this.showParseFail = false
+    },
     // #endregion
     zoomModalMax () {
       this.fileContentHeight = window.screen.availHeight - 410
@@ -1460,7 +1495,8 @@ export default {
   },
   components: {
     RuleTable,
-    DiffVariableTemplate
+    DiffVariableTemplate,
+    ParseFail
   }
 }
 </script>
@@ -1480,7 +1516,7 @@ export default {
 }
 
 .drawer-footer {
-  width: 1300px;
+  width: 1260px;
   padding: 10px 16px;
   text-align: center;
   background: #fff;

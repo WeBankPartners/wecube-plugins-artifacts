@@ -187,5 +187,7 @@
   "art_upgrade_and_clean_up": "Upgrade and clean up directories/files",
   "art_upgrade_and_clean_up_select": "Select upgrade and clean up directories/files",
   "art_path_warn": "The cleanup path must not contain '../' or start with '/'.",
-  "art_size": "Size"
+  "art_size": "Size",
+  "art_file_type": "File Type",
+  "art_parse_fail": "Differentiated Variable Parsing Failed"
 }
