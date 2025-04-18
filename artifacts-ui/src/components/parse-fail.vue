@@ -39,7 +39,7 @@ export default {
   position: fixed;
   top: 50px;
   right: 0px;
-  z-index: 1013;
+  z-index: 4;
   margin-bottom: 10px;
   padding: 16px;
   border-radius: 4px;

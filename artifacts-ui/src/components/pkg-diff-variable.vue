@@ -1,7 +1,7 @@
 <template>
   <Drawer :title="pkgName" v-model="openDrawer" class="custom-drawer" :scrollable="false" width="1300">
-    <Spin size="large" fix v-if="spinShow"></Spin>
     <ParseFail v-if="showParseFail" @close="showParseFail = false" :parseFailMsg="parseFailMsg"></ParseFail>
+    <Spin size="large" fix v-if="spinShow"></Spin>
     <div v-if="showDiffConfigTab">
       <Tabs :value="currentDiffConfigTab" v-model="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
         <div slot="extra">
@@ -696,13 +696,16 @@ export default {
       this.tempTableData = configKeyInfos.filter(item => filterKey.includes(item.type))
     },
     async initDrawer (guid, row) {
+      window.initialDrawerTimeStapArr = []
+      window.initialTimeStap = +new Date()
       this.clearCalcParams()
       this.guid = guid
       this.getCalcInstance()
       this.showParseFail = false
       this.openDrawer = true
       this.spinShow = true
-      await this.getAllCITypesWithAttr()
+      // this.getAllCITypesWithAttr()
+      window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$111')
       this.currentDiffConfigTab = ''
       this.currentDiffConfigTabTmp = ''
       this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
@@ -713,11 +716,16 @@ export default {
       this.packageId = row.guid
       this.showDiffConfigTab = true
       // 获取包文件及差异化变量数据
-      await this.getVariablePrefix()
-      await this.syncPackageDetail()
+      window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$222')
+      const promiseArr = [this.getAllCITypesWithAttr(), this.getVariablePrefix(), this.syncPackageDetail()]
+      await Promise.all(promiseArr)
+      // this.getVariablePrefix()
+      // this.syncPackageDetail()
+      window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$333')
       this.setPrefixType()
       this.initVariableTableData(0)
       this.spinShow = false
+      window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$444')
     },
     initVariableTableData (index) {
       this.currentFileIndex = index
@@ -729,12 +737,21 @@ export default {
       }
     },
     async getVariablePrefix () {
-      let { status, data } = await sysConfig()
-      if (status === 'OK') {
-        this.variablePrefixType.forEach(item => {
-          item.filterKey = data[item.key] || []
-        })
-      }
+      // let { status, data } = await sysConfig()
+      // if (status === 'OK') {
+      //   this.variablePrefixType.forEach(item => {
+      //     item.filterKey = data[item.key] || []
+      //   })
+      // }
+      return new Promise(async resolve => {
+        let { status, data } = await sysConfig()
+        if (status === 'OK') {
+          this.variablePrefixType.forEach(item => {
+            item.filterKey = data[item.key] || []
+          })
+          resolve()
+        }
+      })
     },
     setPrefixType () {
       this.prefixType = ''
@@ -912,10 +929,17 @@ export default {
       }
     },
     async getAllCITypesWithAttr () {
-      let { status, data } = await getAllCITypesWithAttr(['notCreated', 'created', 'dirty', 'deleted'])
-      if (status === 'OK') {
-        this.ciTypes = JSON.parse(JSON.stringify(data))
-      }
+      // let { status, data } = await getAllCITypesWithAttr(['notCreated', 'created', 'dirty', 'deleted'])
+      // if (status === 'OK') {
+      //   this.ciTypes = JSON.parse(JSON.stringify(data))
+      // }
+      return new Promise(async resolve => {
+        let { status, data } = await getAllCITypesWithAttr(['notCreated', 'created', 'dirty', 'deleted'])
+        if (status === 'OK') {
+          this.ciTypes = JSON.parse(JSON.stringify(data))
+          resolve()
+        }
+      })
     },
     getHeaders () {
       let refreshRequest = null
@@ -1090,21 +1114,39 @@ export default {
       })
     },
     async syncPackageDetail () {
-      this.initPackageDetail()
-      let { status, data } = await getPackageDetail(this.guid, this.packageId)
-      if (status === 'OK') {
-        const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-        this.packageDetail = this.formatPackageDetail(data)
-        if (this.packageDetail[tmp].length > 0) {
-          this.activeTab = this.packageDetail[tmp][0].filename
-          this.activeTabTmp = this.activeTab
-          this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
-        } else {
-          this.activeTab = ''
-          this.activeTabTmp = this.activeTab
-          this.activeTabData = {}
+      // this.initPackageDetail()
+      // let { status, data } = await getPackageDetail(this.guid, this.packageId)
+      // if (status === 'OK') {
+      //   const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
+      //   this.packageDetail = this.formatPackageDetail(data)
+      //   if (this.packageDetail[tmp].length > 0) {
+      //     this.activeTab = this.packageDetail[tmp][0].filename
+      //     this.activeTabTmp = this.activeTab
+      //     this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
+      //   } else {
+      //     this.activeTab = ''
+      //     this.activeTabTmp = this.activeTab
+      //     this.activeTabData = {}
+      //   }
+      // }
+      return new Promise(async resolve => {
+        this.initPackageDetail()
+        let { status, data } = await getPackageDetail(this.guid, this.packageId)
+        if (status === 'OK') {
+          const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
+          this.packageDetail = this.formatPackageDetail(data)
+          if (this.packageDetail[tmp].length > 0) {
+            this.activeTab = this.packageDetail[tmp][0].filename
+            this.activeTabTmp = this.activeTab
+            this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
+          } else {
+            this.activeTab = ''
+            this.activeTabTmp = this.activeTab
+            this.activeTabData = {}
+          }
+          resolve()
         }
-      }
+      })
     },
     renderConfigButton (params) {
       let row = params.row
