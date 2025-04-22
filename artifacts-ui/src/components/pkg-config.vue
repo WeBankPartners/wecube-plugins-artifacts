@@ -420,7 +420,7 @@
         <Button :style="toggleCheckFileTreeChanged" type="dashed" size="small" @click="checkConfigFileTreeVis('changed')"><span style="color: #5384FF">changed</span></Button>
         <Button :style="toggleCheckFileTreeDeleted" type="dashed" size="small" @click="checkConfigFileTreeVis('deleted')"><span style="color: #cccccc">deleted</span></Button>
       </CheckboxGroup>
-      <div style="height: 450px; overflow-y: auto">
+      <div style="height: 450px; overflow-y: auto;margin-bottom: 42px;">
         <Tree ref="configTree" :multiple="false" :check-strictly="isFileSelect" :data="configFileTree.treeData" :load-data="configFileTreeLoadNode" @on-toggle-expand="configFileTreeExpand" @on-check-change="changeChildChecked" show-checkbox> </Tree>
       </div>
       <div class="drawer-footer">
