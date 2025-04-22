@@ -34,7 +34,7 @@
                   <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
                 </RadioGroup>
               </div>
-              <Table :data="tempTableData" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"></Table>
+              <Table v-if="item.filename === activeTab" :data="tempTableData" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"></Table>
             </TabPane>
           </Tabs>
           <div v-if="packageDetail.diff_conf_file.length === 0" style="text-align: center;">
@@ -59,7 +59,7 @@
                   <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
                 </RadioGroup>
               </div>
-              <Table :data="tempTableData" :columns="attrsTableColomnOptions" size="small"></Table>
+              <Table v-if="item.filename === activeTab" :data="tempTableData" :columns="attrsTableColomnOptions" :height="maxHeight" size="small"></Table>
             </TabPane>
           </Tabs>
           <div v-if="packageDetail.db_diff_conf_file.length === 0" style="text-align: center;">
@@ -159,7 +159,7 @@
 </template>
 
 <script>
-import { deleteTemplate, getAllCITypesWithAttr, getCalcInstance, getDiffVariable, getPackageCiTypeId, getPackageDetail, getSpecialConnector, getSystemDesignVersions, getTemplate, getUserList, getVariableValue, sysConfig, updateEntity, updatePackage } from '@/api/server.js'
+import { deleteTemplate, getCalcInstance, getDiffVariable, getPackageCiTypeId, getPackageDetail, getSpecialConnector, getSystemDesignVersions, getTemplate, getUserList, getVariableValue, updateEntity, updatePackage } from '@/api/server.js'
 import DiffVariableTemplate from '@/components/diff-variable-template'
 import ParseFail from '@/components/parse-fail'
 import { getCookie, setCookie } from '@/util/cookie.js'
@@ -695,7 +695,7 @@ export default {
     getVariableTableData (configKeyInfos, filterKey) {
       this.tempTableData = configKeyInfos.filter(item => filterKey.includes(item.type))
     },
-    async initDrawer (guid, row) {
+    async initDrawer (guid, row, ciTypes, prefixTypes) {
       window.initialDrawerTimeStapArr = []
       window.initialTimeStap = +new Date()
       this.clearCalcParams()
@@ -704,7 +704,6 @@ export default {
       this.showParseFail = false
       this.openDrawer = true
       this.spinShow = true
-      // this.getAllCITypesWithAttr()
       window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$111')
       this.currentDiffConfigTab = ''
       this.currentDiffConfigTabTmp = ''
@@ -715,12 +714,13 @@ export default {
       this.currentDiffConfigTabTmp = this.currentDiffConfigTab
       this.packageId = row.guid
       this.showDiffConfigTab = true
+      this.ciTypes = ciTypes
+      this.variablePrefixType.forEach(item => {
+        item.filterKey = prefixTypes[item.key] || []
+      })
       // 获取包文件及差异化变量数据
       window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$222')
-      const promiseArr = [this.getAllCITypesWithAttr(), this.getVariablePrefix(), this.syncPackageDetail()]
-      await Promise.all(promiseArr)
-      // this.getVariablePrefix()
-      // this.syncPackageDetail()
+      await this.syncPackageDetail()
       window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$333')
       this.setPrefixType()
       this.initVariableTableData(0)
@@ -735,23 +735,6 @@ export default {
       if (this.currentDiffConfigTab === 'APP' && this.packageDetail.diff_conf_file.length > 0) {
         this.typeChange(this.packageDetail.diff_conf_file[index].configKeyInfos || [])
       }
-    },
-    async getVariablePrefix () {
-      // let { status, data } = await sysConfig()
-      // if (status === 'OK') {
-      //   this.variablePrefixType.forEach(item => {
-      //     item.filterKey = data[item.key] || []
-      //   })
-      // }
-      return new Promise(async resolve => {
-        let { status, data } = await sysConfig()
-        if (status === 'OK') {
-          this.variablePrefixType.forEach(item => {
-            item.filterKey = data[item.key] || []
-          })
-          resolve()
-        }
-      })
     },
     setPrefixType () {
       this.prefixType = ''
@@ -876,16 +859,16 @@ export default {
       }
     },
     isVariableChange () {
-      let tmp = true
-      this.tempTableData.forEach(item => {
+      for (let i = 0; i < this.tempTableData.length; i++) {
+        const item = this.tempTableData[i]
         if (item.conf_variable.diffExpr !== item.conf_variable.originDiffExpr) {
-          tmp = false
+          return false
         }
-      })
-      return tmp
+      }
+      return true
     },
     async changeTab (tabName, tabs) {
-      const flag = await this.isVariableChange() // 这里必须使用await
+      const flag = await this.isVariableChange() // 这里必须使用await, flag是isnotchange
       if (flag) {
         this.activeTabTmp = tabName
         this.activeTab = this.activeTabTmp
@@ -927,19 +910,6 @@ export default {
       if (res.status === 'OK') {
         this.specialDelimiters = res.data
       }
-    },
-    async getAllCITypesWithAttr () {
-      // let { status, data } = await getAllCITypesWithAttr(['notCreated', 'created', 'dirty', 'deleted'])
-      // if (status === 'OK') {
-      //   this.ciTypes = JSON.parse(JSON.stringify(data))
-      // }
-      return new Promise(async resolve => {
-        let { status, data } = await getAllCITypesWithAttr(['notCreated', 'created', 'dirty', 'deleted'])
-        if (status === 'OK') {
-          this.ciTypes = JSON.parse(JSON.stringify(data))
-          resolve()
-        }
-      })
     },
     getHeaders () {
       let refreshRequest = null

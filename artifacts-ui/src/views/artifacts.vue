@@ -700,7 +700,7 @@ export default {
     },
     async startConfigDiff (row, event) {
       event.stopPropagation()
-      this.$refs.pkgDiffVariableConfigRef.initDrawer(this.guid, row)
+      this.$refs.pkgDiffVariableConfigRef.initDrawer(this.guid, row, this.ciTypes, this.btnGroupControl)
     },
     historyPageChange (currentPage) {
       this.historyPageInfo.currentPage = currentPage
