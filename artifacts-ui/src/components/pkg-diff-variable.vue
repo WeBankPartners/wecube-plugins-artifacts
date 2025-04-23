@@ -1094,12 +1094,13 @@ export default {
     async syncPackageDetail () {
       return new Promise(async resolve => {
         this.initPackageDetail()
+        window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$77')
         let { status, data } = await getPackageDetail(this.guid, this.packageId)
         if (status === 'OK') {
           const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-          window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$77')
-          this.packageDetail = this.formatPackageDetail(data)
           window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$88')
+          this.packageDetail = this.formatPackageDetail(data)
+          window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$99')
           if (this.packageDetail[tmp].length > 0) {
             this.activeTab = this.packageDetail[tmp][0].filename
             this.activeTabTmp = this.activeTab
