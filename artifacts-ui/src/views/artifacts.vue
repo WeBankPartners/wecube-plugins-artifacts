@@ -700,7 +700,7 @@ export default {
     },
     async startConfigDiff (row, event) {
       event.stopPropagation()
-      this.$refs.pkgDiffVariableConfigRef.initDrawer(this.guid, row)
+      this.$refs.pkgDiffVariableConfigRef.initDrawer(this.guid, row, this.ciTypes, this.btnGroupControl)
     },
     historyPageChange (currentPage) {
       this.historyPageInfo.currentPage = currentPage
@@ -775,23 +775,6 @@ export default {
             )
           }
         })
-      }
-    },
-    getRootCI (diffExpr, defaultRootCiTypeId, elVar) {
-      let rootCI = defaultRootCiTypeId
-      if (!diffExpr) {
-        return rootCI
-      }
-      try {
-        const de = JSON.parse(diffExpr)
-        const rootItem = de.find(item => item.type === 'rule')
-        if (rootItem) {
-          const val = JSON.parse(rootItem.value)
-          rootCI = val[0].ciTypeId || defaultRootCiTypeId
-        }
-        return rootCI
-      } catch (err) {
-        throw err
       }
     },
     renderActionButton (params) {

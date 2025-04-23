@@ -447,8 +447,8 @@ import CompareFile from '@/views/compare-file.vue'
 import DisplayPath from '@/views/display-path.vue'
 import Sortable from 'sortablejs'
 // 业务运行实例ciTypeId
-const defaultAppRootCiTypeId = 'app_instance'
-const defaultDBRootCiTypeId = 'rdb_instance'
+// const defaultAppRootCiTypeId = 'app_instance'
+// const defaultDBRootCiTypeId = 'rdb_instance'
 export default {
   name: '',
   data () {
@@ -839,9 +839,9 @@ export default {
       diffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        const rootCI = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
-        elVar.originRootCI = rootCI
-        elVar.tempRootCI = rootCI
+        // const rootCI = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
+        // elVar.originRootCI = rootCI
+        // elVar.tempRootCI = rootCI
         elVar.withinFiles = []
         elVar.withinFileIndexes = []
         let index = 0
@@ -872,9 +872,9 @@ export default {
       dbDiffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        const rootCI = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId)
-        elVar.originRootCI = rootCI
-        elVar.tempRootCI = rootCI
+        // const rootCI = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId)
+        // elVar.originRootCI = rootCI
+        // elVar.tempRootCI = rootCI
         elVar.withinFiles = []
         elVar.withinFileIndexes = []
         let index = 0
@@ -903,23 +903,23 @@ export default {
       })
       return copyData
     },
-    getRootCI (diffExpr, defaultRootCiTypeId, elVar) {
-      let rootCI = defaultRootCiTypeId
-      if (!diffExpr) {
-        return rootCI
-      }
-      try {
-        const de = JSON.parse(diffExpr)
-        const rootItem = de.find(item => item.type === 'rule')
-        if (rootItem) {
-          const val = JSON.parse(rootItem.value)
-          rootCI = val[0].ciTypeId || defaultRootCiTypeId
-        }
-        return rootCI
-      } catch (err) {
-        throw err
-      }
-    },
+    // getRootCI (diffExpr, defaultRootCiTypeId, elVar) {
+    //   let rootCI = defaultRootCiTypeId
+    //   if (!diffExpr) {
+    //     return rootCI
+    //   }
+    //   try {
+    //     const de = JSON.parse(diffExpr)
+    //     const rootItem = de.find(item => item.type === 'rule')
+    //     if (rootItem) {
+    //       const val = JSON.parse(rootItem.value)
+    //       rootCI = val[0].ciTypeId || defaultRootCiTypeId
+    //     }
+    //     return rootCI
+    //   } catch (err) {
+    //     throw err
+    //   }
+    // },
     initPackageDetail () {
       this.packageDetail = {
         baseline_package: null,
