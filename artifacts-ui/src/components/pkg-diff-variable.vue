@@ -704,15 +704,12 @@ export default {
       this.tempTableData = configKeyInfos.filter(item => filterKey.includes(item.type))
     },
     async initDrawer (guid, row, ciTypes, prefixTypes) {
-      window.initialDrawerTimeStapArr = []
-      window.initialTimeStap = +new Date()
       this.clearCalcParams()
       this.guid = guid
       this.getCalcInstance()
       this.showParseFail = false
       this.openDrawer = true
       this.spinShow = true
-      window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$111')
       this.currentDiffConfigTab = ''
       this.currentDiffConfigTabTmp = ''
       this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
@@ -727,13 +724,10 @@ export default {
         item.filterKey = prefixTypes[item.key] || []
       })
       // 获取包文件及差异化变量数据
-      window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$222')
       await this.syncPackageDetail()
-      window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$333')
       this.setPrefixType()
       this.initVariableTableData(0)
       this.spinShow = false
-      window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$444')
     },
     initVariableTableData (index) {
       this.currentFileIndex = index
@@ -1094,13 +1088,10 @@ export default {
     async syncPackageDetail () {
       return new Promise(async resolve => {
         this.initPackageDetail()
-        window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$77')
         let { status, data } = await getPackageDetail(this.guid, this.packageId)
         if (status === 'OK') {
           const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-          window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$88')
           this.packageDetail = this.formatPackageDetail(data)
-          window.initialDrawerTimeStapArr.push(+new Date() - window.initialTimeStap + '$99')
           if (this.packageDetail[tmp].length > 0) {
             this.activeTab = this.packageDetail[tmp][0].filename
             this.activeTabTmp = this.activeTab
