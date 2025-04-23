@@ -30,12 +30,14 @@
             </div>
             <Tabs :value="activeTab" v-model="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
               <TabPane v-for="(item, index) in packageDetail.diff_conf_file" v-if="item.configKeyInfos.length !== 0" :label="renderLabel(item)" :name="item.filename" :key="index" tab="APP">
-                <div class="pkg-variable">
-                  <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
-                    <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
-                  </RadioGroup>
+                <div v-if="item.filename === activeTab">
+                  <div class="pkg-variable">
+                    <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
+                      <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
+                    </RadioGroup>
+                  </div>
+                  <Table :data="tempTableData" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"></Table>
                 </div>
-                <Table v-if="item.filename === activeTab" :data="tempTableData" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"></Table>
               </TabPane>
             </Tabs>
             <div v-if="packageDetail.diff_conf_file.length === 0" style="text-align: center;">
@@ -57,12 +59,14 @@
             </div>
             <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.db_diff_conf_file)" name="DB">
               <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" v-if="item.configKeyInfos.length !== 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="DB">
-                <div class="pkg-variable">
-                  <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
-                    <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
-                  </RadioGroup>
+                <div v-if="item.filename === activeTab">
+                  <div class="pkg-variable">
+                    <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
+                      <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
+                    </RadioGroup>
+                  </div>
+                  <Table :data="tempTableData" :columns="attrsTableColomnOptions" :height="maxHeight" size="small"></Table>
                 </div>
-                <Table v-if="item.filename === activeTab" :data="tempTableData" :columns="attrsTableColomnOptions" :height="maxHeight" size="small"></Table>
               </TabPane>
             </Tabs>
             <div v-if="packageDetail.db_diff_conf_file.length === 0" style="text-align: center;">
