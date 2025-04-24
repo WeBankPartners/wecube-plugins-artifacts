@@ -455,7 +455,19 @@ export default {
     async getAllCITypesWithAttr () {
       let { status, data } = await getAllCITypesWithAttr(['notCreated', 'created', 'dirty', 'deleted'])
       if (status === 'OK') {
-        this.ciTypes = JSON.parse(JSON.stringify(data))
+        this.ciTypes = JSON.parse(JSON.stringify(data)).map(item => {
+          item.attributes = item.attributes.map(attr => {
+            let res = {
+              ciTypeAttrId: attr.ciTypeAttrId,
+              inputType: attr.inputType,
+              ciTypeId: attr.ciTypeId,
+              propertyName: attr.propertyName,
+              name: attr.name
+            }
+            return res
+          })
+          return item
+        })
       }
     },
     async getCITypeOperations () {

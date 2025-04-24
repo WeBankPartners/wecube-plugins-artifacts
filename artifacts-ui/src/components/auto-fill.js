@@ -4,7 +4,8 @@ import './auto-fill.scss'
 export default {
   name: 'AutoFill',
   props: {
-    allCiTypes: { default: () => [], required: true },
+    ciTypesObj: { default: () => {}, required: true },
+    ciTypeAttrsObj: { default: () => {}, required: true },
     isReadOnly: { default: () => false, required: false },
     value: { default: () => '', required: true },
     rootCiTypeId: { type: String, required: true },
@@ -40,29 +41,11 @@ export default {
       spinShow: false
     }
   },
-  computed: {
-    ciTypesObj () {
-      let obj = {}
-      this.allCiTypes.forEach(_ => {
-        obj[_.ciTypeId] = _
-      })
-      return obj
-    },
-    ciTypeAttrsObj () {
-      let obj = {}
-      this.allCiTypes.forEach(ciType => {
-        ciType.attributes.forEach(attr => {
-          obj[attr.ciTypeAttrId] = attr
-        })
-      })
-      return obj
-    }
-  },
   watch: {
     value () {
       this.initAutoFillArray()
     },
-    allCiTypes () {
+    ciTypesObj () {
       this.initAutoFillArray()
     },
     optionsDisplay (val) {
@@ -723,7 +706,7 @@ export default {
       }
     },
     initAutoFillArray () {
-      if (!this.allCiTypes.length || !this.value) {
+      if (!Object.keys(this.ciTypesObj).length || !this.value) {
         this.autoFillArray = []
         return
       }
@@ -802,7 +785,7 @@ export default {
       )
     },
     renderInput (item, index) {
-      const { rootCiTypeId, allCiTypes, specialDelimiters, cmdbPackageName } = this
+      const { rootCiTypeId, ciTypesObj, ciTypeAttrsObj, specialDelimiters, cmdbPackageName } = this
       if (item.type === 'value') {
         if (['ref', 'select', 'multiRef', 'multiSelect'].indexOf(item.inputType) >= 0) {
           return (
@@ -826,7 +809,7 @@ export default {
           return <Input class="auto-fill-filter-li-input" onInput={v => (this.filters[index].value = v)} value={item.value} type="textarea" autosize={true} />
         }
       } else {
-        return <AutoFill class="auto-fill-filter-li-input" allCiTypes={allCiTypes} isReadOnly={false} onInput={v => (this.filters[index].value = v)} rootCiTypeId={rootCiTypeId} specialDelimiters={specialDelimiters} value={item.value} cmdbPackageName={cmdbPackageName} />
+        return <AutoFill class="auto-fill-filter-li-input" ciTypesObj={ciTypesObj} ciTypeAttrsObj={ciTypeAttrsObj} isReadOnly={false} onInput={v => (this.filters[index].value = v)} rootCiTypeId={rootCiTypeId} specialDelimiters={specialDelimiters} value={item.value} cmdbPackageName={cmdbPackageName} />
       }
     },
     async changeAttr (val, i) {

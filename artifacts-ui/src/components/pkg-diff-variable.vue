@@ -145,7 +145,7 @@
         <Form :label-width="120">
           <FormItem :label="$t('art_value_rule')">
             <div style="color:gray">
-              <ArtifactsAutoFill :allCiTypes="ciTypes" :specialDelimiters="specialDelimiters" rootCiTypeId="" :isReadOnly="true" v-model="useTemplateSelectRow.value" cmdbPackageName="wecmdb" />
+              <ArtifactsAutoFill :ciTypesObj="ciTypesObj" :ciTypeAttrsObj="ciTypeAttrsObj" :specialDelimiters="specialDelimiters" rootCiTypeId="" :isReadOnly="true" v-model="useTemplateSelectRow.value" cmdbPackageName="wecmdb" />
             </div>
           </FormItem>
           <FormItem v-for="input in customInputs" :key="input.key" style="margin-bottom: 0;">
@@ -329,10 +329,10 @@ export default {
             // show static view only if confirmed
             if (this.tempTableData[params.row._index]) {
               return params.row.conf_variable.fixedDate ? (
-                <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} isReadOnly={true} v-model={this.tempTableData[params.row._index].conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
+                <ArtifactsAutoFill style="margin-top:5px;" ciTypesObj={this.ciTypesObj} ciTypeAttrsObj={this.ciTypeAttrsObj} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} isReadOnly={true} v-model={this.tempTableData[params.row._index].conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
               ) : (
                 <div style="align-items:center;display:flex;">
-                  <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 10px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.tempTableData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
+                  <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 10px);" ciTypesObj={this.ciTypesObj} ciTypeAttrsObj={this.ciTypeAttrsObj} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.tempTableData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
                 </div>
               )
             }
@@ -443,7 +443,7 @@ export default {
           title: this.$t('art_value_rule'),
           key: 'variable_value',
           render: (h, params) => {
-            return <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.variable_value} cmdbPackageName={cmdbPackageName} />
+            return <ArtifactsAutoFill style="margin-top:5px;" ciTypesObj={this.ciTypesObj} ciTypeAttrsObj={this.ciTypeAttrsObj} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.variable_value} cmdbPackageName={cmdbPackageName} />
           }
         },
         {
@@ -495,7 +495,7 @@ export default {
           title: this.$t('art_value_rule'),
           key: 'value',
           render: (h, params) => {
-            return <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.value} cmdbPackageName={cmdbPackageName} />
+            return <ArtifactsAutoFill style="margin-top:5px;" ciTypesObj={this.ciTypesObj} ciTypeAttrsObj={this.ciTypeAttrsObj} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.value} cmdbPackageName={cmdbPackageName} />
           }
         },
         {
@@ -551,6 +551,8 @@ export default {
       fullscreen: false,
       fileContentHeight: window.screen.availHeight * 0.4 + 100,
       ciTypes: [],
+      ciTypesObj: {},
+      ciTypeAttrsObj: {},
       specialDelimiters: [],
       calcAppInstance: '', // 待试算实例
       calcAppInstanceOptions: [], // 待试算实例选项
@@ -720,6 +722,12 @@ export default {
       this.packageId = row.guid
       this.showDiffConfigTab = true
       this.ciTypes = ciTypes
+      this.ciTypes.forEach(ciType => {
+        this.ciTypesObj[ciType.ciTypeId] = ciType
+        ciType.attributes.forEach(attr => {
+          this.ciTypeAttrsObj[attr.ciTypeAttrId] = attr
+        })
+      })
       this.variablePrefixType.forEach(item => {
         item.filterKey = prefixTypes[item.key] || []
       })
