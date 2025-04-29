@@ -1005,10 +1005,11 @@ export default {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
         const res = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
+        let rootCI = res
         if (res === 'parseFail') {
           appParseFailVariable.push(elVar)
+          rootCI = defaultAppRootCiTypeId
         }
-        const rootCI = res === 'parseFail' ? defaultAppRootCiTypeId : ''
         elVar.originRootCI = rootCI
         elVar.tempRootCI = rootCI
         elVar.withinFiles = []
@@ -1043,11 +1044,11 @@ export default {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
         const res = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId, elVar)
+        let rootCI = res
         if (res === 'parseFail') {
-          dbParseFailVariable.push(elVar)
+          appParseFailVariable.push(elVar)
+          rootCI = defaultDBRootCiTypeId
         }
-        const rootCI = res === 'parseFail' ? defaultDBRootCiTypeId : ''
-
         elVar.originRootCI = rootCI
         elVar.tempRootCI = rootCI
         elVar.withinFiles = []
