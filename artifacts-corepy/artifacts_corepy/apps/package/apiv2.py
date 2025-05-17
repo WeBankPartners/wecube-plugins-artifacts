@@ -1476,7 +1476,7 @@ class UnitDesignPackages(WeCubeResource):
             return self.get(unit_design_id, deploy_package_id)
         return resp_json['data']
 
-    def _analyze_diff_var(self, package_id, package_url, origin_conf_list, new_conf_list):
+    def _analyze_diff_var(self, package_id, package_url, origin_conf_list, new_conf_list, baseline_unbind_variable_ids=set()):
         '''
         conf_list是列表，每个元素是string 或 dict[{configKeyInfos，filename}]
         
@@ -1525,12 +1525,16 @@ class UnitDesignPackages(WeCubeResource):
             new_diff_configs_map = artifact_utils.CaseInsensitiveDict()
             for conf in all_diff_configs:
                 finder[conf['key_name']] = conf
+            rename_new_variables = []
             for diff_conf in package_diff_configs:
                 if diff_conf['key'] not in finder:
                     new_diff_configs.add(diff_conf['key'])
                     new_diff_configs_map[diff_conf['key']] = diff_conf
                 else:
                     exist_diff_configs.add(finder[diff_conf['key']]['guid'])
+                    # 找到变量之后还需要检测是否因更名而出现的变量
+                    if finder[diff_conf['key']]['guid'] not in baseline_unbind_variable_ids:
+                        rename_new_variables.append(finder[diff_conf['key']]['guid'])
             # 创建新的差异化变量项
             bind_variables = list(exist_diff_configs)
             new_create_variables = []
@@ -1555,6 +1559,8 @@ class UnitDesignPackages(WeCubeResource):
                 new_create_variables = [c['guid'] for c in resp_json['data']]
                 bind_variables.extend(new_create_variables)
             # LOG.debug("bind_variables: %s", bind_variables)
+            for v in rename_new_variables:
+                new_create_variables.append(v)
             return bind_variables, new_create_variables
         return None, None
 
@@ -2277,10 +2283,25 @@ class UnitDesignPackages(WeCubeResource):
                 # filtered_file_objs.sort(key=lambda x: x['filename'], reverse=False)
                 ret_data[field_pkg_diff_conf_file_name] = FileNameConcater().convert(filtered_file_objs)
                 if do_bind_vars:
+                    # 此时baseline pkg已缓存，计算baseline pkg全量变量，并且获取当前已绑定的变量，检测是否存在用户排除变量
+                    baseline_unbind_variables = set()
+                    if ret_data[field_pkg_package_type_name] in (constant.PackageType.app, constant.PackageType.mixed):
+                        baseline_diff_conf_files = self.update_file_variable(self.get_package_cached_path(baseline_package_id), self.build_file_object(baseline_package[field_pkg_diff_conf_file_name]))
+                        # package_app_diff_configs 是 计算baseline pkg全量变量
+                        baseline_package_diff_configs = []
+                        for conf_file in baseline_diff_conf_files:
+                            baseline_package_diff_configs.extend(conf_file['configKeyInfos'])
+                        baseline_query_diff_configs = list(set([p['key'] for p in baseline_package_diff_configs]))
+                        baseline_all_diff_configs = self._get_diff_configs_by_keyname(baseline_query_diff_configs)
+                        baseline_bind_variables = set([c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]])
+                        for conf in baseline_all_diff_configs:
+                            if conf['guid'] not in baseline_bind_variables:
+                                baseline_unbind_variables.add(conf['guid'])
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
                     bind_variables, new_create_variables = self._analyze_diff_var(package_id,
                                                                                   deploy_package['deploy_package_url'],
-                                                                                  [], conf_files)
+                                                                                  [], conf_files,
+                                                                                  baseline_unbind_variables)
                     if new_create_variables is not None:
                         bind_variables = [c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]]
                         bind_variables.extend(new_create_variables)
@@ -2343,10 +2364,25 @@ class UnitDesignPackages(WeCubeResource):
                 # filtered_file_objs.sort(key=lambda x: x['filename'], reverse=False)
                 ret_data[field_pkg_diff_conf_file_name] = FileNameConcater().convert(filtered_file_objs)
                 if do_bind_vars:
+                    # 此时baseline pkg已缓存，计算baseline pkg全量变量，并且获取当前已绑定的变量，检测是否存在用户排除变量
+                    baseline_unbind_variables = set()
+                    if ret_data[field_pkg_package_type_name] in (constant.PackageType.app, constant.PackageType.mixed):
+                        baseline_diff_conf_files = self.update_file_variable(self.get_package_cached_path(baseline_package_id), self.build_file_object(baseline_package[field_pkg_diff_conf_file_name]))
+                        # package_app_diff_configs 是 计算baseline pkg全量变量
+                        baseline_package_diff_configs = []
+                        for conf_file in baseline_diff_conf_files:
+                            baseline_package_diff_configs.extend(conf_file['configKeyInfos'])
+                        baseline_query_diff_configs = list(set([p['key'] for p in baseline_package_diff_configs]))
+                        baseline_all_diff_configs = self._get_diff_configs_by_keyname(baseline_query_diff_configs)
+                        baseline_bind_variables = set([c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]])
+                        for conf in baseline_all_diff_configs:
+                            if conf['guid'] not in baseline_bind_variables:
+                                baseline_unbind_variables.add(conf['guid'])
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
                     bind_variables, new_create_variables = self._analyze_diff_var(package_id,
                                                                                   deploy_package['deploy_package_url'],
-                                                                                  [], conf_files)
+                                                                                  [], conf_files,
+                                                                                  baseline_unbind_variables)
                     if new_create_variables is not None:
                         bind_variables = [c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]]
                         bind_variables.extend(new_create_variables)
