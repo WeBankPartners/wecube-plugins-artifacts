@@ -88,7 +88,7 @@
                     </div>
                     <div id="start_file_path_test">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.start_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.start_file_path[index].filename" />
+                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path[index].filename" />
                         <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
                       </div>
@@ -104,7 +104,7 @@
                     </div>
                     <div id="stop_file_path_test">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.stop_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.stop_file_path[index].filename" />
+                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path[index].filename" />
                         <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
                       </div>
@@ -120,7 +120,7 @@
                     </div>
                     <div id="deploy_file_path_test">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.deploy_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.deploy_file_path[index].filename" />
+                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path[index].filename" />
                         <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
                       </div>
@@ -1008,15 +1008,15 @@ export default {
         queryFiles = this.packageInput.script_file_directory.map(_ => _.filename)
       } else if (type === 1) {
         this.configFileTreeTitle = this.$t('artifacts_select_start_script')
-        queryFiles = this.packageInput.start_file_path.map(_ => _.filename)
+        queryFiles = this.packageInput.start_file_path.map(_ => _.filename.split(' ')[0])
         queryFilesParent = this.packageInput.script_file_directory.map(_ => _.filename)
       } else if (type === 2) {
         this.configFileTreeTitle = this.$t('artifacts_select_stop_script')
-        queryFiles = this.packageInput.stop_file_path.map(_ => _.filename)
+        queryFiles = this.packageInput.stop_file_path.map(_ => _.filename.split(' ')[0])
         queryFilesParent = this.packageInput.script_file_directory.map(_ => _.filename)
       } else if (type === 3) {
         this.configFileTreeTitle = this.$t('artifacts_select_deploy_script')
-        queryFiles = this.packageInput.deploy_file_path.map(_ => _.filename)
+        queryFiles = this.packageInput.deploy_file_path.map(_ => _.filename.split(' ')[0])
         queryFilesParent = this.packageInput.script_file_directory.map(_ => _.filename)
       } else if (type === 0.4) {
         this.isFileSelect = true
