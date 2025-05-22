@@ -1004,7 +1004,8 @@ export default {
       diffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        const res = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
+        // const res = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
+        const res = defaultAppRootCiTypeId
         let rootCI = res
         if (res === 'parseFail') {
           appParseFailVariable.push(elVar)
@@ -1043,7 +1044,8 @@ export default {
       dbDiffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        const res = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId, elVar)
+        // const res = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId, elVar)
+        const res = defaultDBRootCiTypeId
         let rootCI = res
         if (res === 'parseFail') {
           appParseFailVariable.push(elVar)
