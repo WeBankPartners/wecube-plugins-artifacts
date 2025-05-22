@@ -455,7 +455,19 @@ export default {
     async getAllCITypesWithAttr () {
       let { status, data } = await getAllCITypesWithAttr(['notCreated', 'created', 'dirty', 'deleted'])
       if (status === 'OK') {
-        this.ciTypes = JSON.parse(JSON.stringify(data))
+        this.ciTypes = JSON.parse(JSON.stringify(data)).map(item => {
+          item.attributes = item.attributes.map(attr => {
+            let res = {
+              ciTypeAttrId: attr.ciTypeAttrId,
+              inputType: attr.inputType,
+              ciTypeId: attr.ciTypeId,
+              propertyName: attr.propertyName,
+              name: attr.name
+            }
+            return res
+          })
+          return item
+        })
       }
     },
     async getCITypeOperations () {
@@ -700,7 +712,7 @@ export default {
     },
     async startConfigDiff (row, event) {
       event.stopPropagation()
-      this.$refs.pkgDiffVariableConfigRef.initDrawer(this.guid, row)
+      this.$refs.pkgDiffVariableConfigRef.initDrawer(this.guid, row, this.ciTypes, this.btnGroupControl)
     },
     historyPageChange (currentPage) {
       this.historyPageInfo.currentPage = currentPage
@@ -775,23 +787,6 @@ export default {
             )
           }
         })
-      }
-    },
-    getRootCI (diffExpr, defaultRootCiTypeId, elVar) {
-      let rootCI = defaultRootCiTypeId
-      if (!diffExpr) {
-        return rootCI
-      }
-      try {
-        const de = JSON.parse(diffExpr)
-        const rootItem = de.find(item => item.type === 'rule')
-        if (rootItem) {
-          const val = JSON.parse(rootItem.value)
-          rootCI = val[0].ciTypeId || defaultRootCiTypeId
-        }
-        return rootCI
-      } catch (err) {
-        throw err
       }
     },
     renderActionButton (params) {

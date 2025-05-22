@@ -88,7 +88,7 @@
                     </div>
                     <div id="start_file_path_test">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.start_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.start_file_path[index].filename" />
+                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.start_file_path[index].filename" />
                         <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'start_file_path')"></Button>
                       </div>
@@ -104,7 +104,7 @@
                     </div>
                     <div id="stop_file_path_test">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.stop_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.stop_file_path[index].filename" />
+                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.stop_file_path[index].filename" />
                         <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'stop_file_path')"></Button>
                       </div>
@@ -120,7 +120,7 @@
                     </div>
                     <div id="deploy_file_path_test">
                       <div style="margin-bottom: 5px" v-for="(file, index) in packageInput.deploy_file_path" :key="index">
-                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" disabled v-model="packageInput.deploy_file_path[index].filename" />
+                        <Input class="textarea-input" :rows="1" :placeholder="$t('artifacts_unselected')" type="textarea" v-model="packageInput.deploy_file_path[index].filename" />
                         <DisplayPath :file="file" :canBeMoved="true"></DisplayPath>
                         <Button style="margin-left:4px" size="small" type="error" icon="md-trash" ghost @click="deleteFilePath(index, 'deploy_file_path')"></Button>
                       </div>
@@ -420,7 +420,7 @@
         <Button :style="toggleCheckFileTreeChanged" type="dashed" size="small" @click="checkConfigFileTreeVis('changed')"><span style="color: #5384FF">changed</span></Button>
         <Button :style="toggleCheckFileTreeDeleted" type="dashed" size="small" @click="checkConfigFileTreeVis('deleted')"><span style="color: #cccccc">deleted</span></Button>
       </CheckboxGroup>
-      <div style="height: 450px; overflow-y: auto">
+      <div style="height: 450px; overflow-y: auto;margin-bottom: 42px;">
         <Tree ref="configTree" :multiple="false" :check-strictly="isFileSelect" :data="configFileTree.treeData" :load-data="configFileTreeLoadNode" @on-toggle-expand="configFileTreeExpand" @on-check-change="changeChildChecked" show-checkbox> </Tree>
       </div>
       <div class="drawer-footer">
@@ -447,8 +447,8 @@ import CompareFile from '@/views/compare-file.vue'
 import DisplayPath from '@/views/display-path.vue'
 import Sortable from 'sortablejs'
 // 业务运行实例ciTypeId
-const defaultAppRootCiTypeId = 'app_instance'
-const defaultDBRootCiTypeId = 'rdb_instance'
+// const defaultAppRootCiTypeId = 'app_instance'
+// const defaultDBRootCiTypeId = 'rdb_instance'
 export default {
   name: '',
   data () {
@@ -839,9 +839,9 @@ export default {
       diffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        const rootCI = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
-        elVar.originRootCI = rootCI
-        elVar.tempRootCI = rootCI
+        // const rootCI = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
+        // elVar.originRootCI = rootCI
+        // elVar.tempRootCI = rootCI
         elVar.withinFiles = []
         elVar.withinFileIndexes = []
         let index = 0
@@ -872,9 +872,9 @@ export default {
       dbDiffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        const rootCI = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId)
-        elVar.originRootCI = rootCI
-        elVar.tempRootCI = rootCI
+        // const rootCI = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId)
+        // elVar.originRootCI = rootCI
+        // elVar.tempRootCI = rootCI
         elVar.withinFiles = []
         elVar.withinFileIndexes = []
         let index = 0
@@ -903,23 +903,23 @@ export default {
       })
       return copyData
     },
-    getRootCI (diffExpr, defaultRootCiTypeId, elVar) {
-      let rootCI = defaultRootCiTypeId
-      if (!diffExpr) {
-        return rootCI
-      }
-      try {
-        const de = JSON.parse(diffExpr)
-        const rootItem = de.find(item => item.type === 'rule')
-        if (rootItem) {
-          const val = JSON.parse(rootItem.value)
-          rootCI = val[0].ciTypeId || defaultRootCiTypeId
-        }
-        return rootCI
-      } catch (err) {
-        throw err
-      }
-    },
+    // getRootCI (diffExpr, defaultRootCiTypeId, elVar) {
+    //   let rootCI = defaultRootCiTypeId
+    //   if (!diffExpr) {
+    //     return rootCI
+    //   }
+    //   try {
+    //     const de = JSON.parse(diffExpr)
+    //     const rootItem = de.find(item => item.type === 'rule')
+    //     if (rootItem) {
+    //       const val = JSON.parse(rootItem.value)
+    //       rootCI = val[0].ciTypeId || defaultRootCiTypeId
+    //     }
+    //     return rootCI
+    //   } catch (err) {
+    //     throw err
+    //   }
+    // },
     initPackageDetail () {
       this.packageDetail = {
         baseline_package: null,
@@ -1008,15 +1008,15 @@ export default {
         queryFiles = this.packageInput.script_file_directory.map(_ => _.filename)
       } else if (type === 1) {
         this.configFileTreeTitle = this.$t('artifacts_select_start_script')
-        queryFiles = this.packageInput.start_file_path.map(_ => _.filename)
+        queryFiles = this.packageInput.start_file_path.map(_ => _.filename.split(' ')[0])
         queryFilesParent = this.packageInput.script_file_directory.map(_ => _.filename)
       } else if (type === 2) {
         this.configFileTreeTitle = this.$t('artifacts_select_stop_script')
-        queryFiles = this.packageInput.stop_file_path.map(_ => _.filename)
+        queryFiles = this.packageInput.stop_file_path.map(_ => _.filename.split(' ')[0])
         queryFilesParent = this.packageInput.script_file_directory.map(_ => _.filename)
       } else if (type === 3) {
         this.configFileTreeTitle = this.$t('artifacts_select_deploy_script')
-        queryFiles = this.packageInput.deploy_file_path.map(_ => _.filename)
+        queryFiles = this.packageInput.deploy_file_path.map(_ => _.filename.split(' ')[0])
         queryFilesParent = this.packageInput.script_file_directory.map(_ => _.filename)
       } else if (type === 0.4) {
         this.isFileSelect = true

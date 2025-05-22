@@ -1,5 +1,6 @@
 <template>
   <Drawer :title="pkgName" v-model="openDrawer" class="custom-drawer" :scrollable="false" width="1300">
+    <ParseFail v-if="showParseFail" @close="showParseFail = false" :parseFailMsg="parseFailMsg"></ParseFail>
     <Spin size="large" fix v-if="spinShow"></Spin>
     <div v-if="showDiffConfigTab">
       <Tabs :value="currentDiffConfigTab" v-model="currentDiffConfigTab" @on-click="changeDiffConfigTab" type="card" name="diffConfig" style="width: 100%;">
@@ -16,59 +17,67 @@
           </Button>
         </div>
         <TabPane :disabled="packageType === constPackageOptions.db" :label="$t('APP')" name="APP" tab="diffConfig">
-          <Spin size="large" fix v-if="tabTableLoading">
-            <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
-            <div>{{ $t('artifacts_loading') }}</div>
-          </Spin>
-          <div style="margin-bottom: 8px;">
-            <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;">
-              <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
-            </Select>
-            <Button type="primary" style="margin-left: 24px;" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
-          </div>
-          <Tabs :value="activeTab" v-model="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
-            <TabPane v-for="(item, index) in packageDetail.diff_conf_file" v-if="item.configKeyInfos.length !== 0" :label="renderLabel(item)" :name="item.filename" :key="index" tab="APP">
-              <div class="pkg-variable">
-                <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
-                  <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
-                </RadioGroup>
-              </div>
-              <Table :data="tempTableData" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"></Table>
-            </TabPane>
-          </Tabs>
-          <div v-if="packageDetail.diff_conf_file.length === 0" style="text-align: center;">
-            {{ $t('art_no_data') }}
+          <div v-if="currentDiffConfigTab === 'APP'">
+            <Spin size="large" fix v-if="tabTableLoading">
+              <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
+              <div>{{ $t('artifacts_loading') }}</div>
+            </Spin>
+            <div style="margin-bottom: 8px;">
+              <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;">
+                <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+              </Select>
+              <Button type="primary" style="margin-left: 24px;" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+            </div>
+            <Tabs :value="activeTab" v-model="activeTab" @on-click="val => changeTab(val, packageDetail.diff_conf_file)" name="APP">
+              <TabPane v-for="(item, index) in packageDetail.diff_conf_file" v-if="item.configKeyInfos.length !== 0" :label="renderLabel(item)" :name="item.filename" :key="index" tab="APP">
+                <div v-if="item.filename === activeTab">
+                  <div class="pkg-variable">
+                    <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
+                      <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
+                    </RadioGroup>
+                  </div>
+                  <Table :data="tempTableData" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"></Table>
+                </div>
+              </TabPane>
+            </Tabs>
+            <div v-if="packageDetail.diff_conf_file.length === 0" style="text-align: center;">
+              {{ $t('art_no_data') }}
+            </div>
           </div>
         </TabPane>
         <TabPane :disabled="packageType === constPackageOptions.app" :label="$t('DB')" name="DB" tab="diffConfig">
-          <Spin size="large" fix v-if="tabTableLoading">
-            <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
-            <div>{{ $t('artifacts_loading') }}</div>
-          </Spin>
-          <div style="margin-bottom: 8px;">
-            <Select clearable filterable @on-change="getVariableValue('db')" @on-open-change="getCalcInstance('db')" :placeholder="$t('art_trial_instance')" v-model="calcDBInstance" style="width:300px;">
-              <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
-            </Select>
-            <Button type="primary" :disabled="packageDetail.db_diff_conf_file.length === 0" style="margin-left:24px" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
-          </div>
-          <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.db_diff_conf_file)" name="DB">
-            <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" v-if="item.configKeyInfos.length !== 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="DB">
-              <div class="pkg-variable">
-                <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
-                  <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
-                </RadioGroup>
-              </div>
-              <Table :data="tempTableData" :columns="attrsTableColomnOptions" size="small"></Table>
-            </TabPane>
-          </Tabs>
-          <div v-if="packageDetail.db_diff_conf_file.length === 0" style="text-align: center;">
-            {{ $t('art_no_data') }}
+          <div v-if="currentDiffConfigTab === 'DB'">
+            <Spin size="large" fix v-if="tabTableLoading">
+              <Icon type="ios-loading" size="24" class="spin-icon-load"></Icon>
+              <div>{{ $t('artifacts_loading') }}</div>
+            </Spin>
+            <div style="margin-bottom: 8px;">
+              <Select clearable filterable @on-change="getVariableValue('db')" @on-open-change="getCalcInstance('db')" :placeholder="$t('art_trial_instance')" v-model="calcDBInstance" style="width:300px;">
+                <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+              </Select>
+              <Button type="primary" :disabled="packageDetail.db_diff_conf_file.length === 0" style="margin-left:24px" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
+            </div>
+            <Tabs :value="activeTab" @on-click="val => changeTab(val, packageDetail.db_diff_conf_file)" name="DB">
+              <TabPane v-for="(item, index) in packageDetail.db_diff_conf_file" v-if="item.configKeyInfos.length !== 0" :label="item.shorFileName + ' (' + item.configKeyInfos.length + ')'" :name="item.filename" :key="index" tab="DB">
+                <div v-if="item.filename === activeTab">
+                  <div class="pkg-variable">
+                    <RadioGroup v-model="prefixType" type="button" button-style="solid" @on-change="typeChange(item.configKeyInfos || [])" style="margin-right: 5px">
+                      <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
+                    </RadioGroup>
+                  </div>
+                  <Table :data="tempTableData" :columns="attrsTableColomnOptions" :height="maxHeight" size="small"></Table>
+                </div>
+              </TabPane>
+            </Tabs>
+            <div v-if="packageDetail.db_diff_conf_file.length === 0" style="text-align: center;">
+              {{ $t('art_no_data') }}
+            </div>
           </div>
         </TabPane>
       </Tabs>
     </div>
     <div class="drawer-footer">
-      <Button @click="openDrawer = false" type="primary">{{ $t('art_close') }}</Button>
+      <Button @click="closeDrawer" type="primary">{{ $t('art_close') }}</Button>
     </div>
     <!-- 复制已有模版 -->
     <Modal :mask-closable="false" v-model="isShowConfigKeyModal" :fullscreen="fullscreen" width="1000">
@@ -136,7 +145,7 @@
         <Form :label-width="120">
           <FormItem :label="$t('art_value_rule')">
             <div style="color:gray">
-              <ArtifactsAutoFill :allCiTypes="ciTypes" :specialDelimiters="specialDelimiters" rootCiTypeId="" :isReadOnly="true" v-model="useTemplateSelectRow.value" cmdbPackageName="wecmdb" />
+              <ArtifactsAutoFill :ciTypesObj="ciTypesObj" :ciTypeAttrsObj="ciTypeAttrsObj" :specialDelimiters="specialDelimiters" rootCiTypeId="" :isReadOnly="true" v-model="useTemplateSelectRow.value" cmdbPackageName="wecmdb" />
             </div>
           </FormItem>
           <FormItem v-for="input in customInputs" :key="input.key" style="margin-bottom: 0;">
@@ -158,8 +167,9 @@
 </template>
 
 <script>
-import { deleteTemplate, getAllCITypesWithAttr, getCalcInstance, getDiffVariable, getPackageCiTypeId, getPackageDetail, getSpecialConnector, getSystemDesignVersions, getTemplate, getUserList, getVariableValue, sysConfig, updateEntity, updatePackage } from '@/api/server.js'
+import { deleteTemplate, getCalcInstance, getDiffVariable, getPackageCiTypeId, getPackageDetail, getSpecialConnector, getSystemDesignVersions, getTemplate, getUserList, getVariableValue, updateEntity, updatePackage } from '@/api/server.js'
 import DiffVariableTemplate from '@/components/diff-variable-template'
+import ParseFail from '@/components/parse-fail'
 import { getCookie, setCookie } from '@/util/cookie.js'
 import axios from 'axios'
 import { decode } from 'js-base64'
@@ -176,6 +186,8 @@ export default {
   name: 'artifacts',
   data () {
     return {
+      showParseFail: false,
+      parseFailMsg: [],
       spinShow: false,
       pkgName: '',
       openDrawer: false,
@@ -317,10 +329,10 @@ export default {
             // show static view only if confirmed
             if (this.tempTableData[params.row._index]) {
               return params.row.conf_variable.fixedDate ? (
-                <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} isReadOnly={true} v-model={this.tempTableData[params.row._index].conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
+                <ArtifactsAutoFill style="margin-top:5px;" ciTypesObj={this.ciTypesObj} ciTypeAttrsObj={this.ciTypeAttrsObj} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} isReadOnly={true} v-model={this.tempTableData[params.row._index].conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
               ) : (
                 <div style="align-items:center;display:flex;">
-                  <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 10px);" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.tempTableData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
+                  <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 10px);" ciTypesObj={this.ciTypesObj} ciTypeAttrsObj={this.ciTypeAttrsObj} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.tempTableData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
                 </div>
               )
             }
@@ -431,7 +443,7 @@ export default {
           title: this.$t('art_value_rule'),
           key: 'variable_value',
           render: (h, params) => {
-            return <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.variable_value} cmdbPackageName={cmdbPackageName} />
+            return <ArtifactsAutoFill style="margin-top:5px;" ciTypesObj={this.ciTypesObj} ciTypeAttrsObj={this.ciTypeAttrsObj} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.variable_value} cmdbPackageName={cmdbPackageName} />
           }
         },
         {
@@ -483,7 +495,7 @@ export default {
           title: this.$t('art_value_rule'),
           key: 'value',
           render: (h, params) => {
-            return <ArtifactsAutoFill style="margin-top:5px;" allCiTypes={this.ciTypes} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.value} cmdbPackageName={cmdbPackageName} />
+            return <ArtifactsAutoFill style="margin-top:5px;" ciTypesObj={this.ciTypesObj} ciTypeAttrsObj={this.ciTypeAttrsObj} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.value} cmdbPackageName={cmdbPackageName} />
           }
         },
         {
@@ -539,6 +551,8 @@ export default {
       fullscreen: false,
       fileContentHeight: window.screen.availHeight * 0.4 + 100,
       ciTypes: [],
+      ciTypesObj: {},
+      ciTypeAttrsObj: {},
       specialDelimiters: [],
       calcAppInstance: '', // 待试算实例
       calcAppInstanceOptions: [], // 待试算实例选项
@@ -691,13 +705,13 @@ export default {
     getVariableTableData (configKeyInfos, filterKey) {
       this.tempTableData = configKeyInfos.filter(item => filterKey.includes(item.type))
     },
-    async initDrawer (guid, row) {
+    async initDrawer (guid, row, ciTypes, prefixTypes) {
       this.clearCalcParams()
       this.guid = guid
       this.getCalcInstance()
+      this.showParseFail = false
       this.openDrawer = true
       this.spinShow = true
-      await this.getAllCITypesWithAttr()
       this.currentDiffConfigTab = ''
       this.currentDiffConfigTabTmp = ''
       this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
@@ -707,9 +721,18 @@ export default {
       this.currentDiffConfigTabTmp = this.currentDiffConfigTab
       this.packageId = row.guid
       this.showDiffConfigTab = true
+      this.ciTypes = ciTypes
+      this.ciTypes.forEach(ciType => {
+        this.ciTypesObj[ciType.ciTypeId] = ciType
+        ciType.attributes.forEach(attr => {
+          this.ciTypeAttrsObj[attr.ciTypeAttrId] = attr
+        })
+      })
+      this.variablePrefixType.forEach(item => {
+        item.filterKey = prefixTypes[item.key] || []
+      })
       // 获取包文件及差异化变量数据
       await this.syncPackageDetail()
-      await this.getVariablePrefix()
       this.setPrefixType()
       this.initVariableTableData(0)
       this.spinShow = false
@@ -721,14 +744,6 @@ export default {
       }
       if (this.currentDiffConfigTab === 'APP' && this.packageDetail.diff_conf_file.length > 0) {
         this.typeChange(this.packageDetail.diff_conf_file[index].configKeyInfos || [])
-      }
-    },
-    async getVariablePrefix () {
-      let { status, data } = await sysConfig()
-      if (status === 'OK') {
-        this.variablePrefixType.forEach(item => {
-          item.filterKey = data[item.key] || []
-        })
       }
     },
     setPrefixType () {
@@ -854,16 +869,16 @@ export default {
       }
     },
     isVariableChange () {
-      let tmp = true
-      this.tempTableData.forEach(item => {
+      for (let i = 0; i < this.tempTableData.length; i++) {
+        const item = this.tempTableData[i]
         if (item.conf_variable.diffExpr !== item.conf_variable.originDiffExpr) {
-          tmp = false
+          return false
         }
-      })
-      return tmp
+      }
+      return true
     },
     async changeTab (tabName, tabs) {
-      const flag = await this.isVariableChange() // 这里必须使用await
+      const flag = await this.isVariableChange() // 这里必须使用await, flag是isnotchange
       if (flag) {
         this.activeTabTmp = tabName
         this.activeTab = this.activeTabTmp
@@ -904,12 +919,6 @@ export default {
       const res = await getSpecialConnector()
       if (res.status === 'OK') {
         this.specialDelimiters = res.data
-      }
-    },
-    async getAllCITypesWithAttr () {
-      let { status, data } = await getAllCITypesWithAttr(['notCreated', 'created', 'dirty', 'deleted'])
-      if (status === 'OK') {
-        this.ciTypes = JSON.parse(JSON.stringify(data))
       }
     },
     getHeaders () {
@@ -980,7 +989,8 @@ export default {
         }
         return rootCI
       } catch (err) {
-        throw err
+        return 'parseFail'
+        // throw err
       }
     },
     formatPackageDetail (data) {
@@ -988,10 +998,18 @@ export default {
       let copyData = JSON.parse(dataString)
       let diffConfVariable = copyData.diff_conf_variable || []
       let dbDiffConfVariable = copyData.db_diff_conf_variable || []
+      this.parseFailMsg = []
+      let appParseFailVariable = []
+      let dbParseFailVariable = []
       diffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        const rootCI = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
+        const res = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
+        let rootCI = res
+        if (res === 'parseFail') {
+          appParseFailVariable.push(elVar)
+          rootCI = defaultAppRootCiTypeId
+        }
         elVar.originRootCI = rootCI
         elVar.tempRootCI = rootCI
         elVar.withinFiles = []
@@ -1025,7 +1043,12 @@ export default {
       dbDiffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        const rootCI = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId)
+        const res = this.getRootCI(elVar.diffExpr, defaultDBRootCiTypeId, elVar)
+        let rootCI = res
+        if (res === 'parseFail') {
+          appParseFailVariable.push(elVar)
+          rootCI = defaultDBRootCiTypeId
+        }
         elVar.originRootCI = rootCI
         elVar.tempRootCI = rootCI
         elVar.withinFiles = []
@@ -1055,24 +1078,41 @@ export default {
         })
       })
       copyData.db_diff_conf_file.sort((a, b) => (a.configKeyInfos.length === 0 ? 1 : -1))
+      this.parseFailMsg = this.parseFailMsg.concat(this.parseFailTip('APP', appParseFailVariable)).concat(this.parseFailTip('DB', dbParseFailVariable))
+      if (this.parseFailMsg.length > 0) {
+        this.showParseFail = true
+      }
       return copyData
     },
-    async syncPackageDetail () {
-      this.initPackageDetail()
-      let { status, data } = await getPackageDetail(this.guid, this.packageId)
-      if (status === 'OK') {
-        const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
-        this.packageDetail = this.formatPackageDetail(data)
-        if (this.packageDetail[tmp].length > 0) {
-          this.activeTab = this.packageDetail[tmp][0].filename
-          this.activeTabTmp = this.activeTab
-          this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
-        } else {
-          this.activeTab = ''
-          this.activeTabTmp = this.activeTab
-          this.activeTabData = {}
+    parseFailTip (type, msg) {
+      return msg.map(item => {
+        return {
+          fileType: this.$t(type),
+          fileName: item.fileNames,
+          varType: this.variablePrefixType.find(prefix => prefix.filterKey.includes(item.type)).label,
+          key: item.key
         }
-      }
+      })
+    },
+    async syncPackageDetail () {
+      return new Promise(async resolve => {
+        this.initPackageDetail()
+        let { status, data } = await getPackageDetail(this.guid, this.packageId)
+        if (status === 'OK') {
+          const tmp = this.currentDiffConfigTab === this.constPackageOptions.db ? 'db_diff_conf_file' : 'diff_conf_file'
+          this.packageDetail = this.formatPackageDetail(data)
+          if (this.packageDetail[tmp].length > 0) {
+            this.activeTab = this.packageDetail[tmp][0].filename
+            this.activeTabTmp = this.activeTab
+            this.activeTabData = this.packageDetail[tmp][0].configKeyInfos
+          } else {
+            this.activeTab = ''
+            this.activeTabTmp = this.activeTab
+            this.activeTabData = {}
+          }
+          resolve()
+        }
+      })
     },
     renderConfigButton (params) {
       let row = params.row
@@ -1443,7 +1483,10 @@ export default {
     handleResize () {
       this.maxHeight = window.innerHeight - 340
     },
-
+    closeDrawer () {
+      this.openDrawer = false
+      this.showParseFail = false
+    },
     // #endregion
     zoomModalMax () {
       this.fileContentHeight = window.screen.availHeight - 410
@@ -1460,7 +1503,8 @@ export default {
   },
   components: {
     RuleTable,
-    DiffVariableTemplate
+    DiffVariableTemplate,
+    ParseFail
   }
 }
 </script>
@@ -1480,7 +1524,7 @@ export default {
 }
 
 .drawer-footer {
-  width: 1300px;
+  width: 1260px;
   padding: 10px 16px;
   text-align: center;
   background: #fff;
