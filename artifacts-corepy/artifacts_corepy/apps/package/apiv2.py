@@ -682,7 +682,7 @@ class UnitDesignPackages(WeCubeResource):
                 cmdb_client = self.get_cmdb_client()
                 to_update_configs = []
                 for key, value in update_diff_configs.items():
-                    if diff_conf['variable_type'] == 'GLOBAL':
+                    if value['variable_type'] == 'GLOBAL':
                         if utils.bool_from_string(CONF.compose_overwrite_global, default=False):
                             to_update_configs.append({
                                 'guid': key,
