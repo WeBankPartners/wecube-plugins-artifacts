@@ -1115,7 +1115,7 @@ export default {
     renderConfigButton (params) {
       let row = params.row
       return [
-        <Button disabled={!!(row.conf_variable.diffExpr === row.conf_variable.originDiffExpr || row.conf_variable.fixedDate)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveConfigVariableValue(row)}>
+        <Button disabled={!!(row.conf_variable.diffExpr === row.conf_variable.originDiffExpr)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveConfigVariableValue(row)}>
           {this.$t('artifacts_save')}
         </Button>,
         <Button disabled={row.conf_variable.diffExpr === ''} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveAsTemplate(row)}>
