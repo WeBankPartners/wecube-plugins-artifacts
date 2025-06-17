@@ -624,7 +624,7 @@ class UnitDesignPackages(WeCubeResource):
             if deploy_package is None:
                 raise exceptions.PluginError(message=_("invalid deploy package!"))
             # 创建差异化变量，并更新包的绑定字段
-            # bound': true, 'key': name, 'diffExpr': 'expr'
+            # bound': true, 'key': name, 'diffExpr': 'expr', 'type': '@/#...'
             query_keynames = []
             for diff_config in pacakge_app_diffconfigs:
                 query_keynames.append(diff_config['key'])
@@ -644,6 +644,9 @@ class UnitDesignPackages(WeCubeResource):
                 else:
                     if diff_conf['bound']:
                         bind_app_diff_configs.add(finder[diff_conf['key']]['guid'])
+                    target_diff_conf = finder[diff_conf['key']]
+                    # 添加目标系统的差异化变量类型：GLOBAL/PRIVATE...
+                    diff_conf['variable_type'] = target_diff_conf['variable_type']
                     update_diff_configs[finder[diff_conf['key']]['guid']] = diff_conf
             for diff_conf in pacakge_db_diffconfigs:
                 if diff_conf['key'] not in finder:
@@ -651,6 +654,9 @@ class UnitDesignPackages(WeCubeResource):
                 else:
                     if diff_conf['bound']:
                         bind_db_diff_configs.add(finder[diff_conf['key']]['guid'])
+                    target_diff_conf = finder[diff_conf['key']]
+                    # 添加目标系统的差异化变量类型：GLOBAL/PRIVATE...
+                    diff_conf['variable_type'] = target_diff_conf['variable_type']
                     update_diff_configs[finder[diff_conf['key']]['guid']] = diff_conf
             # 创建新的差异化变量项
             if new_diff_configs:
@@ -674,10 +680,21 @@ class UnitDesignPackages(WeCubeResource):
                         bind_db_diff_configs.add(finder[diff_conf['key']]['guid'])
             if update_diff_configs:
                 cmdb_client = self.get_cmdb_client()
-                cmdb_client.update(CONF.wecube.wecmdb.citypes.diff_config, [{
-                    'guid': key,
-                    'variable_value': value['diffExpr']
-                } for key, value in update_diff_configs.items()])
+                to_update_configs = []
+                for key, value in update_diff_configs.items():
+                    if value['variable_type'] == 'GLOBAL':
+                        if utils.bool_from_string(CONF.compose_overwrite_global, default=False):
+                            to_update_configs.append({
+                                'guid': key,
+                                'variable_value': value['diffExpr']
+                            })
+                    else:
+                        to_update_configs.append({
+                            'guid': key,
+                            'variable_value': value['diffExpr']
+                        })
+                
+                cmdb_client.update(CONF.wecube.wecmdb.citypes.diff_config, to_update_configs)
             # 创建CMDB 包记录
             deploy_package['baseline_package'] = baseline_package or None
             deploy_package['unit_design'] = unit_design_id

@@ -122,6 +122,8 @@ ARTIFACTS_DIFF_CONF_TEMPLATE_MAP 差异化变量符号的默认模板映射，�
 
 ARTIFACTS_CACHE_CLEANUP_INTERVAL_MIN 本地缓存包的清理间隔，默认10min
 
+ARTIFACTS_COMPOSE_OVERWRITE_GLOBAL 导入组合包时是否覆盖全局变量，默认false，即忽略且不覆盖，true时有权限则覆盖，没权限则弹出报错
+
 ## 功能说明：字段自动填充与Baseline包分析逻辑说明
 
 APP:
