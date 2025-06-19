@@ -327,15 +327,11 @@ export default {
           title: this.$t('artifacts_property_value_fill_rule'),
           render: (h, params) => {
             // show static view only if confirmed
-            if (this.tempTableData[params.row._index]) {
-              return params.row.conf_variable.fixedDate ? (
-                <ArtifactsAutoFill style="margin-top:5px;" ciTypesObj={this.ciTypesObj} ciTypeAttrsObj={this.ciTypeAttrsObj} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} isReadOnly={true} v-model={this.tempTableData[params.row._index].conf_variable.diffExpr} cmdbPackageName={cmdbPackageName} />
-              ) : (
-                <div style="align-items:center;display:flex;">
-                  <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 10px);" ciTypesObj={this.ciTypesObj} ciTypeAttrsObj={this.ciTypeAttrsObj} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.tempTableData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
-                </div>
-              )
-            }
+            return (
+              <div style="align-items:center;display:flex;">
+                <ArtifactsAutoFill style="margin-top:5px;width:calc(100% - 10px);" ciTypesObj={this.ciTypesObj} ciTypeAttrsObj={this.ciTypeAttrsObj} specialDelimiters={this.specialDelimiters} rootCiTypeId={params.row.rootCI} v-model={this.tempTableData[params.row._index].conf_variable.diffExpr} onUpdateValue={val => this.updateAutoFillValue(val, params.row)} cmdbPackageName={cmdbPackageName} />
+              </div>
+            )
           }
         },
         {
@@ -1119,7 +1115,7 @@ export default {
     renderConfigButton (params) {
       let row = params.row
       return [
-        <Button disabled={!!(row.conf_variable.diffExpr === row.conf_variable.originDiffExpr || row.conf_variable.fixedDate)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveConfigVariableValue(row)}>
+        <Button disabled={!!(row.conf_variable.diffExpr === row.conf_variable.originDiffExpr)} size="small" type="info" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveConfigVariableValue(row)}>
           {this.$t('artifacts_save')}
         </Button>,
         <Button disabled={row.conf_variable.diffExpr === ''} size="small" type="primary" style="margin-right:5px;margin-bottom:5px;" onClick={() => this.saveAsTemplate(row)}>
