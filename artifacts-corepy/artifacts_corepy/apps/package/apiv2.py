@@ -678,7 +678,7 @@ class UnitDesignPackages(WeCubeResource):
                 for diff_conf in pacakge_db_diffconfigs:
                     if diff_conf['key'] in finder and diff_conf['bound']:
                         bind_db_diff_configs.add(finder[diff_conf['key']]['guid'])
-            if update_diff_configs:
+            if update_diff_configs and utils.bool_from_string(CONF.compose_overwrite_enabled, default=True):
                 cmdb_client = self.get_cmdb_client()
                 to_update_configs = []
                 for key, value in update_diff_configs.items():
@@ -693,8 +693,8 @@ class UnitDesignPackages(WeCubeResource):
                             'guid': key,
                             'variable_value': value['diffExpr']
                         })
-                
-                cmdb_client.update(CONF.wecube.wecmdb.citypes.diff_config, to_update_configs)
+                if to_update_configs:
+                    cmdb_client.update(CONF.wecube.wecmdb.citypes.diff_config, to_update_configs)
             # 创建CMDB 包记录
             deploy_package['baseline_package'] = baseline_package or None
             deploy_package['unit_design'] = unit_design_id
