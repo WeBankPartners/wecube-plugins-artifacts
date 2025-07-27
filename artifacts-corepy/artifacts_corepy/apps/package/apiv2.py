@@ -115,6 +115,10 @@ field_pkg_db_upgrade_file_path_default_value = ''
 field_pkg_diff_conf_var_name = 'diff_conf_variable'
 field_pkg_db_diff_conf_var_name = 'db_diff_conf_variable'
 
+# subsystem_design_guid
+need_subsystem_design_type = ['ENCRYPTED', 'FILE', 'PRIVATE']
+no_need_subsystem_design_type = ['GLOBAL']
+
 field_pkg_overwrite_map_str = os.getenv('ARTIFACTS_DEPLOY_PACKAGE_FIELD_MAP', default='')
 field_pkg_overwrite_map = {}
 if field_pkg_overwrite_map_str.strip():
@@ -564,6 +568,12 @@ class UnitDesignPackages(WeCubeResource):
             pacakge_app_diffconfigs = None
             pacakge_db_diffconfigs = None
             new_download_url = ''
+
+            unit_design = self._get_unit_design_by_id(unit_design_id)
+            # 获取subsystem_design_detail，拿到key_name
+            subsystem_design_detail = self._get_subsystem_design_by_guid(unit_design['subsystem_design']['guid'])
+            subsystem_design_key_name = subsystem_design_detail[0]['key_name']
+
             with tempfile.TemporaryDirectory() as file_cache_dir:
                 # 解压组合包
                 LOG.info('unpack package: %s to %s', compose_filename, file_cache_dir)
@@ -602,7 +612,7 @@ class UnitDesignPackages(WeCubeResource):
                 if len(filenames) == 1:
                     filename = filenames[0]
                     filename = os.path.join(file_cache_dir, filename)
-                    unit_design = self._get_unit_design_by_id(unit_design_id)
+                    
                     nexus_server = None
                     if utils.bool_from_string(CONF.use_remote_nexus_only):
                         nexus_server = CONF.wecube.nexus.server.rstrip('/')
@@ -626,10 +636,17 @@ class UnitDesignPackages(WeCubeResource):
             # 创建差异化变量，并更新包的绑定字段
             # bound': true, 'key': name, 'diffExpr': 'expr', 'type': '@/#...'
             query_keynames = []
+
+            # 在差异化变量中基于添加key_name
             for diff_config in pacakge_app_diffconfigs:
-                query_keynames.append(diff_config['key'])
+                diff_config['key_name'] = diff_config['key'] + '_' + (subsystem_design_key_name if self._conv_diff_conf_type(diff_config.get('type', '')) in need_subsystem_design_type else '' )
             for diff_config in pacakge_db_diffconfigs:
-                query_keynames.append(diff_config['key'])
+                diff_config['key_name'] = diff_config['key'] + '_' + (subsystem_design_key_name if self._conv_diff_conf_type(diff_config.get('type', '')) in need_subsystem_design_type else '' )
+    
+            for diff_config in pacakge_app_diffconfigs:
+                query_keynames.append(diff_config['key_name'])
+            for diff_config in pacakge_db_diffconfigs:
+                query_keynames.append(diff_config['key_name'])
             all_diff_configs = self._get_diff_configs_by_keyname(list(set(query_keynames)))
             finder = artifact_utils.CaseInsensitiveDict()
             new_diff_configs = {}
@@ -639,45 +656,46 @@ class UnitDesignPackages(WeCubeResource):
             for conf in all_diff_configs:
                 finder[conf['key_name']] = conf
             for diff_conf in pacakge_app_diffconfigs:
-                if diff_conf['key'] not in finder:
-                    new_diff_configs[diff_conf['key']] = diff_conf
+                if diff_conf['key_name'] not in finder:
+                    new_diff_configs[diff_conf['key_name']] = diff_conf
                 else:
                     if diff_conf['bound']:
-                        bind_app_diff_configs.add(finder[diff_conf['key']]['guid'])
-                    target_diff_conf = finder[diff_conf['key']]
+                        bind_app_diff_configs.add(finder[diff_conf['key_name']]['guid'])
+                    target_diff_conf = finder[diff_conf['key_name']]
                     # 添加目标系统的差异化变量类型：GLOBAL/PRIVATE...
                     diff_conf['variable_type'] = target_diff_conf['variable_type']
-                    update_diff_configs[finder[diff_conf['key']]['guid']] = diff_conf
+                    update_diff_configs[finder[diff_conf['key_name']]['guid']] = diff_conf
             for diff_conf in pacakge_db_diffconfigs:
-                if diff_conf['key'] not in finder:
-                    new_diff_configs[diff_conf['key']] = diff_conf
+                if diff_conf['key_name'] not in finder:
+                    new_diff_configs[diff_conf['key_name']] = diff_conf
                 else:
                     if diff_conf['bound']:
-                        bind_db_diff_configs.add(finder[diff_conf['key']]['guid'])
-                    target_diff_conf = finder[diff_conf['key']]
+                        bind_db_diff_configs.add(finder[diff_conf['key_name']]['guid'])
+                    target_diff_conf = finder[diff_conf['key_name']]
                     # 添加目标系统的差异化变量类型：GLOBAL/PRIVATE...
                     diff_conf['variable_type'] = target_diff_conf['variable_type']
-                    update_diff_configs[finder[diff_conf['key']]['guid']] = diff_conf
+                    update_diff_configs[finder[diff_conf['key_name']]['guid']] = diff_conf
             # 创建新的差异化变量项
             if new_diff_configs:
                 cmdb_client = self.get_cmdb_client()
                 cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [{
-                    'code': key,
-                    'variable_name': key,
-                    'description': key,
+                    'code': value.get('key', ''),
+                    'variable_name': value.get('key', ''),
+                    'description': value.get('key', ''),
                     'variable_value': value.get('diffExpr', ''),
-                    'variable_type': self._conv_diff_conf_type(value.get('type', ''))
+                    'variable_type': self._conv_diff_conf_type(value.get('type', '')),
+                    'subsystem_design': unit_design['subsystem_design']['guid'] if self._conv_diff_conf_type(value.get('type', '')) in need_subsystem_design_type else None
                 } for key, value in new_diff_configs.items()])
                 # 新创建的差异化变量也需要检测是否需要绑定
                 all_diff_configs = self._get_diff_configs_by_keyname(list(new_diff_configs.keys()))
                 for conf in all_diff_configs:
                     finder[conf['key_name']] = conf
                 for diff_conf in pacakge_app_diffconfigs:
-                    if diff_conf['key'] in finder and diff_conf['bound']:
-                        bind_app_diff_configs.add(finder[diff_conf['key']]['guid'])
+                    if diff_conf['key_name'] in finder and diff_conf['bound']:
+                        bind_app_diff_configs.add(finder[diff_conf['key_name']]['guid'])
                 for diff_conf in pacakge_db_diffconfigs:
-                    if diff_conf['key'] in finder and diff_conf['bound']:
-                        bind_db_diff_configs.add(finder[diff_conf['key']]['guid'])
+                    if diff_conf['key_name'] in finder and diff_conf['bound']:
+                        bind_db_diff_configs.add(finder[diff_conf['key_name']]['guid'])
             if update_diff_configs and utils.bool_from_string(CONF.compose_overwrite_enabled, default=True):
                 cmdb_client = self.get_cmdb_client()
                 to_update_configs = []
@@ -858,6 +876,27 @@ class UnitDesignPackages(WeCubeResource):
             #                                {'names': key_names})
             return resp_json['data']['contents']
         return []
+    
+    def _get_subsystem_design_by_guid(self, subsystem_design_guid):
+        cmdb_client = self.get_cmdb_client()
+        if subsystem_design_guid:
+            diff_config_query = {
+                "dialect": {
+                    "queryMode": "new"
+                },
+                "filters": [{
+                    "name": "guid",
+                    "operator": "eq",
+                    "value": subsystem_design_guid
+                }],
+                "paging": False
+            }
+            resp_json = cmdb_client.retrieve('subsystem_design', diff_config_query)
+            # if not resp_json.get('data', {}).get('contents', []):
+            #     raise exceptions.NotFoundError(message=_("Can not find ci data for key_names [%(names)s]") %
+            #                                {'names': key_names})
+            return resp_json['data']['contents']
+        return []
 
     def _pack_compose_package(self, pack_filepath, deploy_package_id: str):
         deploy_package = self._get_deploy_package_by_id(deploy_package_id)
@@ -875,14 +914,13 @@ class UnitDesignPackages(WeCubeResource):
         del deploy_package['update_user']
         del deploy_package['upload_user']
         del deploy_package['upload_time']
-        del deploy_package['unit_design']
         del deploy_package['confirm_time']
         del deploy_package['deploy_package_url']
         del deploy_package[field_pkg_diff_conf_var_name]
         del deploy_package[field_pkg_db_diff_conf_var_name]
         # 整理差异化变量
         # 处理diff_conf_variable && db_diff_conf_variable
-        deploy_package_detail = self.get(None, deploy_package_id)
+        deploy_package_detail = self.get(deploy_package['unit_design']['guid'], deploy_package_id)
         package_app_diff_configs = deploy_package_detail.get(field_pkg_diff_conf_var_name, []) or []
         package_db_diff_configs = deploy_package_detail.get(field_pkg_db_diff_conf_var_name, []) or []
         package_app_diff_configs = [{'bound': d['bound'], 'key': d['key'], 'diffExpr': d['diffExpr'], 'type': d['type']}
@@ -920,6 +958,7 @@ class UnitDesignPackages(WeCubeResource):
             package_type = constant.PackageType.default
         if not is_upload_local_enabled():
             raise exceptions.PluginError(message=_("Package uploading is disabled!"))
+        # 是否是个组合的包 （组合包带了差异化变量），看起来这里要单独处理
         if self._is_compose_package(filename):
             return self.upload_compose_package(filename, fileobj, unit_design_id, baseline_package=baseline_package)
         unit_design = self._get_unit_design_by_id(unit_design_id)
@@ -961,11 +1000,12 @@ class UnitDesignPackages(WeCubeResource):
             package_result = self.pure_update(package_rows)
         new_package_guid = package_result['data'][0]['guid']
         new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
-            field_pkg_package_type_name: package_type
+            field_pkg_package_type_name: package_type,
+            'subsystem_design_guid': unit_design['subsystem_design']['guid']
         })
         # update 属性
         new_deploy_attrs['guid'] = new_package_guid
-        self.pure_update([new_deploy_attrs])
+        self.pure_update([new_deploy_attrs]) 
         return [self._get_deploy_package_by_id(new_package_guid)]
 
     def upload_from_nexus(self, download_url, baseline_package, package_type, unit_design_id):
@@ -1043,7 +1083,8 @@ class UnitDesignPackages(WeCubeResource):
                 package_result = self.pure_update(package_rows)
             new_package_guid = package_result['data'][0]['guid']
             new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
-                field_pkg_package_type_name: package_type
+                field_pkg_package_type_name: package_type,
+                'subsystem_design_guid': unit_design['subsystem_design']['guid']
             })
             # update 属性
             new_deploy_attrs['guid'] = new_package_guid
@@ -1100,7 +1141,8 @@ class UnitDesignPackages(WeCubeResource):
                         package_result = self.pure_update(package_rows)
                     new_package_guid = package_result['data'][0]['guid']
                     new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
-                        field_pkg_package_type_name: package_type
+                        field_pkg_package_type_name: package_type,
+                        'subsystem_design_guid': unit_design['subsystem_design']['guid']
                     })
                     # update 属性
                     new_deploy_attrs['guid'] = new_package_guid
@@ -1222,8 +1264,9 @@ class UnitDesignPackages(WeCubeResource):
                         # 有package_guid，则更新
                         new_deploy_attrs = self._analyze_package_attrs(clean_data['package_guid'],
                                                                        clean_data['baseline_package_guid'], {
-                                                                           field_pkg_package_type_name: clean_data.get(
-                                                                               'package_type')
+                                                                            field_pkg_package_type_name: clean_data.get(
+                                                                               'package_type'),
+                                                                            'subsystem_design_guid': unit_design['subsystem_design']['guid']
                                                                        })
                         # update 属性
                         new_deploy_attrs['guid'] = clean_data['package_guid']
@@ -1377,6 +1420,8 @@ class UnitDesignPackages(WeCubeResource):
                                                    {'rid': deploy_package_id})
         deploy_package = resp_json['data']['contents'][0]
         data['guid'] = deploy_package_id
+
+        unit_design = self._get_unit_design_by_id(unit_design_id)
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
         # FIXME: patch for wecmdb, error update without code
         clean_data['code'] = deploy_package['name']
@@ -1453,7 +1498,8 @@ class UnitDesignPackages(WeCubeResource):
             bind_variables, new_create_variables = self._analyze_diff_var(deploy_package['guid'],
                                                                           deploy_package['deploy_package_url'],
                                                                           deploy_package[field_pkg_diff_conf_file_name],
-                                                                          data[field_pkg_diff_conf_file_name])
+                                                                          data[field_pkg_diff_conf_file_name],
+                                                                          unit_design['subsystem_design']['guid'])
             if bind_variables is not None:
                 clean_data[field_pkg_diff_conf_var_name] = bind_variables
         # db部署支持
@@ -1470,7 +1516,8 @@ class UnitDesignPackages(WeCubeResource):
                                                                           deploy_package['deploy_package_url'],
                                                                           deploy_package[
                                                                               field_pkg_db_diff_conf_file_name],
-                                                                          data[field_pkg_db_diff_conf_file_name])
+                                                                          data[field_pkg_db_diff_conf_file_name],
+                                                                          unit_design['subsystem_design']['guid'])
             if bind_variables is not None:
                 clean_data[field_pkg_db_diff_conf_var_name] = bind_variables
         if db_upgrade_detect:
@@ -1493,7 +1540,7 @@ class UnitDesignPackages(WeCubeResource):
             return self.get(unit_design_id, deploy_package_id)
         return resp_json['data']
 
-    def _analyze_diff_var(self, package_id, package_url, origin_conf_list, new_conf_list, baseline_unbind_variable_ids=set()):
+    def _analyze_diff_var(self, package_id, package_url, origin_conf_list, new_conf_list, subsystem_design_guid = '', baseline_unbind_variable_ids=set()):
         '''
         conf_list是列表，每个元素是string 或 dict[{configKeyInfos，filename}]
         
@@ -1512,17 +1559,29 @@ class UnitDesignPackages(WeCubeResource):
         # diff_conf_file值并未发生改变，无需下载文件更新变量
         # LOG.debug("new_diff_conf_file_list: %s, old_diff_conf_file_list: %s", new_diff_conf_file_list,old_diff_conf_file_list)
         if new_diff_conf_file_list != old_diff_conf_file_list:
+            # 下载包并缓存
             package_cached_dir = self.ensure_package_cached(package_id,
                                                             package_url)
             self.update_file_variable(package_cached_dir, new_conf_list)
             # LOG.debug("new_conf_list: %s", new_conf_list)
+            #获取这个列表 [{line: 4, name: 'password', key2: '@'}]
             # 差异化配置项的差异
             package_diff_configs = []
             new_diff_configs = set()
             exist_diff_configs = set()
+            # 获取subsystem_design_guid对应的subsystem_design_detail，拿到key_name
+            subsystem_design_detail = self._get_subsystem_design_by_guid(subsystem_design_guid)
+            subsystem_design_key_name = subsystem_design_detail[0]['key_name']
+            # 差异化文件列表 new_conf_list
             for conf_file in new_conf_list:
                 package_diff_configs.extend(conf_file['configKeyInfos'])
-            query_diff_configs = list(set([p['key'] for p in package_diff_configs]))
+
+            # 在package_diff_configs中的每一项增加key_name字段
+            for diff_config in package_diff_configs:
+                diff_config['key_name'] = diff_config['key'] + '_' + (subsystem_design_key_name if self._conv_diff_conf_type(diff_config.get('type', '')) in need_subsystem_design_type else '' )
+
+            query_diff_configs = list(set([p['key_name'] for p in package_diff_configs]))
+            # 获取差异化变量的行
             all_diff_configs = self._get_diff_configs_by_keyname(query_diff_configs)
             # if query_diff_configs:
             #     diff_config_query = {
@@ -1544,14 +1603,14 @@ class UnitDesignPackages(WeCubeResource):
                 finder[conf['key_name']] = conf
             rename_new_variables = []
             for diff_conf in package_diff_configs:
-                if diff_conf['key'] not in finder:
-                    new_diff_configs.add(diff_conf['key'])
-                    new_diff_configs_map[diff_conf['key']] = diff_conf
+                if diff_conf['key_name'] not in finder:
+                    new_diff_configs.add(diff_conf['key_name'])
+                    new_diff_configs_map[diff_conf['key_name']] = diff_conf
                 else:
-                    exist_diff_configs.add(finder[diff_conf['key']]['guid'])
+                    exist_diff_configs.add(finder[diff_conf['key_name']]['guid'])
                     # 找到变量之后还需要检测是否因更名而出现的变量
-                    if finder[diff_conf['key']]['guid'] not in baseline_unbind_variable_ids:
-                        rename_new_variables.append(finder[diff_conf['key']]['guid'])
+                    if finder[diff_conf['key_name']]['guid'] not in baseline_unbind_variable_ids:
+                        rename_new_variables.append(finder[diff_conf['key_name']]['guid'])
             # 创建新的差异化变量项
             bind_variables = list(exist_diff_configs)
             new_create_variables = []
@@ -1567,11 +1626,12 @@ class UnitDesignPackages(WeCubeResource):
                             replace_pattern = r'\$&\s*([a-zA-Z0-9_-]+?)\s*\$&'
                             diff_conf['value'] = re.sub(replace_pattern, var_name, diff_conf_tpl)
                 resp_json = cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [{
-                    'code': c,
-                    'variable_name': c,
-                    'description': c,
+                    'code': new_diff_configs_map.get(c, {}).get('key', ''),
+                    'variable_name': new_diff_configs_map.get(c, {}).get('key', ''),
+                    'description': new_diff_configs_map.get(c, {}).get('key', ''),
                     'variable_value': new_diff_configs_map.get(c, {}).get('value', ''),
-                    'variable_type': self._conv_diff_conf_type(new_diff_configs_map.get(c, {}).get('type', ''))
+                    'variable_type': self._conv_diff_conf_type(new_diff_configs_map.get(c, {}).get('type', '')),
+                    'subsystem_design': subsystem_design_guid if self._conv_diff_conf_type(new_diff_configs_map.get(c, {}).get('type', '')) in need_subsystem_design_type else None
                 } for c in new_diff_configs])
                 new_create_variables = [c['guid'] for c in resp_json['data']]
                 bind_variables.extend(new_create_variables)
@@ -1594,6 +1654,11 @@ class UnitDesignPackages(WeCubeResource):
         return results
 
     def get(self, unit_design_id, deploy_package_id):
+        # 获取unit_design_id对应的subsystem_design_key_name
+        unit_design = self._get_unit_design_by_id(unit_design_id)
+        subsystem_design_detail = self._get_subsystem_design_by_guid(unit_design['subsystem_design']['guid'])
+        subsystem_design_key_name = subsystem_design_detail[0]['key_name']
+
         cmdb_client = self.get_cmdb_client()
         query = {
             "dialect": {
@@ -1694,8 +1759,15 @@ class UnitDesignPackages(WeCubeResource):
             for conf_file in result[field_pkg_db_diff_conf_file_name]:
                 package_db_diff_configs.extend(conf_file['configKeyInfos'])
         query_diff_configs = []
-        query_diff_configs.extend([p['key'] for p in package_app_diff_configs])
-        query_diff_configs.extend([p['key'] for p in package_db_diff_configs])
+
+        # 基于subsystem_design_key_name添加key_name
+        for diff_config in package_app_diff_configs:
+            diff_config['key_name'] = diff_config['key'] + '_' + (subsystem_design_key_name if self._conv_diff_conf_type(diff_config.get('type', '')) in need_subsystem_design_type else '' )
+        for diff_config in package_db_diff_configs:
+            diff_config['key_name'] = diff_config['key'] + '_' + (subsystem_design_key_name if self._conv_diff_conf_type(diff_config.get('type', '')) in need_subsystem_design_type else '' )
+
+        query_diff_configs.extend([p['key_name'] for p in package_app_diff_configs])
+        query_diff_configs.extend([p['key_name'] for p in package_db_diff_configs])
         query_diff_configs = list(set(query_diff_configs))
         all_diff_configs = self._get_diff_configs_by_keyname(query_diff_configs)
         # if query_diff_configs:
@@ -1727,6 +1799,23 @@ class UnitDesignPackages(WeCubeResource):
 
     def baseline_compare(self, unit_design_id, deploy_package_id, baseline_package_id):
         cmdb_client = self.get_cmdb_client()
+        query = {
+            "dialect": {
+                "queryMode": "new"
+            },
+            "filters": [{
+                "name": "guid",
+                "operator": "eq",
+                "value": unit_design_id
+            }],
+            "paging": False
+        }
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.unit_design, query)
+        if not resp_json.get('data', {}).get('contents', []):
+            raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
+                                                   {'rid': unit_design_id})
+        unit_design = resp_json['data']['contents'][0]
+
         deploy_package = self._get_deploy_package_by_id(deploy_package_id)
         baseline_package = self._get_deploy_package_by_id(baseline_package_id)
         baseline_cached_dir = None
@@ -1744,7 +1833,8 @@ class UnitDesignPackages(WeCubeResource):
         new_deploy_package_attrs = self._analyze_package_attrs(deploy_package_id, baseline_package_id, {
             field_pkg_package_type_name: package_type,
             field_pkg_is_decompression_name: is_decompression,
-            field_pkg_key_service_code_name: key_service_code
+            field_pkg_key_service_code_name: key_service_code,
+            'subsystem_design_guid': unit_design['subsystem_design']['guid']
         })
 
         result = {}
@@ -2141,7 +2231,7 @@ class UnitDesignPackages(WeCubeResource):
         for conf in all_diff_configs:
             finder[conf['key_name']] = conf
         for pconf in package_diff_configs:
-            p_finder[pconf['key']] = pconf
+            p_finder[pconf['key_name']] = pconf
         for bconf in bounded_diff_configs:
             b_finder[bconf['key_name']] = bconf
         for k, v in p_finder.items():
@@ -2152,7 +2242,7 @@ class UnitDesignPackages(WeCubeResource):
                 'diffConfigGuid': None if conf is None else conf['guid'],
                 'diffExpr': None if conf is None else conf['variable_value'],
                 'fixedDate': None if conf is None else conf['confirm_time'],
-                'key': k if conf is None else conf['key_name'],
+                'key': p_conf['key'] if conf is None else conf['code'],
                 'type': None if p_conf is None else p_conf['type']
             })
         return results
@@ -2222,9 +2312,14 @@ class UnitDesignPackages(WeCubeResource):
         return filepath
 
     def _analyze_package_attrs(self, package_id: str, baseline_package_id: str, input_attrs: map,
-                               do_bind_vars=True) -> map:
+                               do_bind_vars=True,) -> map:
         # input_attrs都是以CMDB字段值方式传递，比如列表实际上是A|B|C格式
         ret_data = {}
+        subsystem_design_guid = input_attrs.get('subsystem_design_guid', None)
+        # 基于subsystem_design_guid获取subsystem_design_key_name
+        subsystem_design_detail = self._get_subsystem_design_by_guid(subsystem_design_guid)
+        subsystem_design_key_name = subsystem_design_detail[0]['key_name']
+
         deploy_package = self._get_deploy_package_by_id(package_id)
         # 建议优化为：上传时解压，否则此处会增加耗时
         self.ensure_package_cached(package_id, deploy_package['deploy_package_url'])
@@ -2258,17 +2353,19 @@ class UnitDesignPackages(WeCubeResource):
                 for f in file_objs:
                     for ext in available_extensions:
                         if fnmatch.fnmatch(f['name'], '*' + ext):
-                            # 扫描每个文件，有差异化变量的才加入清单
+                            # 扫描每个文件，有差异化变量的才加入清单 // 
                             var_rets = self.update_file_variable(self.get_package_cached_path(package_id), [{'filename': f['path']}])
+                            #  这个文件是否有差异化变量
                             if len(var_rets[0]['configKeyInfos']) > 0:
                                 filtered_file_objs.append(f)
                 
                 ret_data[field_pkg_diff_conf_file_name] = FilePathConcater().convert(filtered_file_objs)
                 if do_bind_vars:
+                    # 主要逻辑
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
                     bind_variables, new_create_variables = self._analyze_diff_var(package_id,
                                                                                   deploy_package['deploy_package_url'],
-                                                                                  [], conf_files)
+                                                                                  [], conf_files, subsystem_design_guid)
                     if bind_variables is not None:
                         ret_data[field_pkg_diff_conf_var_name] = bind_variables
             else:
@@ -2308,7 +2405,11 @@ class UnitDesignPackages(WeCubeResource):
                         baseline_package_diff_configs = []
                         for conf_file in baseline_diff_conf_files:
                             baseline_package_diff_configs.extend(conf_file['configKeyInfos'])
-                        baseline_query_diff_configs = list(set([p['key'] for p in baseline_package_diff_configs]))
+                        # 基于subsystem_design_key_name添加key_name
+                        for diff_config in baseline_package_diff_configs:
+                            diff_config['key_name'] = diff_config['key'] + '_' + (subsystem_design_key_name if self._conv_diff_conf_type(diff_config.get('type', '')) in need_subsystem_design_type else '' )
+
+                        baseline_query_diff_configs = list(set([p['key_name'] for p in baseline_package_diff_configs]))
                         baseline_all_diff_configs = self._get_diff_configs_by_keyname(baseline_query_diff_configs)
                         baseline_bind_variables = set([c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]])
                         for conf in baseline_all_diff_configs:
@@ -2317,7 +2418,7 @@ class UnitDesignPackages(WeCubeResource):
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
                     bind_variables, new_create_variables = self._analyze_diff_var(package_id,
                                                                                   deploy_package['deploy_package_url'],
-                                                                                  [], conf_files,
+                                                                                  [], conf_files, subsystem_design_guid,
                                                                                   baseline_unbind_variables)
                     if new_create_variables is not None:
                         bind_variables = [c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]]
@@ -2342,7 +2443,7 @@ class UnitDesignPackages(WeCubeResource):
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
                     bind_variables, new_create_variables = self._analyze_diff_var(package_id,
                                                                                   deploy_package['deploy_package_url'],
-                                                                                  [], conf_files)
+                                                                                  [], conf_files, subsystem_design_guid)
                     if bind_variables is not None:
                         ret_data[field_pkg_diff_conf_var_name] = bind_variables
             else:
@@ -2389,7 +2490,12 @@ class UnitDesignPackages(WeCubeResource):
                         baseline_package_diff_configs = []
                         for conf_file in baseline_diff_conf_files:
                             baseline_package_diff_configs.extend(conf_file['configKeyInfos'])
-                        baseline_query_diff_configs = list(set([p['key'] for p in baseline_package_diff_configs]))
+                        
+                        # 基于subsystem_design_key_name添加key_name
+                        for diff_config in baseline_package_diff_configs:
+                            diff_config['key_name'] = diff_config['key'] + '_' + (subsystem_design_key_name if self._conv_diff_conf_type(diff_config.get('type', '')) in need_subsystem_design_type else '' )
+                        
+                        baseline_query_diff_configs = list(set([p['key_name'] for p in baseline_package_diff_configs]))
                         baseline_all_diff_configs = self._get_diff_configs_by_keyname(baseline_query_diff_configs)
                         baseline_bind_variables = set([c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]])
                         for conf in baseline_all_diff_configs:
@@ -2398,7 +2504,7 @@ class UnitDesignPackages(WeCubeResource):
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
                     bind_variables, new_create_variables = self._analyze_diff_var(package_id,
                                                                                   deploy_package['deploy_package_url'],
-                                                                                  [], conf_files,
+                                                                                  [], conf_files, subsystem_design_guid,
                                                                                   baseline_unbind_variables)
                     if new_create_variables is not None:
                         bind_variables = [c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]]

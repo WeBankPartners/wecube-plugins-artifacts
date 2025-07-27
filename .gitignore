@@ -26,6 +26,8 @@ target/
 # testing
 /coverage
 
+venv/
+
 # misc
 .DS_Store
 .env.local
