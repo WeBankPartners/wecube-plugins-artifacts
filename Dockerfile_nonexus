@@ -1,5 +1,5 @@
-# FROM python:3.8-slim-buster
-FROM python:3.8-slim-bullseye
+FROM python:3.8-slim-buster
+# FROM python:3.8-slim-bullseye
 LABEL maintainer = "Webank CTB Team"
 RUN sed -i 's/deb.debian.org/mirrors.cloud.tencent.com/g' /etc/apt/sources.list
 RUN sed -i 's/security.debian.org/mirrors.cloud.tencent.com/g' /etc/apt/sources.list
@@ -12,7 +12,7 @@ RUN mkdir -p /tmp/artifacts/
 ADD artifacts-corepy/etc/* /etc/artifacts_corepy/
 # Install && Clean up
 RUN apt update && apt-get -y install gcc swig libssl-dev python3-dev && \
-    pip3 install -i https://mirrors.cloud.tencent.com/pypi/simple/ --trusted-host mirrors.cloud.tencent.com -r /tmp/requirements.txt && \
+    pip3 install -i http://mirrors.cloud.tencent.com/pypi/simple/ --trusted-host mirrors.cloud.tencent.com -r /tmp/requirements.txt && \
     pip3 install /tmp/*.whl && \
     rm -rf /root/.cache && apt autoclean && \
     rm -rf /tmp/* /var/lib/apt/* /var/cache/* && \
