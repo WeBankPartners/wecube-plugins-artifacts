@@ -1030,7 +1030,7 @@ export default {
         elFile.shorFileName = elFile.filename.split('/').slice(-1)[0]
         elFile.configKeyInfos.forEach(elFileVar => {
           elFileVar.index = index
-          const found = diffConfVariable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase())
+          const found = diffConfVariable.find(_ => _.key.toLowerCase() === elFileVar.key.toLowerCase() && _.type === elFileVar.type)
           elFileVar.conf_variable = found
           index += 1
         })
