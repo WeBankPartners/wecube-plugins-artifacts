@@ -35,7 +35,8 @@ try:
   # 使用与wsgi_server.py相同的初始化方式
   application = talos_base.initialize_server(
       'artifacts_corepy',
-      os.environ.get('ARTIFACTS_COREPY_CONF', './etc/artifacts_corepy.conf'),
+      os.environ.get('ARTIFACTS_COREPY_CONF', '/etc/artifacts_corepy/artifacts_corepy.conf'),  # 在机器中使用
+      # os.environ.get('ARTIFACTS_COREPY_CONF', './etc/artifacts_corepy.conf'),   # 在本地测试使用
       conf_dir=os.environ.get('ARTIFACTS_COREPY_CONF_DIR', '/etc/artifacts_corepy/artifacts_corepy.conf.d'),
       middlewares=[]  # 独立脚本不需要中间件
   )
