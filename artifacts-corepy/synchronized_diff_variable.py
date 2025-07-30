@@ -104,7 +104,6 @@ class DiffVariableSynchronizer:
             packages = self._get_all_deploy_packages()
             self.stats['total_packages'] = len(packages)
             LOG.info(f"共找到 {len(packages)} 个部署物料包")
-            return
             # 3. 处理每个物料包
             for package in packages:
                 try:
