@@ -79,6 +79,7 @@ setup(
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
     packages=find_packages(exclude=['docs', 'tests']),
+    py_modules=['synchronized_diff_variable'],  # 新增：包含根目录的单独模块
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
@@ -117,6 +118,7 @@ setup(
         'console_scripts': [
             'artifacts_corepy_server=artifacts_corepy.server.simple_server:main',
             'artifacts_corepy_scheduler=artifacts_corepy.server.scheduler:main',
+            'artifacts_sync_diff_vars=synchronized_diff_variable:main', 
         ],
     },
 )
