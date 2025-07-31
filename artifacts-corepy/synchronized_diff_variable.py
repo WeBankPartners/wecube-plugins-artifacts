@@ -320,6 +320,10 @@ class DiffVariableSynchronizer:
         variable_type = variable_data.get('variable_type', '')
         code = variable_data.get('code', '')
 
+        if variable_type == '':
+            LOG.debug(f"变量 {variable_name} 没有变量类型，无需处理")
+            return {'guid': variable_guid}
+
         # 如果是公有变量，不做处理，但将GUID推入集合A
         if variable_type == GLOBAL_VARIABLE_TYPE:
             LOG.debug(f"变量 {variable_name} 是公有变量，无需处理")
