@@ -19,6 +19,7 @@ import sys
 import os
 import json
 import argparse
+import copy
 
 # 添加项目根目录到Python路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -69,6 +70,7 @@ class DiffVariableSynchronizer:
             server: WeCMDB服务器地址
             token: 认证令牌
         """
+        self.batch_size = 500
         self.server = CONF.wecube.server
 
         wecube_client = wecube.WeCubeClient(self.server, "")
@@ -87,7 +89,11 @@ class DiffVariableSynchronizer:
             'deleted_variables': 0,
             'skipped_variables': 0,  # 新增：跳过的变量数量
             'global_variables': 0,   # 新增：公有变量数量
-            'errors': 0
+            'errors': 0,
+            'updated_0_confirmed': 0,
+            'invalid_deleted': 0,
+            'deleted_0_confirmed': 0,
+            'failed_batches': 0
         }
     
     def run(self):
@@ -417,15 +423,14 @@ class DiffVariableSynchronizer:
         except Exception as e:
             LOG.error(f"更新物料包 {package_guid} 的差异化变量列表时出错: {str(e)}")
             raise
-    
     def _cleanup_invalid_variables(self):
         """
-        清理无效的差异化变量（非公有变量且子系统设计ID为null）
+        清理无效的差异化变量记录
+        删除非公有变量且子系统设计为null的记录
         """
-        LOG.info("开始清理无效的差异化变量...")
+        LOG.info(f"开始清理无效变量，批处理大小: {self.batch_size}")
         
-        # 查询所有非公有变量且子系统设计ID为null的记录
-        query = {
+        base_query = {
             "dialect": {
                 "queryMode": "new"
             },
@@ -440,32 +445,166 @@ class DiffVariableSynchronizer:
         }
         
         try:
-            resp_json = self.cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, query)
-            all_invalid_variables = resp_json.get('data', {}).get('contents', [])
-            invalid_variables = [
-                item for item in all_invalid_variables
-                if 'Delete' in item.get('nextOperations', []) 
-                and item.get('subsystem_design') is None
-            ]
+            # 第一步：处理state为updated_0的数据
+            self._process_updated_0_variables_in_batches(base_query)
             
-            if not invalid_variables:
-                LOG.info("没有找到需要清理的无效差异化变量")
-                return
+            # 第二步：将所有的数据调用delete接口
+            self._delete_invalid_variables_in_batches(base_query)
             
-            LOG.info(f"找到 {len(invalid_variables)} 个无效的差异化变量，准备删除")
+            # 第三步：对所有state为deleted_0的数据进行确认删除
+            self._confirm_deleted_variables_in_batches(base_query)
             
-            # 批量删除
-            delete_data = [{'guid': var['guid']} for var in invalid_variables]
-            
-            self.cmdb_client.delete(CONF.wecube.wecmdb.citypes.diff_config, delete_data)
-            self.cmdb_client.confirm(CONF.wecube.wecmdb.citypes.diff_config, delete_data)
-
-            self.stats['deleted_variables'] = len(invalid_variables)
-            LOG.info(f"已删除 {len(invalid_variables)} 个无效的差异化变量")
             
         except Exception as e:
             LOG.error(f"清理无效差异化变量时出错: {str(e)}")
-    
+
+    def _process_batch_with_retry(self, operation_name, operation_func, batch_data, max_retries=3):
+        """
+        带重试机制的批处理操作
+        
+        Args:
+            operation_name: 操作名称（用于日志）
+            operation_func: 要执行的操作函数
+            batch_data: 批次数据
+            max_retries: 最大重试次数
+        """
+        for attempt in range(max_retries):
+            try:
+                operation_func(batch_data)
+                return True
+            except Exception as e:
+                LOG.warning(f"{operation_name} 第 {attempt + 1} 次尝试失败: {str(e)}")
+                if attempt == max_retries - 1:
+                    LOG.error(f"{operation_name} 达到最大重试次数，跳过此批次")
+                    self.stats['failed_batches'] += 1
+                    return False
+                else:
+                    import time
+                    time.sleep(2)  # 重试前等待2秒
+        return False
+
+    def _process_updated_0_variables_in_batches(self, base_query):
+        """批量处理updated_0状态的变量"""
+        LOG.info("开始处理updated_0状态的变量...")
+        
+        query_copy = copy.deepcopy(base_query)
+        query_copy['filters'].append({
+            "name": "state",
+            "operator": "eq",
+            "value": "updated_0"
+        })
+        
+        variables = self._fetch_variables(query_copy, "updated_0")
+        filtered_variables = [
+            item for item in variables
+            if item.get('subsystem_design') is None
+        ]
+        
+        if not filtered_variables:
+            LOG.info("没有找到updated_0状态需要处理的变量")
+            return
+        
+        self._process_in_batches(
+            data=filtered_variables,
+            operation_name="确认updated_0变量",
+            operation_func=lambda batch_data: self.cmdb_client.confirm(
+                CONF.wecube.wecmdb.citypes.diff_config, batch_data
+            ),
+            count_key='updated_0_confirmed'
+        )
+
+    def _delete_invalid_variables_in_batches(self, base_query):
+        """批量删除无效变量"""
+        LOG.info("开始删除无效变量...")
+        
+        variables = self._fetch_variables(base_query, "需要删除")
+        filtered_variables = [
+            item for item in variables
+            if 'Delete' in item.get('nextOperations', []) 
+            and item.get('subsystem_design') is None
+        ]
+        
+        if not filtered_variables:
+            LOG.info("没有找到需要删除的无效变量")
+            return
+        
+        self._process_in_batches(
+            data=filtered_variables,
+            operation_name="删除无效变量",
+            operation_func=lambda batch_data: self.cmdb_client.delete(
+                CONF.wecube.wecmdb.citypes.diff_config, batch_data
+            ),
+            count_key='invalid_deleted'
+        )
+
+    def _confirm_deleted_variables_in_batches(self, base_query):
+        """批量确认删除deleted_0状态的变量"""
+        LOG.info("开始确认删除deleted_0状态的变量...")
+        
+        query_copy = copy.deepcopy(base_query)
+        query_copy['filters'].append({
+            "name": "state",
+            "operator": "eq",
+            "value": "deleted_0"
+        })
+        
+        variables = self._fetch_variables(query_copy, "deleted_0")
+        filtered_variables = [
+            item for item in variables
+            if item.get('subsystem_design') is None
+        ]
+        
+        if not filtered_variables:
+            LOG.info("没有找到deleted_0状态需要确认删除的变量")
+            return
+        
+        self._process_in_batches(
+            data=filtered_variables,
+            operation_name="确认删除deleted_0变量",
+            operation_func=lambda batch_data: self.cmdb_client.confirm(
+                CONF.wecube.wecmdb.citypes.diff_config, batch_data
+            ),
+            count_key='deleted_0_confirmed'
+        )
+
+    def _fetch_variables(self, query, operation_type):
+        """获取变量数据"""
+        try:
+            resp_json = self.cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.diff_config, query)
+            return resp_json.get('data', {}).get('contents', [])
+        except Exception as e:
+            LOG.error(f"获取{operation_type}变量时失败: {str(e)}")
+            return []
+
+    def _process_in_batches(self, data, operation_name, operation_func, count_key):
+        """通用的批处理方法"""
+        total_count = len(data)
+        LOG.info(f"找到 {total_count} 个变量需要{operation_name}")
+        
+        processed_count = 0
+        for i in range(0, total_count, self.batch_size):
+            batch = data[i:i + self.batch_size]
+            batch_data = [{'guid': var['guid']} for var in batch]
+            batch_number = i // self.batch_size + 1
+            
+            LOG.info(f"{operation_name} 第 {batch_number} 批，数量: {len(batch_data)}")
+            
+            success = self._process_batch_with_retry(
+                f"{operation_name}第{batch_number}批",
+                operation_func,
+                batch_data
+            )
+            
+            if success:
+                processed_count += len(batch_data)
+                self.stats[count_key] += len(batch_data)
+                LOG.info(f"已{operation_name} {processed_count}/{total_count} 个变量")
+            
+            # 批次间的短暂延迟，避免对服务器造成压力
+            if i + self.batch_size < total_count:
+                import time
+                time.sleep(0.5)
+
     def _print_statistics(self):
         """
         打印统计信息
@@ -481,6 +620,12 @@ class DiffVariableSynchronizer:
         LOG.info(f"  公有变量数量: {self.stats['global_variables']}")
         LOG.info(f"  处理错误数量: {self.stats['errors']}")
         LOG.info(f"  集合A大小: {len(self.processed_variables)}")
+        LOG.info("=== 批处理统计信息 ===")
+        LOG.info(f"Updated_0状态确认数量: {self.stats['updated_0_confirmed']}")
+        LOG.info(f"无效变量删除数量: {self.stats['invalid_deleted']}")
+        LOG.info(f"Deleted_0状态确认数量: {self.stats['deleted_0_confirmed']}")
+        LOG.info(f"失败批次数量: {self.stats['failed_batches']}")
+        LOG.info(f"批处理大小: {self.batch_size}")
         LOG.info("=" * 60)
 
 
