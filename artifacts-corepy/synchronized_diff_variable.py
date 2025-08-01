@@ -24,10 +24,6 @@ import copy
 # 添加项目根目录到Python路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# 设置配置文件环境变量
-# os.environ.setdefault('ARTIFACTS_COREPY_CONF', os.path.join(os.path.dirname(__file__), 'etc/artifacts_corepy.conf'))
-# os.environ.setdefault('ARTIFACTS_COREPY_CONF_DIR', os.path.join(os.path.dirname(__file__), 'etc/artifacts_corepy.conf.d'))
-
 from talos.server import base as talos_base
 from artifacts_corepy.server import base as artifacts_base
 
@@ -37,7 +33,7 @@ try:
   application = talos_base.initialize_server(
       'artifacts_corepy',
       os.environ.get('ARTIFACTS_COREPY_CONF', '/etc/artifacts_corepy/artifacts_corepy.conf'),  # 在机器中使用
-      # os.environ.get('ARTIFACTS_COREPY_CONF', './etc/artifacts_corepy.conf'),   # 在本地测试使用
+    #   os.environ.get('ARTIFACTS_COREPY_CONF', './etc/artifacts_corepy.conf'),   # 在本地测试使用
       conf_dir=os.environ.get('ARTIFACTS_COREPY_CONF_DIR', '/etc/artifacts_corepy/artifacts_corepy.conf.d'),
       middlewares=[]  # 独立脚本不需要中间件
   )
@@ -110,6 +106,7 @@ class DiffVariableSynchronizer:
             packages = self._get_all_deploy_packages()
             self.stats['total_packages'] = len(packages)
             LOG.info(f"共找到 {len(packages)} 个部署物料包")
+
             # 3. 处理每个物料包
             for package in packages:
                 try:
@@ -121,7 +118,7 @@ class DiffVariableSynchronizer:
                     continue
             
             # 4. 清理无效的差异化变量
-            self._cleanup_invalid_variables()
+            # self._cleanup_invalid_variables()
             
             # 5. 输出统计信息
             self._print_statistics()
@@ -200,48 +197,113 @@ class DiffVariableSynchronizer:
         
         # 处理差异化变量
         diff_conf_variables = package.get('diff_conf_variable', [])
-        if not diff_conf_variables:
+        db_diff_conf_variables = package.get('db_diff_conf_variable', [])
+        if not diff_conf_variables and not db_diff_conf_variables:
             LOG.info(f"物料包 {package_name} 没有差异化变量，跳过处理")
             return
         
-        LOG.info(f"物料包 {package_name} 包含 {len(diff_conf_variables)} 个差异化变量")
+        LOG.info(f"物料包 {package_name} 包含 {len(diff_conf_variables)} 个应用差异化变量，"
+             f"{len(db_diff_conf_variables)} 个数据库差异化变量")
+
+        # 处理应用差异化变量
+        updated_app_variables = []
+        app_variable_updated = False
         
-        # 处理每个差异化变量
-        updated_variables = []
-        variable_updated = False
-        
-        for variable_ref in diff_conf_variables:
-            variable_guid = variable_ref.get('guid')
-            
-            # 检查该GUID是否已在集合A中
-            if variable_guid in self.processed_variables:
-                LOG.debug(f"变量 {variable_guid} 已在公共变量集合A中，跳过处理")
-                self.stats['skipped_variables'] += 1
-                updated_variables.append(variable_guid)
-                continue
-            
-            # 获取差异化变量详细信息
-            variable_data = self._get_diff_variable(variable_guid)
-            if not variable_data:
-                LOG.warning(f"无法获取差异化变量 {variable_guid} 的详细信息，跳过")
-                continue
-            
-            # 处理变量
-            new_variable_ref = self._process_variable(
-                variable_data, current_subsystem_id, package_name
+        if diff_conf_variables:
+            LOG.info(f"开始处理 {len(diff_conf_variables)} 个应用差异化变量")
+            updated_app_variables, app_variable_updated = self._process_variable_list(
+                diff_conf_variables, current_subsystem_id, package_name, "应用"
             )
-            
-            if new_variable_ref.get('guid', '') != variable_ref.get('guid', ''):
-                variable_updated = True
-            updated_variables.append(new_variable_ref.get('guid', ''))
+        # 处理数据库差异化变量
+        updated_db_variables = []
+        db_variable_updated = False
         
+        if db_diff_conf_variables:
+            LOG.info(f"开始处理 {len(db_diff_conf_variables)} 个数据库差异化变量")
+            updated_db_variables, db_variable_updated = self._process_variable_list(
+                db_diff_conf_variables, current_subsystem_id, package_name, "数据库"
+            )
         # 如果有变量更新，则更新物料包
-        if variable_updated:
-            self._update_package_variables(package_guid, updated_variables)
+        if app_variable_updated or db_variable_updated:
+            self._update_package_variables(package_guid, updated_app_variables, updated_db_variables)
             self.stats['updated_packages'] += 1
             LOG.info(f"已更新物料包 {package_name} 的差异化变量")
         else:
             LOG.info(f"物料包 {package_name} 的差异化变量无需更新")
+
+    def _process_variable_list(self, variable_list, current_subsystem_id, package_name, variable_type):
+        """
+        处理变量列表的通用方法
+        Args:
+            variable_list: 变量列表
+            current_subsystem_id: 当前子系统ID
+            package_name: 包名称（用于日志）
+            variable_type: 变量类型（"应用"或"数据库"）
+        
+        Returns:
+            tuple: (updated_variables, has_changes)
+        """
+        updated_variables = []
+        has_changes = False
+        
+        for variable_ref in variable_list:
+            variable_guid = variable_ref.get('guid')
+            
+            # 检查该GUID是否已在集合A中
+            if variable_guid in self.processed_variables:
+                LOG.debug(f"{variable_type}变量 {variable_guid} 已在公共变量集合A中，跳过处理")
+                updated_variables.append(variable_ref)
+                self.stats['skipped_variables'] += 1
+                continue
+            
+            # 根据GUID获取变量详细信息
+            variable_info = self._get_diff_variable(variable_guid)
+            code = variable_info.get('code', '')
+            if not variable_info:
+                LOG.warning(f"无法获取{variable_type}变量 {variable_guid} 的详细信息，保留原GUID")
+                updated_variables.append(variable_ref)
+                continue
+            
+            # 检查是否为公有变量
+            if variable_info.get('variable_type') == GLOBAL_VARIABLE_TYPE:
+                LOG.debug(f"{variable_type}变量 {variable_guid} 是公有变量，添加到集合A")
+                updated_variables.append(variable_ref)
+                self.processed_variables.add(variable_guid)
+                self.stats['global_variables'] += 1
+                continue
+            
+            # 检查子系统设计ID是否一致
+            var_subsystem_id = variable_info.get('subsystem_design', {}).get('guid') if variable_info.get('subsystem_design') else None
+
+            if var_subsystem_id == current_subsystem_id:
+                LOG.debug(f"{variable_type}变量 {variable_guid} 的子系统设计ID一致，无需处理")
+                updated_variables.append(variable_ref)
+            else:
+                presented_variable = self._get_diff_variable_by_code(code, current_subsystem_id)
+                if (presented_variable):
+                    has_changes = True
+                    LOG.info(f"变量已存在，无需创建")
+                    updated_variables.append({'guid': presented_variable.get('guid')})
+                    continue
+
+                LOG.info(f"{variable_type}变量 {variable_guid} 的子系统设计ID不一致，需要创建新变量")
+                LOG.debug(f"原子系统ID: {var_subsystem_id}, 目标子系统ID: {current_subsystem_id}")
+                
+                # 创建新的变量
+                new_guid = self._create_new_variable(variable_info, current_subsystem_id)
+                if new_guid:
+                    # 更新变量引用
+                    new_variable_ref = variable_ref.copy()
+                    new_variable_ref['guid'] = new_guid.get('guid', '')
+                    updated_variables.append(new_variable_ref)
+                    has_changes = True
+                    self.stats['created_variables'] += 1
+                    LOG.info(f"成功创建新的{variable_type}变量 {new_guid} 替换原变量 {variable_guid}")
+                else:
+                    # 创建失败，保留原GUID
+                    updated_variables.append(variable_ref)
+                    LOG.error(f"创建新{variable_type}变量失败，保留原GUID {variable_guid}")
+        return [item['guid'] for item in updated_variables], has_changes
     
     def _get_diff_variable(self, variable_guid):
         """
@@ -309,61 +371,6 @@ class DiffVariableSynchronizer:
             LOG.error(f"查询差异化变量时出错: {str(e)}")
             return None
     
-    def _process_variable(self, variable_data, current_subsystem_id, package_name):
-        """
-        处理单个差异化变量
-        
-        Args:
-            variable_data: 变量数据
-            current_subsystem_id: 当前子系统设计ID
-            package_name: 物料包名称（用于日志）
-            
-        Returns:
-            dict: 变量引用（可能是新创建的）
-        """
-        variable_guid = variable_data.get('guid')
-        variable_name = variable_data.get('variable_name', 'unknown')
-        variable_type = variable_data.get('variable_type', '')
-        code = variable_data.get('code', '')
-
-        if variable_type == '':
-            LOG.debug(f"变量 {variable_name} 没有变量类型，无需处理")
-            return {'guid': variable_guid}
-
-        # 如果是公有变量，不做处理，但将GUID推入集合A
-        if variable_type == GLOBAL_VARIABLE_TYPE:
-            LOG.debug(f"变量 {variable_name} 是公有变量，无需处理")
-            self.processed_variables.add(variable_guid)
-            self.stats['global_variables'] += 1
-            return {'guid': variable_guid}
-        
-        # 检查子系统设计ID
-        variable_subsystem = variable_data.get('subsystem_design', {})
-        variable_subsystem_id = variable_subsystem.get('guid') if variable_subsystem else None
-        # 如果子系统设计ID一致，不做处理
-        if variable_subsystem_id == current_subsystem_id:
-            LOG.debug(f"变量 {variable_name} 的子系统设计ID已正确，无需处理")
-            return {'guid': variable_guid}
-        
-        LOG.info(f"变量 {variable_name} 的子系统设计ID不一致 (当前: {variable_subsystem_id}, 目标: {current_subsystem_id})，创建新变量")
-        
-        presented_variable = self._get_diff_variable_by_code(code, current_subsystem_id)
-        if (presented_variable):
-            LOG.info(f"变量 {variable_name} 已存在，无需创建")
-            return {'guid': presented_variable.get('guid')}
-            
-        # 创建新的差异化变量
-        new_variable_data = self._create_new_variable(variable_data, current_subsystem_id)
-        
-        if new_variable_data:
-            new_guid = new_variable_data.get('guid')
-            LOG.info(f"为物料包 {package_name} 创建新的差异化变量: {variable_name} (新GUID: {new_guid})")
-            self.stats['created_variables'] += 1
-            return {'guid': new_guid}
-        else:
-            LOG.error(f"创建新的差异化变量失败，保持原变量引用")
-            return {'guid': variable_guid}
-    
     def _create_new_variable(self, original_data, new_subsystem_id):
         """
         基于原变量数据创建新的差异化变量
@@ -391,7 +398,6 @@ class DiffVariableSynchronizer:
         
         try:
             resp_json = self.cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [new_data])
-            
             if resp_json.get('data') and len(resp_json['data']) > 0:
                 return resp_json['data'][0]
             else:
@@ -401,7 +407,7 @@ class DiffVariableSynchronizer:
             LOG.error(f"创建差异化变量时出错: {str(e)}")
             return None
     
-    def _update_package_variables(self, package_guid, updated_variables):
+    def _update_package_variables(self, package_guid, updated_variables, updated_db_variables):
         """
         更新物料包的差异化变量列表
         
@@ -409,10 +415,10 @@ class DiffVariableSynchronizer:
             package_guid: 物料包GUID
             updated_variables: 更新后的变量列表
         """
-        
         update_data = {
             'guid': package_guid,
-            'diff_conf_variable': json.dumps(updated_variables)
+            'diff_conf_variable': updated_variables,
+            'db_diff_conf_variable': updated_db_variables
         }
         try:
             self.cmdb_client.update(
