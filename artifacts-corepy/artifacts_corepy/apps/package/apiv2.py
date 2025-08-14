@@ -880,19 +880,19 @@ class UnitDesignPackages(WeCubeResource):
         del deploy_package['deploy_package_url']
         del deploy_package[field_pkg_diff_conf_var_name]
         del deploy_package[field_pkg_db_diff_conf_var_name]
-        # 整理差异化变量
-        # 处理diff_conf_variable && db_diff_conf_variable
-        deploy_package_detail = self.get_without_status(None, deploy_package_id)
-        package_app_diff_configs = deploy_package_detail.get(field_pkg_diff_conf_var_name, []) or []
-        package_db_diff_configs = deploy_package_detail.get(field_pkg_db_diff_conf_var_name, []) or []
-        package_app_diff_configs = [{'bound': d['bound'], 'key': d['key'], 'diffExpr': d['diffExpr'], 'type': d['type']}
-                                    for d in package_app_diff_configs]
-        package_db_diff_configs = [{'bound': d['bound'], 'key': d['key'], 'diffExpr': d['diffExpr'], 'type': d['type']}
-                                   for d in package_db_diff_configs]
         # 下载原包文件
         with tempfile.TemporaryDirectory() as tmp_path:
             package_path_file = self.download_from_url(tmp_path, deploy_package_url)
             self.ensure_package_cached_with_path(deploy_package_id, package_path_file)
+            # 整理差异化变量
+            # 处理diff_conf_variable && db_diff_conf_variable
+            deploy_package_detail = self.get_without_status(None, deploy_package_id)
+            package_app_diff_configs = deploy_package_detail.get(field_pkg_diff_conf_var_name, []) or []
+            package_db_diff_configs = deploy_package_detail.get(field_pkg_db_diff_conf_var_name, []) or []
+            package_app_diff_configs = [{'bound': d['bound'], 'key': d['key'], 'diffExpr': d['diffExpr'], 'type': d['type']}
+                                        for d in package_app_diff_configs]
+            package_db_diff_configs = [{'bound': d['bound'], 'key': d['key'], 'diffExpr': d['diffExpr'], 'type': d['type']}
+                                    for d in package_db_diff_configs]
             package_path_data = os.path.join(tmp_path, 'package.json')
             with open(package_path_data, 'w') as f:
                 content = json.dumps(deploy_package)
