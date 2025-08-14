@@ -909,7 +909,7 @@ class UnitDesignPackages(WeCubeResource):
             clean_filename = os.path.splitext(os.path.splitext(os.path.basename(package_path_file))[0])[0]
             output_filename = os.path.join(tmp_path, '[W]' + clean_filename + '_weart.tar.gz')
             # 创建压缩文件
-            with tarfile.open(pack_filepath, "w:gz") as tar:
+            with tarfile.open(pack_filepath, "w:gz", compresslevel=1) as tar:
                 tar.add(package_path_file, arcname=os.path.basename(package_path_file))
                 tar.add(package_path_data, arcname=os.path.basename(package_path_data))
                 tar.add(package_path_app_diffconfigs, arcname=os.path.basename(package_path_app_diffconfigs))
