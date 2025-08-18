@@ -772,7 +772,7 @@ class UnitDesignPackages(WeCubeResource):
         # 新增nexus配置
         nexus_server = CONF.pushnexus.server.rstrip('/')
         nexus_client = nexus.NeuxsClient(CONF.pushnexus.server, CONF.pushnexus.username,
-                                         CONF.pushnexus.password)
+                                        CONF.pushnexus.password)
         artifact_path = '/'
         if params and params.get('path', None):
             artifact_path = params['path']
@@ -918,18 +918,19 @@ class UnitDesignPackages(WeCubeResource):
         del deploy_package['deploy_package_url']
         del deploy_package[field_pkg_diff_conf_var_name]
         del deploy_package[field_pkg_db_diff_conf_var_name]
-        # 整理差异化变量
-        # 处理diff_conf_variable && db_diff_conf_variable
-        deploy_package_detail = self.get(deploy_package['unit_design']['guid'], deploy_package_id)
-        package_app_diff_configs = deploy_package_detail.get(field_pkg_diff_conf_var_name, []) or []
-        package_db_diff_configs = deploy_package_detail.get(field_pkg_db_diff_conf_var_name, []) or []
-        package_app_diff_configs = [{'bound': d['bound'], 'key': d['key'], 'diffExpr': d['diffExpr'], 'type': d['type']}
-                                    for d in package_app_diff_configs]
-        package_db_diff_configs = [{'bound': d['bound'], 'key': d['key'], 'diffExpr': d['diffExpr'], 'type': d['type']}
-                                   for d in package_db_diff_configs]
         # 下载原包文件
         with tempfile.TemporaryDirectory() as tmp_path:
             package_path_file = self.download_from_url(tmp_path, deploy_package_url)
+            self.ensure_package_cached_with_path(deploy_package_id, package_path_file)
+            # 整理差异化变量
+            # 处理diff_conf_variable && db_diff_conf_variable
+            deploy_package_detail = self.get_without_status(deploy_package['unit_design']['guid'], deploy_package_id)
+            package_app_diff_configs = deploy_package_detail.get(field_pkg_diff_conf_var_name, []) or []
+            package_db_diff_configs = deploy_package_detail.get(field_pkg_db_diff_conf_var_name, []) or []
+            package_app_diff_configs = [{'bound': d['bound'], 'key': d['key'], 'diffExpr': d['diffExpr'], 'type': d['type']}
+                                        for d in package_app_diff_configs]
+            package_db_diff_configs = [{'bound': d['bound'], 'key': d['key'], 'diffExpr': d['diffExpr'], 'type': d['type']}
+                                    for d in package_db_diff_configs]
             package_path_data = os.path.join(tmp_path, 'package.json')
             with open(package_path_data, 'w') as f:
                 content = json.dumps(deploy_package)
@@ -946,7 +947,7 @@ class UnitDesignPackages(WeCubeResource):
             clean_filename = os.path.splitext(os.path.splitext(os.path.basename(package_path_file))[0])[0]
             output_filename = os.path.join(tmp_path, '[W]' + clean_filename + '_weart.tar.gz')
             # 创建压缩文件
-            with tarfile.open(pack_filepath, "w:gz") as tar:
+            with tarfile.open(pack_filepath, "w:gz", compresslevel=1) as tar:
                 tar.add(package_path_file, arcname=os.path.basename(package_path_file))
                 tar.add(package_path_data, arcname=os.path.basename(package_path_data))
                 tar.add(package_path_app_diffconfigs, arcname=os.path.basename(package_path_app_diffconfigs))
@@ -1653,6 +1654,126 @@ class UnitDesignPackages(WeCubeResource):
         results.sort(key=lambda x: x['filename'], reverse=False)
         return results
 
+    def get_without_status(self, unit_design_id, deploy_package_id):
+        # 获取unit_design_id对应的subsystem_design_key_name
+        unit_design = self._get_unit_design_by_id(unit_design_id)
+        subsystem_design_detail = self._get_subsystem_design_by_guid(unit_design['subsystem_design']['guid'])
+        subsystem_design_key_name = subsystem_design_detail[0]['key_name']
+        cmdb_client = self.get_cmdb_client()
+        query = {
+            "dialect": {
+                "queryMode": "new"
+            },
+            "filters": [{
+                "name": "guid",
+                "operator": "eq",
+                "value": deploy_package_id
+            }],
+            "paging": False
+        }
+        resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+        if not resp_json.get('data', {}).get('contents', []):
+            raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
+                                                   {'rid': deploy_package_id})
+        deploy_package = resp_json['data']['contents'][0]
+        baseline_package = (deploy_package.get('baseline_package', None) or {})
+        if baseline_package:
+            query = {
+                "dialect": {
+                    "queryMode": "new"
+                },
+                "filters": [{
+                    "name": "guid",
+                    "operator": "eq",
+                    "value": baseline_package['guid']
+                }],
+                "paging": False
+            }
+            resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
+            if not resp_json.get('data', {}).get('contents', []):
+                LOG.warn("Can not find ci data for guid [%(rid)s]" % {'rid': baseline_package['guid']})
+                # raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
+                #                                        {'rid': baseline_package['guid']})
+                baseline_package = {}
+            else:
+                baseline_package = resp_json['data']['contents'][0]
+        result = {}
+        result['nextOperations'] = list(set(deploy_package.get('nextOperations', [])))
+        result['packageId'] = deploy_package_id
+        result['baseline_package'] = baseline_package.get('guid', None)
+        # db部署支持
+        result[field_pkg_package_type_name] = deploy_package.get(field_pkg_package_type_name,
+                                                                 constant.PackageType.default) or constant.PackageType.default
+        package_cached_dir = self.ensure_package_cached(deploy_package['guid'], deploy_package['deploy_package_url'])
+        # common 字段
+        result[field_pkg_is_decompression_name] = utils.bool_from_string(
+            deploy_package[field_pkg_is_decompression_name], default=True)
+        result[field_pkg_package_type_name] = deploy_package[field_pkg_package_type_name]
+        result[field_pkg_package_size_name] = deploy_package.get(field_pkg_package_size_name, 0) or 0
+        result[field_pkg_package_size_name] = int(result[field_pkg_package_size_name])
+        result[field_pkg_key_service_code_name] = deploy_package[field_pkg_key_service_code_name]
+        # var 字段
+        result[field_pkg_diff_conf_var_name] = deploy_package[field_pkg_diff_conf_var_name]
+        result[field_pkg_db_diff_conf_var_name] = deploy_package.get(field_pkg_db_diff_conf_var_name, [])
+        # |切割为列表, 更新文件的md5,comparisonResult,isDir
+        fields = (field_pkg_diff_conf_directory_name, field_pkg_diff_conf_file_name,
+                  field_pkg_script_file_directory_name, field_pkg_deploy_file_path_name,
+                  field_pkg_start_file_path_name, field_pkg_stop_file_path_name,
+                  field_pkg_log_file_directory_name, field_pkg_upgrade_cleanup_file_path_name)
+        for field in fields:
+            result[field] = self.build_file_object(deploy_package[field])
+        # log仅更新格式
+        fields = (field_pkg_log_file_trade_name, field_pkg_log_file_keyword_name,
+                  field_pkg_log_file_metric_name, field_pkg_log_file_trace_name,)
+        for field in fields:
+            result[field] = self.build_file_object(deploy_package[field])
+        # db
+        fields = (field_pkg_db_deploy_file_directory_name, field_pkg_db_deploy_file_path_name,
+                  field_pkg_db_diff_conf_directory_name, field_pkg_db_diff_conf_file_name,
+                  field_pkg_db_upgrade_directory_name, field_pkg_db_rollback_file_path_name,
+                  field_pkg_db_rollback_directory_name, field_pkg_db_upgrade_file_path_name,)
+        for field in fields:
+            result[field] = self.build_file_object(deploy_package.get(field, None))
+
+        package_app_diff_configs = []
+        if result[field_pkg_package_type_name] in (constant.PackageType.app, constant.PackageType.mixed):
+            # 更新差异化配置文件的变量列表
+            self.update_file_variable(package_cached_dir, result[field_pkg_diff_conf_file_name])
+            for conf_file in result[field_pkg_diff_conf_file_name]:
+                package_app_diff_configs.extend(conf_file['configKeyInfos'])
+        package_db_diff_configs = []
+        if result[field_pkg_package_type_name] in (constant.PackageType.db, constant.PackageType.mixed):
+            # 更新差异化配置文件的变量列表
+            self.update_file_variable(package_cached_dir, result[field_pkg_db_diff_conf_file_name])
+            for conf_file in result[field_pkg_db_diff_conf_file_name]:
+                package_db_diff_configs.extend(conf_file['configKeyInfos'])
+        query_diff_configs = []
+
+        # 基于subsystem_design_key_name添加key_name
+        for diff_config in package_app_diff_configs:
+            diff_config['key_name'] = diff_config['key'] + '_' + (subsystem_design_key_name if self._conv_diff_conf_type(diff_config.get('type', '')) in need_subsystem_design_type else '' )
+        for diff_config in package_db_diff_configs:
+            diff_config['key_name'] = diff_config['key'] + '_' + (subsystem_design_key_name if self._conv_diff_conf_type(diff_config.get('type', '')) in need_subsystem_design_type else '' )
+
+
+        query_diff_configs.extend([p['key_name'] for p in package_app_diff_configs])
+        query_diff_configs.extend([p['key_name'] for p in package_db_diff_configs])
+        query_diff_configs = list(set(query_diff_configs))
+        all_diff_configs = self._get_diff_configs_by_keyname(query_diff_configs)
+        if package_app_diff_configs:
+            # 更新差异化变量bound/diffConfigGuid/diffExpr/fixedDate/key/type
+            result[field_pkg_diff_conf_var_name] = self.update_diff_conf_variable(all_diff_configs,
+                                                                                  package_app_diff_configs,
+                                                                                  result[field_pkg_diff_conf_var_name])
+        if package_db_diff_configs:
+            # 更新差异化变量bound/diffConfigGuid/diffExpr/fixedDate/key/type
+            result[field_pkg_db_diff_conf_var_name] = self.update_diff_conf_variable(all_diff_configs,
+                                                                                     package_db_diff_configs,
+                                                                                     result[
+                                                                                         field_pkg_db_diff_conf_var_name])
+        return result
+
+
     def get(self, unit_design_id, deploy_package_id):
         # 获取unit_design_id对应的subsystem_design_key_name
         unit_design = self._get_unit_design_by_id(unit_design_id)
@@ -2262,6 +2383,30 @@ class UnitDesignPackages(WeCubeResource):
                         LOG.info('download from: %s for pakcage: %s', url, guid)
                         filepath = self.download_from_url(download_path, url)
                         LOG.info('download complete')
+                        LOG.info('unpack package: %s to %s', guid, file_cache_dir)
+                        try:
+                            artifact_utils.unpack_file(filepath, file_cache_dir)
+                        except Exception as e:
+                            shutil.rmtree(file_cache_dir, ignore_errors=True)
+                            LOG.error('unpack failed')
+                            if str(e).find('bad subsequent header') >= 0:
+                                raise exceptions.PluginError(message=_(
+                                    'unpack file error: %(detail)s, is file contains paxheader(mac archive) and modify with 7zip? (cause paxheader corruption)'
+                                    % {'detail': str(e)}))
+                            raise exceptions.PluginError(message=_('unpack file error: %(detail)s' %
+                                                                   {'detail': str(e)}))
+                        LOG.info('unpack complete')
+            else:
+                raise OSError(_('failed to acquire lock, package cache may not be available'))
+        return file_cache_dir
+
+    def ensure_package_cached_with_path(self, guid, filepath):
+        file_cache_dir = self.get_package_cached_path(guid)
+        with artifact_utils.lock(hashlib.sha1(file_cache_dir.encode()).hexdigest(), timeout=300) as locked:
+            if locked:
+                if os.path.exists(file_cache_dir):
+                    LOG.info('using cache: %s for package: %s', file_cache_dir, guid)
+                else:
                         LOG.info('unpack package: %s to %s', guid, file_cache_dir)
                         try:
                             artifact_utils.unpack_file(filepath, file_cache_dir)
