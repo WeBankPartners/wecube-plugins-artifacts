@@ -568,12 +568,10 @@ class UnitDesignPackages(WeCubeResource):
             pacakge_app_diffconfigs = None
             pacakge_db_diffconfigs = None
             new_download_url = ''
-
             unit_design = self._get_unit_design_by_id(unit_design_id)
             # 获取subsystem_design_detail，拿到key_name
             subsystem_design_detail = self._get_subsystem_design_by_guid(unit_design['subsystem_design']['guid'])
             subsystem_design_key_name = subsystem_design_detail[0]['key_name']
-
             with tempfile.TemporaryDirectory() as file_cache_dir:
                 # 解压组合包
                 LOG.info('unpack package: %s to %s', compose_filename, file_cache_dir)
@@ -1006,6 +1004,14 @@ class UnitDesignPackages(WeCubeResource):
         })
         # update 属性
         new_deploy_attrs['guid'] = new_package_guid
+
+        # 对最终更新的物料包中的差异换变量进行去重
+        if field_pkg_diff_conf_var_name in new_deploy_attrs and isinstance(new_deploy_attrs[field_pkg_diff_conf_var_name], list) and new_deploy_attrs[field_pkg_diff_conf_var_name]:
+            new_deploy_attrs[field_pkg_diff_conf_var_name] = list(set(new_deploy_attrs[field_pkg_diff_conf_var_name]))
+        
+        if field_pkg_db_diff_conf_var_name in new_deploy_attrs and isinstance(new_deploy_attrs[field_pkg_db_diff_conf_var_name], list) and new_deploy_attrs[field_pkg_db_diff_conf_var_name]:
+            new_deploy_attrs[field_pkg_db_diff_conf_var_name] = list(set(new_deploy_attrs[field_pkg_db_diff_conf_var_name]))
+
         self.pure_update([new_deploy_attrs]) 
         return [self._get_deploy_package_by_id(new_package_guid)]
 
