@@ -753,16 +753,28 @@ class UnitDesignPackages(WeCubeResource):
         filename, fileobj, filesize = self.download_compose_package(deploy_package_id)
         # 新增nexus配置
         nexus_server = CONF.pushnexus.server.rstrip('/')
-        nexus_client = nexus.NeuxsClient(CONF.pushnexus.server, CONF.pushnexus.username,
-                                        CONF.pushnexus.password)
+        nexus_repository = CONF.pushnexus.repository
+        nexus_username = CONF.pushnexus.username
+        nexus_password = CONF.pushnexus.password
+        
         artifact_path = '/'
         if params and params.get('path', None):
             artifact_path = params['path']
         else:
             unit_design = self._get_unit_design_by_id(unit_design_id)
             artifact_path = self.get_unit_design_artifact_path(unit_design)
-        artifact_repository = CONF.pushnexus.repository
-        upload_result = nexus_client.upload(artifact_repository, artifact_path, os.path.basename(filename),
+        if params and params.get('server', None):
+            nexus_server = params['server']
+        if params and params.get('repository', None):
+            nexus_repository = params['repository']
+        if params and params.get('username', None):
+            nexus_username = params['username']
+        if params and params.get('password', None):
+            nexus_password = params['password']
+        nexus_client = nexus.NeuxsClient(nexus_server, nexus_username,
+                                        nexus_password)
+        
+        upload_result = nexus_client.upload(nexus_repository, artifact_path, os.path.basename(filename),
                                             'application/octet-stream', fileobj)
         return upload_result
 
