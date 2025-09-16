@@ -189,5 +189,10 @@
   "art_path_warn": "The cleanup path must not contain '../' or start with '/'.",
   "art_size": "Size",
   "art_file_type": "File Type",
-  "art_parse_fail": "Differentiated Variable Parsing Failed"
+  "art_parse_fail": "Differentiated Variable Parsing Failed",
+  "art_please_enter": "please Enter",
+  "art_template_name": "Template Name",
+  "art_template_details": "Template Details",
+  "art_update_user": "Update User",
+  "art_delConfirm_tip": "Deleting data cannot be restored. Are you sure to proceed?"
 }

@@ -13,6 +13,7 @@
         <FormItem label="" style="display: none;">
           <Input v-model="templateParams.value" type="textarea"></Input>
         </FormItem>
+        <slot name="formItem"></slot>
       </Form>
       <div v-if="isAdd" style="margin-bottom: 0;margin: 0 50px;">
         <template v-if="customParamsName.length > 0">
@@ -146,6 +147,8 @@ export default {
         this.flowRoleManageModal = false
         if (!this.isAdd) {
           this.$emit('reloadTableData')
+        } else {
+          this.$emit('addTableItemSuccess')
         }
       }
     },

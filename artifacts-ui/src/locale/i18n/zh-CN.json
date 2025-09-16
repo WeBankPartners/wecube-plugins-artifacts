@@ -189,5 +189,10 @@
   "art_path_warn": "清理路径中不能包含'../'或以'/'开头",
   "art_size": "大小",
   "art_file_type": "文件类型",
-  "art_parse_fail": "差异化变量解析失败"
+  "art_parse_fail": "差异化变量解析失败",
+  "art_please_enter": "请输入",
+  "art_template_name": "模板名称",
+  "art_template_details": "模板详情",
+  "art_update_user": "更新人",
+  "art_delConfirm_tip": "删除数据将无法恢复,确认执行? "
 }
