@@ -13,3 +13,14 @@ class CollectionDiffConfTemplates(CollectionController):
 class ItemDiffConfTemplate(ItemController):
     name = 'artifacts.diff-conf-templates'
     resource = api.DiffConfTemplate
+
+# ... existing code ...
+
+class CollectionPrivateVariableTemplates(CollectionController):
+    name = 'artifacts.private-variable-templates'
+    resource = api.PrivateVariableTemplate
+
+
+class ItemPrivateVariableTemplate(ItemController):
+    name = 'artifacts.private-variable-templates'
+    resource = api.PrivateVariableTemplate

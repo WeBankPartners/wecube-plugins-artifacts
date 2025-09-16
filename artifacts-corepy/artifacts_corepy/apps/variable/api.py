@@ -90,3 +90,36 @@ class DiffConfTemplate(resource.DiffConfTemplate):
             result['is_owner'] = GLOBALS.request.auth_user == result['create_user']
 
         return result
+    
+# ... existing code ...
+
+class PrivateVariableTemplate(resource.PrivateVariableTemplate):
+    def list(self, filters=None, orders=None, offset=None, limit=None, hooks=None):
+        """
+        获取私有变量模板列表
+        """
+        return super().list(filters, orders, offset, limit, hooks)
+
+    def get(self, rid):
+        """
+        获取单个私有变量模板
+        """
+        return super().get(rid)
+
+    def create(self, data):
+        """
+        创建私有变量模板
+        """
+        return super().create(data)
+
+    def update(self, rid, data):
+        """
+        更新私有变量模板
+        """
+        return super().update(rid, data)
+
+    def delete(self, rid):
+        """
+        删除私有变量模板
+        """
+        return super().delete(rid)

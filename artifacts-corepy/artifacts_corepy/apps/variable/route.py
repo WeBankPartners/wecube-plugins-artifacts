@@ -11,3 +11,6 @@ CONF = config.CONF
 def add_routes(api):
     api.add_route('/artifacts/api/v1/diff-conf-templates', controller.CollectionDiffConfTemplates())
     api.add_route('/artifacts/api/v1/diff-conf-templates/{rid}', controller.ItemDiffConfTemplate())
+
+    api.add_route('/artifacts/api/v1/private-variable-templates', controller.CollectionPrivateVariableTemplates())
+    api.add_route('/artifacts/api/v1/private-variable-templates/{rid}', controller.ItemPrivateVariableTemplate())

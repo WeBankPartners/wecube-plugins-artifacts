@@ -40,6 +40,35 @@ class DiffConfTemplate(Base, DictBase):
 
     def __repr__(self):
         return "{0}:{1}".format(self.type, self.code)
+    
+# ... existing code ...
+
+class PrivateVariableTemplate(Base, DictBase):
+    __tablename__ = 'private_variable_template'
+    
+    attributes = [
+        'id', 'name', 'diff_conf_template_id', 'description', 'create_user', 'create_time', 'update_user', 'update_time',
+        'diff_conf_template'
+    ]
+    
+    id = Column(BIGINT, primary_key=True, index=True)
+    name = Column(String(36), nullable=False, comment='私有变量名称')
+    diff_conf_template_id = Column(BIGINT, nullable=False, comment='关联的差异化配置模板ID')
+    description = Column(String(128), server_default=text("''"), comment='描述')
+    create_user = Column(String(36))
+    create_time = Column(DateTime, default=func.now())
+    update_user = Column(String(36))
+    update_time = Column(DateTime, default=func.now(), onupdate=func.now())
+    
+    # 关联到 DiffConfTemplate
+    diff_conf_template = relationship("DiffConfTemplate", backref="private_variable_templates")
+    
+    @property
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+    
+    def __repr__(self):
+        return "{0}:{1}".format(self.name, self.diff_conf_template_id)
 
 
 class DiffConfTemplateRole(Base, DictBase):

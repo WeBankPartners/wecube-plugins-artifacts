@@ -76,6 +76,29 @@ class DiffConfTemplate(MetaCRUD):
         if self.list({'code': resource['code']}):
             raise exceptions.ValidationError('code: %s exist error, please check' % resource['code'])
 
+
+# ... existing code ...
+
+class PrivateVariableTemplate(MetaCRUD):
+    orm_meta = models.PrivateVariableTemplate
+    _default_order = ['-id', 'update_time', 'create_time']
+
+    _validate = [
+        crud.ColumnValidator(field='name',
+                             rule=my_validator.LengthValidator(1, 36),
+                             validate_on=('create:R', 'update:O')),
+        crud.ColumnValidator(field='diff_conf_template_id',
+                             rule=my_validator.validator.NumberValidator(),
+                             validate_on=('create:R', 'update:O')),
+        crud.ColumnValidator(field='description',
+                             rule=my_validator.LengthValidator(0, 128),
+                             validate_on=('create:O', 'update:O')),
+        crud.ColumnValidator(field='create_user', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='create_time', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='update_user', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='update_time', validate_on=('*:O',), nullable=True),
+    ]
+
 class DiffConfTemplateRole(crud.ResourceBase):
     orm_meta = models.DiffConfTemplateRole
     _default_order = ['-id']
