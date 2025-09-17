@@ -83,3 +83,12 @@ export const deleteTemplate = id => req.delete(`/api/v1/diff-conf-templates/${id
 export const getVariableValue = data => req.post(`/app-instances/variable-values`, data)
 // 获取待试算实例
 export const getCalcInstance = data => req.post(`/unit-designs/app-instances`, data)
+
+// 私有变量绑定相关接口
+export const getTemplateBindList = queryString => req.get(`/api/v1/private-variable-templates?${queryString}`)
+
+export const saveTemplateBind = data => req.post(`/api/v1/private-variable-templates`, data)
+
+export const updateTemplateBind = (data, id) => req.patch(`/api/v1/private-variable-templates/${id}`, data)
+
+export const deleteTemplateBind = id => req.delete(`/api/v1/private-variable-templates/${id}`)

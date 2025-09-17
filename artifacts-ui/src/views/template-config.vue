@@ -91,9 +91,7 @@ export default {
           align: 'center',
           render: (h, params) => {
             const useRolesKeyToFlow = params.row.roles.filter(r => r.permission === 'USE').map(r => r.role)
-            // const mgmtRolesKeyToFlow = params.row.roles.filter(r => r.permission === 'MGMT').map(r => r.role)
             const strArray = this.allRoles.filter(item => useRolesKeyToFlow.includes(item.name)).map(one => one.displayName)
-            console.error('88774', this.allRoles, strArray)
             return <span>{strArray.join(',')}</span>
           }
         },
@@ -188,7 +186,6 @@ export default {
       const res = await getSpecialConnector()
       if (res.status === 'OK') {
         this.specialDelimiters = res.data
-        console.error(this.specialDelimiters, '8777')
       }
     },
     async getAllCITypesWithAttr () {
@@ -221,11 +218,9 @@ export default {
       let { status, data } = await getUserList()
       if (status === 'OK') {
         this.creatorList = data || []
-        console.error(this.creatorList, '877')
       }
     },
     async getTemplateList () {
-      console.error('getTemplateList11')
       this.remoteLoading = true
       let params = {
         __offset: (this.pagination.currentPage - 1) * this.pagination.pageSize,
@@ -242,7 +237,6 @@ export default {
       if (res) {
         this.templateTableData = res.data.data
         this.pagination.total = res.data.count
-        console.error(this.templateTableData, 'templateTableData')
       }
       if (!isEmpty(this.ciTypeAttrsObj)) {
         this.remoteLoading = false
@@ -266,7 +260,6 @@ export default {
       }
     },
     templateAuth (row) {
-      console.error(row, 'row')
       this.currentEditRow = row
       this.currentModelValue = row.value
       this.$refs.diffVariableTemplateRef.editAuth(row)
@@ -279,7 +272,6 @@ export default {
           key: _.name,
           label: _.displayName
         }))
-        console.error(this.allRoles, 'allRoles211')
       }
     },
     async getCurrentUserRoles () {
@@ -290,7 +282,6 @@ export default {
           key: _.name,
           label: _.displayName
         }))
-        console.error(this.currentUserRoles, 'allRoles985')
       }
     }
   }

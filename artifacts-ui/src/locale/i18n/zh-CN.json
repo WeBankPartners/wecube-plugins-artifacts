@@ -194,5 +194,7 @@
   "art_template_name": "模板名称",
   "art_template_details": "模板详情",
   "art_update_user": "更新人",
-  "art_delConfirm_tip": "删除数据将无法恢复,确认执行? "
+  "art_delConfirm_tip": "删除数据将无法恢复,确认执行? ",
+  "art_add_template_bind": "新增绑定",
+  "variable_template_bind_name_exist": "变量名已存在, 请重新输入"
 }

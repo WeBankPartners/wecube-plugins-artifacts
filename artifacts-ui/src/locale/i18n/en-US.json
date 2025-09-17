@@ -194,5 +194,7 @@
   "art_template_name": "Template Name",
   "art_template_details": "Template Details",
   "art_update_user": "Update User",
-  "art_delConfirm_tip": "Deleting data cannot be restored. Are you sure to proceed?"
+  "art_delConfirm_tip": "Deleting data cannot be restored. Are you sure to proceed?",
+  "art_add_template_bind": "Add Template Bind",
+  "variable_template_bind_name_exist": "Variable template bind name already exists"
 }
