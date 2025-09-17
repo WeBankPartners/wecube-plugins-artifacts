@@ -53,7 +53,7 @@ class PrivateVariableTemplate(Base, DictBase):
     
     id = Column(BIGINT, primary_key=True, index=True)
     name = Column(String(36), nullable=False, comment='私有变量名称')
-    diff_conf_template_id = Column(BIGINT, nullable=False, comment='关联的差异化配置模板ID')
+    diff_conf_template_id = Column(ForeignKey('diff_conf_template.id'), nullable=False, comment='关联的差异化配置模板ID')
     description = Column(String(128), server_default=text("''"), comment='描述')
     create_user = Column(String(36))
     create_time = Column(DateTime, default=func.now())
