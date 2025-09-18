@@ -50,15 +50,26 @@ export default {
       this.compareResult = ''
       this.originContent = originContent.replace(/\n/g, '<br>')
       this.newContent = newContent.replace(/\n/g, '<br>')
-      const diff = Diff.diffChars(this.originContent, this.newContent)
+      let diff = []
+      if (originContent === '' && newContent !== '') {
+        diff = [
+          {
+            added: true,
+            color: 'green',
+            count: 1234, // 模拟数据
+            removed: undefined,
+            value: this.newContent
+          }
+        ]
+      } else {
+        diff = Diff.diffChars(this.originContent, this.newContent)
+      }
       diff.forEach(part => {
         // green for additions, red for deletions
         // grey for common parts
         const color = part.added ? 'green' : part.removed ? 'red' : 'grey'
         part.color = color
-      })
-      diff.forEach(item => {
-        this.compareResult += `<span style='color:${item.color}'>${item.value}<span>`
+        this.compareResult += `<span style='color:${part.color}'>${part.value}<span>`
       })
     }
   },
@@ -70,6 +81,7 @@ export default {
 .compare-show-container {
   display: flex;
 }
+
 .container-item {
   flex: 1;
   margin: 2px;
