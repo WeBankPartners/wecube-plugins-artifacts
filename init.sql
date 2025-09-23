@@ -53,7 +53,7 @@ alter table diff_conf_template add unique (code);
 -- alter table diff_conf_template modify column create_time datetime default current_timestamp;
 -- alter table diff_conf_template modify column update_time datetime default current_timestamp on update current_timestamp;
 
-#@v1.5.3.5-begin@;
+#@v1.5.3.7-begin@;
 CREATE TABLE private_variable_template (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(36) NOT NULL COMMENT '私有变量名称',
@@ -65,4 +65,4 @@ CREATE TABLE private_variable_template (
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-#@v1.5.3.5-end@;
+#@v1.5.3.7-end@;
