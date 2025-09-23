@@ -114,6 +114,7 @@
     <div v-else class="right-zone-empty">
       <div class="empty-text">{{ $t('artifacts_please_select_unit') }}</div>
     </div>
+    <AddVariableInformation :allAddVariableInfo="allAddVariableInfo" @closeInformationModal="onInformationModalClose"></AddVariableInformation>
   </div>
 </template>
 
@@ -123,10 +124,11 @@ import CustomTitle from '@/components/custom-title.vue'
 import PkgConfig from '@/components/pkg-config.vue'
 import PkgDiffVariableConfig from '@/components/pkg-diff-variable.vue'
 import PkgUpload from '@/components/pkg-upload.vue'
+import AddVariableInformation from '@/components/add-variable-information.vue'
 import { getCookie, setCookie } from '@/util/cookie.js'
 import { formatFileSize } from '@/util/tool.js'
 import axios from 'axios'
-import { debounce } from 'lodash'
+import { debounce, isEmpty } from 'lodash'
 import DisplayPath from './display-path'
 // 业务运行实例ciTypeId
 const defaultAppRootCiTypeId = 'app_instance'
@@ -377,7 +379,8 @@ export default {
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
         verticalAlign: 'top'
-      }
+      },
+      allAddVariableInfo: []
     }
   },
   computed: {},
@@ -555,9 +558,13 @@ export default {
       this.getbaselinePkg()
     }, 300),
     // 包上传成功后刷新列表
-    refreshTable (packageType) {
+    refreshTable (packageType, data) {
       this.tableFilter.package_type = packageType
-      this.queryPackages()
+      if (data && !isEmpty(data[1])) {
+        this.allAddVariableInfo = data[1]
+      } else {
+        this.queryPackages()
+      }
     },
     async getPkgTypeNum () {
       let { status, data } = await getPkgTypeNum(this.guid)
@@ -988,6 +995,9 @@ export default {
       } else {
         window.location.href = window.location.origin + '/#/login'
       }
+    },
+    onInformationModalClose () {
+      this.queryPackages()
     }
   },
   created () {
@@ -1000,7 +1010,8 @@ export default {
     CustomTitle,
     PkgUpload,
     PkgConfig,
-    PkgDiffVariableConfig
+    PkgDiffVariableConfig,
+    AddVariableInformation
   },
   mounted () {
     // 初始检查元素状态

@@ -196,5 +196,9 @@
   "art_update_user": "更新人",
   "art_delConfirm_tip": "删除数据将无法恢复,确认执行? ",
   "art_add_template_bind": "新增绑定",
-  "variable_template_bind_name_exist": "变量名已存在, 请重新输入"
+  "art_variable_template_bind_name_exist": "变量名已存在, 请重新输入",
+  "art_required_variable_tips": "请将必填属性填写完毕",
+  "art_variable_confrim_modal_title": "确认新增变量参数",
+  "art_final_variable_value": "最终变量值",
+  "art_update_variable_value": "更新变量值"
 }

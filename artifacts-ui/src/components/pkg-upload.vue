@@ -217,11 +217,11 @@ export default {
             title: this.$t('art_success'),
             desc: this.$t('art_need_time')
           })
-          const { status } = await uploadArtifact(this.guid, this.onlineUploadParams.downloadUrl, this.onlineUploadParams.baseline_package, this.onlineUploadParams.package_type)
+          const { status, data } = await uploadArtifact(this.guid, this.onlineUploadParams.downloadUrl, this.onlineUploadParams.baseline_package, this.onlineUploadParams.package_type)
           if (status === 'OK') {
             this.loading = false
             this.onlineModal = false
-            this.$emit('refreshTable', this.onlineUploadParams.package_type)
+            this.$emit('refreshTable', this.onlineUploadParams.package_type, data)
           } else {
             this.loading = false
           }
@@ -255,11 +255,11 @@ export default {
         title: this.$t('art_success'),
         desc: this.$t('art_need_time')
       })
-      const { status } = await uploadLocalArtifact(this.guid, this.formData)
+      const { status, data } = await uploadLocalArtifact(this.guid, this.formData)
       if (status === 'OK') {
         this.loading = false
         this.localModal = false
-        this.$emit('refreshTable', this.localUploadParams.package_type)
+        this.$emit('refreshTable', this.localUploadParams.package_type, data)
       } else {
         this.loading = false
       }

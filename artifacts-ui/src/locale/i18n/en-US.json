@@ -196,5 +196,9 @@
   "art_update_user": "Update User",
   "art_delConfirm_tip": "Deleting data cannot be restored. Are you sure to proceed?",
   "art_add_template_bind": "Add Template Bind",
-  "variable_template_bind_name_exist": "Variable template bind name already exists"
+  "art_variable_template_bind_name_exist": "Variable template bind name already exists",
+  "art_required_variable_tips": "Please fill in all the required fields",
+  "art_variable_confrim_modal_title": "Confirm added variable parameters",
+  "art_final_variable_value": "Final variable value",
+  "art_update_variable_value": "Update the variable value"
 }

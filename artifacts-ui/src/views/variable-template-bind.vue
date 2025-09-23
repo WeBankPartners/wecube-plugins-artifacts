@@ -180,6 +180,7 @@ export default {
     this.getVariableTemplatBindList()
     this.getAllTemplateList()
     this.getAllCITypesWithAttr()
+    this.getSpecialConnector()
   },
   methods: {
     onFilterConditionChange: debounce(function () {
@@ -246,7 +247,7 @@ export default {
         if (res.data.data.length > 0 && res.data.data.some(item => item.id !== this.currentId)) {
           this.$Notice.warning({
             title: 'Warning',
-            desc: this.$t('variable_template_bind_name_exist')
+            desc: this.$t('art_variable_template_bind_name_exist')
           })
           return
         }
