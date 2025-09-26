@@ -71,6 +71,8 @@ class DiffConfTemplate(MetaCRUD):
         if 'id' not in resource and self._id_prefix:
             resource['id'] = utils.generate_prefix_uuid(self._id_prefix)
         resource['create_user'] = scoped_globals.GLOBALS.request.auth_user or None
+        # 在创建时同时设置 update_user，确保新增记录的 update_user 不为空
+        resource['update_user'] = scoped_globals.GLOBALS.request.auth_user or None
 
         # 单独校验 code，返回人性化报错信息
         if self.list({'code': resource['code']}):
@@ -98,6 +100,13 @@ class PrivateVariableTemplate(MetaCRUD):
         crud.ColumnValidator(field='update_user', validate_on=('*:O',), nullable=True),
         crud.ColumnValidator(field='update_time', validate_on=('*:O',), nullable=True),
     ]
+
+    def _before_create(self, resource, validate):
+        if 'id' not in resource and self._id_prefix:
+            resource['id'] = utils.generate_prefix_uuid(self._id_prefix)
+        resource['create_user'] = scoped_globals.GLOBALS.request.auth_user or None
+        # 在创建时同时设置 update_user，确保新增记录的 update_user 不为空
+        resource['update_user'] = scoped_globals.GLOBALS.request.auth_user or None
 
 class DiffConfTemplateRole(crud.ResourceBase):
     orm_meta = models.DiffConfTemplateRole
