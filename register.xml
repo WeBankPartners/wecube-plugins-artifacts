@@ -10,8 +10,8 @@
     <!-- 2.菜单注入 - 描述运行本插件包需要注入的菜单 -->
     <menus>
         <menu code="IMPLEMENTATION_ARTIFACT_MANAGEMENT" cat="IMPLEMENTATION" displayName="Artifacts Management" localDisplayName="应用物料管理">/artifacts/implementation/artifact-management</menu>
-        <menu code="TEMPLATE_CONFIG" cat="IMPLEMENTATION" displayName="Template Config" localDisplayName="模板配置">/artifacts/implementation/template-config</menu>
-        <menu code="VARIABLE_TEMPLATE_BIND" cat="IMPLEMENTATION" displayName="Variable Template Bind" localDisplayName="变量模板绑定">/artifacts/implementation/variable-template-bind</menu>
+        <menu code="TEMPLATE_CONFIG" cat='ADMIN' displayName="Template Config" localDisplayName="物料模板配置">/artifacts/implementation/template-config</menu>
+        <menu code="VARIABLE_TEMPLATE_BIND" cat="ADMIN" displayName="Variable Template Bind" localDisplayName="物料变量模板绑定">/artifacts/implementation/variable-template-bind</menu>
     </menus>
 
     <!-- 3.数据模型 - 描述本插件包的数据模型,并且描述和Framework数据模型的关系 -->
