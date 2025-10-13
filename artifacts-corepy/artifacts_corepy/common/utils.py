@@ -12,6 +12,7 @@ import contextlib
 import functools
 import io
 import logging
+import os
 import os.path
 import re
 import shutil
@@ -66,6 +67,7 @@ def variable_parse(content, spliters):
 
 def unpack_file(filename, unpack_dest):
     shutil.unpack_archive(filename, unpack_dest)
+    os.utime(unpack_dest, None)
 
 
 @contextlib.contextmanager
