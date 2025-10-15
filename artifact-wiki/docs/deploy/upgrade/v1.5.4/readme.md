@@ -34,7 +34,7 @@
 
 ![修改唯一名称](images/image8.png)
 
-7. **修改唯一名称**：在 协同-插件注册 页面，进入 wecmdb 插件（注意：是wecmdb插件，不是物料包插件）
+7. **更新CMDB**：在 协同-插件注册 页面，进入 wecmdb 插件（注意：是wecmdb插件，不是物料包插件）
 
 ![进入wecmdb插件](images/image9.png)
 
