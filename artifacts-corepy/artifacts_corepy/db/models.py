@@ -32,7 +32,7 @@ class DiffConfTemplate(Base, DictBase):
     update_time = Column(DateTime, default=func.now(), onupdate=func.now())
     # is_deleted = Column(TINYINT, nullable=False, default=0, comment='软删除:0,1')
 
-    roles = relationship("DiffConfTemplateRole", back_populates="diff_conf_template")
+    roles = relationship("DiffConfTemplateRole", back_populates="diff_conf_template", lazy='selectin')
 
     @property
     def as_dict(self):
@@ -80,7 +80,7 @@ class DiffConfTemplateRole(Base, DictBase):
     role = Column(String(64), nullable=False, comment='角色')
 
     diff_conf_template_id = Column(ForeignKey('diff_conf_template.id', ondelete='CASCADE'))
-    diff_conf_template = relationship('DiffConfTemplate', lazy=True)
+    diff_conf_template = relationship('DiffConfTemplate', back_populates='roles')
 
     @property
     def as_dict(self):

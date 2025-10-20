@@ -30,7 +30,9 @@ class DiffConfTemplate(resource.DiffConfTemplate):
     def _addtional_update(self, session, rid, data, before_updated, after_updated):
         if 'roles' in data:
             current_roles = collections.defaultdict(set)
-            for r in after_updated["roles"]:
+            # after_updated 可能不包含 roles（为避免 lazy 访问），因此直接查询当前角色表
+            db_roles = resource.DiffConfTemplateRole(transaction=session).list({'diff_conf_template_id': rid})
+            for r in db_roles:
                 current_roles[r['permission']].add(r['role'])
 
             for perm, perm_roles in data['roles'].items():
@@ -55,12 +57,7 @@ class DiffConfTemplate(resource.DiffConfTemplate):
                         }
                     })
 
-            # update final roles
-            after_updated["roles"] = [
-                {"permission": perm, "role": perm_role}
-                for perm, perm_roles in data['roles'].items()
-                for perm_role in perm_roles
-            ]
+            # 不主动在 after_updated 上回填 roles，避免再次触发惰性加载
 
     def _addtional_list(self, query, filters):
         """权限控制，角色数据过滤"""

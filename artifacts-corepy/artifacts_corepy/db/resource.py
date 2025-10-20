@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from talos.core import utils
 from talos.db import crud, validator
 from talos.utils import scoped_globals
+from sqlalchemy.orm import selectinload
 
 from artifacts_corepy.db import validator as my_validator
 from artifacts_corepy.db import models
@@ -41,6 +42,8 @@ class MetaCRUD(crud.ResourceBase):
 class DiffConfTemplate(MetaCRUD):
     orm_meta = models.DiffConfTemplate
     _default_order = ['-update_time', '-id']
+    # 关闭动态外键加载，避免在detail场景下对未显式包含的关系使用raiseload
+    _dynamic_relationship = False
 
     _validate = [
         crud.ColumnValidator(field='type',
@@ -66,6 +69,16 @@ class DiffConfTemplate(MetaCRUD):
                              validate_on=('create:M', 'update:O'),
                              orm_required=False),
     ]
+
+    def _apply_primary_key_filter(self, query, rid):
+        query = super()._apply_primary_key_filter(query, rid)
+        # 预加载 roles，避免在序列化阶段触发惰性加载异常
+        return query.options(selectinload(self.orm_meta.roles))
+
+    def _addtional_list(self, query, filters):
+        query = super()._addtional_list(query, filters)
+        # 列表查询同样预加载 roles，保证 list 响应包含 roles
+        return query.options(selectinload(self.orm_meta.roles))
 
     def _before_create(self, resource, validate):
         if 'id' not in resource and self._id_prefix:
