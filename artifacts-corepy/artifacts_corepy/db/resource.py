@@ -40,7 +40,7 @@ class MetaCRUD(crud.ResourceBase):
 
 class DiffConfTemplate(MetaCRUD):
     orm_meta = models.DiffConfTemplate
-    _default_order = ['-id', 'update_time', 'create_time']
+    _default_order = ['-update_time', '-id']
 
     _validate = [
         crud.ColumnValidator(field='type',
@@ -83,7 +83,7 @@ class DiffConfTemplate(MetaCRUD):
 
 class PrivateVariableTemplate(MetaCRUD):
     orm_meta = models.PrivateVariableTemplate
-    _default_order = ['-id', 'update_time', 'create_time']
+    _default_order = ['-update_time', '-id']
 
     _validate = [
         crud.ColumnValidator(field='name',
