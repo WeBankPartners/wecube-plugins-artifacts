@@ -126,24 +126,32 @@ export default {
     handleUseRoleTransferChange (newTargetKeys) {
       this.useRolesKeyToFlow = newTargetKeys
     },
-    async isCodeHasExit (code) {
+    async isCodeHasExit (info, isAdd) {
       return new Promise(async (resolve, reject) => {
         let params = {
           __offset: 0,
           __limit: 1000,
-          code
+          code: info.code
         }
         const queryString = new URLSearchParams(params).toString()
         const res = await getTemplate(queryString)
-        if (res.data.count > 0) {
-          resolve(true)
+        if (isAdd) {
+          if (res.data.count > 0) {
+            resolve(true)
+          } else {
+            resolve(false)
+          }
         } else {
-          resolve(false)
+          if (res.data.count > 1) {
+            resolve(true)
+          } else {
+            resolve(false)
+          }
         }
       })
     },
     async saveAsTemplate () {
-      if (this.templateParams.code && (await this.isCodeHasExit(this.templateParams.code))) {
+      if (this.templateParams.code && (await this.isCodeHasExit(this.templateParams, this.isAdd))) {
         this.$Message.error(this.$t('art_variable_template_name_exist'))
         return
       }
