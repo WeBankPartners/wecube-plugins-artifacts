@@ -200,5 +200,7 @@
   "art_required_variable_tips": "Please fill in all the required fields",
   "art_variable_confrim_modal_title": "Confirm added variable parameters",
   "art_final_variable_value": "Final variable value",
-  "art_update_variable_value": "Update the variable value"
+  "art_update_variable_value": "Update the variable value",
+  "art_variable_template_name_exist": "The template name already exists. Please re-enter",
+  "art_template_not_allow_delete_tips": "This template has been bound and cannot be deleted!"
 }

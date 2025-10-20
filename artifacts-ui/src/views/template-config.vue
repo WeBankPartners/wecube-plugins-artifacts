@@ -38,7 +38,7 @@
     <DiffVariableTemplate ref="diffVariableTemplateRef" :useRolesRequired="true" @reloadTableData="getTemplateList" @addTableItemSuccess="getTemplateList">
       <template v-slot:formItem>
         <div style="display: flex;align-items: center;margin-left: 40px">
-          <span>{{ $t('art_template_details') + '&nbsp;&nbsp;&nbsp;' }}</span>
+          <span>{{ $t('art_value_rule') + '&nbsp;&nbsp;&nbsp;' }}</span>
           <ArtifactsAutoFill v-model="currentModelValue" style="margin-top:5px; width: 800px; margin-top: 20px; margin-bottom: 20px;" :ciTypesObj="ciTypesObj" :ciTypeAttrsObj="ciTypeAttrsObj" :specialDelimiters="specialDelimiters" rootCiTypeId="app_instance" :isReadOnly="false" cmdbPackageName="wecmdb" />
         </div>
       </template>
@@ -47,7 +47,7 @@
 </template>
 
 <script>
-import { getTemplate, getUserList, getAllCITypesWithAttr, getSpecialConnector, deleteTemplate, getRoleList, getCurrentUserRoles } from '@/api/server.js'
+import { getTemplate, getUserList, getAllCITypesWithAttr, getSpecialConnector, deleteTemplate, getRoleList, getCurrentUserRoles, getTemplateBindList } from '@/api/server.js'
 import { debounce, isEmpty } from 'lodash'
 import Vue from 'vue'
 import DiffVariableTemplate from '@/components/diff-variable-template'
@@ -67,7 +67,7 @@ export default {
           align: 'center'
         },
         {
-          title: this.$t('art_template_details'),
+          title: this.$t('art_value_rule'),
           minWidth: 300,
           key: 'value',
           align: 'center',
@@ -249,7 +249,28 @@ export default {
       this.currentModelValue = ''
       this.$refs.diffVariableTemplateRef.startAuth([], [], '', '')
     },
+    async isTemplateBindVariable (id) {
+      return new Promise(async (resolve, reject) => {
+        let params = {
+          __offset: 0,
+          __limit: 1000,
+          diff_conf_template_id: id
+        }
+        const queryString = new URLSearchParams(params).toString()
+        const res = await getTemplateBindList(queryString)
+        if (res.data.count > 0) {
+          resolve(true)
+        } else {
+          resolve(false)
+        }
+      })
+    },
     async deleteConfirmModal (row) {
+      if (await this.isTemplateBindVariable(row.id)) {
+        this.$Message.error(this.$t('art_template_not_allow_delete_tips'))
+        return
+      }
+      this.isTemplateBindVariable(row.id)
       const { status, message } = await deleteTemplate(row.id)
       if (status === 'OK') {
         this.$Notice.success({

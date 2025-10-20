@@ -38,17 +38,17 @@
     <Modal v-model="isShowBindModal" :closable="false" :width="700" :title="$t('art_add_template_bind')">
       <div style="max-height: 500px;overflow-y: auto;">
         <Form :label-width="120">
-          <FormItem :label="$t('art_variable_name')">
-            <Input clearable v-model="formItem.name" />
+          <FormItem :label="$t('art_variable_name')" required>
+            <Input clearable v-model="formItem.name" maxlength="30" show-word-limit />
           </FormItem>
-          <FormItem :label="$t('art_template_name')">
+          <FormItem :label="$t('art_template_name')" required>
             <Select v-model="formItem.diff_conf_template_id" filterable clearable @on-change="onTemplateChange" @on-clear="onTemplateClear">
               <Option v-for="item in allTemplateList" :value="item.id" :key="item.id" :label="item.code">
                 {{ item.code }}
               </Option>
             </Select>
           </FormItem>
-          <FormItem :label="$t('art_template_details')">
+          <FormItem :label="$t('art_value_rule')" required>
             <div style="color:gray">
               <ArtifactsAutoFill :ciTypesObj="ciTypesObj" :ciTypeAttrsObj="ciTypeAttrsObj" :specialDelimiters="specialDelimiters" rootCiTypeId="" :isReadOnly="true" v-model="diffVariableValue" cmdbPackageName="wecmdb" />
             </div>
@@ -92,16 +92,16 @@ export default {
           tooltip: true,
           align: 'center',
           render: (h, params) => {
-            return <span>{params.row.diff_conf_template.code}</span>
+            return <span>{params.row.diff_conf_template ? params.row.diff_conf_template.code : ''}</span>
           }
         },
         {
-          title: this.$t('art_template_details'),
+          title: this.$t('art_value_rule'),
           minWidth: 300,
           key: 'diff_conf_template_id',
           align: 'center',
           render: (h, params) => {
-            return <ArtifactsAutoFill style="margin-top:5px;" ciTypesObj={this.ciTypesObj} ciTypeAttrsObj={this.ciTypeAttrsObj} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.diff_conf_template.value} cmdbPackageName="wecmdb" />
+            return params.row.diff_conf_template ? <ArtifactsAutoFill style="margin-top:5px;" ciTypesObj={this.ciTypesObj} ciTypeAttrsObj={this.ciTypeAttrsObj} specialDelimiters={this.specialDelimiters} rootCiTypeId="" isReadOnly={true} v-model={params.row.diff_conf_template.value} cmdbPackageName="wecmdb" /> : ''
           }
         },
         {
@@ -178,7 +178,6 @@ export default {
   mounted () {
     this.getCreatorList()
     this.getVariableTemplatBindList()
-    this.getAllTemplateList()
     this.getAllCITypesWithAttr()
     this.getSpecialConnector()
   },
@@ -187,6 +186,7 @@ export default {
       this.getVariableTemplatBindList()
     }, 500),
     onAddButtonClick () {
+      this.getAllTemplateList()
       this.isAdd = true
       this.isShowBindModal = true
     },
@@ -219,7 +219,7 @@ export default {
       }
     },
     async getAllTemplateList () {
-      const queryString = '__offset=0&__limit=10000'
+      const queryString = '__offset=0&__limit=100000'
       const res = await getTemplate(queryString)
       if (res) {
         this.allTemplateList = res.data.data
@@ -314,11 +314,12 @@ export default {
       }
     },
     editTemplateBind (row) {
+      this.getAllTemplateList()
       this.isAdd = false
       Vue.set(this.formItem, 'name', row.name)
-      Vue.set(this.formItem, 'diff_conf_template_id', row.diff_conf_template_id)
       const template = this.allTemplateList.find(item => item.id === row.diff_conf_template_id)
-      this.diffVariableValue = template.value
+      Vue.set(this.formItem, 'diff_conf_template_id', template ? row.diff_conf_template_id : '')
+      this.diffVariableValue = template ? template.value : ''
       this.currentId = row.id
       this.isShowBindModal = true
     },

@@ -60,7 +60,8 @@
   </Modal>
 </template>
 <script>
-import { getRoleList, getCurrentUserRoles, saveTemplate, updateTemplate } from '@/api/server.js'
+import { isEmpty } from 'lodash'
+import { getRoleList, getCurrentUserRoles, saveTemplate, updateTemplate, getTemplate } from '@/api/server.js'
 export default {
   props: {
     useRolesRequired: {
@@ -125,7 +126,27 @@ export default {
     handleUseRoleTransferChange (newTargetKeys) {
       this.useRolesKeyToFlow = newTargetKeys
     },
+    async isCodeHasExit (code) {
+      return new Promise(async (resolve, reject) => {
+        let params = {
+          __offset: 0,
+          __limit: 1000,
+          code
+        }
+        const queryString = new URLSearchParams(params).toString()
+        const res = await getTemplate(queryString)
+        if (res.data.count > 0) {
+          resolve(true)
+        } else {
+          resolve(false)
+        }
+      })
+    },
     async saveAsTemplate () {
+      if (this.templateParams.code && (await this.isCodeHasExit(this.templateParams.code))) {
+        this.$Message.error(this.$t('art_variable_template_name_exist'))
+        return
+      }
       this.templateParams.roles.MGMT = this.mgmtRolesKeyToFlow
       this.templateParams.roles.USE = this.useRolesKeyToFlow
       let method = null
@@ -138,6 +159,10 @@ export default {
       } else {
         method = updateTemplate
         params = this.templateParams
+      }
+      if (isEmpty(this.templateParams.value)) {
+        this.$Message.error(this.$t('art_value_rule') + this.$t('art_cannot_be_empty'))
+        return
       }
       const { status } = await method(params, this.templateParams.id)
       if (status === 'OK') {
