@@ -81,7 +81,7 @@ export default {
           align: 'center',
           render: (h, params) => {
             const mgmtRolesKeyToFlow = params.row.roles.filter(r => r.permission === 'MGMT').map(r => r.role)
-            const strArray = this.currentUserRoles.filter(item => mgmtRolesKeyToFlow.includes(item.name)).map(one => one.displayName)
+            const strArray = this.allRoles.filter(item => mgmtRolesKeyToFlow.includes(item.name)).map(one => one.displayName)
             return <span>{strArray.join(',')}</span>
           }
         },
@@ -125,20 +125,25 @@ export default {
           width: 100,
           align: 'center',
           fixed: 'right',
-          render: (h, params) => (
-            <div style="display: flex;">
-              <Tooltip content={this.$t('art_update')} placement="top" delay={500} transfer={true}>
-                <Button size="small" type="primary" onClick={() => this.templateAuth(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
-                  <Icon type="md-create" />
-                </Button>
-              </Tooltip>
-              <Poptip confirm transfer title={this.$t('art_delConfirm_tip')} placement="left-end" on-on-ok={() => this.deleteConfirmModal(params.row)}>
-                <Button size="small" type="error">
-                  <Icon type="md-trash" />
-                </Button>
-              </Poptip>
-            </div>
-          )
+          render: (h, params) => {
+            const mgmtRolesKeyToFlow = params.row.roles.filter(r => r.permission === 'MGMT').map(r => r.role)
+            const strArray = this.currentUserRoles.filter(item => mgmtRolesKeyToFlow.includes(item.name))
+            const isDisabled = !(strArray.length > 0)
+            return (
+              <div style="display: flex;">
+                <Tooltip content={this.$t('art_update')} placement="top" delay={500} transfer={true}>
+                  <Button size="small" type="primary" disabled={isDisabled} onClick={() => this.templateAuth(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
+                    <Icon type="md-create" />
+                  </Button>
+                </Tooltip>
+                <Poptip confirm transfer title={this.$t('art_delConfirm_tip')} placement="left-end" on-on-ok={() => this.deleteConfirmModal(params.row)}>
+                  <Button size="small" type="error" disabled={isDisabled}>
+                    <Icon type="md-trash" />
+                  </Button>
+                </Poptip>
+              </div>
+            )
+          }
         }
       ],
       templateTableData: [],
