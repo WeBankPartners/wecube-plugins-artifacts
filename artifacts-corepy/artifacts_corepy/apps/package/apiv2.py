@@ -1635,7 +1635,7 @@ class UnitDesignPackages(WeCubeResource):
             # 创建新的差异化变量项
             bind_variables = list(exist_diff_configs)
             new_create_variables = []
-            new_create_cmdb_variables = {}
+            new_create_cmdb_variables = []
             private_variable_templates = []
             # LOG.debug("new_create_variables: %s", new_create_variables)
             if new_diff_configs:
@@ -1660,15 +1660,15 @@ class UnitDesignPackages(WeCubeResource):
                     'subsystem_design': subsystem_design_guid if self._conv_diff_conf_type(new_diff_configs_map.get(c, {}).get('type', '')) in need_subsystem_design_type else None
                 } for c in new_diff_configs])
                 new_create_variables = [c['guid'] for c in resp_json['data']]
-                # new_create_cmdb_variables = resp_json['data']
-                # new_create_cmdb_variables = [{"guid": item["guid"], "variable_value": item["variable_value"], "variable_name": item["variable_name"], "variable_type": item["variable_type"]} for item in resp_json['data']]
-                new_create_cmdb_variables = {
-                    "final_arr": [{"guid": item["guid"], "variable_value": item["variable_value"], "variable_name": item["variable_name"], "variable_type": item["variable_type"]} for item in resp_json['data']],
-                    "private_variable_templates": private_variable_templates,
-                    "new_diff_configs_map": new_diff_configs_map,
-                    "new_diff_configs": list(new_diff_configs),
-                    "new_diff_key_configs": list(new_diff_key_configs)
-                }
+                new_create_cmdb_variables = [{"guid": item["guid"], "variable_value": item["variable_value"], "variable_name": item["variable_name"], "variable_type": item["variable_type"]} for item in resp_json['data']]
+                # new_create_cmdb_variables = {
+                #     "final_arr": [{"guid": item["guid"], "variable_value": item["variable_value"], "variable_name": item["variable_name"], "variable_type": item["variable_type"]} for item in resp_json['data']],
+                #     "private_variable_templates": private_variable_templates,
+                #     "new_diff_configs_map": new_diff_configs_map,
+                #     "new_diff_configs": list(new_diff_configs),
+                #     "new_diff_key_configs": list(new_diff_key_configs),
+                #     "new_conf_list": new_conf_list,
+                # }
                 bind_variables.extend(new_create_variables)
             # LOG.debug("bind_variables: %s", bind_variables)
             for v in rename_new_variables:
