@@ -203,5 +203,6 @@
   "art_update_variable_value": "更新变量值",
   "art_variable_template_name_exist": "模板名已存在, 请重新输入",
   "art_template_not_allow_delete_tips": "该模板已绑定变量",
-  "art_not_allow_delete": "不允许删除!"
+  "art_not_allow_delete": "不允许删除!",
+  "art_edit_template_bind": "编辑绑定"
 }

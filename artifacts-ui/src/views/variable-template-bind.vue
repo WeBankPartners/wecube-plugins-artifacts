@@ -35,7 +35,7 @@
       show-total
       show-sizer
     />
-    <Modal v-model="isShowBindModal" :closable="false" :width="700" :title="$t('art_add_template_bind')">
+    <Modal v-model="isShowBindModal" :closable="false" :width="700" :title="isAdd ? $t('art_add_template_bind') : $t('art_edit_template_bind')">
       <div style="max-height: 500px;overflow-y: auto;">
         <Form :label-width="120">
           <FormItem :label="$t('art_variable_name')" required>
@@ -219,11 +219,14 @@ export default {
       }
     },
     async getAllTemplateList () {
-      const queryString = '__offset=0&__limit=100000&query=all'
-      const res = await getTemplate(queryString)
-      if (res) {
-        this.allTemplateList = res.data.data
-      }
+      return new Promise(async (resolve, reject) => {
+        const queryString = '__offset=0&__limit=100000&query=all'
+        const res = await getTemplate(queryString)
+        if (res) {
+          this.allTemplateList = res.data.data
+          resolve()
+        }
+      })
     },
     closeShowBindModal () {
       this.isShowBindModal = false
@@ -313,8 +316,8 @@ export default {
         this.specialDelimiters = res.data
       }
     },
-    editTemplateBind (row) {
-      this.getAllTemplateList()
+    async editTemplateBind (row) {
+      await this.getAllTemplateList()
       this.isAdd = false
       Vue.set(this.formItem, 'name', row.name)
       const template = this.allTemplateList.find(item => item.id === row.diff_conf_template_id)
