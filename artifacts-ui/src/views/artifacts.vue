@@ -562,9 +562,8 @@ export default {
       this.tableFilter.package_type = packageType
       if (data && !isEmpty(data[1])) {
         this.allAddVariableInfo = data[1]
-      } else {
-        this.queryPackages()
       }
+      this.queryPackages()
     },
     async getPkgTypeNum () {
       let { status, data } = await getPkgTypeNum(this.guid)
