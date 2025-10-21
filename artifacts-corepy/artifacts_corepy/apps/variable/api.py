@@ -62,12 +62,28 @@ class DiffConfTemplate(resource.DiffConfTemplate):
     def _addtional_list(self, query, filters):
         """权限控制，角色数据过滤"""
         query = super()._addtional_list(query, filters)
+        
+        # 检查是否有 query=all 参数，如果有则跳过权限校验
+        request_params = getattr(GLOBALS.request, 'params', {})
+        if request_params.get('query') == 'all':
+            return query
+            
         permission_filters = {"roles.role": {'in': list(GLOBALS.request.auth_permissions)}}
         query = self._apply_filters(query, self.orm_meta, permission_filters)
         return query
 
     def _addtional_count(self, query, filters):
-        return self._addtional_list(query, filters)
+        """权限控制，角色数据过滤 - 计数方法"""
+        query = super()._addtional_count(query, filters)
+        
+        # 检查是否有 query=all 参数，如果有则跳过权限校验
+        request_params = getattr(GLOBALS.request, 'params', {})
+        if request_params.get('query') == 'all':
+            return query
+            
+        permission_filters = {"roles.role": {'in': list(GLOBALS.request.auth_permissions)}}
+        query = self._apply_filters(query, self.orm_meta, permission_filters)
+        return query
 
     def list(self, filters=None, orders=None, offset=None, limit=None, hooks=None):
         """
