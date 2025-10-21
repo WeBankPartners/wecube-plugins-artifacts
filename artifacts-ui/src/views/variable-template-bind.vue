@@ -219,7 +219,7 @@ export default {
       }
     },
     async getAllTemplateList () {
-      const queryString = '__offset=0&__limit=100000'
+      const queryString = '__offset=0&__limit=100000&query=all'
       const res = await getTemplate(queryString)
       if (res) {
         this.allTemplateList = res.data.data

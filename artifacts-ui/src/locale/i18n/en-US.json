@@ -202,5 +202,6 @@
   "art_final_variable_value": "Final variable value",
   "art_update_variable_value": "Update the variable value",
   "art_variable_template_name_exist": "The template name already exists. Please re-enter",
-  "art_template_not_allow_delete_tips": "This template has been bound and cannot be deleted!"
+  "art_template_not_allow_delete_tips": "This template has been bound",
+  "art_not_allow_delete": "Not Allow Delete!"
 }

@@ -167,7 +167,7 @@
 </template>
 
 <script>
-import { deleteTemplate, getCalcInstance, getDiffVariable, getPackageCiTypeId, getPackageDetail, getSpecialConnector, getSystemDesignVersions, getTemplate, getUserList, getVariableValue, updateEntity, updatePackage } from '@/api/server.js'
+import { deleteTemplate, getCalcInstance, getDiffVariable, getPackageCiTypeId, getPackageDetail, getSpecialConnector, getSystemDesignVersions, getTemplate, getUserList, getVariableValue, updateEntity, updatePackage, getCurrentUserRoles } from '@/api/server.js'
 import DiffVariableTemplate from '@/components/diff-variable-template'
 import ParseFail from '@/components/parse-fail'
 import { getCookie, setCookie } from '@/util/cookie.js'
@@ -513,16 +513,19 @@ export default {
           fixed: 'right',
           width: 120,
           render: (h, params) => {
+            const mgmtRolesKeyToFlow = params.row.roles.filter(r => r.permission === 'MGMT').map(r => r.role)
+            const strArray = this.currentUserRoles.filter(item => mgmtRolesKeyToFlow.includes(item.name))
+            const isDisabled = !(strArray.length > 0)
             return (
               <div style="padding-top:5px">
                 <div>
                   <Tooltip content={this.$t('art_permissions')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" type="warning" onClick={() => this.templateAuth(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
+                    <Button size="small" type="warning" disabled={isDisabled} onClick={() => this.templateAuth(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
                       <Icon type="ios-person" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
                   <Tooltip content={this.$t('art_delete')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" type="error" onClick={() => this.templateDelete(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
+                    <Button size="small" type="error" disabled={isDisabled} onClick={() => this.templateDelete(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
                       <Icon type="md-trash" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
@@ -555,7 +558,8 @@ export default {
       variableAppValue: {}, // 缓存试算结果
       calcDBInstance: '', // 待试算实例
       calcDBInstanceOptions: [], // 待试算实例选项
-      variableDBValue: {} // 缓存试算结果
+      variableDBValue: {}, // 缓存试算结果
+      currentUserRoles: []
     }
   },
   computed: {},
@@ -1493,11 +1497,22 @@ export default {
     zoomModalMin () {
       this.fileContentHeight = window.screen.availHeight * 0.4 + 100
       this.fullscreen = false
+    },
+    async getCurrentUserRoles () {
+      const { status, data } = await getCurrentUserRoles()
+      if (status === 'OK') {
+        this.currentUserRoles = data.map(_ => ({
+          ..._,
+          key: _.name,
+          label: _.displayName
+        }))
+      }
     }
   },
   created () {
     this.fetchData()
     this.getSpecialConnector()
+    this.getCurrentUserRoles()
   },
   components: {
     RuleTable,

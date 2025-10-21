@@ -162,7 +162,8 @@ export default {
       currentModelValue: '',
       currentEditRow: {},
       allRoles: [],
-      currentUserRoles: []
+      currentUserRoles: [],
+      bindVariableNameList: []
     }
   },
   components: {
@@ -264,6 +265,7 @@ export default {
         const queryString = new URLSearchParams(params).toString()
         const res = await getTemplateBindList(queryString)
         if (res.data.count > 0) {
+          this.bindVariableNameList = res.data.data.map(item => item.name)
           resolve(true)
         } else {
           resolve(false)
@@ -272,10 +274,9 @@ export default {
     },
     async deleteConfirmModal (row) {
       if (await this.isTemplateBindVariable(row.id)) {
-        this.$Message.error(this.$t('art_template_not_allow_delete_tips'))
+        this.$Message.error(this.$t('art_template_not_allow_delete_tips') + this.bindVariableNameList.join(',') + '; ' + this.$t('art_not_allow_delete'))
         return
       }
-      this.isTemplateBindVariable(row.id)
       const { status, message } = await deleteTemplate(row.id)
       if (status === 'OK') {
         this.$Notice.success({
