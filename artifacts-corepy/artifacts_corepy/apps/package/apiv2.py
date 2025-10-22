@@ -1643,14 +1643,14 @@ class UnitDesignPackages(WeCubeResource):
                 if new_diff_key_configs:
                     private_variable_templates = self._get_private_variable_templates_by_names(new_diff_key_configs)
 
-                for var_name in new_diff_configs:
-                    diff_conf = new_diff_configs_map[var_name]
-                    if diff_conf['type'] in field_diff_conf_tpl_map:
-                        diff_conf_tpl = field_diff_conf_tpl_map[diff_conf['type']]
-                        if diff_conf_tpl:
-                            # 替换模板值 $& var_name &$
-                            replace_pattern = r'\$&\s*([a-zA-Z0-9_-]+?)\s*\$&'
-                            diff_conf['value'] = re.sub(replace_pattern, var_name, diff_conf_tpl)
+                # for var_name in new_diff_configs:
+                #     diff_conf = new_diff_configs_map[var_name]
+                #     if diff_conf['type'] in field_diff_conf_tpl_map:
+                #         diff_conf_tpl = field_diff_conf_tpl_map[diff_conf['type']]
+                #         if diff_conf_tpl:
+                #             # 替换模板值 $& var_name &$
+                #             replace_pattern = r'\$&\s*([a-zA-Z0-9_-]+?)\s*\$&'
+                #             diff_conf['value'] = re.sub(replace_pattern, var_name, diff_conf_tpl)
                 resp_json = cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [{
                     'code': new_diff_configs_map.get(c, {}).get('key', ''),
                     'variable_name': new_diff_configs_map.get(c, {}).get('key', ''),
