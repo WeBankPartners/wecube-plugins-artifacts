@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import collections
 import logging
+from sqlalchemy import func
 from talos.core import config
 from talos.utils.scoped_globals import GLOBALS
 
@@ -56,6 +57,13 @@ class DiffConfTemplate(resource.DiffConfTemplate):
                             'in': list(deleted_perm_roles)
                         }
                     })
+
+            # 由于 roles 字段的更新不会触发主表的 update_time 自动更新，
+            # 需要手动更新主表的 update_time 和 update_user
+            session.query(self.orm_meta).filter(self.orm_meta.id == rid).update({
+                'update_time': func.now(),
+                'update_user': GLOBALS.request.auth_user or None
+            })
 
             # 不主动在 after_updated 上回填 roles，避免再次触发惰性加载
 
