@@ -75,7 +75,7 @@ export default {
         if (!isEmpty(val)) {
           this.allAddVariableDetails = val
           this.handleVariableInfo()
-          if (this.allAddVariableDetails.every(item => item.variable_value)) {
+          if (this.allAddVariableDetails.some(item => item.variable_value)) {
             this.isVariableModalShow = true
           } else {
             this.isVariableModalShow = false
