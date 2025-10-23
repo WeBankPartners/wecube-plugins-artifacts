@@ -520,13 +520,13 @@ export default {
               <div style="padding-top:5px">
                 <div>
                   <Tooltip content={this.$t('art_permissions')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" type="warning" disabled={isDisabled} onClick={() => this.templateAuth(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
-                      <Icon type="ios-person" color="white" size="16"></Icon>
+                    <Button size="small" type="primary" disabled={isDisabled} onClick={() => this.templateAuth(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
+                      <Icon type="md-create" size="16" />
                     </Button>
                   </Tooltip>
                   <Tooltip content={this.$t('art_delete')} placement="top" delay={500} transfer={true}>
                     <Button size="small" type="error" disabled={isDisabled} onClick={() => this.templateDelete(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
-                      <Icon type="md-trash" color="white" size="16"></Icon>
+                      <Icon type="md-trash" size="16"></Icon>
                     </Button>
                   </Tooltip>
                 </div>
