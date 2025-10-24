@@ -290,6 +290,14 @@ export default {
       this.currentEditRow = row
       this.currentModelValue = row.value
       this.$refs.diffVariableTemplateRef.editAuth(row)
+      setTimeout(() => {
+        const ele = document.querySelector('.flow-role-transfer-container')
+        if (ele) {
+          ele.addEventListener('scroll', e => {
+            e.stopPropagation()
+          })
+        }
+      }, 1000)
     },
     async getRoleList () {
       const { status, data } = await getRoleList()
