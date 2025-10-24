@@ -296,6 +296,9 @@ export default {
           ele.addEventListener('scroll', e => {
             e.stopPropagation()
           })
+          ele.addEventListener('wheel', e => {
+            e.stopPropagation()
+          })
         }
       }, 1000)
     },

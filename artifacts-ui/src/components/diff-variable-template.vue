@@ -1,11 +1,11 @@
 <template>
-  <Modal v-model="flowRoleManageModal" width="1000" :fullscreen="fullscreen" :mask-closable="false" class="platform-base-role-transfer">
+  <Modal v-model="flowRoleManageModal" width="1000" :fullscreen="fullscreen" :mask-closable="false" class="platform-base-role-transfer" @wheel.stop>
     <div slot="header" style="display: flex;align-items: center;justify-content: space-between;">
       <h6>{{ isAdd ? $t('art_add_template') : $t('art_edit_template') }}</h6>
       <!-- <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
       <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" /> -->
     </div>
-    <div v-if="flowRoleManageModal" class="flow-role-transfer-container" :style="{ height: fileContentHeight + 'px' }">
+    <div v-if="flowRoleManageModal" class="flow-role-transfer-container" :style="{ height: fileContentHeight + 'px' }" @wheel.stop>
       <Form :label-width="90">
         <FormItem :label="$t('art_name')" style="margin-bottom: 0;">
           <Input v-model="templateParams.code" @input="templateParams.code = templateParams.code.trim()" :placeholder="$t('art_name')" maxlength="30" show-word-limit style="width: 96%"></Input>
@@ -432,6 +432,8 @@ export default {
 .flow-role-transfer-container {
   min-width: 700px;
   overflow-y: auto;
+  position: relative;
+  z-index: 1000;
 }
 .header-icon {
   font-size: 16px;
