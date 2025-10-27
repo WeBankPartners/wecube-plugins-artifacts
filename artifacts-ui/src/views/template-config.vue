@@ -254,6 +254,7 @@ export default {
     onAddButtonClick () {
       this.currentModelValue = ''
       this.$refs.diffVariableTemplateRef.startAuth([], [], '', '')
+      this.setBodyOverflowHidden()
     },
     async isTemplateBindVariable (id) {
       return new Promise(async (resolve, reject) => {
@@ -290,17 +291,12 @@ export default {
       this.currentEditRow = row
       this.currentModelValue = row.value
       this.$refs.diffVariableTemplateRef.editAuth(row)
+      this.setBodyOverflowHidden()
+    },
+    setBodyOverflowHidden () {
       setTimeout(() => {
-        const ele = document.querySelector('.flow-role-transfer-container')
-        if (ele) {
-          ele.addEventListener('scroll', e => {
-            e.stopPropagation()
-          })
-          ele.addEventListener('wheel', e => {
-            e.stopPropagation()
-          })
-        }
-      }, 1000)
+        document.body.style.setProperty('overflow', 'hidden', 'important')
+      }, 500)
     },
     async getRoleList () {
       const { status, data } = await getRoleList()

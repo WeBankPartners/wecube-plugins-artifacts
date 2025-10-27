@@ -189,6 +189,7 @@ export default {
       this.getAllTemplateList()
       this.isAdd = true
       this.isShowBindModal = true
+      this.setBodyOverflowHidden()
     },
     async getVariableTemplatBindList () {
       this.remoteLoading = true
@@ -325,6 +326,7 @@ export default {
       this.diffVariableValue = template ? template.value : ''
       this.currentId = row.id
       this.isShowBindModal = true
+      this.setBodyOverflowHidden()
     },
     async deleteConfirmModal (row) {
       const { status, message } = await deleteTemplateBind(row.id)
@@ -335,6 +337,11 @@ export default {
         })
         this.getVariableTemplatBindList()
       }
+    },
+    setBodyOverflowHidden () {
+      setTimeout(() => {
+        document.body.style.setProperty('overflow', 'hidden', 'important')
+      }, 500)
     }
   }
 }
