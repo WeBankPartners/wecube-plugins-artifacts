@@ -23,8 +23,8 @@
               <div>{{ $t('artifacts_loading') }}</div>
             </Spin>
             <div style="margin-bottom: 8px;">
-              <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;">
-                <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+              <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:480px;">
+                <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.key_name }}</Option>
               </Select>
               <Button type="primary" style="margin-left: 24px;" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
@@ -36,7 +36,7 @@
                       <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
                     </RadioGroup>
                   </div>
-                  <Table :data="tempTableData" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"></Table>
+                  <Table :data="tempTableData" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"> </Table>
                 </div>
               </TabPane>
             </Tabs>
@@ -52,8 +52,8 @@
               <div>{{ $t('artifacts_loading') }}</div>
             </Spin>
             <div style="margin-bottom: 8px;">
-              <Select clearable filterable @on-change="getVariableValue('db')" @on-open-change="getCalcInstance('db')" :placeholder="$t('art_trial_instance')" v-model="calcDBInstance" style="width:300px;">
-                <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+              <Select clearable filterable @on-change="getVariableValue('db')" @on-open-change="getCalcInstance('db')" :placeholder="$t('art_trial_instance')" v-model="calcDBInstance" style="width:480px;">
+                <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.key_name }}</Option>
               </Select>
               <Button type="primary" :disabled="packageDetail.db_diff_conf_file.length === 0" style="margin-left:24px" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
@@ -65,7 +65,7 @@
                       <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
                     </RadioGroup>
                   </div>
-                  <Table :data="tempTableData" :columns="attrsTableColomnOptions" :height="maxHeight" size="small"></Table>
+                  <Table :data="tempTableData" :columns="attrsTableColomnOptions" :height="maxHeight" size="small"> </Table>
                 </div>
               </TabPane>
             </Tabs>
@@ -92,7 +92,7 @@
       </div>
       <div style="display: flex;gap: 8px;margin-bottom: 8px;">
         <Select style="width: 200px;" @on-change="remoteConfigSearch()" v-model="tempCopyParams.variable_type">
-          <Option v-for="item in ['ALL', 'GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE']" :value="item" :key="item">{{ item }}</Option>
+          <Option v-for="item in ['ALL', 'GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE']" :value="item" :key="item">{{ item }} </Option>
         </Select>
         <Input style="width: 200px;" v-model="tempCopyParams.variable_name" @on-change="remoteConfigSearch()" :placeholder="$t('art_variable_name')" clearable />
         <Select style="width: 200px;" clearable filterable @on-change="remoteConfigSearch()" @on-clear="tempCopyParams.create_user = ''" :placeholder="$t('art_creator')" v-model="tempCopyParams.create_user">
@@ -1544,6 +1544,7 @@ export default {
   position: fixed;
   bottom: 20px;
 }
+
 .btn-img {
   width: 16px;
   vertical-align: middle;
@@ -1552,15 +1553,18 @@ export default {
 <style lang="scss">
 .pkg-variable {
   margin-bottom: 16px;
+
   .ivu-radio-group-button .ivu-radio-wrapper-checked {
     background: #5384ff;
     color: #fff;
   }
+
   .ivu-radio-group-button .ivu-radio-wrapper-checked:hover {
     border-color: #57a3f3;
     color: white;
   }
 }
+
 .custom-drawer {
   .ivu-drawer-body {
     height: calc(100% - 30px) !important;
