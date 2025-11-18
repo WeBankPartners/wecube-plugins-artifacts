@@ -44,7 +44,7 @@ upload_py: package_py
 	rm -rf $(project_name)-$(version).zip
 
 
-image_py_arm64: build_py_arm64
+image_py_arm64: build_py
 	
 	@if [ $(with_nexus) == 'true' ]; \
 	then \
