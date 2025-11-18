@@ -53,7 +53,7 @@ image_py_arm64: build_py
 	else \
 	    docker buildx create --use; \
 		docker buildx inspect --bootstrap; \
-		docker buildx build --build-arg TARGETARCH=arm64 --platform linux/arm64 -t $(project_name):$(version) -f Dockerfile_nonexus .; \
+		docker buildx build --pull=false --build-arg TARGETARCH=arm64 --platform linux/arm64 -t $(project_name):$(version) -f Dockerfile_nonexus .; \
 	fi
 
 package_py_arm64: image_py_arm64
