@@ -17,16 +17,16 @@ build: clean
 	cd artifacts-ui &&  npm install --force && NODE_OPTIONS="--openssl-legacy-provider" npm run plugin
 
 image: build
-	ifeq ($(with_nexus),true)
-		wget -O nexus-data.tar.gz https://wecube-1259801214.cos.ap-guangzhou.myqcloud.com/nexus-data/nexus-data.tar.gz
-	endif
-	ifeq ($(arch),arm64)
-		docker buildx create --use || true
-		docker buildx inspect --bootstrap
-		docker buildx build --platform linux/arm64 -t $(project_name):$(version) -f $(dockerfile) .
-	else
-		docker build -t $(project_name):$(version) -f $(dockerfile) .
-	endif
+ifeq ($(with_nexus),true)
+	wget -O nexus-data.tar.gz https://wecube-1259801214.cos.ap-guangzhou.myqcloud.com/nexus-data/nexus-data.tar.gz
+endif
+ifeq ($(arch),arm64)
+	docker buildx create --use || true
+	docker buildx inspect --bootstrap
+	docker buildx build --platform linux/arm64 -t $(project_name):$(version) -f $(dockerfile) .
+else
+	docker build -t $(project_name):$(version) -f $(dockerfile) .
+endif
 
 package: image
 	rm -rf package
