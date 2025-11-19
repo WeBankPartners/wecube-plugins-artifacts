@@ -5,7 +5,12 @@ project_name=$(shell basename "${current_dir}")
 remote_docker_image_registry=ccr.ccs.tencentyun.com/webankpartners/wecube-plugins-artifacts
 arch ?= amd64          # 默认amd64，可选 ARCH=amd64/arm64
 with_nexus ?= true     # 默认true，可选 WITH_NEXUS=true/false
-dockerfile := $(if $(with_nexus),Dockerfile,Dockerfile_nonexus)
+ifeq ($(with_nexus),true)
+dockerfile := Dockerfile
+else
+dockerfile := Dockerfile_nonexus
+endif
+
 
 
 clean:
@@ -21,9 +26,7 @@ ifeq ($(with_nexus),true)
 	wget -O nexus-data.tar.gz https://wecube-1259801214.cos.ap-guangzhou.myqcloud.com/nexus-data/nexus-data.tar.gz
 endif
 ifeq ($(arch),arm64)
-	docker buildx create --use || true
-	docker buildx inspect --bootstrap
-	docker buildx build --platform linux/arm64 -t $(project_name):$(version) -f $(dockerfile) .
+	docker buildx build --platform linux/arm64 -t $(project_name):$(version) -f $(dockerfile) . --load
 else
 	docker build -t $(project_name):$(version) -f $(dockerfile) .
 endif
