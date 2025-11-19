@@ -1,5 +1,4 @@
-ARG TARGETARCH
-FROM python:3.8-slim-buster-${TARGETARCH}
+FROM ccr.ccs.tencentyun.com/webankpartners/python:3.8-slim-buster
 LABEL maintainer = "Webank CTB Team"
 RUN sed -i 's/deb.debian.org/mirrors.tencentyun.com/g' /etc/apt/sources.list
 RUN sed -i 's/security.debian.org/mirrors.tencentyun.com/g' /etc/apt/sources.list
