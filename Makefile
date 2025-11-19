@@ -14,12 +14,14 @@ endif
 
 
 clean:
-	rm -rf $(current_dir)/artifacts-corepy/dist/
+	rm -rf package
+	rm -rf artifacts-corepy/dist/
+	rm -rf artifacts-ui/dist/
 
 build: clean
 	pip3 install wheel
 	cd artifacts-corepy && python3 setup.py bdist_wheel
-	cd artifacts-ui &&  npm install --force && NODE_OPTIONS="--openssl-legacy-provider" npm run plugin
+	docker run --rm  -v $(current_dir):/home/node/app -w /home/node/app node:16.20.2 sh -c "npm set registry https://mirrors.cloud.tencent.com/npm/ && cd /home/node/app/artifacts-ui && npm install --force && npm run plugin"
 
 image: build
 ifeq ($(with_nexus),true)
