@@ -1,0 +1,83 @@
+[baseos]
+name=CentOS Stream $releasever - BaseOS
+baseurl=https://mirrors.tencent.com/centos-stream/$releasever-stream/BaseOS/$basearch/os
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+gpgcheck=0
+repo_gpgcheck=0
+metadata_expire=6h
+countme=1
+enabled=1
+
+[baseos-debuginfo]
+name=CentOS Stream $releasever - BaseOS - Debug
+baseurl=https://mirrors.tencent.com/centos-stream/$releasever-stream/BaseOS/$basearch/debug/tree/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+gpgcheck=0
+repo_gpgcheck=0
+metadata_expire=6h
+enabled=0
+
+[baseos-source]
+name=CentOS Stream $releasever - BaseOS - Source
+baseurl=https://mirrors.tencent.com/centos-stream/$releasever-stream/BaseOS/source/tree/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+gpgcheck=0
+repo_gpgcheck=0
+metadata_expire=6h
+enabled=0
+
+[appstream]
+name=CentOS Stream $releasever - AppStream
+baseurl=https://mirrors.tencent.com/centos-stream/$releasever-stream/AppStream/$basearch/os
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+gpgcheck=0
+repo_gpgcheck=0
+metadata_expire=6h
+countme=1
+enabled=1
+
+[appstream-debuginfo]
+name=CentOS Stream $releasever - AppStream - Debug
+baseurl=https://mirrors.tencent.com/centos-stream/$releasever-stream/AppStream/$basearch/debug/tree/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+gpgcheck=0
+repo_gpgcheck=0
+metadata_expire=6h
+enabled=0
+
+[appstream-source]
+name=CentOS Stream $releasever - AppStream - Source
+baseurl=https://mirrors.tencent.com/centos-stream/$releasever-stream/AppStream/source/tree/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+gpgcheck=0
+repo_gpgcheck=0
+metadata_expire=6h
+enabled=0
+
+[crb]
+name=CentOS Stream $releasever - CRB
+baseurl=https://mirrors.tencent.com/centos-stream/$releasever-stream/CRB/$basearch/os
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+gpgcheck=0
+repo_gpgcheck=0
+metadata_expire=6h
+countme=1
+enabled=1
+
+[crb-debuginfo]
+name=CentOS Stream $releasever - CRB - Debug
+baseurl=https://mirrors.tencent.com/centos-stream/$releasever-stream/CRB/$basearch/debug/tree/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+gpgcheck=0
+repo_gpgcheck=0
+metadata_expire=6h
+enabled=0
+
+[crb-source]
+name=CentOS Stream $releasever - CRB - Source
+baseurl=https://mirrors.tencent.com/centos-stream/$releasever-stream/CRB/source/tree/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+gpgcheck=0
+repo_gpgcheck=0
+metadata_expire=6h
+enabled=0
