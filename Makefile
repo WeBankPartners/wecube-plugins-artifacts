@@ -1,7 +1,7 @@
 current_dir=$(shell pwd)
-version=$(shell bash ./build/version.sh)
+version=${PLUGIN_VERSION}
 date=$(shell date +%Y%m%d%H%M%S)
-project_name=$(shell basename "${current_dir}")
+project_name ?= $(shell basename "${current_dir}")
 remote_docker_image_registry=ccr.ccs.tencentyun.com/webankpartners/wecube-plugins-artifacts
 arch ?= amd64          # 默认amd64，可选 ARCH=amd64/arm64
 with_nexus ?= true     # 默认true，可选 WITH_NEXUS=true/false
