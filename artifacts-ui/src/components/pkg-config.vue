@@ -261,6 +261,23 @@
                 </Col>
               </Row>
             </div>
+
+            <!-- 自定义脚本输入（镜像部署脚本） -->
+            <div style="margin-top: 16px;">
+              <Row>
+                <Col span="3" style="margin-top: 6px">
+                  <span>{{ $t('art_script_content') }}</span>
+                </Col>
+                <Col span="21">
+                  <Input
+                    type="textarea"
+                    :autosize="{ minRows: 6 }"
+                    v-model="packageInput.image_deploy_script"
+                    :placeholder="$t('art_script_content')"
+                  />
+                </Col>
+              </Row>
+            </div>
           </div>
         </TabPane>
         <TabPane :disabled="disableDBCard" :label="$t('DB')" name="DB">
@@ -525,7 +542,8 @@ export default {
         db_deploy_file_directory: [], // DB部署脚本
         db_deploy_file_path: [],
 
-        upgrade_cleanup_file_path: [] // 升级清理目录
+        upgrade_cleanup_file_path: [], // 升级清理目录
+        image_deploy_script: ''
       },
       packageDetail: {
         baseline_package: null,
@@ -552,7 +570,8 @@ export default {
         db_deploy_file_directory: [], // DB部署脚本
         db_deploy_file_path: [],
 
-        upgrade_cleanup_file_path: [] // 升级清理目录
+        upgrade_cleanup_file_path: [], // 升级清理目录
+        image_deploy_script: ''
       },
       packageType: '', // 包类型
       baselinePackageOptions: [], // 基线包下拉框数据
@@ -688,6 +707,8 @@ export default {
               }
             ]
           : JSON.parse(JSON.stringify(this.packageDetail.upgrade_cleanup_file_path))
+
+      this.packageInput.image_deploy_script = this.packageDetail.image_deploy_script || ''
 
       this.$nextTick(() => {
         this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code))
@@ -825,6 +846,7 @@ export default {
                 exists: false
               }
             ]
+        this.packageInput.image_deploy_script = found.image_deploy_script || ''
         this.$nextTick(() => {
           this.packageInput.key_service_code = found.key_service_code ? JSON.parse(JSON.stringify(found.key_service_code)) : []
         })
@@ -946,7 +968,8 @@ export default {
         db_deploy_file_directory: [], // DB部署脚本
         db_deploy_file_path: [],
 
-        upgrade_cleanup_file_path: [] // 升级清理目录
+        upgrade_cleanup_file_path: [], // 升级清理目录
+        image_deploy_script: ''
       }
     },
     // 获取基线列表
@@ -1543,7 +1566,9 @@ export default {
         db_deploy_file_path: this.packageInput.db_deploy_file_path,
         upgrade_cleanup_file_path: this.packageInput.upgrade_cleanup_file_path,
 
-        key_service_code: this.packageInput.key_service_code
+        key_service_code: this.packageInput.key_service_code,
+
+        image_deploy_script: this.packageInput.image_deploy_script
       }
       this.saveConfigLoading = true
       let { status } = await updatePackage(this.guid, this.packageId, obj)

@@ -241,7 +241,8 @@ class UnitDesignPackages(WeCubeResource):
             "description", "package_type", "stop_file_path", "start_file_path", "state", "fixed_date", "unit_design",
             "is_decompression", "db_deploy_file_path", "created_by", "db_rollback_directory", "key_name",
             "db_upgrade_directory", "upload_time", "upload_user", "deploy_file_path", "diff_conf_file",
-            "db_diff_conf_file", "name", "updated_by", "guid", "created_date", "updated_date", "md5_value", "state_code"
+            "db_diff_conf_file", "name", "updated_by", "guid", "created_date", "updated_date", "md5_value", "state_code",
+            "image_deploy_script"
         ])
 
     def list_by_post(self, query, unit_design_id):
@@ -632,6 +633,11 @@ class UnitDesignPackages(WeCubeResource):
                                  rule_type='type',
                                  converter=FileNameConcater(),
                                  nullable=False),
+            crud.ColumnValidator('image_deploy_script',
+                                 validate_on=['update:O'],
+                                 rule='0, 65535',
+                                 rule_type='length',
+                                 nullable=True),
             crud.ColumnValidator('db_diff_conf_variable',
                                  validate_on=['update:O'],
                                  rule=(list, tuple),
@@ -836,6 +842,7 @@ class UnitDesignPackages(WeCubeResource):
         # db部署支持
         result['package_type'] = deploy_package['data'].get(
             'package_type', constant.PackageType.default) or constant.PackageType.default
+        result['image_deploy_script'] = deploy_package['data'].get('image_deploy_script', '')
         # 文件对比[same, changed, new, deleted]
         baseline_cached_dir = None
         package_cached_dir = None

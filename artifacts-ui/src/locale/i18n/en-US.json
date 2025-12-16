@@ -189,5 +189,6 @@
   "art_path_warn": "The cleanup path must not contain '../' or start with '/'.",
   "art_size": "Size",
   "art_file_type": "File Type",
-  "art_parse_fail": "Differentiated Variable Parsing Failed"
+  "art_parse_fail": "Differentiated Variable Parsing Failed",
+  "art_script_content": "Script Content"
 }
