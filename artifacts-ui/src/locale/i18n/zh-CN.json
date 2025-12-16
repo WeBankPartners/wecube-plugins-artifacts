@@ -190,5 +190,20 @@
   "art_size": "大小",
   "art_file_type": "文件类型",
   "art_parse_fail": "差异化变量解析失败",
-  "art_script_content": "脚本内容"
+  "art_script_content": "脚本内容",
+  "art_please_enter": "请输入",
+  "art_template_name": "模板名称",
+  "art_template_details": "模板详情",
+  "art_update_user": "更新人",
+  "art_delConfirm_tip": "删除数据将无法恢复,确认执行? ",
+  "art_add_template_bind": "新增绑定",
+  "art_variable_template_bind_name_exist": "变量名已存在, 请重新输入",
+  "art_required_variable_tips": "请将必填属性填写完毕",
+  "art_variable_confrim_modal_title": "确认新增变量参数",
+  "art_final_variable_value": "最终变量值",
+  "art_update_variable_value": "更新变量值",
+  "art_variable_template_name_exist": "模板名已存在, 请重新输入",
+  "art_template_not_allow_delete_tips": "该模板已绑定变量",
+  "art_not_allow_delete": "不允许删除!",
+  "art_edit_template_bind": "编辑绑定"
 }

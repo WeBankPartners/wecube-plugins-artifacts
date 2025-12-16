@@ -190,5 +190,20 @@
   "art_size": "Size",
   "art_file_type": "File Type",
   "art_parse_fail": "Differentiated Variable Parsing Failed",
-  "art_script_content": "Script Content"
+  "art_script_content": "Script Content",
+  "art_please_enter": "please Enter",
+  "art_template_name": "Template Name",
+  "art_template_details": "Template Details",
+  "art_update_user": "Update User",
+  "art_delConfirm_tip": "Deleting data cannot be restored. Are you sure to proceed?",
+  "art_add_template_bind": "Add Template Bind",
+  "art_variable_template_bind_name_exist": "Variable template bind name already exists",
+  "art_required_variable_tips": "Please fill in all the required fields",
+  "art_variable_confrim_modal_title": "Confirm added variable parameters",
+  "art_final_variable_value": "Final variable value",
+  "art_update_variable_value": "Update the variable value",
+  "art_variable_template_name_exist": "The template name already exists. Please re-enter",
+  "art_template_not_allow_delete_tips": "This template has been bound",
+  "art_not_allow_delete": "Not Allow Delete!",
+  "art_edit_template_bind": "Edit Template Bind"
 }

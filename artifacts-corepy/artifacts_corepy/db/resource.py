@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from talos.core import utils
 from talos.db import crud, validator
 from talos.utils import scoped_globals
+from sqlalchemy.orm import selectinload
 
 from artifacts_corepy.db import validator as my_validator
 from artifacts_corepy.db import models
@@ -40,7 +41,9 @@ class MetaCRUD(crud.ResourceBase):
 
 class DiffConfTemplate(MetaCRUD):
     orm_meta = models.DiffConfTemplate
-    _default_order = ['-id', 'update_time', 'create_time']
+    _default_order = ['-update_time', '-id']
+    # 关闭动态外键加载，避免在detail场景下对未显式包含的关系使用raiseload
+    _dynamic_relationship = False
 
     _validate = [
         crud.ColumnValidator(field='type',
@@ -67,14 +70,56 @@ class DiffConfTemplate(MetaCRUD):
                              orm_required=False),
     ]
 
+    def _apply_primary_key_filter(self, query, rid):
+        query = super()._apply_primary_key_filter(query, rid)
+        # 预加载 roles，避免在序列化阶段触发惰性加载异常
+        return query.options(selectinload(self.orm_meta.roles))
+
+    def _addtional_list(self, query, filters):
+        query = super()._addtional_list(query, filters)
+        # 列表查询同样预加载 roles，保证 list 响应包含 roles
+        return query.options(selectinload(self.orm_meta.roles))
+
     def _before_create(self, resource, validate):
         if 'id' not in resource and self._id_prefix:
             resource['id'] = utils.generate_prefix_uuid(self._id_prefix)
         resource['create_user'] = scoped_globals.GLOBALS.request.auth_user or None
+        # 在创建时同时设置 update_user，确保新增记录的 update_user 不为空
+        resource['update_user'] = scoped_globals.GLOBALS.request.auth_user or None
 
         # 单独校验 code，返回人性化报错信息
         if self.list({'code': resource['code']}):
             raise exceptions.ValidationError('code: %s exist error, please check' % resource['code'])
+
+
+# ... existing code ...
+
+class PrivateVariableTemplate(MetaCRUD):
+    orm_meta = models.PrivateVariableTemplate
+    _default_order = ['-update_time', '-id']
+
+    _validate = [
+        crud.ColumnValidator(field='name',
+                             rule=my_validator.LengthValidator(1, 36),
+                             validate_on=('create:R', 'update:O')),
+        crud.ColumnValidator(field='diff_conf_template_id',
+                             rule=my_validator.validator.NumberValidator(),
+                             validate_on=('create:R', 'update:O')),
+        crud.ColumnValidator(field='description',
+                             rule=my_validator.LengthValidator(0, 128),
+                             validate_on=('create:O', 'update:O')),
+        crud.ColumnValidator(field='create_user', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='create_time', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='update_user', validate_on=('*:O',), nullable=True),
+        crud.ColumnValidator(field='update_time', validate_on=('*:O',), nullable=True),
+    ]
+
+    def _before_create(self, resource, validate):
+        if 'id' not in resource and self._id_prefix:
+            resource['id'] = utils.generate_prefix_uuid(self._id_prefix)
+        resource['create_user'] = scoped_globals.GLOBALS.request.auth_user or None
+        # 在创建时同时设置 update_user，确保新增记录的 update_user 不为空
+        resource['update_user'] = scoped_globals.GLOBALS.request.auth_user or None
 
 class DiffConfTemplateRole(crud.ResourceBase):
     orm_meta = models.DiffConfTemplateRole

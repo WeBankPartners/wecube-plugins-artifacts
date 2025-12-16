@@ -1,11 +1,11 @@
 <template>
-  <Modal v-model="flowRoleManageModal" width="1000" :fullscreen="fullscreen" :mask-closable="false" class="platform-base-role-transfer">
+  <Modal v-model="flowRoleManageModal" width="1000" :fullscreen="fullscreen" :mask-closable="false" class="platform-base-role-transfer" @wheel.stop>
     <div slot="header" style="display: flex;align-items: center;justify-content: space-between;">
       <h6>{{ isAdd ? $t('art_add_template') : $t('art_edit_template') }}</h6>
       <!-- <Icon v-if="!fullscreen" @click="zoomModalMax" class="header-icon" type="ios-expand" />
       <Icon v-else @click="zoomModalMin" class="header-icon" type="ios-contract" /> -->
     </div>
-    <div v-if="flowRoleManageModal" class="flow-role-transfer-container" :style="{ height: fileContentHeight + 'px' }">
+    <div v-if="flowRoleManageModal" class="flow-role-transfer-container" :style="{ height: fileContentHeight + 'px' }" @wheel.stop>
       <Form :label-width="90">
         <FormItem :label="$t('art_name')" style="margin-bottom: 0;">
           <Input v-model="templateParams.code" @input="templateParams.code = templateParams.code.trim()" :placeholder="$t('art_name')" maxlength="30" show-word-limit style="width: 96%"></Input>
@@ -13,6 +13,7 @@
         <FormItem label="" style="display: none;">
           <Input v-model="templateParams.value" type="textarea"></Input>
         </FormItem>
+        <slot name="formItem"></slot>
       </Form>
       <div v-if="isAdd" style="margin-bottom: 0;margin: 0 50px;">
         <template v-if="customParamsName.length > 0">
@@ -59,7 +60,8 @@
   </Modal>
 </template>
 <script>
-import { getRoleList, getCurrentUserRoles, saveTemplate, updateTemplate } from '@/api/server.js'
+import { isEmpty } from 'lodash'
+import { getRoleList, getCurrentUserRoles, saveTemplate, updateTemplate, getTemplate } from '@/api/server.js'
 export default {
   props: {
     useRolesRequired: {
@@ -124,7 +126,35 @@ export default {
     handleUseRoleTransferChange (newTargetKeys) {
       this.useRolesKeyToFlow = newTargetKeys
     },
+    async isCodeHasExit (info, isAdd) {
+      return new Promise(async (resolve, reject) => {
+        let params = {
+          __offset: 0,
+          __limit: 1000,
+          code: info.code
+        }
+        const queryString = new URLSearchParams(params).toString()
+        const res = await getTemplate(queryString)
+        if (isAdd) {
+          if (res.data.count > 0) {
+            resolve(true)
+          } else {
+            resolve(false)
+          }
+        } else {
+          if (res.data.count > 1) {
+            resolve(true)
+          } else {
+            resolve(false)
+          }
+        }
+      })
+    },
     async saveAsTemplate () {
+      if (this.templateParams.code && (await this.isCodeHasExit(this.templateParams, this.isAdd))) {
+        this.$Message.error(this.$t('art_variable_template_name_exist'))
+        return
+      }
       this.templateParams.roles.MGMT = this.mgmtRolesKeyToFlow
       this.templateParams.roles.USE = this.useRolesKeyToFlow
       let method = null
@@ -138,6 +168,10 @@ export default {
         method = updateTemplate
         params = this.templateParams
       }
+      if (isEmpty(this.templateParams.value)) {
+        this.$Message.error(this.$t('art_value_rule') + this.$t('art_cannot_be_empty'))
+        return
+      }
       const { status } = await method(params, this.templateParams.id)
       if (status === 'OK') {
         this.$Notice.success({
@@ -146,6 +180,8 @@ export default {
         this.flowRoleManageModal = false
         if (!this.isAdd) {
           this.$emit('reloadTableData')
+        } else {
+          this.$emit('addTableItemSuccess')
         }
       }
     },
@@ -396,6 +432,8 @@ export default {
 .flow-role-transfer-container {
   min-width: 700px;
   overflow-y: auto;
+  position: relative;
+  z-index: 1000;
 }
 .header-icon {
   font-size: 16px;

@@ -34,6 +34,7 @@ from artifacts_corepy.common import wecmdbv2 as wecmdb
 from artifacts_corepy.common import utils as artifact_utils
 from artifacts_corepy.common import constant
 from artifacts_corepy.common.wecmdbv2 import URL_PREFIX
+from artifacts_corepy.db import resource
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -1010,7 +1011,7 @@ class UnitDesignPackages(WeCubeResource):
             package_rows[0]['guid'] = exist_package['guid']
             package_result = self.pure_update(package_rows)
         new_package_guid = package_result['data'][0]['guid']
-        new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
+        new_deploy_attrs, new_create_cmdb_variables = self._analyze_package_attrs(new_package_guid, baseline_package, {
             field_pkg_package_type_name: package_type,
             'subsystem_design_guid': unit_design['subsystem_design']['guid']
         })
@@ -1023,9 +1024,8 @@ class UnitDesignPackages(WeCubeResource):
         
         if field_pkg_db_diff_conf_var_name in new_deploy_attrs and isinstance(new_deploy_attrs[field_pkg_db_diff_conf_var_name], list) and new_deploy_attrs[field_pkg_db_diff_conf_var_name]:
             new_deploy_attrs[field_pkg_db_diff_conf_var_name] = list(set(new_deploy_attrs[field_pkg_db_diff_conf_var_name]))
-
         self.pure_update([new_deploy_attrs]) 
-        return [self._get_deploy_package_by_id(new_package_guid)]
+        return [self._get_deploy_package_by_id(new_package_guid), new_create_cmdb_variables]
 
     def upload_from_nexus(self, download_url, baseline_package, package_type, unit_design_id):
         if not package_type:
@@ -1101,14 +1101,14 @@ class UnitDesignPackages(WeCubeResource):
                 package_rows[0]['guid'] = exist_package['guid']
                 package_result = self.pure_update(package_rows)
             new_package_guid = package_result['data'][0]['guid']
-            new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
+            new_deploy_attrs, new_create_cmdb_variables = self._analyze_package_attrs(new_package_guid, baseline_package, {
                 field_pkg_package_type_name: package_type,
                 'subsystem_design_guid': unit_design['subsystem_design']['guid']
             })
             # update 属性
             new_deploy_attrs['guid'] = new_package_guid
             self.pure_update([new_deploy_attrs])
-            return [self._get_deploy_package_by_id(new_package_guid)]
+            return [self._get_deploy_package_by_id(new_package_guid), new_create_cmdb_variables]
         else:
             # 从本地Nexus下载并上传到远端Nexus中
             l_nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
@@ -1159,14 +1159,14 @@ class UnitDesignPackages(WeCubeResource):
                         package_rows[0]['guid'] = exist_package['guid']
                         package_result = self.pure_update(package_rows)
                     new_package_guid = package_result['data'][0]['guid']
-                    new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
+                    new_deploy_attrs, new_create_cmdb_variables = self._analyze_package_attrs(new_package_guid, baseline_package, {
                         field_pkg_package_type_name: package_type,
                         'subsystem_design_guid': unit_design['subsystem_design']['guid']
                     })
                     # update 属性
                     new_deploy_attrs['guid'] = new_package_guid
                     self.pure_update([new_deploy_attrs])
-                    return [self._get_deploy_package_by_id(new_package_guid)]
+                    return [self._get_deploy_package_by_id(new_package_guid), new_create_cmdb_variables]
 
     def upload_and_create(self, data):
         def _pop_none(d, k):
@@ -1281,7 +1281,7 @@ class UnitDesignPackages(WeCubeResource):
                     unit_design = resp_json['data']['contents'][0]
                     if clean_data['package_guid']:
                         # 有package_guid，则更新
-                        new_deploy_attrs = self._analyze_package_attrs(clean_data['package_guid'],
+                        new_deploy_attrs, new_create_cmdb_variables = self._analyze_package_attrs(clean_data['package_guid'],
                                                                        clean_data['baseline_package_guid'], {
                                                                             field_pkg_package_type_name: clean_data.get(
                                                                                'package_type'),
@@ -1514,7 +1514,7 @@ class UnitDesignPackages(WeCubeResource):
             auto_bind = False
         # 根据diff_conf_file计算变量进行更新绑定
         if field_pkg_diff_conf_file_name in data and auto_bind:
-            bind_variables, new_create_variables = self._analyze_diff_var(deploy_package['guid'],
+            bind_variables, new_create_variables, new_create_cmdb_variables = self._analyze_diff_var(deploy_package['guid'],
                                                                           deploy_package['deploy_package_url'],
                                                                           deploy_package[field_pkg_diff_conf_file_name],
                                                                           data[field_pkg_diff_conf_file_name],
@@ -1531,7 +1531,7 @@ class UnitDesignPackages(WeCubeResource):
             db_auto_bind = False
         # 根据diff_conf_file计算变量进行更新绑定
         if field_pkg_db_diff_conf_file_name in data and db_auto_bind:
-            bind_variables, new_create_variables = self._analyze_diff_var(deploy_package['guid'],
+            bind_variables, new_create_variables, new_create_cmdb_variables = self._analyze_diff_var(deploy_package['guid'],
                                                                           deploy_package['deploy_package_url'],
                                                                           deploy_package[
                                                                               field_pkg_db_diff_conf_file_name],
@@ -1586,7 +1586,8 @@ class UnitDesignPackages(WeCubeResource):
             #获取这个列表 [{line: 4, name: 'password', key2: '@'}]
             # 差异化配置项的差异
             package_diff_configs = []
-            new_diff_configs = set()
+            new_diff_configs = set() # 由新创建的key_name组成的集合
+            new_diff_key_configs = set() # 由新创建的key组成的集合
             exist_diff_configs = set()
             # 获取subsystem_design_guid对应的subsystem_design_detail，拿到key_name
             subsystem_design_detail = self._get_subsystem_design_by_guid(subsystem_design_guid)
@@ -1625,6 +1626,7 @@ class UnitDesignPackages(WeCubeResource):
                 if diff_conf['key_name'] not in finder:
                     new_diff_configs.add(diff_conf['key_name'])
                     new_diff_configs_map[diff_conf['key_name']] = diff_conf
+                    new_diff_key_configs.add(diff_conf['key'])
                 else:
                     exist_diff_configs.add(finder[diff_conf['key_name']]['guid'])
                     # 找到变量之后还需要检测是否因更名而出现的变量
@@ -1633,32 +1635,71 @@ class UnitDesignPackages(WeCubeResource):
             # 创建新的差异化变量项
             bind_variables = list(exist_diff_configs)
             new_create_variables = []
+            new_create_cmdb_variables = []
+            private_variable_templates = []
             # LOG.debug("new_create_variables: %s", new_create_variables)
             if new_diff_configs:
                 # 处理模板替换
-                for var_name in new_diff_configs:
-                    diff_conf = new_diff_configs_map[var_name]
-                    if diff_conf['type'] in field_diff_conf_tpl_map:
-                        diff_conf_tpl = field_diff_conf_tpl_map[diff_conf['type']]
-                        if diff_conf_tpl:
-                            # 替换模板值 $& var_name &$
-                            replace_pattern = r'\$&\s*([a-zA-Z0-9_-]+?)\s*\$&'
-                            diff_conf['value'] = re.sub(replace_pattern, var_name, diff_conf_tpl)
+                if new_diff_key_configs:
+                    private_variable_templates = self._get_private_variable_templates_by_names(new_diff_key_configs)
+
+                # for var_name in new_diff_configs:
+                #     diff_conf = new_diff_configs_map[var_name]
+                #     if diff_conf['type'] in field_diff_conf_tpl_map:
+                #         diff_conf_tpl = field_diff_conf_tpl_map[diff_conf['type']]
+                #         if diff_conf_tpl:
+                #             # 替换模板值 $& var_name &$
+                #             replace_pattern = r'\$&\s*([a-zA-Z0-9_-]+?)\s*\$&'
+                #             diff_conf['value'] = re.sub(replace_pattern, var_name, diff_conf_tpl)
                 resp_json = cmdb_client.create(CONF.wecube.wecmdb.citypes.diff_config, [{
                     'code': new_diff_configs_map.get(c, {}).get('key', ''),
                     'variable_name': new_diff_configs_map.get(c, {}).get('key', ''),
                     'description': new_diff_configs_map.get(c, {}).get('key', ''),
-                    'variable_value': new_diff_configs_map.get(c, {}).get('value', ''),
+                    'variable_value': new_diff_configs_map.get(c, {}).get('value', '') or next((item['diff_conf_template']['value'] for item in private_variable_templates if item['name'] == new_diff_configs_map.get(c, {}).get('key', '')), ''),
                     'variable_type': self._conv_diff_conf_type(new_diff_configs_map.get(c, {}).get('type', '')),
                     'subsystem_design': subsystem_design_guid if self._conv_diff_conf_type(new_diff_configs_map.get(c, {}).get('type', '')) in need_subsystem_design_type else None
                 } for c in new_diff_configs])
                 new_create_variables = [c['guid'] for c in resp_json['data']]
+                new_create_cmdb_variables = [{"guid": item["guid"], "variable_value": item["variable_value"], "variable_name": item["variable_name"], "variable_type": item["variable_type"]} for item in resp_json['data']]
+                # new_create_cmdb_variables = {
+                #     "final_arr": [{"guid": item["guid"], "variable_value": item["variable_value"], "variable_name": item["variable_name"], "variable_type": item["variable_type"]} for item in resp_json['data']],
+                #     "private_variable_templates": private_variable_templates,
+                #     "new_diff_configs_map": new_diff_configs_map,
+                #     "new_diff_configs": list(new_diff_configs),
+                #     "new_diff_key_configs": list(new_diff_key_configs),
+                #     "new_conf_list": new_conf_list,
+                # }
                 bind_variables.extend(new_create_variables)
             # LOG.debug("bind_variables: %s", bind_variables)
             for v in rename_new_variables:
                 new_create_variables.append(v)
-            return bind_variables, new_create_variables
-        return None, None
+            return bind_variables, new_create_variables, new_create_cmdb_variables
+        return None, None, None
+    
+    def _get_private_variable_templates_by_names(self, variable_names):
+        # 根据变量名称列表查询私有变量模板信息
+        if not variable_names:
+            return []
+        try:
+            # 创建 PrivateVariableTemplate 资源实例
+            private_var_template = resource.PrivateVariableTemplate()
+            
+            # 构建查询过滤器
+            filters = {
+                'name': {
+                    'in': variable_names
+                }
+            }
+            
+            # 执行查询
+            results = private_var_template.list(filters=filters)
+            
+            LOG.info('Found %d private variable templates for names: %s', len(results), variable_names)
+            return results
+            
+        except Exception as e:
+            LOG.error('Failed to query private variable templates: %s', str(e))
+            return []
 
     def find_files_by_status(self, baseline_id, package_id, source_dirs, status):
         results = []
@@ -1969,7 +2010,7 @@ class UnitDesignPackages(WeCubeResource):
                                                 field_pkg_is_decompression_default_value) or field_pkg_is_decompression_default_value
         key_service_code = baseline_package.get(field_pkg_key_service_code_name,
                                                 field_pkg_key_service_code_default_value) or field_pkg_key_service_code_default_value
-        new_deploy_package_attrs = self._analyze_package_attrs(deploy_package_id, baseline_package_id, {
+        new_deploy_package_attrs, new_create_cmdb_variables = self._analyze_package_attrs(deploy_package_id, baseline_package_id, {
             field_pkg_package_type_name: package_type,
             field_pkg_is_decompression_name: is_decompression,
             field_pkg_key_service_code_name: key_service_code,
@@ -2478,6 +2519,8 @@ class UnitDesignPackages(WeCubeResource):
                                do_bind_vars=True,) -> map:
         # input_attrs都是以CMDB字段值方式传递，比如列表实际上是A|B|C格式
         ret_data = {}
+        # 保存每次新增的变量，之前的new_create_variables字段不能表征，故新加一个变量
+        new_create_cmdb_variables = []
         subsystem_design_guid = input_attrs.get('subsystem_design_guid', None)
         # 基于subsystem_design_guid获取subsystem_design_key_name
         subsystem_design_detail = self._get_subsystem_design_by_guid(subsystem_design_guid)
@@ -2526,7 +2569,7 @@ class UnitDesignPackages(WeCubeResource):
                 if do_bind_vars:
                     # 主要逻辑
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
-                    bind_variables, new_create_variables = self._analyze_diff_var(package_id,
+                    bind_variables, new_create_variables, new_create_cmdb_variables = self._analyze_diff_var(package_id,
                                                                                   deploy_package['deploy_package_url'],
                                                                                   [], conf_files, subsystem_design_guid)
                     if bind_variables is not None:
@@ -2579,7 +2622,7 @@ class UnitDesignPackages(WeCubeResource):
                             if conf['guid'] not in baseline_bind_variables:
                                 baseline_unbind_variables.add(conf['guid'])
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
-                    bind_variables, new_create_variables = self._analyze_diff_var(package_id,
+                    bind_variables, new_create_variables, new_create_cmdb_variables = self._analyze_diff_var(package_id,
                                                                                   deploy_package['deploy_package_url'],
                                                                                   [], conf_files, subsystem_design_guid,
                                                                                   baseline_unbind_variables)
@@ -2604,7 +2647,7 @@ class UnitDesignPackages(WeCubeResource):
                 ret_data[field_pkg_diff_conf_file_name] = FilePathConcater().convert(filtered_file_objs)
                 if do_bind_vars:
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
-                    bind_variables, new_create_variables = self._analyze_diff_var(package_id,
+                    bind_variables, new_create_variables, new_create_cmdb_variables = self._analyze_diff_var(package_id,
                                                                                   deploy_package['deploy_package_url'],
                                                                                   [], conf_files, subsystem_design_guid)
                     if bind_variables is not None:
@@ -2665,7 +2708,7 @@ class UnitDesignPackages(WeCubeResource):
                             if conf['guid'] not in baseline_bind_variables:
                                 baseline_unbind_variables.add(conf['guid'])
                     conf_files = self.build_file_object(ret_data[field_pkg_diff_conf_file_name])
-                    bind_variables, new_create_variables = self._analyze_diff_var(package_id,
+                    bind_variables, new_create_variables, new_create_cmdb_variables = self._analyze_diff_var(package_id,
                                                                                   deploy_package['deploy_package_url'],
                                                                                   [], conf_files, subsystem_design_guid,
                                                                                   baseline_unbind_variables)
@@ -3019,7 +3062,7 @@ class UnitDesignPackages(WeCubeResource):
                             if fnmatch.fnmatch(f['filename'], '*' + ext):
                                 filtered_file_objs.append(f)
                     ret_data[field_pkg_db_rollback_file_path_name] = FileNameConcater().convert(filtered_file_objs)
-        return ret_data
+        return ret_data, new_create_cmdb_variables
 
 
 class UnitDesignNexusPackages(WeCubeResource):

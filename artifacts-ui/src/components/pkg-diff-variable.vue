@@ -23,8 +23,8 @@
               <div>{{ $t('artifacts_loading') }}</div>
             </Spin>
             <div style="margin-bottom: 8px;">
-              <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;">
-                <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+              <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:480px;">
+                <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.key_name }}</Option>
               </Select>
               <Button type="primary" style="margin-left: 24px;" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
@@ -36,7 +36,7 @@
                       <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
                     </RadioGroup>
                   </div>
-                  <Table :data="tempTableData" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"></Table>
+                  <Table :data="tempTableData" :height="maxHeight" :columns="attrsTableColomnOptions" size="small"> </Table>
                 </div>
               </TabPane>
             </Tabs>
@@ -52,8 +52,8 @@
               <div>{{ $t('artifacts_loading') }}</div>
             </Spin>
             <div style="margin-bottom: 8px;">
-              <Select clearable filterable @on-change="getVariableValue('db')" @on-open-change="getCalcInstance('db')" :placeholder="$t('art_trial_instance')" v-model="calcDBInstance" style="width:300px;">
-                <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+              <Select clearable filterable @on-change="getVariableValue('db')" @on-open-change="getCalcInstance('db')" :placeholder="$t('art_trial_instance')" v-model="calcDBInstance" style="width:480px;">
+                <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.key_name }}</Option>
               </Select>
               <Button type="primary" :disabled="packageDetail.db_diff_conf_file.length === 0" style="margin-left:24px" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
@@ -65,7 +65,7 @@
                       <Radio v-for="prefix in variablePrefixType" :label="prefix.key" :key="prefix.key" :disabled="getNum(item.configKeyInfos || [], prefix.filterKey) === 0">{{ prefix.label }}({{ getNum(item.configKeyInfos || [], prefix.filterKey) }})</Radio>
                     </RadioGroup>
                   </div>
-                  <Table :data="tempTableData" :columns="attrsTableColomnOptions" :height="maxHeight" size="small"></Table>
+                  <Table :data="tempTableData" :columns="attrsTableColomnOptions" :height="maxHeight" size="small"> </Table>
                 </div>
               </TabPane>
             </Tabs>
@@ -92,7 +92,7 @@
       </div>
       <div style="display: flex;gap: 8px;margin-bottom: 8px;">
         <Select style="width: 200px;" @on-change="remoteConfigSearch()" v-model="tempCopyParams.variable_type">
-          <Option v-for="item in ['ALL', 'GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE']" :value="item" :key="item">{{ item }}</Option>
+          <Option v-for="item in ['ALL', 'GLOBAL', 'PRIVATE', 'ENCRYPTED', 'FILE']" :value="item" :key="item">{{ item }} </Option>
         </Select>
         <Input style="width: 200px;" v-model="tempCopyParams.variable_name" @on-change="remoteConfigSearch()" :placeholder="$t('art_variable_name')" clearable />
         <Select style="width: 200px;" clearable filterable @on-change="remoteConfigSearch()" @on-clear="tempCopyParams.create_user = ''" :placeholder="$t('art_creator')" v-model="tempCopyParams.create_user">
@@ -167,7 +167,7 @@
 </template>
 
 <script>
-import { deleteTemplate, getCalcInstance, getDiffVariable, getPackageCiTypeId, getPackageDetail, getSpecialConnector, getSystemDesignVersions, getTemplate, getUserList, getVariableValue, updateEntity, updatePackage } from '@/api/server.js'
+import { deleteTemplate, getCalcInstance, getDiffVariable, getPackageCiTypeId, getPackageDetail, getSpecialConnector, getSystemDesignVersions, getTemplate, getUserList, getVariableValue, updateEntity, updatePackage, getCurrentUserRoles } from '@/api/server.js'
 import DiffVariableTemplate from '@/components/diff-variable-template'
 import ParseFail from '@/components/parse-fail'
 import { getCookie, setCookie } from '@/util/cookie.js'
@@ -513,17 +513,20 @@ export default {
           fixed: 'right',
           width: 120,
           render: (h, params) => {
+            const mgmtRolesKeyToFlow = params.row.roles.filter(r => r.permission === 'MGMT').map(r => r.role)
+            const strArray = this.currentUserRoles.filter(item => mgmtRolesKeyToFlow.includes(item.name))
+            const isDisabled = !(strArray.length > 0)
             return (
               <div style="padding-top:5px">
                 <div>
                   <Tooltip content={this.$t('art_permissions')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" type="warning" onClick={() => this.templateAuth(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
-                      <Icon type="ios-person" color="white" size="16"></Icon>
+                    <Button size="small" type="primary" disabled={isDisabled} onClick={() => this.templateAuth(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
+                      <Icon type="md-create" size="16" />
                     </Button>
                   </Tooltip>
                   <Tooltip content={this.$t('art_delete')} placement="top" delay={500} transfer={true}>
-                    <Button size="small" type="error" onClick={() => this.templateDelete(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
-                      <Icon type="md-trash" color="white" size="16"></Icon>
+                    <Button size="small" type="error" disabled={isDisabled} onClick={() => this.templateDelete(params.row, event)} style={{ marginRight: '5px', marginBottom: '2px' }}>
+                      <Icon type="md-trash" size="16"></Icon>
                     </Button>
                   </Tooltip>
                 </div>
@@ -555,7 +558,8 @@ export default {
       variableAppValue: {}, // 缓存试算结果
       calcDBInstance: '', // 待试算实例
       calcDBInstanceOptions: [], // 待试算实例选项
-      variableDBValue: {} // 缓存试算结果
+      variableDBValue: {}, // 缓存试算结果
+      currentUserRoles: []
     }
   },
   computed: {},
@@ -1493,11 +1497,22 @@ export default {
     zoomModalMin () {
       this.fileContentHeight = window.screen.availHeight * 0.4 + 100
       this.fullscreen = false
+    },
+    async getCurrentUserRoles () {
+      const { status, data } = await getCurrentUserRoles()
+      if (status === 'OK') {
+        this.currentUserRoles = data.map(_ => ({
+          ..._,
+          key: _.name,
+          label: _.displayName
+        }))
+      }
     }
   },
   created () {
     this.fetchData()
     this.getSpecialConnector()
+    this.getCurrentUserRoles()
   },
   components: {
     RuleTable,
@@ -1529,6 +1544,7 @@ export default {
   position: fixed;
   bottom: 20px;
 }
+
 .btn-img {
   width: 16px;
   vertical-align: middle;
@@ -1537,15 +1553,18 @@ export default {
 <style lang="scss">
 .pkg-variable {
   margin-bottom: 16px;
+
   .ivu-radio-group-button .ivu-radio-wrapper-checked {
     background: #5384ff;
     color: #fff;
   }
+
   .ivu-radio-group-button .ivu-radio-wrapper-checked:hover {
     border-color: #57a3f3;
     color: white;
   }
 }
+
 .custom-drawer {
   .ivu-drawer-body {
     height: calc(100% - 30px) !important;
