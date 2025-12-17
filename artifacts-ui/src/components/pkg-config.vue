@@ -263,7 +263,7 @@
             </div>
 
             <!-- 自定义脚本输入（镜像部署脚本） -->
-            <div style="margin-top: 16px;">
+            <div style="margin-top: 16px;" v-if="isDockerPackageRunType">
               <Row>
                 <Col span="3" style="margin-top: 6px">
                   <span>{{ $t('art_script_content') }}</span>
@@ -479,6 +479,7 @@ export default {
       fullscreen: false,
       fileContentHeight: window.screen.availHeight * 0.4 + 'px',
       pkgName: '', // 当前选中的包名
+      packageRunType: 'VM', // DOCKER / VM
       isFileSelect: false, // 是否选择文件 适配文件夹和文件二选一场景
       isFileAndFolderSelectable: false, // 适配文件夹和文件都可选场景
       isShowKeyServiceCode: false,
@@ -613,6 +614,9 @@ export default {
     },
     disableDBCard () {
       return this.packageType === this.constPackageOptions.app
+    },
+    isDockerPackageRunType () {
+      return String(this.packageRunType || '').toUpperCase() === 'DOCKER'
     }
   },
   methods: {
@@ -668,6 +672,8 @@ export default {
       this.guid = guid
       this.packageId = row.guid
       await this.syncPackageDetail()
+      // 仅 DOCKER 包展示“脚本内容”输入框
+      this.packageRunType = this.packageDetail.package_run_type || row.package_run_type || 'VM'
       this.packageType = row.package_type || this.constPackageOptions.mixed
       this.currentConfigTab = this.packageType === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
       // 以下4个变量类型为字符串
@@ -1569,6 +1575,10 @@ export default {
         key_service_code: this.packageInput.key_service_code,
 
         image_deploy_script: this.packageInput.image_deploy_script
+      }
+      // 非 DOCKER 包不允许提交脚本内容，避免误写入
+      if (!this.isDockerPackageRunType) {
+        obj.image_deploy_script = ''
       }
       this.saveConfigLoading = true
       let { status } = await updatePackage(this.guid, this.packageId, obj)
