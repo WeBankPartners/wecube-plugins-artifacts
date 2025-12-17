@@ -983,23 +983,32 @@ export default {
       this.packageInput.baseline_package = ''
       this.baselinePackageOptions = []
       // resultColumns: ['guid', 'name', 'package_type', 'diff_conf_file', 'start_file_path', 'stop_file_path', 'deploy_file_path', 'is_decompression', 'db_diff_conf_file', 'db_upgrade_directory', 'db_rollback_directory', 'db_deploy_file_path', 'db_upgrade_file_path', 'db_rollback_file_path'],
+      const filters = [
+        {
+          name: 'guid',
+          operator: 'ne',
+          value: this.packageId
+        },
+        {
+          name: 'package_type',
+          operator: 'eq',
+          value: this.packageType
+        }
+      ]
+      // 根据当前物料包的 package_run_type 进行过滤
+      if (this.packageRunType) {
+        filters.push({
+          name: 'package_run_type',
+          operator: 'eq',
+          value: this.packageRunType
+        })
+      }
       let { status, data } = await queryPackages(this.guid, {
         sorting: {
           asc: false,
           field: 'upload_time'
         },
-        filters: [
-          {
-            name: 'guid',
-            operator: 'ne',
-            value: this.packageId
-          },
-          {
-            name: 'package_type',
-            operator: 'eq',
-            value: this.packageType
-          }
-        ],
+        filters: filters,
         paging: true,
         pageable: {
           pageSize: 1000,
