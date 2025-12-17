@@ -810,6 +810,10 @@ class UnitDesignPackages(WeCubeResource):
                     clean_data['baseline_package'], deploy_package_id,
                     clean_data['db_rollback_directory'].split('|') if clean_data['db_rollback_directory'] else [],
                     ['new', 'changed']))
+        # 确保 image_deploy_script 字段被包含在 clean_data 中
+        # ColumnValidator.get_clean_data 对于可选字段可能不会包含，需要显式添加
+        if 'image_deploy_script' in data:
+            clean_data['image_deploy_script'] = data['image_deploy_script']
         resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [clean_data])
         if with_detail:
             return self.get(unit_design_id, deploy_package_id)
