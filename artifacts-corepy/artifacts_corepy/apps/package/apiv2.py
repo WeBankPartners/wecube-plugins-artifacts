@@ -46,13 +46,15 @@ field_pkg_is_decompression_name = 'is_decompression'  # true,false as string
 field_pkg_package_type_name = 'package_type'  # APP DB APP&DB
 field_pkg_key_service_code_name = 'key_service_code'
 field_pkg_image_deploy_script_name = 'image_deploy_script'
+field_pkg_package_run_type_name = 'package_run_type'  # DOCKER / VM
 fields_pkg_common = [field_pkg_baseline_package_name, field_pkg_is_decompression_name, field_pkg_package_type_name,
-                     field_pkg_key_service_code_name, field_pkg_image_deploy_script_name]
+                     field_pkg_key_service_code_name, field_pkg_image_deploy_script_name, field_pkg_package_run_type_name]
 field_pkg_baseline_package_default_value = None
 field_pkg_is_decompression_default_value = 'true'
 field_pkg_package_type_default_value = constant.PackageType.default
 field_pkg_key_service_code_default_value = []
 field_pkg_image_deploy_script_default_value = ''
+field_pkg_package_run_type_default_value = 'VM'
 # APP
 field_pkg_diff_conf_directory_name = 'diff_conf_directory'
 field_pkg_diff_conf_file_name = 'diff_conf_file'
@@ -436,6 +438,24 @@ class UnitDesignPackages(WeCubeResource):
         # ])
         pass
 
+    def _infer_package_run_type_from_name(self, package_name: str) -> str:
+        """
+        根据物料包文件名推导运行类型：
+        - 包名带 docker 后缀（如 *_docker.tar.gz）=> DOCKER
+        - 否则 => VM
+        """
+        name = (package_name or '').strip().lower()
+        if not name:
+            return field_pkg_package_run_type_default_value
+        # 兼容常见后缀与命名形式：*_docker.tar.gz / *_docker.tgz / *_docker.zip / *_docker
+        if (name.endswith('_docker.tar.gz')
+                or name.endswith('_docker.tgz')
+                or name.endswith('_docker.zip')
+                or name.endswith('_docker')
+                or '_docker.' in name):
+            return 'DOCKER'
+        return 'VM'
+
     def list_by_post(self, query, unit_design_id):
         cmdb_client = self.get_cmdb_client()
         query.setdefault('dialect', {"queryMode": "new"})
@@ -455,6 +475,8 @@ class UnitDesignPackages(WeCubeResource):
                                                        field_pkg_key_service_code_default_value) or field_pkg_key_service_code_default_value
             i[field_pkg_image_deploy_script_name] = i.get(field_pkg_image_deploy_script_name,
                                                            field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
+            i[field_pkg_package_run_type_name] = i.get(field_pkg_package_run_type_name, None) or \
+                                                 self._infer_package_run_type_from_name(i.get('name', ''))
             fields = (field_pkg_diff_conf_directory_name, field_pkg_diff_conf_file_name,
                       field_pkg_script_file_directory_name, field_pkg_deploy_file_path_name,
                       field_pkg_start_file_path_name, field_pkg_stop_file_path_name,
@@ -722,6 +744,8 @@ class UnitDesignPackages(WeCubeResource):
             deploy_package['upload_user'] = force_operator or scoped_globals.GLOBALS.request.auth_user
             deploy_package['upload_time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             deploy_package['deploy_package_url'] = new_download_url
+            deploy_package[field_pkg_package_run_type_name] = self._infer_package_run_type_from_name(
+                deploy_package.get('name', ''))
             # 更新差异化变量配置
             deploy_package[field_pkg_diff_conf_var_name] = list(bind_app_diff_configs)
             deploy_package[field_pkg_db_diff_conf_var_name] = list(bind_db_diff_configs)
@@ -1006,7 +1030,8 @@ class UnitDesignPackages(WeCubeResource):
             'upload_user': scoped_globals.GLOBALS.request.auth_user,
             'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'unit_design': unit_design_id,
-            field_pkg_package_type_name: package_type
+            field_pkg_package_type_name: package_type,
+            field_pkg_package_run_type_name: self._infer_package_run_type_from_name(filename)
         }]
         exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
         if exist_package is None:
@@ -1096,7 +1121,8 @@ class UnitDesignPackages(WeCubeResource):
                 'upload_user': scoped_globals.GLOBALS.request.auth_user,
                 'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'unit_design': unit_design_id,
-                field_pkg_package_type_name: package_type
+                field_pkg_package_type_name: package_type,
+                field_pkg_package_run_type_name: self._infer_package_run_type_from_name(url_info['filename'])
             }]
             exist_package = self._get_deploy_package_by_name_unit(url_info['filename'], unit_design_id)
             if exist_package is None:
@@ -1154,7 +1180,8 @@ class UnitDesignPackages(WeCubeResource):
                             datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         'unit_design':
                             unit_design_id,
-                        field_pkg_package_type_name: package_type
+                        field_pkg_package_type_name: package_type,
+                        field_pkg_package_run_type_name: self._infer_package_run_type_from_name(filename)
                     }]
                     exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
                     if exist_package is None:
@@ -1453,6 +1480,8 @@ class UnitDesignPackages(WeCubeResource):
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
         # FIXME: patch for wecmdb, error update without code
         clean_data['code'] = deploy_package['name']
+        # package_run_type：根据包名自动推导并落 CMDB（不依赖前端传参）
+        clean_data[field_pkg_package_run_type_name] = self._infer_package_run_type_from_name(deploy_package.get('name'))
         # 校验app diff conf扩展名
         available_extensions = split_to_list(CONF.diff_conf_extension)
         if field_pkg_diff_conf_file_name in data:
@@ -1785,6 +1814,8 @@ class UnitDesignPackages(WeCubeResource):
         result[field_pkg_package_size_name] = int(result[field_pkg_package_size_name])
         result[field_pkg_key_service_code_name] = deploy_package[field_pkg_key_service_code_name]
         result[field_pkg_image_deploy_script_name] = deploy_package.get(field_pkg_image_deploy_script_name, '')
+        result[field_pkg_package_run_type_name] = deploy_package.get(field_pkg_package_run_type_name, None) or \
+                                                  self._infer_package_run_type_from_name(deploy_package.get('name', ''))
         # var 字段
         result[field_pkg_diff_conf_var_name] = deploy_package[field_pkg_diff_conf_var_name]
         result[field_pkg_db_diff_conf_var_name] = deploy_package.get(field_pkg_db_diff_conf_var_name, [])
@@ -1914,6 +1945,8 @@ class UnitDesignPackages(WeCubeResource):
         result[field_pkg_package_size_name] = int(result[field_pkg_package_size_name])
         result[field_pkg_key_service_code_name] = deploy_package[field_pkg_key_service_code_name]
         result[field_pkg_image_deploy_script_name] = deploy_package.get(field_pkg_image_deploy_script_name, '')
+        result[field_pkg_package_run_type_name] = deploy_package.get(field_pkg_package_run_type_name, None) or \
+                                                  self._infer_package_run_type_from_name(deploy_package.get('name', ''))
         # var 字段
         result[field_pkg_diff_conf_var_name] = deploy_package[field_pkg_diff_conf_var_name]
         result[field_pkg_db_diff_conf_var_name] = deploy_package.get(field_pkg_db_diff_conf_var_name, [])
