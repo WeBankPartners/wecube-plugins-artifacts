@@ -834,6 +834,7 @@ class UnitDesignPackages(WeCubeResource):
     def get(self, unit_design_id, deploy_package_id):
         cmdb_client = self.get_cmdb_client()
         query = {"filters": [{"name": "guid", "operator": "eq", "value": deploy_package_id}], "paging": False}
+        self.set_package_query_fields(query)
         resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
         if not resp_json.get('data', {}).get('contents', []):
             raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
