@@ -241,8 +241,7 @@ class UnitDesignPackages(WeCubeResource):
             "description", "package_type", "stop_file_path", "start_file_path", "state", "fixed_date", "unit_design",
             "is_decompression", "db_deploy_file_path", "created_by", "db_rollback_directory", "key_name",
             "db_upgrade_directory", "upload_time", "upload_user", "deploy_file_path", "diff_conf_file",
-            "db_diff_conf_file", "name", "updated_by", "guid", "created_date", "updated_date", "md5_value", "state_code",
-            "image_deploy_script"
+            "db_diff_conf_file", "name", "updated_by", "guid", "created_date", "updated_date", "md5_value", "state_code"
         ])
 
     def list_by_post(self, query, unit_design_id):
@@ -633,11 +632,6 @@ class UnitDesignPackages(WeCubeResource):
                                  rule_type='type',
                                  converter=FileNameConcater(),
                                  nullable=False),
-            crud.ColumnValidator('image_deploy_script',
-                                 validate_on=['update:O'],
-                                 rule='0, 65535',
-                                 rule_type='length',
-                                 nullable=True),
             crud.ColumnValidator('db_diff_conf_variable',
                                  validate_on=['update:O'],
                                  rule=(list, tuple),
@@ -805,15 +799,11 @@ class UnitDesignPackages(WeCubeResource):
                     clean_data['db_upgrade_directory'].split('|') if clean_data['db_upgrade_directory'] else [],
                     ['new', 'changed']))
         if db_rollback_detect:
-            clean_data['db_rollback_file_path'] = FileNameConcater().convert(
+                    clean_data['db_rollback_file_path'] = FileNameConcater().convert(
                 self.find_files_by_status(
                     clean_data['baseline_package'], deploy_package_id,
                     clean_data['db_rollback_directory'].split('|') if clean_data['db_rollback_directory'] else [],
                     ['new', 'changed']))
-        # 确保 image_deploy_script 字段被包含在 clean_data 中
-        # ColumnValidator.get_clean_data 对于可选字段可能不会包含，需要显式添加
-        if 'image_deploy_script' in data:
-            clean_data['image_deploy_script'] = data['image_deploy_script']
         resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [clean_data])
         if with_detail:
             return self.get(unit_design_id, deploy_package_id)
@@ -834,7 +824,6 @@ class UnitDesignPackages(WeCubeResource):
     def get(self, unit_design_id, deploy_package_id):
         cmdb_client = self.get_cmdb_client()
         query = {"filters": [{"name": "guid", "operator": "eq", "value": deploy_package_id}], "paging": False}
-        self.set_package_query_fields(query)
         resp_json = cmdb_client.retrieve(CONF.wecube.wecmdb.citypes.deploy_package, query)
         if not resp_json.get('data', {}).get('contents', []):
             raise exceptions.NotFoundError(message=_("Can not find ci data for guid [%(rid)s]") %
@@ -847,7 +836,6 @@ class UnitDesignPackages(WeCubeResource):
         # db部署支持
         result['package_type'] = deploy_package['data'].get(
             'package_type', constant.PackageType.default) or constant.PackageType.default
-        result['image_deploy_script'] = deploy_package['data'].get('image_deploy_script', '')
         # 文件对比[same, changed, new, deleted]
         baseline_cached_dir = None
         package_cached_dir = None

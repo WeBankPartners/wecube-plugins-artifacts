@@ -45,12 +45,14 @@ field_pkg_baseline_package_name = 'baseline_package'
 field_pkg_is_decompression_name = 'is_decompression'  # true,false as string
 field_pkg_package_type_name = 'package_type'  # APP DB APP&DB
 field_pkg_key_service_code_name = 'key_service_code'
+field_pkg_image_deploy_script_name = 'image_deploy_script'
 fields_pkg_common = [field_pkg_baseline_package_name, field_pkg_is_decompression_name, field_pkg_package_type_name,
-                     field_pkg_key_service_code_name]
+                     field_pkg_key_service_code_name, field_pkg_image_deploy_script_name]
 field_pkg_baseline_package_default_value = None
 field_pkg_is_decompression_default_value = 'true'
 field_pkg_package_type_default_value = constant.PackageType.default
 field_pkg_key_service_code_default_value = []
+field_pkg_image_deploy_script_default_value = ''
 # APP
 field_pkg_diff_conf_directory_name = 'diff_conf_directory'
 field_pkg_diff_conf_file_name = 'diff_conf_file'
@@ -451,6 +453,8 @@ class UnitDesignPackages(WeCubeResource):
                                                        field_pkg_is_decompression_default_value) or field_pkg_is_decompression_default_value
             i[field_pkg_key_service_code_name] = i.get(field_pkg_key_service_code_name,
                                                        field_pkg_key_service_code_default_value) or field_pkg_key_service_code_default_value
+            i[field_pkg_image_deploy_script_name] = i.get(field_pkg_image_deploy_script_name,
+                                                           field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
             fields = (field_pkg_diff_conf_directory_name, field_pkg_diff_conf_file_name,
                       field_pkg_script_file_directory_name, field_pkg_deploy_file_path_name,
                       field_pkg_start_file_path_name, field_pkg_stop_file_path_name,
@@ -1347,6 +1351,11 @@ class UnitDesignPackages(WeCubeResource):
             crud.ColumnValidator(field_pkg_package_type_name, validate_on=['update:O'], nullable=True),
             crud.ColumnValidator(field_pkg_key_service_code_name, validate_on=['update:O'], rule=(list, tuple),
                                  rule_type='type', nullable=True),
+            crud.ColumnValidator(field_pkg_image_deploy_script_name,
+                                 validate_on=['update:O'],
+                                 rule='0, 65535',
+                                 rule_type='length',
+                                 nullable=True),
             # app diff conf
             crud.ColumnValidator(field_pkg_diff_conf_directory_name, validate_on=['update:O'], rule=(list, tuple),
                                  rule_type='type',
@@ -1553,6 +1562,10 @@ class UnitDesignPackages(WeCubeResource):
                     split_to_list(clean_data[field_pkg_db_rollback_directory_name]) if clean_data[
                         field_pkg_db_rollback_directory_name] else [],
                     ['new', 'changed']))
+        # 确保 image_deploy_script 字段被包含在 clean_data 中
+        # ColumnValidator.get_clean_data 对于可选字段可能不会包含，需要显式添加
+        if field_pkg_image_deploy_script_name in data:
+            clean_data[field_pkg_image_deploy_script_name] = data[field_pkg_image_deploy_script_name]
         resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [clean_data],
                                        keep_origin_value=(field_pkg_key_service_code_name,))
         if with_detail:
@@ -1771,6 +1784,7 @@ class UnitDesignPackages(WeCubeResource):
         result[field_pkg_package_size_name] = deploy_package.get(field_pkg_package_size_name, 0) or 0
         result[field_pkg_package_size_name] = int(result[field_pkg_package_size_name])
         result[field_pkg_key_service_code_name] = deploy_package[field_pkg_key_service_code_name]
+        result[field_pkg_image_deploy_script_name] = deploy_package.get(field_pkg_image_deploy_script_name, '')
         # var 字段
         result[field_pkg_diff_conf_var_name] = deploy_package[field_pkg_diff_conf_var_name]
         result[field_pkg_db_diff_conf_var_name] = deploy_package.get(field_pkg_db_diff_conf_var_name, [])
@@ -1899,6 +1913,7 @@ class UnitDesignPackages(WeCubeResource):
         result[field_pkg_package_size_name] = deploy_package.get(field_pkg_package_size_name, 0) or 0
         result[field_pkg_package_size_name] = int(result[field_pkg_package_size_name])
         result[field_pkg_key_service_code_name] = deploy_package[field_pkg_key_service_code_name]
+        result[field_pkg_image_deploy_script_name] = deploy_package.get(field_pkg_image_deploy_script_name, '')
         # var 字段
         result[field_pkg_diff_conf_var_name] = deploy_package[field_pkg_diff_conf_var_name]
         result[field_pkg_db_diff_conf_var_name] = deploy_package.get(field_pkg_db_diff_conf_var_name, [])
