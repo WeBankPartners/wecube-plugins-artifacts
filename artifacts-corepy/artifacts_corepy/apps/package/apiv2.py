@@ -636,7 +636,7 @@ class UnitDesignPackages(WeCubeResource):
                 # 剩下的即是原始物料包
                 if len(filenames) == 1:
                     filename = filenames[0]
-                    filename = os.path.join(file_cache_dir, filename)
+                    fullpath = os.path.join(file_cache_dir, filename)
                     
                     nexus_server = None
                     if utils.bool_from_string(CONF.use_remote_nexus_only):
@@ -650,7 +650,7 @@ class UnitDesignPackages(WeCubeResource):
                         nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
                         artifact_path = self.build_local_nexus_path(unit_design)
                         artifact_repository = CONF.nexus.repository
-                    with open(filename, 'rb') as fileobj:
+                    with open(fullpath, 'rb') as fileobj:
                         upload_result = nexus_client.upload(artifact_repository, artifact_path, filename,
                                                             'application/octet-stream', fileobj)
                     new_download_url = upload_result['downloadUrl'].replace(nexus_server,
