@@ -6,11 +6,14 @@ import cgi
 import falcon
 import os
 import json
+import logging
 import urllib.parse
 from talos.core import utils
 from talos.core import config
 from talos.core.i18n import _
 from talos.common import controller as base_controller
+
+LOG = logging.getLogger(__name__)
 
 from artifacts_corepy.common.controller import Collection, Item, POSTCollection
 from artifacts_corepy.common import exceptions
@@ -370,13 +373,21 @@ class PushComposePackage(base_controller.Controller):
     resource = package_api.UnitDesignPackages
 
     def on_post(self, req, resp, **kwargs):
+        LOG.info('[PushComposePackage] Received POST request, path params: %s', kwargs)
         body_param = {}
         if hasattr(req, 'json'):
             body_param = req.json
+            LOG.info('[PushComposePackage] Request JSON body: %s', json.dumps(body_param, ensure_ascii=False))
+        else:
+            LOG.info('[PushComposePackage] Request has no JSON body')
+        LOG.info('[PushComposePackage] Request parameters - unit_design_id: %s, deploy_package_id: %s', 
+                 kwargs.get('unit_design_id'), kwargs.get('deploy_package_id'))
+        result = self.resource().push_compose_package(body_param, **kwargs)
+        LOG.info('[PushComposePackage] Push completed successfully, result: %s', json.dumps(result, ensure_ascii=False))
         resp.json = {
             'code': 200,
             'status': 'OK',
-            'data': self.resource().push_compose_package(body_param, **kwargs),
+            'data': result,
             'message': 'success'
         }
         resp.status = falcon.HTTP_200

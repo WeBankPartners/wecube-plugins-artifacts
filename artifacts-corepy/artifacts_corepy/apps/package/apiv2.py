@@ -795,32 +795,53 @@ class UnitDesignPackages(WeCubeResource):
     """
 
     def push_compose_package(self, params, unit_design_id: str, deploy_package_id: str):
+        LOG.info('[push_compose_package] Start push compose package, unit_design_id: %s, deploy_package_id: %s', 
+                 unit_design_id, deploy_package_id)
+        LOG.info('[push_compose_package] Request params: %s', json.dumps(params, ensure_ascii=False) if params else 'None')
+        
         filename, fileobj, filesize = self.download_compose_package(deploy_package_id)
+        LOG.info('[push_compose_package] Downloaded compose package, filename: %s, filesize: %s', 
+                 os.path.basename(filename), filesize)
+        
         # 新增nexus配置
         nexus_server = CONF.pushnexus.server.rstrip('/')
         nexus_repository = CONF.pushnexus.repository
         nexus_username = CONF.pushnexus.username
         nexus_password = CONF.pushnexus.password
+        LOG.info('[push_compose_package] Default nexus config - server: %s, repository: %s, username: %s', 
+                 nexus_server, nexus_repository, nexus_username)
         
         artifact_path = '/'
         if params and params.get('path', None):
             artifact_path = params['path']
+            LOG.info('[push_compose_package] Using artifact_path from params: %s', artifact_path)
         else:
             unit_design = self._get_unit_design_by_id(unit_design_id)
             artifact_path = self.get_unit_design_artifact_path(unit_design)
+            LOG.info('[push_compose_package] Using artifact_path from unit_design: %s', artifact_path)
         if params and params.get('server', None):
             nexus_server = params['server']
+            LOG.info('[push_compose_package] Override nexus_server from params: %s', nexus_server)
         if params and params.get('repository', None):
             nexus_repository = params['repository']
+            LOG.info('[push_compose_package] Override nexus_repository from params: %s', nexus_repository)
         if params and params.get('username', None):
             nexus_username = params['username']
+            LOG.info('[push_compose_package] Override nexus_username from params: %s', nexus_username)
         if params and params.get('password', None):
             nexus_password = params['password']
+            LOG.info('[push_compose_package] Override nexus_password from params: [REDACTED]')
+        
+        LOG.info('[push_compose_package] Final nexus config - server: %s, repository: %s, username: %s, artifact_path: %s', 
+                 nexus_server, nexus_repository, nexus_username, artifact_path)
+        
         nexus_client = nexus.NeuxsClient(nexus_server, nexus_username,
                                         nexus_password)
         
+        LOG.info('[push_compose_package] Start uploading to nexus, filename: %s', os.path.basename(filename))
         upload_result = nexus_client.upload(nexus_repository, artifact_path, os.path.basename(filename),
                                             'application/octet-stream', fileobj)
+        LOG.info('[push_compose_package] Upload completed, result: %s', json.dumps(upload_result, ensure_ascii=False))
         return upload_result
 
     """导出组合物料包[含差异化变量，包配置，包文件]
