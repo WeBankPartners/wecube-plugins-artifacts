@@ -24,7 +24,7 @@
             </Spin>
             <div style="margin-bottom: 8px;">
               <Select clearable filterable @on-change="getVariableValue('app')" @on-open-change="getCalcInstance('app')" :placeholder="$t('art_trial_instance')" v-model="calcAppInstance" style="width:300px;">
-                <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+                <Option v-for="instance in calcAppInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.key_name }}</Option>
               </Select>
               <Button type="primary" style="margin-left: 24px;" :disabled="packageDetail.diff_conf_file.length === 0" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
@@ -53,7 +53,7 @@
             </Spin>
             <div style="margin-bottom: 8px;">
               <Select clearable filterable @on-change="getVariableValue('db')" @on-open-change="getCalcInstance('db')" :placeholder="$t('art_trial_instance')" v-model="calcDBInstance" style="width:300px;">
-                <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.name }}</Option>
+                <Option v-for="instance in calcDBInstanceOptions" :value="instance.guid" :key="instance.name">{{ instance.key_name }}</Option>
               </Select>
               <Button type="primary" :disabled="packageDetail.db_diff_conf_file.length === 0" style="margin-left:24px" @click="showBatchBindModal">{{ $t('multi_bind_config') }}</Button>
             </div>
