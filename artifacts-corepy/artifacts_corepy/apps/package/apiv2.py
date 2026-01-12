@@ -44,8 +44,9 @@ field_pkg_baseline_package_name = 'baseline_package'
 field_pkg_is_decompression_name = 'is_decompression'  # true,false as string
 field_pkg_package_type_name = 'package_type'  # APP DB APP&DB
 field_pkg_key_service_code_name = 'key_service_code'
+field_pkg_image_name = 'image_name'  # Docker镜像名称
 fields_pkg_common = [field_pkg_baseline_package_name, field_pkg_is_decompression_name, field_pkg_package_type_name,
-                     field_pkg_key_service_code_name]
+                     field_pkg_key_service_code_name, field_pkg_image_name]
 field_pkg_baseline_package_default_value = None
 field_pkg_is_decompression_default_value = 'true'
 field_pkg_package_type_default_value = constant.PackageType.default
@@ -446,6 +447,7 @@ class UnitDesignPackages(WeCubeResource):
                                                        field_pkg_is_decompression_default_value) or field_pkg_is_decompression_default_value
             i[field_pkg_key_service_code_name] = i.get(field_pkg_key_service_code_name,
                                                        field_pkg_key_service_code_default_value) or field_pkg_key_service_code_default_value
+            i[field_pkg_image_name] = i.get(field_pkg_image_name, '') or ''
             fields = (field_pkg_diff_conf_directory_name, field_pkg_diff_conf_file_name,
                       field_pkg_script_file_directory_name, field_pkg_deploy_file_path_name,
                       field_pkg_start_file_path_name, field_pkg_stop_file_path_name,
@@ -776,6 +778,18 @@ class UnitDesignPackages(WeCubeResource):
         
         upload_result = nexus_client.upload(nexus_repository, artifact_path, os.path.basename(filename),
                                             'application/octet-stream', fileobj)
+
+        # 检查并推送关联镜像
+        deploy_package = self._get_deploy_package_by_id(deploy_package_id)
+        image_name = deploy_package.get(field_pkg_image_name, '')
+        if image_name and image_name.strip():
+            LOG.info('[push_compose_package] Found associated image: %s', image_name)
+            try:
+                self._push_docker_image(image_name.strip(), deploy_package_id)
+            except Exception as e:
+                LOG.error('[push_compose_package] Failed to push associated image %s: %s', image_name, str(e))
+                # 镜像推送失败不影响物料包推送的成功
+
         return upload_result
 
     """导出组合物料包[含差异化变量，包配置，包文件]
@@ -3106,3 +3120,58 @@ class UnitDesignApps(WeCubeResource):
             })
 
         return ret['data'] or []
+
+    def _push_docker_image(self, image_name: str, deploy_package_id: str):
+        """推送Docker镜像"""
+        LOG.info('[push_docker_image] Starting to push Docker image: %s for package: %s', image_name, deploy_package_id)
+
+        # 解析镜像名称，如果没有版本号，默认为latest
+        if ':' not in image_name:
+            image_name_with_tag = f"{image_name}:latest"
+        else:
+            image_name_with_tag = image_name
+
+        # 源仓库配置（固定）
+        source_registry = "172.21.10.202:8083"
+        source_username = "admin"
+        source_password = "artifacts"
+
+        # 目标仓库配置（从环境变量读取）
+        target_registry = CONF.pushimage.server_url.rstrip('/')
+        target_username = CONF.pushimage.username
+        target_password = CONF.pushimage.password
+
+        # 构建skopeo命令
+        cmd = [
+            'skopeo', 'copy',
+            '--all',
+            '--src-creds', f'{source_username}:{source_password}',
+            '--dest-creds', f'{target_username}:{target_password}',
+            '--src-tls-verify=false',
+            '--dest-tls-verify=false',
+            f'docker://{source_registry}/{image_name_with_tag}',
+            f'docker://{target_registry}/{image_name_with_tag}'
+        ]
+
+        LOG.info('[push_docker_image] Executing skopeo command: %s', ' '.join(cmd))
+
+        # 执行命令
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)  # 10分钟超时
+            if result.returncode == 0:
+                LOG.info('[push_docker_image] Successfully pushed image: %s', image_name_with_tag)
+            else:
+                error_msg = f'skopeo command failed with return code {result.returncode}'
+                if result.stderr:
+                    error_msg += f', stderr: {result.stderr}'
+                if result.stdout:
+                    error_msg += f', stdout: {result.stdout}'
+                raise Exception(error_msg)
+        except subprocess.TimeoutExpired:
+            raise Exception(f'skopeo command timed out after 600 seconds for image: {image_name_with_tag}')
+        except FileNotFoundError:
+            LOG.warning('[push_docker_image] skopeo command not found, skipping image push for: %s', image_name_with_tag)
+            # 不抛出异常，让流程继续
+        except Exception as e:
+            LOG.error('[push_docker_image] Failed to push image %s: %s', image_name_with_tag, str(e))
+            raise

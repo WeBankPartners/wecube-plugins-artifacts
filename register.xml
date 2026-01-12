@@ -69,6 +69,9 @@
         <systemParameter name="ARTIFACTS_CACHE_CLEANUP_INTERVAL_MIN" scopeType="plugins" defaultValue="10" />
         <systemParameter name="ARTIFACTS_COMPOSE_OVERWRITE_GLOBAL" scopeType="plugins" defaultValue="false" />
         <systemParameter name="ARTIFACTS_COMPOSE_OVERWRITE_ENABLED" scopeType="plugins" defaultValue="true" />
+        <systemParameter name="PUSH_IMAGE_SERVER_URL" scopeType="plugins" defaultValue="" />
+        <systemParameter name="PUSH_IMAGE_USERNAME" scopeType="plugins" defaultValue="" />
+        <systemParameter name="PUSH_IMAGE_PASSWORD" scopeType="plugins" defaultValue="" />
         
     </systemParameters>
 
