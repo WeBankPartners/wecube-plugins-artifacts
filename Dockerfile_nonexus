@@ -14,7 +14,8 @@ RUN apt update && apt-get -y install skopeo gcc swig libssl-dev python3-dev && \
     pip3 install /tmp/*.whl && \
     rm -rf /root/.cache && apt autoclean && \
     rm -rf /tmp/* /var/lib/apt/* /var/cache/* && \
-    apt purge -y `cat /var/log/apt/history.log|grep 'Install: '|tail -1| sed 's/Install://'| sed 's/\ /\n/g' | sed '/(/d' | sed '/)/d' | sed ':l;N;s/\n/ /;b l'`
+    apt-get purge -y gcc swig libssl-dev python3-dev  && \
+    apt-get autoremove -y
 ADD build/start_all.sh /scripts/start_all.sh
 RUN chmod +x /scripts/start_all.sh
 CMD ["/bin/sh","-c","/scripts/start_all.sh"]
