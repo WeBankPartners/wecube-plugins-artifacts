@@ -11,8 +11,9 @@ RUN mkdir -p /tmp/artifacts/
 ADD artifacts-corepy/etc/* /etc/artifacts_corepy/
 ADD nexus-data.tar.gz /nexus-data-init
 
-# Install && Clean up
-RUN microdnf clean all && microdnf makecache && microdnf -y install expat python3 python3-devel swig openssl-devel gcc libev-devel make  && \
+# Install && Clean up(remove redhat-release because of skopeo/container-common conflict)
+RUN cp /etc/os-release os-release.bak && rpm -e --nodeps redhat-release && mv os-release.bak /etc/os-release && echo "9" > /etc/dnf/vars/releasever && \
+    microdnf clean all && microdnf makecache && microdnf -y install expat python3 python3-devel swig openssl-devel gcc libev-devel make skopeo && \
     pip3 install -i http://mirrors.tencentyun.com/pypi/simple/ --trusted-host mirrors.tencentyun.com -r /tmp/requirements.txt && \
     pip3 install /tmp/*.whl && microdnf -y remove python3-devel swig openssl-devel gcc libev-devel make && rm -rf /tmp/* && microdnf clean all
 ADD build/start_all.sh /scripts/start_all.sh
