@@ -42,7 +42,7 @@ setup(
 
     # Author details
     author='wecube team',
-    author_email='roywu@webank.com',
+    author_email='wecube@wecube.com',
 
     # Choose your license
     license='Apache License 2.0',

@@ -9,6 +9,7 @@ artifacts_corepy.common.wecube
 import base64
 import logging
 import random
+from cryptography.hazmat.primitives import serialization
 
 from talos.core import config
 from talos.core.i18n import _
@@ -18,16 +19,48 @@ LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
+def rsa_pkcs1_v15_pad(message: bytes, key_size: int) -> bytes:
+    """
+    Implements PKCS#1 v1.5 padding for private key encryption.
+    Block = 0x00 | 0x01 | PS(0xff...) | 0x00 | message
+    """
+    max_msg_len = key_size - 11
+    if len(message) > max_msg_len:
+        raise ValueError("Message too long")
+    ps = b"\xff" * (key_size - len(message) - 3)
+    return b"\x00\x01" + ps + b"\x00" + message
+
+
 def encrypt(message, rsa_key):
-    import M2Crypto.RSA
-    template = '''-----BEGIN PRIVATE KEY-----
-%s
------END PRIVATE KEY-----'''
-    key_pem = template % rsa_key
-    privat_key = M2Crypto.RSA.load_key_string(key_pem.encode())
-    ciphertext = privat_key.private_encrypt(message.encode(), M2Crypto.RSA.pkcs1_padding)
-    encrypted_message = base64.b64encode(ciphertext).decode()
-    return encrypted_message
+    key_pem = f"""-----BEGIN PRIVATE KEY-----
+{rsa_key}
+-----END PRIVATE KEY-----"""
+    private_key = serialization.load_pem_private_key(
+        key_pem.encode(),
+        password=None,
+    )
+    numbers = private_key.private_numbers()
+    n = numbers.public_numbers.n
+    d = numbers.d
+    # Key size in bytes
+    key_size = (n.bit_length() + 7) // 8
+    # PKCS#1 v1.5 padding
+    padded = rsa_pkcs1_v15_pad(message.encode(), key_size)
+    # Raw RSA private key exponentiation (like M2Crypto.private_encrypt)
+    ciphertext_int = pow(int.from_bytes(padded, "big"), d, n)
+    ciphertext = ciphertext_int.to_bytes(key_size, "big")
+    return base64.b64encode(ciphertext).decode()
+
+# def encrypt(message, rsa_key):
+#     import M2Crypto.RSA
+#     template = '''-----BEGIN PRIVATE KEY-----
+# %s
+# -----END PRIVATE KEY-----'''
+#     key_pem = template % rsa_key
+#     privat_key = M2Crypto.RSA.load_key_string(key_pem.encode())
+#     ciphertext = privat_key.private_encrypt(message.encode(), M2Crypto.RSA.pkcs1_padding)
+#     encrypted_message = base64.b64encode(ciphertext).decode()
+#     return encrypted_message
 
 
 class WeCubeClient(utils.ClientMixin):
