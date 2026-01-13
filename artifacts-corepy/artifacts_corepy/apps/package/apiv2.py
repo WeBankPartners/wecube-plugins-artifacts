@@ -3087,42 +3087,7 @@ class AppInstancePackages(WeCubeResource):
         ret = cmdb_client.render_variable_values(post_data)
         return ret['data'][0]['variable_values'] if ret['data'] else ""
 
-
-class UnitDesignApps(WeCubeResource):
-
-    def list_by_post(self, payload):
-        """应用/DB实例列表"""
-        wecube_client = wecube.WeCubeClient(CONF.wecube.server, self.token)
-
-        if payload.get('type') == "db":
-            filter_expression = CONF.wecube.wecmdb.expressions.db_filter
-        else:
-            filter_expression = CONF.wecube.wecmdb.expressions.app_filter
-
-        filters = [
-            {
-                "index": 0,
-                "packageName": "wecmdb",
-                "entityName": CONF.wecube.wecmdb.citypes.unit_design,
-                "attributeFilters": [
-                    {
-                        "name": "guid",
-                        "value": payload.get('guid'),
-                        "operator": "eq"
-                    }
-                ]
-            }
-        ]
-        ret = wecube_client.post(
-            wecube_client.build_url('/platform/v1/data-model/dme/integrated-query'), {
-                'dataModelExpression': filter_expression,
-                'filters': filters
-            })
-
-        return ret['data'] or []
-
     def _push_docker_image(self, image_name: str, deploy_package_id: str):
-        """推送Docker镜像"""
         LOG.info('[push_docker_image] Starting to push Docker image: %s for package: %s', image_name, deploy_package_id)
 
         # 解析镜像名称，如果没有版本号，默认为latest
@@ -3175,3 +3140,37 @@ class UnitDesignApps(WeCubeResource):
         except Exception as e:
             LOG.error('[push_docker_image] Failed to push image %s: %s', image_name_with_tag, str(e))
             raise
+
+
+class UnitDesignApps(WeCubeResource):
+
+    def list_by_post(self, payload):
+        """应用/DB实例列表"""
+        wecube_client = wecube.WeCubeClient(CONF.wecube.server, self.token)
+
+        if payload.get('type') == "db":
+            filter_expression = CONF.wecube.wecmdb.expressions.db_filter
+        else:
+            filter_expression = CONF.wecube.wecmdb.expressions.app_filter
+
+        filters = [
+            {
+                "index": 0,
+                "packageName": "wecmdb",
+                "entityName": CONF.wecube.wecmdb.citypes.unit_design,
+                "attributeFilters": [
+                    {
+                        "name": "guid",
+                        "value": payload.get('guid'),
+                        "operator": "eq"
+                    }
+                ]
+            }
+        ]
+        ret = wecube_client.post(
+            wecube_client.build_url('/platform/v1/data-model/dme/integrated-query'), {
+                'dataModelExpression': filter_expression,
+                'filters': filters
+            })
+
+        return ret['data'] or []

@@ -36,3 +36,4 @@ skopeo copy \
 - ✅ 已实现镜像推送逻辑 (`_push_docker_image` 方法)
 - ✅ 已集成到 `push_compose_package` 方法中
 - ✅ 已确保Docker镜像包含skopeo工具
+- ✅ 已修复方法定义位置问题（移至正确的类中）
