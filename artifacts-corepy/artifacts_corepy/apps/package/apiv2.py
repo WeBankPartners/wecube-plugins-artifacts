@@ -2922,10 +2922,10 @@ class UnitDesignPackages(WeCubeResource):
         else:
             image_name_with_tag = image_name
 
-        # 源仓库配置（固定）
-        source_registry = "172.21.10.202:8083"
-        source_username = "admin"
-        source_password = "artifacts"
+        # 源仓库配置（从系统参数读取）
+        source_registry = CONF.image_server_url.rstrip('/')
+        source_username = CONF.image_username
+        source_password = CONF.image_password
 
         # 目标仓库配置（从配置读取）
         target_registry = CONF.pushimage.server_url.rstrip('/')
