@@ -2923,9 +2923,9 @@ class UnitDesignPackages(WeCubeResource):
             image_name_with_tag = image_name
 
         # 源仓库配置（从系统参数读取）
-        source_registry = CONF.image_server_url.rstrip('/')
-        source_username = CONF.image_username
-        source_password = CONF.image_password
+        source_registry = CONF.image.server_url.rstrip('/')
+        source_username = CONF.image.username
+        source_password = CONF.image.password
 
         # 目标仓库配置（从配置读取）
         target_registry = CONF.pushimage.server_url.rstrip('/')
