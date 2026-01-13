@@ -11,6 +11,7 @@ import logging
 import collections
 import re
 import shutil
+import subprocess
 import tempfile
 import json
 import tarfile
@@ -2926,7 +2927,7 @@ class UnitDesignPackages(WeCubeResource):
         source_username = "admin"
         source_password = "artifacts"
 
-        # 目标仓库配置（从环境变量读取）
+        # 目标仓库配置（从配置读取）
         target_registry = CONF.pushimage.server_url.rstrip('/')
         target_username = CONF.pushimage.username
         target_password = CONF.pushimage.password
