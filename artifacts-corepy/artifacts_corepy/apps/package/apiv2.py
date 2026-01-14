@@ -2917,12 +2917,20 @@ class UnitDesignPackages(WeCubeResource):
         LOG.info('[push_docker_image] Starting to push Docker image: %s for package: %s', image_name, deploy_package_id)
 
         # 检查源仓库配置
-        if not (CONF.image.server_url and CONF.image.username and CONF.image.password):
-            raise exceptions.PluginError(message="Source image repository configuration is incomplete. Please configure IMAGE_SERVER_URL, IMAGE_USERNAME, and IMAGE_PASSWORD.")
+        if not CONF.image.server_url:
+            LOG.info('[push_docker_image] Source image repository server_url not configured, skipping image push')
+            return  # 直接跳过，不抛异常
+
+        if not CONF.image.username or not CONF.image.password:
+            raise exceptions.PluginError(message="Source image repository configuration is incomplete. Please configure ARTIFACTS_IMAGE_USERNAME and ARTIFACTS_IMAGE_PASSWORD.")
 
         # 检查目标仓库配置
-        if not (CONF.pushimage.server_url and CONF.pushimage.username and CONF.pushimage.password):
-            raise exceptions.PluginError(message="Target image repository configuration is incomplete. Please configure PUSH_IMAGE_SERVER_URL, PUSH_IMAGE_USERNAME, and PUSH_IMAGE_PASSWORD.")
+        if not CONF.pushimage.server_url:
+            LOG.info('[push_docker_image] Target image repository server_url not configured, skipping image push')
+            return  # 直接跳过，不抛异常
+
+        if not CONF.pushimage.username or not CONF.pushimage.password:
+            raise exceptions.PluginError(message="Target image repository configuration is incomplete. Please configure ARTIFACTS_PUSH_IMAGE_USERNAME and ARTIFACTS_PUSH_IMAGE_PASSWORD.")
 
         # 解析镜像名称，如果没有版本号，默认为latest
         if ':' not in image_name:
