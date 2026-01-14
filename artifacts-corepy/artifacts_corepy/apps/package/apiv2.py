@@ -2916,6 +2916,14 @@ class UnitDesignPackages(WeCubeResource):
         """推送Docker镜像"""
         LOG.info('[push_docker_image] Starting to push Docker image: %s for package: %s', image_name, deploy_package_id)
 
+        # 检查源仓库配置
+        if not (CONF.image.server_url and CONF.image.username and CONF.image.password):
+            raise exceptions.PluginError(message="Source image repository configuration is incomplete. Please configure IMAGE_SERVER_URL, IMAGE_USERNAME, and IMAGE_PASSWORD.")
+
+        # 检查目标仓库配置
+        if not (CONF.pushimage.server_url and CONF.pushimage.username and CONF.pushimage.password):
+            raise exceptions.PluginError(message="Target image repository configuration is incomplete. Please configure PUSH_IMAGE_SERVER_URL, PUSH_IMAGE_USERNAME, and PUSH_IMAGE_PASSWORD.")
+
         # 解析镜像名称，如果没有版本号，默认为latest
         if ':' not in image_name:
             image_name_with_tag = f"{image_name}:latest"
@@ -2927,7 +2935,7 @@ class UnitDesignPackages(WeCubeResource):
         source_username = CONF.image.username
         source_password = CONF.image.password
 
-        # 目标仓库配置（从配置读取）
+        # 目标仓库配置（从系统参数读取）
         target_registry = CONF.pushimage.server_url.rstrip('/')
         target_username = CONF.pushimage.username
         target_password = CONF.pushimage.password
