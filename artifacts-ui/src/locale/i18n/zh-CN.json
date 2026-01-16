@@ -189,5 +189,6 @@
   "art_path_warn": "清理路径中不能包含'../'或以'/'开头",
   "art_size": "大小",
   "art_file_type": "文件类型",
-  "art_parse_fail": "差异化变量解析失败"
+  "art_parse_fail": "差异化变量解析失败",
+  "art_script_content": "脚本内容"
 }
