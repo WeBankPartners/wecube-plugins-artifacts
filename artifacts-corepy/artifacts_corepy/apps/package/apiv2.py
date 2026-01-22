@@ -708,6 +708,13 @@ class UnitDesignPackages(WeCubeResource):
             deploy_package['upload_time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             deploy_package['deploy_package_url'] = new_download_url
             deploy_package[field_pkg_image_name_name] = field_pkg_image_name_default_value
+            # 提前获取基线包的 image_deploy_script，避免后续耗时操作导致超时时该字段未被继承
+            if baseline_package:
+                baseline_pkg_data = self._get_deploy_package_by_id(baseline_package)
+                deploy_package[field_pkg_image_deploy_script_name] = baseline_pkg_data.get(field_pkg_image_deploy_script_name, 
+                                                                                           field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
+            else:
+                deploy_package[field_pkg_image_deploy_script_name] = field_pkg_image_deploy_script_default_value
             # 更新差异化变量配置
             deploy_package[field_pkg_diff_conf_var_name] = list(bind_app_diff_configs)
             deploy_package[field_pkg_db_diff_conf_var_name] = list(bind_db_diff_configs)
@@ -1093,6 +1100,12 @@ class UnitDesignPackages(WeCubeResource):
                     filename = download_url.split('/')[-1]
                     upload_result = l_nexus_client.upload(CONF.nexus.repository, l_artifact_path, filename, filetype,
                                                           fileobj)
+                    # 提前获取基线包的 image_deploy_script，避免后续耗时操作导致超时时该字段未被继承
+                    baseline_image_deploy_script = field_pkg_image_deploy_script_default_value
+                    if baseline_package:
+                        baseline_pkg_data = self._get_deploy_package_by_id(baseline_package)
+                        baseline_image_deploy_script = baseline_pkg_data.get(field_pkg_image_deploy_script_name, 
+                                                                              field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
                     package_rows = [{
                         'baseline_package': baseline_package or None,
                         'name':
@@ -1113,7 +1126,8 @@ class UnitDesignPackages(WeCubeResource):
                         'unit_design':
                             unit_design_id,
                         field_pkg_package_type_name: package_type,
-                        field_pkg_image_name_name: field_pkg_image_name_default_value
+                        field_pkg_image_name_name: field_pkg_image_name_default_value,
+                        field_pkg_image_deploy_script_name: baseline_image_deploy_script
                     }]
                     exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
                     if exist_package is None:
