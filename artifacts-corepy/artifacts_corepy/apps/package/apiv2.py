@@ -45,13 +45,15 @@ field_pkg_is_decompression_name = 'is_decompression'  # true,false as string
 field_pkg_package_type_name = 'package_type'  # APP DB APP&DB
 field_pkg_key_service_code_name = 'key_service_code'
 field_pkg_image_deploy_script_name = 'image_deploy_script'
+field_pkg_image_name_name = 'image_name'
 fields_pkg_common = [field_pkg_baseline_package_name, field_pkg_is_decompression_name, field_pkg_package_type_name,
-                     field_pkg_key_service_code_name, field_pkg_image_deploy_script_name]
+                     field_pkg_key_service_code_name, field_pkg_image_deploy_script_name, field_pkg_image_name_name]
 field_pkg_baseline_package_default_value = None
 field_pkg_is_decompression_default_value = 'true'
 field_pkg_package_type_default_value = constant.PackageType.default
 field_pkg_key_service_code_default_value = []
 field_pkg_image_deploy_script_default_value = ''
+field_pkg_image_name_default_value = '#suggest'
 # APP
 field_pkg_diff_conf_directory_name = 'diff_conf_directory'
 field_pkg_diff_conf_file_name = 'diff_conf_file'
@@ -705,6 +707,7 @@ class UnitDesignPackages(WeCubeResource):
             deploy_package['upload_user'] = force_operator or scoped_globals.GLOBALS.request.auth_user
             deploy_package['upload_time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             deploy_package['deploy_package_url'] = new_download_url
+            deploy_package[field_pkg_image_name_name] = field_pkg_image_name_default_value
             # 更新差异化变量配置
             deploy_package[field_pkg_diff_conf_var_name] = list(bind_app_diff_configs)
             deploy_package[field_pkg_db_diff_conf_var_name] = list(bind_db_diff_configs)
@@ -968,7 +971,8 @@ class UnitDesignPackages(WeCubeResource):
             'upload_user': scoped_globals.GLOBALS.request.auth_user,
             'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'unit_design': unit_design_id,
-            field_pkg_package_type_name: package_type
+            field_pkg_package_type_name: package_type,
+            field_pkg_image_name_name: field_pkg_image_name_default_value
         }]
         exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
         if exist_package is None:
@@ -1050,7 +1054,8 @@ class UnitDesignPackages(WeCubeResource):
                 'upload_user': scoped_globals.GLOBALS.request.auth_user,
                 'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'unit_design': unit_design_id,
-                field_pkg_package_type_name: package_type
+                field_pkg_package_type_name: package_type,
+                field_pkg_image_name_name: field_pkg_image_name_default_value
             }]
             exist_package = self._get_deploy_package_by_name_unit(url_info['filename'], unit_design_id)
             if exist_package is None:
@@ -1107,7 +1112,8 @@ class UnitDesignPackages(WeCubeResource):
                             datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         'unit_design':
                             unit_design_id,
-                        field_pkg_package_type_name: package_type
+                        field_pkg_package_type_name: package_type,
+                        field_pkg_image_name_name: field_pkg_image_name_default_value
                     }]
                     exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
                     if exist_package is None:
@@ -2404,6 +2410,11 @@ class UnitDesignPackages(WeCubeResource):
                                                                     None) or baseline_package.get(
             field_pkg_key_service_code_name,
             field_pkg_key_service_code_default_value) or field_pkg_key_service_code_default_value
+        # image_deploy_script 继承基线版本
+        ret_data[field_pkg_image_deploy_script_name] = input_attrs.get(field_pkg_image_deploy_script_name,
+                                                                       None) or baseline_package.get(
+            field_pkg_image_deploy_script_name,
+            field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
         # app diff conf
         FieldSetting = namedtuple("FieldSetting", 'name, default_value')
         fset = FieldSetting(name=field_pkg_diff_conf_directory_name,
