@@ -53,7 +53,7 @@ field_pkg_is_decompression_default_value = 'true'
 field_pkg_package_type_default_value = constant.PackageType.default
 field_pkg_key_service_code_default_value = []
 field_pkg_image_deploy_script_default_value = ''
-field_pkg_image_name_default_value = '#suggest'
+field_pkg_image_name_default_value = 'suggest#'
 # APP
 field_pkg_diff_conf_directory_name = 'diff_conf_directory'
 field_pkg_diff_conf_file_name = 'diff_conf_file'
@@ -707,7 +707,9 @@ class UnitDesignPackages(WeCubeResource):
             deploy_package['upload_user'] = force_operator or scoped_globals.GLOBALS.request.auth_user
             deploy_package['upload_time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             deploy_package['deploy_package_url'] = new_download_url
-            deploy_package[field_pkg_image_name_name] = field_pkg_image_name_default_value
+            # 优先使用组合包自带的配置值，值无效才使用默认值
+            if not deploy_package.get(field_pkg_image_name_name):
+                deploy_package[field_pkg_image_name_name] = field_pkg_image_name_default_value
             # 提前获取基线包的 image_deploy_script，避免后续耗时操作导致超时时该字段未被继承
             if baseline_package:
                 baseline_pkg_data = self._get_deploy_package_by_id(baseline_package)
@@ -967,6 +969,12 @@ class UnitDesignPackages(WeCubeResource):
                                                                 CONF.wecube.server.rstrip('/') + '/artifacts')
         fileobj.seek(0, os.SEEK_END)  # 移动到文件末尾
         filesize = fileobj.tell()  # 获取当前位置，即文件大小
+        # 提前获取基线包的 image_deploy_script，避免后续耗时操作导致超时时该字段未被继承
+        baseline_image_deploy_script = field_pkg_image_deploy_script_default_value
+        if baseline_package:
+            baseline_pkg_data = self._get_deploy_package_by_id(baseline_package)
+            baseline_image_deploy_script = baseline_pkg_data.get(field_pkg_image_deploy_script_name, 
+                                                                  field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
         package_rows = [{
             'baseline_package': baseline_package or None,
             'name': filename,
@@ -979,10 +987,12 @@ class UnitDesignPackages(WeCubeResource):
             'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'unit_design': unit_design_id,
             field_pkg_package_type_name: package_type,
-            field_pkg_image_name_name: field_pkg_image_name_default_value
+            field_pkg_image_deploy_script_name: baseline_image_deploy_script
         }]
         exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
         if exist_package is None:
+            # 只在首次创建时提供 image_name 默认值，更新时不覆盖
+            package_rows[0][field_pkg_image_name_name] = field_pkg_image_name_default_value
             package_result = self.create(package_rows)
         else:
             package_rows[0]['guid'] = exist_package['guid']
@@ -1050,6 +1060,12 @@ class UnitDesignPackages(WeCubeResource):
             # update_unit_design['guid'] = unit_design['data']['guid']
             # update_unit_design[CONF.wecube.wecmdb.artifact_field] = url_info['group']
             # cmdb_client.update(CONF.wecube.wecmdb.citypes.unit_design, [update_unit_design])
+            # 提前获取基线包的 image_deploy_script，避免后续耗时操作导致超时时该字段未被继承
+            baseline_image_deploy_script = field_pkg_image_deploy_script_default_value
+            if baseline_package:
+                baseline_pkg_data = self._get_deploy_package_by_id(baseline_package)
+                baseline_image_deploy_script = baseline_pkg_data.get(field_pkg_image_deploy_script_name, 
+                                                                      field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
             package_rows = [{
                 'baseline_package': baseline_package or None,
                 'name': url_info['filename'],
@@ -1062,10 +1078,12 @@ class UnitDesignPackages(WeCubeResource):
                 'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'unit_design': unit_design_id,
                 field_pkg_package_type_name: package_type,
-                field_pkg_image_name_name: field_pkg_image_name_default_value
+                field_pkg_image_deploy_script_name: baseline_image_deploy_script
             }]
             exist_package = self._get_deploy_package_by_name_unit(url_info['filename'], unit_design_id)
             if exist_package is None:
+                # 只在首次创建时提供 image_name 默认值，更新时不覆盖
+                package_rows[0][field_pkg_image_name_name] = field_pkg_image_name_default_value
                 package_result = self.create(package_rows)
             else:
                 package_rows[0]['guid'] = exist_package['guid']
@@ -1126,11 +1144,12 @@ class UnitDesignPackages(WeCubeResource):
                         'unit_design':
                             unit_design_id,
                         field_pkg_package_type_name: package_type,
-                        field_pkg_image_name_name: field_pkg_image_name_default_value,
                         field_pkg_image_deploy_script_name: baseline_image_deploy_script
                     }]
                     exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
                     if exist_package is None:
+                        # 只在首次创建时提供 image_name 默认值，更新时不覆盖
+                        package_rows[0][field_pkg_image_name_name] = field_pkg_image_name_default_value
                         package_result = self.create(package_rows)
                     else:
                         package_rows[0]['guid'] = exist_package['guid']
