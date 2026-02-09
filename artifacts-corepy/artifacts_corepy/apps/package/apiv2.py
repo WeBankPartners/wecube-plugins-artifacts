@@ -710,13 +710,14 @@ class UnitDesignPackages(WeCubeResource):
             # 优先使用组合包自带的配置值，值无效才使用默认值
             if not deploy_package.get(field_pkg_image_name_name):
                 deploy_package[field_pkg_image_name_name] = field_pkg_image_name_default_value
-            # 提前获取基线包的 image_deploy_script，避免后续耗时操作导致超时时该字段未被继承
-            if baseline_package:
-                baseline_pkg_data = self._get_deploy_package_by_id(baseline_package)
-                deploy_package[field_pkg_image_deploy_script_name] = baseline_pkg_data.get(field_pkg_image_deploy_script_name, 
-                                                                                           field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
-            else:
-                deploy_package[field_pkg_image_deploy_script_name] = field_pkg_image_deploy_script_default_value
+            # image_deploy_script 优先级：组合包自带 > 基线包继承 > 默认值
+            if not deploy_package.get(field_pkg_image_deploy_script_name):
+                if baseline_package:
+                    baseline_pkg_data = self._get_deploy_package_by_id(baseline_package)
+                    deploy_package[field_pkg_image_deploy_script_name] = baseline_pkg_data.get(field_pkg_image_deploy_script_name, 
+                                                                                               field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
+                else:
+                    deploy_package[field_pkg_image_deploy_script_name] = field_pkg_image_deploy_script_default_value
             # 更新差异化变量配置
             deploy_package[field_pkg_diff_conf_var_name] = list(bind_app_diff_configs)
             deploy_package[field_pkg_db_diff_conf_var_name] = list(bind_db_diff_configs)
@@ -969,12 +970,12 @@ class UnitDesignPackages(WeCubeResource):
                                                                 CONF.wecube.server.rstrip('/') + '/artifacts')
         fileobj.seek(0, os.SEEK_END)  # 移动到文件末尾
         filesize = fileobj.tell()  # 获取当前位置，即文件大小
-        # 提前获取基线包的 image_deploy_script，避免后续耗时操作导致超时时该字段未被继承
-        baseline_image_deploy_script = field_pkg_image_deploy_script_default_value
+        # 优先从基线包继承 image_deploy_script，否则使用默认值
+        final_image_deploy_script = field_pkg_image_deploy_script_default_value
         if baseline_package:
             baseline_pkg_data = self._get_deploy_package_by_id(baseline_package)
-            baseline_image_deploy_script = baseline_pkg_data.get(field_pkg_image_deploy_script_name, 
-                                                                  field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
+            final_image_deploy_script = baseline_pkg_data.get(field_pkg_image_deploy_script_name, 
+                                                               field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
         package_rows = [{
             'baseline_package': baseline_package or None,
             'name': filename,
@@ -987,7 +988,7 @@ class UnitDesignPackages(WeCubeResource):
             'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'unit_design': unit_design_id,
             field_pkg_package_type_name: package_type,
-            field_pkg_image_deploy_script_name: baseline_image_deploy_script
+            field_pkg_image_deploy_script_name: final_image_deploy_script
         }]
         exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
         if exist_package is None:
@@ -1060,12 +1061,12 @@ class UnitDesignPackages(WeCubeResource):
             # update_unit_design['guid'] = unit_design['data']['guid']
             # update_unit_design[CONF.wecube.wecmdb.artifact_field] = url_info['group']
             # cmdb_client.update(CONF.wecube.wecmdb.citypes.unit_design, [update_unit_design])
-            # 提前获取基线包的 image_deploy_script，避免后续耗时操作导致超时时该字段未被继承
-            baseline_image_deploy_script = field_pkg_image_deploy_script_default_value
+            # 优先从基线包继承 image_deploy_script，否则使用默认值
+            final_image_deploy_script = field_pkg_image_deploy_script_default_value
             if baseline_package:
                 baseline_pkg_data = self._get_deploy_package_by_id(baseline_package)
-                baseline_image_deploy_script = baseline_pkg_data.get(field_pkg_image_deploy_script_name, 
-                                                                      field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
+                final_image_deploy_script = baseline_pkg_data.get(field_pkg_image_deploy_script_name, 
+                                                                   field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
             package_rows = [{
                 'baseline_package': baseline_package or None,
                 'name': url_info['filename'],
@@ -1078,7 +1079,7 @@ class UnitDesignPackages(WeCubeResource):
                 'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'unit_design': unit_design_id,
                 field_pkg_package_type_name: package_type,
-                field_pkg_image_deploy_script_name: baseline_image_deploy_script
+                field_pkg_image_deploy_script_name: final_image_deploy_script
             }]
             exist_package = self._get_deploy_package_by_name_unit(url_info['filename'], unit_design_id)
             if exist_package is None:
@@ -1118,12 +1119,12 @@ class UnitDesignPackages(WeCubeResource):
                     filename = download_url.split('/')[-1]
                     upload_result = l_nexus_client.upload(CONF.nexus.repository, l_artifact_path, filename, filetype,
                                                           fileobj)
-                    # 提前获取基线包的 image_deploy_script，避免后续耗时操作导致超时时该字段未被继承
-                    baseline_image_deploy_script = field_pkg_image_deploy_script_default_value
+                    # 优先从基线包继承 image_deploy_script，否则使用默认值
+                    final_image_deploy_script = field_pkg_image_deploy_script_default_value
                     if baseline_package:
                         baseline_pkg_data = self._get_deploy_package_by_id(baseline_package)
-                        baseline_image_deploy_script = baseline_pkg_data.get(field_pkg_image_deploy_script_name, 
-                                                                              field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
+                        final_image_deploy_script = baseline_pkg_data.get(field_pkg_image_deploy_script_name, 
+                                                                           field_pkg_image_deploy_script_default_value) or field_pkg_image_deploy_script_default_value
                     package_rows = [{
                         'baseline_package': baseline_package or None,
                         'name':
@@ -1144,7 +1145,7 @@ class UnitDesignPackages(WeCubeResource):
                         'unit_design':
                             unit_design_id,
                         field_pkg_package_type_name: package_type,
-                        field_pkg_image_deploy_script_name: baseline_image_deploy_script
+                        field_pkg_image_deploy_script_name: final_image_deploy_script
                     }]
                     exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
                     if exist_package is None:
