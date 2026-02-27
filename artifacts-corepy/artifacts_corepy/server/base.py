@@ -42,7 +42,8 @@ def decrypt_rsa(secret_key, encrypt_text):
                   'ci_typeid_app_template_ci', 'ci_typeid_db_template_ci', 'push_nexus_server', 'push_nexus_repository',
                   'push_nexus_username', 'push_nexus_password', 'app_filter_expression', 'db_filter_expression',
                   's3_server_url', 'db_script_extension', 'global_variable_prefix', 'cache_cleanup_interval_min',
-                  'compose_overwrite_global', 'compose_overwrite_enabled')
+                  'compose_overwrite_global', 'compose_overwrite_enabled', 'push_image_server_url', 'push_image_username', 'push_image_password',
+                  'image_server_url', 'image_username', 'image_password')
 def get_env_value(value, origin_value):
     prefix = 'ENV@'
     encrypt_prefix = 'RSA@'
