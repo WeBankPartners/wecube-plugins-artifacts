@@ -959,7 +959,7 @@ class UnitDesignPackages(WeCubeResource):
                 tar.add(package_path_db_diffconfigs, arcname=os.path.basename(package_path_db_diffconfigs))
         return output_filename
 
-    def upload(self, filename, filetype, fileobj, baseline_package, package_type, unit_design_id):
+    def upload(self, filename, filetype, fileobj, baseline_package, package_type, image_name, unit_design_id):
         if not package_type:
             package_type = constant.PackageType.default
         if not is_upload_local_enabled():
@@ -1007,10 +1007,12 @@ class UnitDesignPackages(WeCubeResource):
         exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
         if exist_package is None:
             # 只在首次创建时提供 image_name 默认值，更新时不覆盖
-            package_rows[0][field_pkg_image_name_name] = field_pkg_image_name_default_value
+            package_rows[0][field_pkg_image_name_name] = image_name or field_pkg_image_name_default_value
             package_result = self.create(package_rows)
         else:
             package_rows[0]['guid'] = exist_package['guid']
+            if image_name:
+                package_rows[0][field_pkg_image_name_name] = image_name
             package_result = self.pure_update(package_rows)
         new_package_guid = package_result['data'][0]['guid']
         new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
@@ -1021,7 +1023,7 @@ class UnitDesignPackages(WeCubeResource):
         self.pure_update([new_deploy_attrs])
         return [self._get_deploy_package_by_id(new_package_guid)]
 
-    def upload_from_nexus(self, download_url, baseline_package, package_type, unit_design_id):
+    def upload_from_nexus(self, download_url, baseline_package, package_type, image_name, unit_design_id):
         if not package_type:
             package_type = constant.PackageType.default
         if not is_upload_nexus_enabled():
@@ -1098,10 +1100,12 @@ class UnitDesignPackages(WeCubeResource):
             exist_package = self._get_deploy_package_by_name_unit(url_info['filename'], unit_design_id)
             if exist_package is None:
                 # 只在首次创建时提供 image_name 默认值，更新时不覆盖
-                package_rows[0][field_pkg_image_name_name] = field_pkg_image_name_default_value
+                package_rows[0][field_pkg_image_name_name] = image_name or field_pkg_image_name_default_value
                 package_result = self.create(package_rows)
             else:
                 package_rows[0]['guid'] = exist_package['guid']
+                if image_name:
+                    package_rows[0][field_pkg_image_name_name] = image_name
                 package_result = self.pure_update(package_rows)
             new_package_guid = package_result['data'][0]['guid']
             new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
@@ -1164,10 +1168,12 @@ class UnitDesignPackages(WeCubeResource):
                     exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
                     if exist_package is None:
                         # 只在首次创建时提供 image_name 默认值，更新时不覆盖
-                        package_rows[0][field_pkg_image_name_name] = field_pkg_image_name_default_value
+                        package_rows[0][field_pkg_image_name_name] = image_name or field_pkg_image_name_default_value
                         package_result = self.create(package_rows)
                     else:
                         package_rows[0]['guid'] = exist_package['guid']
+                        if image_name:
+                            package_rows[0][field_pkg_image_name_name] = image_name
                         package_result = self.pure_update(package_rows)
                     new_package_guid = package_result['data'][0]['guid']
                     new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {

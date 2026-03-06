@@ -150,6 +150,7 @@ class CollectionUnitDesignNexusPackageUpload(object):
         download_url = req.params.get('downloadUrl', None)
         baseline_package = req.params.get('baseline_package', None)
         package_type = req.params.get('package_type', None)
+        image_name = req.params.get('image_name', None)
         if not package_type:
             raise exceptions.ValidationError(message=_('missing query param: package_type'))
         elif package_type not in [constant.PackageType.app, constant.PackageType.db, constant.PackageType.mixed, constant.PackageType.image, constant.PackageType.rule]:
@@ -160,12 +161,12 @@ class CollectionUnitDesignNexusPackageUpload(object):
         resp.json = {
             'code': 200,
             'status': 'OK',
-            'data': self.upload(req, download_url, baseline_package, package_type, **kwargs),
+            'data': self.upload(req, download_url, baseline_package, package_type, image_name, **kwargs),
             'message': 'success'
         }
 
-    def upload(self, req, download_url, baseline_package, package_type, **kwargs):
-        return self.resource().upload_from_nexus(download_url, baseline_package, package_type, **kwargs)
+    def upload(self, req, download_url, baseline_package, package_type, image_name, **kwargs):
+        return self.resource().upload_from_nexus(download_url, baseline_package, package_type, image_name, **kwargs)
 
 
 class CollectionUnitDesignPackageUpload(object):
@@ -184,15 +185,17 @@ class CollectionUnitDesignPackageUpload(object):
             raise exceptions.ValidationError(message=_('missing form param: package_type'))
         elif package_type not in [constant.PackageType.app, constant.PackageType.db, constant.PackageType.mixed, constant.PackageType.image, constant.PackageType.rule]:
             raise exceptions.ValidationError(message=_('invalid package_type param value: %s') % package_type)
+        if 'image_name' in form:
+            image_name = form.getvalue('image_name', None)
         resp.json = {
             'code': 200,
             'status': 'OK',
-            'data': self.upload(req, form['file'].filename, form['file'].type, form['file'].file, baseline_package, package_type, **kwargs),
+            'data': self.upload(req, form['file'].filename, form['file'].type, form['file'].file, baseline_package, package_type, image_name, **kwargs),
             'message': 'success'
         }
 
-    def upload(self, req, filename, filetype, fileobj, baseline_package, package_type, **kwargs):
-        return self.resource().upload(filename, filetype, fileobj, baseline_package, package_type, **kwargs)
+    def upload(self, req, filename, filetype, fileobj, baseline_package, package_type, image_name, **kwargs):
+        return self.resource().upload(filename, filetype, fileobj, baseline_package, package_type, image_name, **kwargs)
 
 
 class ItemPackage(Item):
