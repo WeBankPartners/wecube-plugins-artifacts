@@ -24,10 +24,6 @@ CREATE TABLE diff_conf_template_role (
     permission VARCHAR(16) NOT NULL COMMENT '权限：MGMT/USE/xx',
     role VARCHAR(64) NOT NULL COMMENT '角色',
     diff_conf_template_id BIGINT,
-    CONSTRAINT fk_diff_conf_template
-        FOREIGN KEY (diff_conf_template_id)
-        REFERENCES diff_conf_template (id)
-        ON DELETE CASCADE,
     INDEX (diff_conf_template_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
