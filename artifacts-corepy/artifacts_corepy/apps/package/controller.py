@@ -185,6 +185,7 @@ class CollectionUnitDesignPackageUpload(object):
             raise exceptions.ValidationError(message=_('missing form param: package_type'))
         elif package_type not in [constant.PackageType.app, constant.PackageType.db, constant.PackageType.mixed, constant.PackageType.image, constant.PackageType.rule]:
             raise exceptions.ValidationError(message=_('invalid package_type param value: %s') % package_type)
+        image_name = None
         if 'image_name' in form:
             image_name = form.getvalue('image_name', None)
         resp.json = {
