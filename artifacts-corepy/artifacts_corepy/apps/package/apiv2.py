@@ -793,10 +793,18 @@ class UnitDesignPackages(WeCubeResource):
         nexus_client = nexus.NeuxsClient(nexus_server, nexus_username,
                                         nexus_password)
         
-        upload_result = nexus_client.upload(nexus_repository, artifact_path, os.path.basename(filename),
-                                            'application/octet-stream', fileobj)
+        # 推送物料包，失败不影响镜像推送
+        upload_result = None
+        package_push_error = None
+        try:
+            upload_result = nexus_client.upload(nexus_repository, artifact_path, os.path.basename(filename),
+                                                'application/octet-stream', fileobj)
+            LOG.info('[push_compose_package] Successfully pushed package to nexus')
+        except Exception as e:
+            package_push_error = e
+            LOG.error('[push_compose_package] Failed to push package: %s', str(e))
 
-        # 检查并推送关联镜像
+        # 检查并推送关联镜像（无论物料包推送是否成功都尝试推送镜像）
         deploy_package = self._get_deploy_package_by_id(deploy_package_id)
         image_name = deploy_package.get(field_pkg_image_name_name, '')
         if image_name and image_name.strip():
@@ -805,7 +813,11 @@ class UnitDesignPackages(WeCubeResource):
                 self._push_docker_image(image_name.strip(), deploy_package_id)
             except Exception as e:
                 LOG.error('[push_compose_package] Failed to push associated image %s: %s', image_name, str(e))
-                # 镜像推送失败不影响物料包推送的成功
+                # 镜像推送失败不影响整体结果
+
+        # 如果物料包推送失败，抛出异常
+        if package_push_error:
+            raise package_push_error
 
         return upload_result
 
