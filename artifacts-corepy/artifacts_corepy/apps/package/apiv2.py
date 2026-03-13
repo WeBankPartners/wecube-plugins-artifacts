@@ -3029,9 +3029,11 @@ class UnitDesignPackages(WeCubeResource):
         target_password = CONF.pushimage.password
 
         # 构建skopeo命令
+        # --remove-signatures: 移除签名，避免 in-toto attestation 层导致的兼容性问题
         cmd = [
             'skopeo', 'copy',
             '--all',
+            '--remove-signatures',
             '--src-creds', f'{source_username}:{source_password}',
             '--dest-creds', f'{target_username}:{target_password}',
             '--src-tls-verify=false',
