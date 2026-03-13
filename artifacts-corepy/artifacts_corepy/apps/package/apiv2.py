@@ -3016,12 +3016,15 @@ class UnitDesignPackages(WeCubeResource):
             image_name_with_tag = image_name
 
         # 源仓库配置（从系统参数读取）
+        # 去掉 http:// 或 https:// 前缀，skopeo 的 docker:// 协议不需要这些
         source_registry = CONF.image.server_url.rstrip('/')
+        source_registry = source_registry.replace('http://', '').replace('https://', '')
         source_username = CONF.image.username
         source_password = CONF.image.password
 
         # 目标仓库配置（从系统参数读取）
         target_registry = CONF.pushimage.server_url.rstrip('/')
+        target_registry = target_registry.replace('http://', '').replace('https://', '')
         target_username = CONF.pushimage.username
         target_password = CONF.pushimage.password
 
