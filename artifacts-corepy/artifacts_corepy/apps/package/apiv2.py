@@ -3028,42 +3028,103 @@ class UnitDesignPackages(WeCubeResource):
         target_username = CONF.pushimage.username
         target_password = CONF.pushimage.password
 
-        # 构建skopeo命令
-        # --remove-signatures: 移除签名，避免 in-toto attestation 层导致的兼容性问题
-        cmd = [
+        source_image = f'docker://{source_registry}/{image_name_with_tag}'
+        target_image = f'docker://{target_registry}/{image_name_with_tag}'
+
+        # skopeo 基础参数（不含多架构/格式选项）
+        base_cmd = [
             'skopeo', 'copy',
-            '--all',
-            '--remove-signatures',
             '--src-creds', f'{source_username}:{source_password}',
             '--dest-creds', f'{target_username}:{target_password}',
             '--src-tls-verify=false',
             '--dest-tls-verify=false',
-            f'docker://{source_registry}/{image_name_with_tag}',
-            f'docker://{target_registry}/{image_name_with_tag}'
         ]
 
-        LOG.info('[push_docker_image] Executing skopeo command: %s', ' '.join(cmd))
+        # 多策略重试：依次尝试以下方案，直到成功
+        # 背景：部分镜像包含 attestation 签名层（application/vnd.in-toto+json），
+        # 旧版 skopeo 使用 --all 时会尝试复制该层并报错；
+        # 新版 skopeo(>=1.9.0) 配合 --preserve-digests 可正常处理。
+        strategies = [
+            {
+                'name': 'multi-arch-preserve',
+                'desc': '多架构（保留摘要和签名，兼容 attestation）',
+                'extra_args': ['--all', '--preserve-digests']
+            },
+            {
+                'name': 'multi-arch-oci',
+                'desc': '多架构（OCI格式，部分仓库 attestation 兼容性更好）',
+                'extra_args': ['--all', '--format=oci']
+            },
+            {
+                'name': 'multi-arch',
+                'desc': '多架构（所有平台，标准模式）',
+                'extra_args': ['--all']
+            },
+            {
+                'name': 'single-arch',
+                'desc': '单架构（当前系统架构，跳过 attestation 层）',
+                'extra_args': []
+            }
+        ]
 
-        # 执行命令
-        try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)  # 10分钟超时
-            if result.returncode == 0:
-                LOG.info('[push_docker_image] Successfully pushed image: %s', image_name_with_tag)
-            else:
-                error_msg = f'skopeo command failed with return code {result.returncode}'
-                if result.stderr:
-                    error_msg += f', stderr: {result.stderr}'
-                if result.stdout:
-                    error_msg += f', stdout: {result.stdout}'
-                raise Exception(error_msg)
-        except subprocess.TimeoutExpired:
-            raise Exception(f'skopeo command timed out after 600 seconds for image: {image_name_with_tag}')
-        except FileNotFoundError:
-            LOG.warning('[push_docker_image] skopeo command not found, skipping image push for: %s', image_name_with_tag)
-            # 不抛出异常，让流程继续
-        except Exception as e:
-            LOG.error('[push_docker_image] Failed to push image %s: %s', image_name_with_tag, str(e))
-            raise
+        # 判断是否为 attestation/格式相关错误，决定是否继续尝试下一策略
+        def _is_retryable_error(stderr):
+            retryable_keywords = [
+                'in-toto',
+                'unsupported MIME type',
+                'unknown flag',
+                'invalid argument',
+                'unsupported manifest MIME type',
+            ]
+            return any(kw in stderr for kw in retryable_keywords)
+
+        last_error = None
+        for strategy in strategies:
+            cmd = base_cmd + strategy['extra_args'] + [source_image, target_image]
+            LOG.info('[push_docker_image] Trying strategy [%s] (%s): %s',
+                     strategy['name'], strategy['desc'], ' '.join(cmd))
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+                if result.returncode == 0:
+                    LOG.info('[push_docker_image] Successfully pushed image [%s] using strategy [%s]',
+                             image_name_with_tag, strategy['name'])
+                    return
+                else:
+                    error_msg = f"skopeo strategy [{strategy['name']}] failed with return code {result.returncode}"
+                    if result.stderr:
+                        error_msg += f', stderr: {result.stderr}'
+                    if result.stdout:
+                        error_msg += f', stdout: {result.stdout}'
+                    last_error = error_msg
+                    stderr_text = result.stderr or ''
+                    if _is_retryable_error(stderr_text):
+                        LOG.warning('[push_docker_image] Strategy [%s] failed with retryable error, trying next. stderr: %s',
+                                    strategy['name'], stderr_text[:300])
+                        continue
+                    else:
+                        # 非 attestation 类错误，直接失败不再重试
+                        LOG.error('[push_docker_image] Strategy [%s] failed with non-retryable error: %s',
+                                  strategy['name'], error_msg[:500])
+                        raise Exception(error_msg)
+            except subprocess.TimeoutExpired:
+                last_error = f"skopeo strategy [{strategy['name']}] timed out after 600 seconds"
+                LOG.warning('[push_docker_image] Strategy [%s] timed out, trying next', strategy['name'])
+                continue
+            except FileNotFoundError:
+                LOG.warning('[push_docker_image] skopeo command not found, skipping image push for: %s', image_name_with_tag)
+                return
+            except Exception as e:
+                if 'non-retryable' in str(e) or last_error == str(e):
+                    raise
+                last_error = str(e)
+                LOG.warning('[push_docker_image] Strategy [%s] raised exception, trying next: %s',
+                            strategy['name'], str(e)[:300])
+                continue
+
+        # 所有策略均失败
+        LOG.error('[push_docker_image] All strategies failed for image %s. Last error: %s',
+                  image_name_with_tag, last_error)
+        raise Exception(f'Failed to push image {image_name_with_tag} after trying all strategies. Last error: {last_error}')
 
 
 class UnitDesignNexusPackages(WeCubeResource):
