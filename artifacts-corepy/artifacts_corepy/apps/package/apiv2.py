@@ -776,6 +776,10 @@ class UnitDesignPackages(WeCubeResource):
         nexus_username = CONF.pushnexus.username
         nexus_password = CONF.pushnexus.password
         
+        image_registry = None
+        image_username = None
+        image_password = None
+        
         artifact_path = '/'
         if params and params.get('path', None):
             artifact_path = params['path']
@@ -790,6 +794,13 @@ class UnitDesignPackages(WeCubeResource):
             nexus_username = params['username']
         if params and params.get('password', None):
             nexus_password = params['password']
+            
+        if params and params.get('image_registry', None):
+            image_registry = params['image_registry']
+        if params and params.get('image_username', None):
+            image_username = params['image_username']
+        if params and params.get('image_password', None):
+            image_password = params['image_password']
         nexus_client = nexus.NeuxsClient(nexus_server, nexus_username,
                                         nexus_password)
         
@@ -810,7 +821,7 @@ class UnitDesignPackages(WeCubeResource):
         if image_name and image_name.strip():
             LOG.info('[push_compose_package] Found associated image: %s', image_name)
             try:
-                self._push_docker_image(image_name.strip(), deploy_package_id)
+                self._push_docker_image(image_name.strip(), deploy_package_id, image_registry, image_username, image_password)
             except Exception as e:
                 LOG.error('[push_compose_package] Failed to push associated image %s: %s', image_name, str(e))
                 # 镜像推送失败不影响整体结果
@@ -2989,7 +3000,7 @@ class UnitDesignPackages(WeCubeResource):
                     ret_data[field_pkg_db_rollback_file_path_name] = FileNameConcater().convert(filtered_file_objs)
         return ret_data
 
-    def _push_docker_image(self, image_name: str, deploy_package_id: str):
+    def _push_docker_image(self, image_name: str, deploy_package_id: str, image_registry=None, image_username=None, image_password=None):
         """推送Docker镜像"""
         LOG.info('[push_docker_image] Starting to push Docker image: %s for package: %s', image_name, deploy_package_id)
 
@@ -3001,12 +3012,19 @@ class UnitDesignPackages(WeCubeResource):
         if not CONF.image.username or not CONF.image.password:
             raise exceptions.PluginError(message="Source image repository configuration is incomplete. Please configure ARTIFACTS_IMAGE_USERNAME and ARTIFACTS_IMAGE_PASSWORD.")
 
+        # 目标仓库配置, 优先从传参获取，以系统参数为默认
+        target_registry = image_registry or CONF.pushimage.server_url
+        target_registry = (target_registry or '').rstrip('/')
+        target_registry = target_registry.lstrip('http://')
+        target_registry = target_registry.lstrip('https://')
+        target_username = image_username or CONF.pushimage.username
+        target_password = image_password or CONF.pushimage.password
         # 检查目标仓库配置
-        if not CONF.pushimage.server_url:
+        if not target_registry:
             LOG.info('[push_docker_image] Target image repository server_url not configured, skipping image push')
             return  # 直接跳过，不抛异常
 
-        if not CONF.pushimage.username or not CONF.pushimage.password:
+        if not target_username or not target_password:
             raise exceptions.PluginError(message="Target image repository configuration is incomplete. Please configure ARTIFACTS_PUSH_IMAGE_USERNAME and ARTIFACTS_PUSH_IMAGE_PASSWORD.")
 
         # 解析镜像名称，如果没有版本号，默认为latest
@@ -3018,15 +3036,12 @@ class UnitDesignPackages(WeCubeResource):
         # 源仓库配置（从系统参数读取）
         # 去掉 http:// 或 https:// 前缀，skopeo 的 docker:// 协议不需要这些
         source_registry = CONF.image.server_url.rstrip('/')
-        source_registry = source_registry.replace('http://', '').replace('https://', '')
+        source_registry = source_registry.lstrip('http://')
+        source_registry = source_registry.lstrip('https://')
         source_username = CONF.image.username
         source_password = CONF.image.password
 
-        # 目标仓库配置（从系统参数读取）
-        target_registry = CONF.pushimage.server_url.rstrip('/')
-        target_registry = target_registry.replace('http://', '').replace('https://', '')
-        target_username = CONF.pushimage.username
-        target_password = CONF.pushimage.password
+        
 
         source_image = f'docker://{source_registry}/{image_name_with_tag}'
         target_image = f'docker://{target_registry}/{image_name_with_tag}'
