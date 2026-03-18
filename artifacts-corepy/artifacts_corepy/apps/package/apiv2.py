@@ -3015,8 +3015,7 @@ class UnitDesignPackages(WeCubeResource):
         # 目标仓库配置, 优先从传参获取，以系统参数为默认
         target_registry = image_registry or CONF.pushimage.server_url
         target_registry = (target_registry or '').rstrip('/')
-        target_registry = target_registry.lstrip('http://')
-        target_registry = target_registry.lstrip('https://')
+        target_registry = target_registry.replace('https://', '').replace('http://', '')
         target_username = image_username or CONF.pushimage.username
         target_password = image_password or CONF.pushimage.password
         # 检查目标仓库配置
@@ -3036,8 +3035,7 @@ class UnitDesignPackages(WeCubeResource):
         # 源仓库配置（从系统参数读取）
         # 去掉 http:// 或 https:// 前缀，skopeo 的 docker:// 协议不需要这些
         source_registry = CONF.image.server_url.rstrip('/')
-        source_registry = source_registry.lstrip('http://')
-        source_registry = source_registry.lstrip('https://')
+        source_registry = source_registry.replace('https://', '').replace('http://', '')
         source_username = CONF.image.username
         source_password = CONF.image.password
 
