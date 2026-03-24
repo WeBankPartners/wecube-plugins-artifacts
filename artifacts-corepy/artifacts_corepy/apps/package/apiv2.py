@@ -3125,7 +3125,7 @@ class UnitDesignPackages(WeCubeResource):
         LOG.error('[push_docker_image] All strategies failed for image %s. Last error: %s',
                   image_name_with_tag, last_error)
         raise Exception(f'Failed to push image {image_name_with_tag} after trying all strategies. Last error: {last_error}')
-
+ 
 
 class UnitDesignNexusPackages(WeCubeResource):
     def get_unit_design_artifact_path(self, unit_design):
