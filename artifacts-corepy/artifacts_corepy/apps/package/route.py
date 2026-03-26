@@ -168,6 +168,8 @@ def add_routes(api):
     # compose package
     api.add_route('/artifacts/packages/{deploy_package_id}/download',
                   controller.DownloadComposePackage())
+    api.add_route('/artifacts/packages/{deploy_package_id}/download-image',
+                  controller.DownloadImage())
     api.add_route('/artifacts/unit-designs/{unit_design_id}/packages/{deploy_package_id}/push',
                   controller.PushComposePackage())
 

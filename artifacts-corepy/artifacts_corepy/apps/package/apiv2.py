@@ -3138,7 +3138,80 @@ class UnitDesignPackages(WeCubeResource):
         LOG.error('[push_docker_image] All strategies failed for image %s. Last error: %s',
                   image_name_with_tag, last_error)
         raise Exception(f'Failed to push image {image_name_with_tag} after trying all strategies. Last error: {last_error}')
- 
+
+    def download_image(self, deploy_package_id: str):
+        """从源镜像仓库拉取镜像保存为 docker-archive tar 文件，流式传输给浏览器，结束后自动清理临时文件"""
+        deploy_package = self._get_deploy_package_by_id(deploy_package_id)
+        image_name = (deploy_package.get(field_pkg_image_name_name, '') or '').strip()
+
+        if not image_name:
+            raise exceptions.PluginError(message="该物料包未配置关联镜像，image_name 为空")
+
+        if not CONF.image.server_url:
+            raise exceptions.PluginError(message="源镜像仓库未配置，请检查 CONF.image.server_url")
+
+        if not CONF.image.username or not CONF.image.password:
+            raise exceptions.PluginError(message="源镜像仓库认证信息未配置，请检查 ARTIFACTS_IMAGE_USERNAME / ARTIFACTS_IMAGE_PASSWORD")
+
+        image_name_with_tag = image_name if ':' in image_name else f"{image_name}:latest"
+
+        source_registry = CONF.image.server_url.rstrip('/').replace('https://', '').replace('http://', '')
+        source_username = CONF.image.username
+        source_password = CONF.image.password
+
+        # 输出文件名：冒号和斜杠替换为下划线，便于浏览器保存
+        safe_name = image_name_with_tag.replace(':', '_').replace('/', '_')
+        output_filename = f"image_{safe_name}.tar"
+
+        tmp_dir = tempfile.mkdtemp(prefix='artifacts_img_')
+        tmp_filepath = os.path.join(tmp_dir, output_filename)
+
+        try:
+            source_image = f'docker://{source_registry}/{image_name_with_tag}'
+            dest_image = f'docker-archive:{tmp_filepath}'
+
+            cmd = [
+                'skopeo', 'copy',
+                '--src-creds', f'{source_username}:{source_password}',
+                '--src-tls-verify=false',
+                source_image,
+                dest_image,
+            ]
+
+            LOG.info('[download_image] Pulling image %s -> %s', image_name_with_tag, tmp_filepath)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+
+            if result.returncode != 0:
+                err_detail = result.stderr[:500] if result.stderr else 'unknown error'
+                LOG.error('[download_image] skopeo failed for %s: %s', image_name_with_tag, err_detail)
+                raise exceptions.PluginError(message=f"镜像拉取失败: {err_detail}")
+
+            LOG.info('[download_image] Successfully pulled image %s, size=%d bytes',
+                     image_name_with_tag, os.path.getsize(tmp_filepath))
+
+            filesize = os.path.getsize(tmp_filepath)
+
+            # 生成器：流式读取 tar 文件传给浏览器，finally 保证临时目录始终被清理
+            def _stream_and_cleanup():
+                try:
+                    chunk_size = 64 * 1024  # 64KB
+                    with open(tmp_filepath, 'rb') as f:
+                        while True:
+                            chunk = f.read(chunk_size)
+                            if not chunk:
+                                break
+                            yield chunk
+                finally:
+                    shutil.rmtree(tmp_dir, ignore_errors=True)
+                    LOG.info('[download_image] Cleaned up temp dir: %s', tmp_dir)
+
+            return output_filename, _stream_and_cleanup(), filesize
+
+        except Exception:
+            # 拉取失败时立即清理，防止残留
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            raise
+
 
 class UnitDesignNexusPackages(WeCubeResource):
     def get_unit_design_artifact_path(self, unit_design):

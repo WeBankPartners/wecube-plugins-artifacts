@@ -368,6 +368,21 @@ class DownloadComposePackage(base_controller.Controller):
         resp.set_header('Content-Type', 'application/octet-stream')
         resp.status = falcon.HTTP_200
 
+class DownloadImage(base_controller.Controller):
+    allow_methods = ('GET',)
+    name = 'artifacts.downloadimage'
+    resource = package_api.UnitDesignPackages
+
+    def on_get(self, req, resp, **kwargs):
+        filename, stream, filesize = self.resource().download_image(**kwargs)
+        resp.set_header('Content-Disposition',
+                        'attachment;filename="%s"' % urllib.parse.quote(filename))
+        resp.set_header('Content-Type', 'application/octet-stream')
+        resp.set_header('Content-Length', str(filesize))
+        resp.status = falcon.HTTP_200
+        resp.stream = stream
+
+
 class PushComposePackage(base_controller.Controller):
     allow_methods = ('POST',)
     name = 'artifacts.pushcomposepackage'

@@ -305,6 +305,13 @@ export default {
                       <Icon type="md-cloud-download" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
+                  {params.row.image_name && (
+                    <Tooltip content={this.$t('download_image')} placement="top" delay={500} transfer={true}>
+                      <Button size="small" onClick={() => this.toDownloadImage(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#19be6b', borderColor: '#19be6b', marginBottom: '2px' }}>
+                        <Icon type="md-images" color="white" size="16"></Icon>
+                      </Button>
+                    </Tooltip>
+                  )}
                   <Tooltip content={this.$t('push')} placement="top" delay={500} transfer={true}>
                     <Button size="small" disabled={!this.btnGroupControl.push_to_nexus_enabled} onClick={() => this.toPushPkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#5384FF', borderColor: '#5384FF', marginBottom: '2px' }}>
                       <Icon type="md-cloud-upload" color="white" size="16"></Icon>
@@ -912,6 +919,26 @@ export default {
       await this.updateHeaders()
       const a = document.createElement('a')
       a.href = `/artifacts/packages/${row.guid}/download?token=${'Bearer ' + getCookie('accessToken')}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    },
+    async toDownloadImage (row, event) {
+      event.stopPropagation()
+      if (!row.image_name) {
+        this.$Notice.warning({
+          title: this.$t('download_image'),
+          desc: this.$t('download_image_no_image')
+        })
+        return
+      }
+      this.$Notice.info({
+        title: this.$t('download_image'),
+        desc: `${row.image_name} ${this.$t('download_image_sending')}`
+      })
+      await this.updateHeaders()
+      const a = document.createElement('a')
+      a.href = `/artifacts/packages/${row.guid}/download-image?token=${'Bearer ' + getCookie('accessToken')}`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
