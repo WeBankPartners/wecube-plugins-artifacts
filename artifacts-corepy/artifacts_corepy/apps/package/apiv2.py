@@ -2767,7 +2767,7 @@ class UnitDesignPackages(WeCubeResource):
             else:
                 # 目录值仅继承，清单仅继承
                 ret_data[fset.name] = baseline_package[fset.name]     
-        # db diff 数据库差异化文件不继承
+        # db diff 数据库差异化文件继承
         fset = FieldSetting(name=field_pkg_db_diff_conf_directory_name,
                             default_value=field_pkg_db_diff_conf_directory_default_value)
         if input_attrs.get(fset.name, None):
@@ -2781,9 +2781,10 @@ class UnitDesignPackages(WeCubeResource):
                 ret_data[fset.name] = fset.default_value
                 ret_data[field_pkg_db_diff_conf_file_name] = field_pkg_db_diff_conf_file_default_value
             else:
-                # 目录值仅继承，差异化文件清单填充默认(空)
+                # 目录值仅继承，差异化文件清单继承
                 ret_data[fset.name] = baseline_package[fset.name]
-                ret_data[field_pkg_db_diff_conf_file_name] = field_pkg_db_diff_conf_file_default_value
+                ret_data[field_pkg_db_diff_conf_file_name] = baseline_package.get(field_pkg_db_diff_conf_file_name,
+                                                                                  field_pkg_db_diff_conf_file_default_value) or field_pkg_db_diff_conf_file_default_value
         # db install
         fset = FieldSetting(name=field_pkg_db_deploy_file_directory_name,
                             default_value=field_pkg_db_deploy_file_directory_default_value)
