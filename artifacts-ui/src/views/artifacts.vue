@@ -286,7 +286,7 @@ export default {
           title: this.$t('artifacts_action'),
           key: 'state',
           fixed: 'right',
-          width: 230,
+          width: 268,
           render: (h, params) => {
             // 镜像包不需要查看差异化配置
             const showDiffEdit = params.row.package_type !== this.constPackageOptions.image
@@ -300,14 +300,14 @@ export default {
                       </Button>
                     </Tooltip>
                   )}
-                  <Tooltip content={this.$t('export')} placement="top" delay={500} transfer={true}>
+                  <Tooltip content={this.$t('export_package')} placement="top" delay={500} transfer={true}>
                     <Button size="small" onClick={() => this.toExportPkg(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#5384FF', borderColor: '#5384FF', marginBottom: '2px' }}>
                       <Icon type="md-cloud-download" color="white" size="16"></Icon>
                     </Button>
                   </Tooltip>
                   {params.row.image_name && (
-                    <Tooltip content={this.$t('download_image')} placement="top" delay={500} transfer={true}>
-                      <Button size="small" onClick={() => this.toDownloadImage(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#19be6b', borderColor: '#19be6b', marginBottom: '2px' }}>
+                    <Tooltip content={this.$t('export_image')} placement="top" delay={500} transfer={true}>
+                      <Button size="small" onClick={() => this.toDownloadImage(params.row, event)} style={{ marginRight: '5px', backgroundColor: '#5384FF', borderColor: '#5384FF', marginBottom: '2px' }}>
                         <Icon type="md-images" color="white" size="16"></Icon>
                       </Button>
                     </Tooltip>
@@ -913,8 +913,8 @@ export default {
     async toExportPkg (row, event) {
       event.stopPropagation()
       this.$Notice.info({
-        title: `${this.$t('export')}`,
-        desc: `${row.code} ${this.$t('export')} ${this.$t('senting')}`
+        title: `${this.$t('export_package')}`,
+        desc: `${row.code} ${this.$t('export_package')} ${this.$t('senting')}`
       })
       await this.updateHeaders()
       const a = document.createElement('a')
@@ -927,14 +927,15 @@ export default {
       event.stopPropagation()
       if (!row.image_name) {
         this.$Notice.warning({
-          title: this.$t('download_image'),
-          desc: this.$t('download_image_no_image')
+          title: this.$t('export_image'),
+          desc: this.$t('export_image_no_image')
         })
         return
       }
       this.$Notice.info({
-        title: this.$t('download_image'),
-        desc: `${row.image_name} ${this.$t('download_image_sending')}`
+        title: this.$t('export_image'),
+        desc: `${row.image_name} ${this.$t('export_image_sending')}`,
+        duration: 15
       })
       await this.updateHeaders()
       const a = document.createElement('a')
