@@ -1550,8 +1550,8 @@ class UnitDesignPackages(WeCubeResource):
         # 根据用户指定进行变量绑定
         auto_bind = True
         if field_pkg_diff_conf_var_name in data:
-            clean_data[field_pkg_diff_conf_var_name] = [c['diffConfigGuid'] for c in data[field_pkg_diff_conf_var_name]
-                                                        if c['bound']]
+            clean_data[field_pkg_diff_conf_var_name] = list(dict.fromkeys(
+                [c['diffConfigGuid'] for c in data[field_pkg_diff_conf_var_name] if c['bound']]))
             auto_bind = False
         # 根据diff_conf_file计算变量进行更新绑定
         if field_pkg_diff_conf_file_name in data and auto_bind:
@@ -1560,14 +1560,13 @@ class UnitDesignPackages(WeCubeResource):
                                                                           deploy_package[field_pkg_diff_conf_file_name],
                                                                           data[field_pkg_diff_conf_file_name])
             if bind_variables is not None:
-                clean_data[field_pkg_diff_conf_var_name] = bind_variables
+                clean_data[field_pkg_diff_conf_var_name] = list(dict.fromkeys(bind_variables))
         # db部署支持
         # 根据用户指定进行变量绑定
         db_auto_bind = True
         if field_pkg_db_diff_conf_var_name in data:
-            clean_data[field_pkg_db_diff_conf_var_name] = [
-                c['diffConfigGuid'] for c in data[field_pkg_db_diff_conf_var_name] if c['bound']
-            ]
+            clean_data[field_pkg_db_diff_conf_var_name] = list(dict.fromkeys(
+                [c['diffConfigGuid'] for c in data[field_pkg_db_diff_conf_var_name] if c['bound']]))
             db_auto_bind = False
         # 根据diff_conf_file计算变量进行更新绑定
         if field_pkg_db_diff_conf_file_name in data and db_auto_bind:
@@ -1577,7 +1576,7 @@ class UnitDesignPackages(WeCubeResource):
                                                                               field_pkg_db_diff_conf_file_name],
                                                                           data[field_pkg_db_diff_conf_file_name])
             if bind_variables is not None:
-                clean_data[field_pkg_db_diff_conf_var_name] = bind_variables
+                clean_data[field_pkg_db_diff_conf_var_name] = list(dict.fromkeys(bind_variables))
         if db_upgrade_detect:
             clean_data[field_pkg_db_upgrade_file_path_name] = FileNameConcater().convert(
                 self.find_files_by_status(
@@ -2568,9 +2567,12 @@ class UnitDesignPackages(WeCubeResource):
                                                                                   [], conf_files,
                                                                                   baseline_unbind_variables)
                     if new_create_variables is not None:
-                        bind_variables = [c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]]
-                        bind_variables.extend(new_create_variables)
-                        ret_data[field_pkg_diff_conf_var_name] = bind_variables
+                        baseline_guids = [c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]]
+                        baseline_guids_set = set(baseline_guids)
+                        # new_create_variables 包含真正新建的变量和 rename_new_variables（已存在CMDB中且未被用户排除的变量）
+                        # 只取不在 baseline 已绑定集合中的部分，避免重复；dict.fromkeys 同时清理 baseline 自身的历史重复
+                        extra = [g for g in new_create_variables if g not in baseline_guids_set]
+                        ret_data[field_pkg_diff_conf_var_name] = list(dict.fromkeys(baseline_guids + extra))
         else:
             if not baseline_package:
                 ret_data[fset.name] = fset.default_value
@@ -2592,7 +2594,7 @@ class UnitDesignPackages(WeCubeResource):
                                                                                   deploy_package['deploy_package_url'],
                                                                                   [], conf_files)
                     if bind_variables is not None:
-                        ret_data[field_pkg_diff_conf_var_name] = bind_variables
+                        ret_data[field_pkg_diff_conf_var_name] = list(dict.fromkeys(bind_variables))
             else:
                 base_value = baseline_package[fset.name]
                 if not base_value:
@@ -2649,9 +2651,12 @@ class UnitDesignPackages(WeCubeResource):
                                                                                   [], conf_files,
                                                                                   baseline_unbind_variables)
                     if new_create_variables is not None:
-                        bind_variables = [c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]]
-                        bind_variables.extend(new_create_variables)
-                        ret_data[field_pkg_diff_conf_var_name] = bind_variables
+                        baseline_guids = [c['guid'] for c in baseline_package[field_pkg_diff_conf_var_name]]
+                        baseline_guids_set = set(baseline_guids)
+                        # new_create_variables 包含真正新建的变量和 rename_new_variables（已存在CMDB中且未被用户排除的变量）
+                        # 只取不在 baseline 已绑定集合中的部分，避免重复；dict.fromkeys 同时清理 baseline 自身的历史重复
+                        extra = [g for g in new_create_variables if g not in baseline_guids_set]
+                        ret_data[field_pkg_diff_conf_var_name] = list(dict.fromkeys(baseline_guids + extra))
         # app bin script
         fset = FieldSetting(name=field_pkg_script_file_directory_name,
                             default_value=field_pkg_script_file_directory_default_value)
