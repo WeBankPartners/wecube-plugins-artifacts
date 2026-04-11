@@ -1595,6 +1595,13 @@ class UnitDesignPackages(WeCubeResource):
         # ColumnValidator.get_clean_data 对于可选字段可能不会包含，需要显式添加
         if field_pkg_image_deploy_script_name in data:
             clean_data[field_pkg_image_deploy_script_name] = data[field_pkg_image_deploy_script_name]
+        # 如果本次 update 未触发差异化变量重新计算，仍需对现有值去重，以清理历史重复数据
+        for _var_field in (field_pkg_diff_conf_var_name, field_pkg_db_diff_conf_var_name):
+            if _var_field not in clean_data:
+                _existing = [c['guid'] for c in (deploy_package.get(_var_field, []) or [])]
+                _deduped = list(dict.fromkeys(_existing))
+                if len(_deduped) != len(_existing):
+                    clean_data[_var_field] = _deduped
         resp_json = cmdb_client.update(CONF.wecube.wecmdb.citypes.deploy_package, [clean_data],
                                        keep_origin_value=(field_pkg_key_service_code_name,))
         if with_detail:
