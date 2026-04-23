@@ -2800,7 +2800,10 @@ class UnitDesignPackages(WeCubeResource):
         # db diff 数据库差异化变量绑定继承（有baseline时，参照app差异化变量的继承逻辑）
         if do_bind_vars and baseline_package:
             if ret_data[field_pkg_package_type_name] in (constant.PackageType.db, constant.PackageType.mixed):
-                # 计算baseline包全量db差异化变量，找出用户主动排除（未绑定）的变量，新包中同样不绑定
+                # baseline 已绑定的 db 差异化变量 guid 列表（or [] 防止 CMDB 返回 None）
+                baseline_db_bound_list = baseline_package.get(field_pkg_db_diff_conf_var_name) or []
+                baseline_db_guids = [c['guid'] for c in baseline_db_bound_list]
+                # 计算 baseline 中用户主动排除（未绑定）的变量，新包继承时同样不自动绑定
                 baseline_unbind_db_variables = set()
                 baseline_db_conf_file_value = baseline_package.get(field_pkg_db_diff_conf_file_name, '') or ''
                 if baseline_db_conf_file_value:
@@ -2812,22 +2815,25 @@ class UnitDesignPackages(WeCubeResource):
                         baseline_db_package_diff_configs.extend(conf_file['configKeyInfos'])
                     baseline_db_query_diff_configs = list(set([p['key'] for p in baseline_db_package_diff_configs]))
                     baseline_db_all_diff_configs = self._get_diff_configs_by_keyname(baseline_db_query_diff_configs)
-                    baseline_db_bind_variables = set([c['guid'] for c in baseline_package.get(field_pkg_db_diff_conf_var_name, [])])
+                    baseline_db_bind_variables_set = set(baseline_db_guids)
                     for conf in baseline_db_all_diff_configs:
-                        if conf['guid'] not in baseline_db_bind_variables:
+                        if conf['guid'] not in baseline_db_bind_variables_set:
                             baseline_unbind_db_variables.add(conf['guid'])
+                # 尝试扫描新包中的 db 差异化文件，找出新增变量
                 db_conf_files = self.build_file_object(ret_data.get(field_pkg_db_diff_conf_file_name, '') or '')
                 db_bind_variables, db_new_create_variables = self._analyze_diff_var(
                     package_id,
                     deploy_package['deploy_package_url'],
                     [], db_conf_files,
                     baseline_unbind_db_variables)
+                baseline_db_guids_set = set(baseline_db_guids)
                 if db_new_create_variables is not None:
-                    baseline_db_guids = [c['guid'] for c in baseline_package.get(field_pkg_db_diff_conf_var_name, [])]
-                    baseline_db_guids_set = set(baseline_db_guids)
-                    # 只取不在baseline已绑定集合中的部分，避免重复
+                    # 只取不在 baseline 已绑定集合中的部分，避免重复
                     extra = [g for g in db_new_create_variables if g not in baseline_db_guids_set]
                     ret_data[field_pkg_db_diff_conf_var_name] = list(dict.fromkeys(baseline_db_guids + extra))
+                elif baseline_db_guids:
+                    # _analyze_diff_var 未能扫描文件（返回 None）时，直接继承 baseline 的绑定
+                    ret_data[field_pkg_db_diff_conf_var_name] = list(dict.fromkeys(baseline_db_guids))
         # db install
         fset = FieldSetting(name=field_pkg_db_deploy_file_directory_name,
                             default_value=field_pkg_db_deploy_file_directory_default_value)
