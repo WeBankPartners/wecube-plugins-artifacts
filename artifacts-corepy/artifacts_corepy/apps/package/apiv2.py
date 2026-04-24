@@ -308,6 +308,14 @@ class SpecialConnector(WeCubeResource):
 
 
 class CiTypes(WeCubeResource):
+    def get_cmdb_client(self):
+        accept_language = None
+        try:
+            accept_language = scoped_globals.GLOBALS.request.get_header('Accept-Language')
+        except Exception:
+            pass
+        return wecmdb.WeCMDBClient(self.server, self.token, accept_language=accept_language)
+
     def list(self, params):
         cmdb_client = self.get_cmdb_client()
         with_attributes = params.get('with-attributes', 'no')
@@ -410,6 +418,14 @@ class EnumCodes(WeCubeResource):
 
 
 class CITypeOperations(WeCubeResource):
+    def get_cmdb_client(self):
+        accept_language = None
+        try:
+            accept_language = scoped_globals.GLOBALS.request.get_header('Accept-Language')
+        except Exception:
+            pass
+        return wecmdb.WeCMDBClient(self.server, self.token, accept_language=accept_language)
+
     def get(self, ci_type_id):
         cmdb_client = self.get_cmdb_client()
         resp_json = cmdb_client.ci_operations(ci_type_id)

@@ -21,9 +21,10 @@ URL_PREFIX = '/wecmdb/api/v1'
 
 class WeCMDBClient(object):
     """WeCMDB Client"""
-    def __init__(self, server, token):
+    def __init__(self, server, token, accept_language=None):
         self.server = server.rstrip('/')
         self.token = token
+        self.accept_language = accept_language
 
     @staticmethod
     def build_retrieve_url(citype):
@@ -78,7 +79,10 @@ class WeCMDBClient(object):
         return URL_PREFIX + '/ci-data/rollback/query/%s' % ci_guid
 
     def build_headers(self):
-        return {'Authorization': 'Bearer ' + self.token}
+        headers = {'Authorization': 'Bearer ' + self.token}
+        if self.accept_language:
+            headers['Accept-Language'] = self.accept_language
+        return headers
 
     def check_response(self, resp_json):
         if resp_json['statusCode'] != 'OK':
