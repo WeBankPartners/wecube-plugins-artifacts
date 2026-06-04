@@ -1,7 +1,7 @@
 <template>
   <div>
     <Drawer :title="pkgName" :mask-closable="false" :closable="true" v-model="openDrawer" :scrollable="false" width="1300">
-      <Spin size="large" fix v-if="spinShow"></Spin>
+      <Spin size="large" fix v-if="spinShow || baselineCompareLoading"></Spin>
       <Form :label-width="120" class="pkg-config">
         <FormItem :label="$t('package_type')">
           <Select clearable :placeholder="$t('package_type')" v-model="packageType" @on-change="packageTypeChanged">
@@ -9,7 +9,7 @@
           </Select>
         </FormItem>
         <FormItem :label="$t('baseline_package')">
-          <Select clearable filterable :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" @on-clear="clearBaseline" v-model="packageInput.baseline_package">
+          <Select clearable filterable :loading="baselineCompareLoading" :disabled="baselineCompareLoading" :placeholder="$t('baseline_package')" @on-change="baseLinePackageChanged" @on-clear="clearBaseline" v-model="packageInput.baseline_package">
             <Option v-for="conf in baselinePackageOptions" :value="conf.guid" :key="conf.name">{{ conf.name }}</Option>
           </Select>
         </FormItem>
@@ -425,7 +425,7 @@
       </Tabs>
       <div class="drawer-footer">
         <Button @click="closeFilesModal" style="margin-right: 8px">{{ $t('artifacts_cancel') }}</Button>
-        <Button @click="saveConfigFiles" type="primary">{{ $t('artifacts_save') }}</Button>
+        <Button @click="saveConfigFiles" type="primary" :loading="saveConfigLoading || baselineCompareLoading" :disabled="baselineCompareLoading || saveConfigLoading">{{ $t('artifacts_save') }}</Button>
       </div>
     </Drawer>
     <!-- 包配置文件选择 -->
@@ -470,6 +470,8 @@ export default {
   data () {
     return {
       spinShow: false,
+      baselineCompareLoading: false,
+      saveConfigLoading: false,
       showFileCompare: false,
       compareParams: {
         originContent: '',
@@ -663,6 +665,7 @@ export default {
     async open (guid, row, hideFooter) {
       this.openDrawer = true
       this.spinShow = true
+      this.baselineCompareLoading = false
       this.pkgName = `${row.key_name} - ${this.$t('artifacts_script_configuration')}`
       this.guid = guid
       this.packageId = row.guid
@@ -741,7 +744,10 @@ export default {
     },
     async syncBaselineFileStatus () {
       if (this.packageInput.baseline_package) {
-        const { data } = await compareBaseLineFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package })
+        const { status, data } = await compareBaseLineFiles(this.guid, this.packageId, { baselinePackage: this.packageInput.baseline_package })
+        if (status !== 'OK' || !data) {
+          return false
+        }
         this.packageInput.diff_conf_directory = JSON.parse(JSON.stringify(data.diff_conf_directory || []))
         this.packageInput.diff_conf_file = JSON.parse(JSON.stringify(data.diff_conf_file || []))
         this.packageInput.script_file_directory = JSON.parse(JSON.stringify(data.script_file_directory || []))
@@ -782,6 +788,7 @@ export default {
           this.packageInput.key_service_code = JSON.parse(JSON.stringify(data.key_service_code || []))
         })
       }
+      return true
     },
     async syncPackageDetail () {
       this.initPackageDetail()
@@ -807,7 +814,16 @@ export default {
       })
     },
     async baseLinePackageChanged (v) {
-      if (v) {
+      if (this.baselineCompareLoading) {
+        return
+      }
+      if (!v) {
+        return
+      }
+      const lastPackageType = this.packageType
+      const lastPackageInput = JSON.parse(JSON.stringify(this.packageInput))
+      this.baselineCompareLoading = true
+      try {
         const found = JSON.parse(JSON.stringify(this.baselinePackageOptions.find(row => row.guid === v)))
         this.packageType = found.package_type
         this.packageInput.diff_conf_directory = found.diff_conf_directory ? JSON.parse(JSON.stringify(found.diff_conf_directory)) : []
@@ -847,8 +863,14 @@ export default {
         this.$nextTick(() => {
           this.packageInput.key_service_code = found.key_service_code ? JSON.parse(JSON.stringify(found.key_service_code)) : []
         })
+        const compareSuccess = await this.syncBaselineFileStatus()
+        if (!compareSuccess) {
+          this.packageType = lastPackageType
+          this.packageInput = lastPackageInput
+        }
+      } finally {
+        this.baselineCompareLoading = false
       }
-      await this.syncBaselineFileStatus()
     },
     formatPackageDetail (data) {
       let dataString = JSON.stringify(data)
@@ -1500,6 +1522,7 @@ export default {
     },
     closeFilesModal () {
       this.initPackageDetail()
+      this.baselineCompareLoading = false
       this.openDrawer = false
     },
     paramsValiate () {
@@ -1531,6 +1554,9 @@ export default {
       return res
     },
     async saveConfigFiles () {
+      if (this.baselineCompareLoading || this.saveConfigLoading) {
+        return
+      }
       const canSave = this.paramsValiate()
       if (!canSave) {
         return
@@ -1566,14 +1592,17 @@ export default {
         key_service_code: this.packageInput.key_service_code,
         image_deploy_script: this.packageInput.image_deploy_script
       }
-      this.saveConfigLoading = true
-      let { status } = await updatePackage(this.guid, this.packageId, obj)
-      this.saveConfigLoading = false
-      if (status === 'OK') {
-        this.openDrawer = false
-        this.$Notice.success({
-          title: this.$t('artifacts_successed')
-        })
+      try {
+        this.saveConfigLoading = true
+        let { status } = await updatePackage(this.guid, this.packageId, obj)
+        if (status === 'OK') {
+          this.openDrawer = false
+          this.$Notice.success({
+            title: this.$t('artifacts_successed')
+          })
+        }
+      } finally {
+        this.saveConfigLoading = false
       }
       this.$emit('queryPackages')
     },

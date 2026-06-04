@@ -150,6 +150,29 @@ def get_deploy_package_by_id(cmdb_client, deploy_package_id):
         return None
     return resp_json['data']['contents'][0]
 
+
+def is_deploy_package_bound_to_app_instance(cmdb_client, deploy_package_id):
+    app_instance_citype = getattr(CONF.wecube.wecmdb.citypes, 'app_root_ci', 'app_instance') or 'app_instance'
+    query = {
+        "dialect": {
+            "queryMode": "new"
+        },
+        "filters": [{
+            "name": "deploy_package",
+            "operator": "eq",
+            "value": deploy_package_id
+        }],
+        "resultColumns": ["guid", "deploy_package"],
+        "paging": True,
+        "pageable": {
+            "pageSize": 1,
+            "startIndex": 0
+        }
+    }
+    resp_json = cmdb_client.retrieve(app_instance_citype, query)
+    return bool(resp_json.get('data', {}).get('contents', []))
+
+
 def cleanup_deploy_package():
     try:
         wecube_client = wecube.WeCubeClient(CONF.wecube.server, "")
@@ -204,6 +227,10 @@ def cleanup_deploy_package():
             for deploy_package in deploy_package_list:
                 if cnt > keep_topn:
                     try:
+                        if is_deploy_package_bound_to_app_instance(cmdb_client, deploy_package["guid"]):
+                            LOG.info('skip cleanup package[%s], bound to app_instance', deploy_package["guid"])
+                            cnt += 1
+                            continue
                         data = [{'guid': deploy_package["guid"]}]
                         deploy_package_url = deploy_package.get("deploy_package_url", "")
                         if deploy_package['state'] == 'deleted_0':
