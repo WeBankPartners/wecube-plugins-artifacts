@@ -40,6 +40,98 @@ LOG = logging.getLogger(__name__)
 CONF = config.CONF
 TOKEN_KEY = 'artifacts_subsystem_token'
 
+
+def _ci_guid(value):
+    if isinstance(value, dict):
+        guid = value.get('guid')
+        if guid:
+            return guid
+        data = value.get('data')
+        if isinstance(data, dict):
+            return data.get('guid') or ''
+        return ''
+    return value or ''
+
+
+def _ci_key_name(value):
+    if isinstance(value, dict):
+        key_name = value.get('key_name')
+        if key_name:
+            return key_name
+        data = value.get('data')
+        if isinstance(data, dict):
+            return data.get('key_name') or ''
+        return ''
+    return ''
+
+
+def _conf_value(value, default):
+    return value if value else default
+
+
+def docker_unit_type_key():
+    return _conf_value(getattr(CONF.wecube.wecmdb, 'docker_unit_type_key', None), 'DOCKER')
+
+
+def k8s_root_ci_type():
+    return _conf_value(getattr(CONF.wecube.wecmdb.citypes, 'k8s_root_ci', None), 'k8s_workload')
+
+
+def app_root_ci_type():
+    return _conf_value(getattr(CONF.wecube.wecmdb.citypes, 'app_root_ci', None), 'app_instance')
+
+
+def db_root_ci_type():
+    return _conf_value(getattr(CONF.wecube.wecmdb.citypes, 'db_root_ci', None), 'rdb_instance')
+
+
+def docker_filter_expression():
+    return _conf_value(
+        getattr(CONF.wecube.wecmdb.expressions, 'docker_filter', None),
+        'wecmdb:unit_design~(unit_design)wecmdb:unit~(unit)wecmdb:k8s_workload')
+
+
+def _package_type_value(value):
+    if isinstance(value, dict):
+        return value.get('code') or value.get('key_name') or value.get('value') or ''
+    return value or ''
+
+
+def is_docker_unit(unit_design):
+    if not unit_design:
+        return False
+    return _ci_key_name(unit_design.get('unit_type')) == docker_unit_type_key()
+
+
+def use_k8s_app_root(unit_design, package_type):
+    return is_docker_unit(unit_design) and _package_type_value(package_type) in (constant.PackageType.app,
+                                                                                constant.PackageType.mixed)
+
+
+def resolve_app_root_ci(unit_design, package_type):
+    if use_k8s_app_root(unit_design, package_type):
+        return k8s_root_ci_type()
+    return app_root_ci_type()
+
+
+def query_ci_by_guid(cmdb_client, citype, guid):
+    if not guid or not citype:
+        return None
+    query = {
+        "dialect": {
+            "queryMode": "new"
+        },
+        "filters": [{
+            "name": "guid",
+            "operator": "eq",
+            "value": guid
+        }],
+        "paging": False
+    }
+    resp_json = cmdb_client.retrieve(citype, query)
+    contents = resp_json.get('data', {}).get('contents') or []
+    return contents[0] if contents else None
+
 # Common
 field_pkg_baseline_package_name = 'baseline_package'
 field_pkg_is_decompression_name = 'is_decompression'  # true,false as string
@@ -204,6 +296,19 @@ class WeCubeResource(object):
 
     def get_cmdb_client(self):
         return wecmdb.WeCMDBClient(self.server, self.token)
+
+    def get_variable_root_ci_type_ids(self, unit_design_id=None, package_type=None):
+        app_root = app_root_ci_type()
+        if unit_design_id:
+            unit_design = query_ci_by_guid(self.get_cmdb_client(), CONF.wecube.wecmdb.citypes.unit_design,
+                                           unit_design_id)
+            app_root = resolve_app_root_ci(unit_design, package_type)
+        return {
+            'app': app_root,
+            'db': db_root_ci_type(),
+            'app_template': CONF.wecube.wecmdb.citypes.app_template_ci,
+            'db_template': CONF.wecube.wecmdb.citypes.db_template_ci
+        }
 
     def list(self, params):
         pass
@@ -3453,9 +3558,22 @@ class AppInstancePackages(WeCubeResource):
     def get_variable_values(self, post_data):
         """差异化变量试算"""
         cmdb_client = self.get_cmdb_client()
-        ret = cmdb_client.render_variable_values(post_data)
+        citype = app_root_ci_type()
+        item = None
+        if isinstance(post_data, list) and post_data:
+            item = post_data[0]
+        elif isinstance(post_data, dict):
+            item = post_data
+        if item and item.get('type') != 'db':
+            deploy_package_id = item.get('deploy_package')
+            if deploy_package_id:
+                pkg = query_ci_by_guid(cmdb_client, CONF.wecube.wecmdb.citypes.deploy_package, deploy_package_id)
+                if pkg:
+                    unit_design = query_ci_by_guid(cmdb_client, CONF.wecube.wecmdb.citypes.unit_design,
+                                                   _ci_guid(pkg.get('unit_design')))
+                    citype = resolve_app_root_ci(unit_design, pkg.get('package_type'))
+        ret = cmdb_client.render_variable_values(post_data, citype=citype)
         return ret['data'][0]['variable_values'] if ret['data'] else ""
-
 
 
 class UnitDesignApps(WeCubeResource):
@@ -3468,6 +3586,12 @@ class UnitDesignApps(WeCubeResource):
             filter_expression = CONF.wecube.wecmdb.expressions.db_filter
         else:
             filter_expression = CONF.wecube.wecmdb.expressions.app_filter
+            unit_design_id = payload.get('guid')
+            if unit_design_id:
+                unit_design = query_ci_by_guid(self.get_cmdb_client(), CONF.wecube.wecmdb.citypes.unit_design,
+                                               unit_design_id)
+                if use_k8s_app_root(unit_design, payload.get('package_type')):
+                    filter_expression = docker_filter_expression()
 
         filters = [
             {

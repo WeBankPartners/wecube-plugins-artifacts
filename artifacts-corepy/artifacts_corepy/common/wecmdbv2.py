@@ -158,8 +158,9 @@ class WeCMDBClient(object):
         url = self.server + self.build_state_operation_url(operation, citype)
         return self.post(url, self.format(data))
 
-    def render_variable_values(self, data):
-        url = self.server + f'{URL_PREFIX}/ci-data/do/Change/app_instance?onlyQuery=true'
+    def render_variable_values(self, data, citype=None):
+        citype = citype or getattr(CONF.wecube.wecmdb.citypes, 'app_root_ci', None) or 'app_instance'
+        url = self.server + f'{URL_PREFIX}/ci-data/do/Change/{citype}?onlyQuery=true'
         return self.post(url, data)
 
     def enumcodes(self, cat_id):

@@ -167,7 +167,7 @@
 </template>
 
 <script>
-import { deleteTemplate, getCalcInstance, getDiffVariable, getPackageCiTypeId, getPackageDetail, getSpecialConnector, getSystemDesignVersions, getTemplate, getUserList, getVariableValue, updateEntity, updatePackage } from '@/api/server.js'
+import { deleteTemplate, getCalcInstance, getDiffVariable, getPackageCiTypeId, getPackageDetail, getSpecialConnector, getSystemDesignVersions, getTemplate, getUserList, getVariableRootCiTypeId, getVariableValue, updateEntity, updatePackage } from '@/api/server.js'
 import DiffVariableTemplate from '@/components/diff-variable-template'
 import ParseFail from '@/components/parse-fail'
 import { getCookie, setCookie } from '@/util/cookie.js'
@@ -555,7 +555,8 @@ export default {
       variableAppValue: {}, // 缓存试算结果
       calcDBInstance: '', // 待试算实例
       calcDBInstanceOptions: [], // 待试算实例选项
-      variableDBValue: {} // 缓存试算结果
+      variableDBValue: {}, // 缓存试算结果
+      appRootCiTypeId: defaultAppRootCiTypeId
     }
   },
   computed: {},
@@ -646,7 +647,8 @@ export default {
     async getCalcInstance (type) {
       let params = {
         guid: this.guid,
-        type
+        type,
+        package_type: this.packageType
       }
       let { status, data } = await getCalcInstance(params)
       if (status === 'OK') {
@@ -656,6 +658,19 @@ export default {
         if (type === 'db') {
           this.calcDBInstanceOptions = data || []
         }
+      }
+    },
+    async loadAppRootCiTypeId () {
+      this.appRootCiTypeId = defaultAppRootCiTypeId
+      if (!this.guid) {
+        return
+      }
+      const res = await getVariableRootCiTypeId({
+        unit_design_id: this.guid,
+        package_type: this.packageType
+      })
+      if (res.status === 'OK' && res.data && res.data.app) {
+        this.appRootCiTypeId = res.data.app
       }
     },
     async typeChange (configKeyInfos) {
@@ -704,7 +719,10 @@ export default {
     async initDrawer (guid, row, ciTypes, prefixTypes) {
       this.clearCalcParams()
       this.guid = guid
-      this.getCalcInstance()
+      this.packageType = row.package_type
+      this.packageId = row.guid
+      await this.loadAppRootCiTypeId()
+      this.getCalcInstance(this.packageType === this.constPackageOptions.db ? 'db' : 'app')
       this.showParseFail = false
       this.openDrawer = true
       this.spinShow = true
@@ -712,10 +730,8 @@ export default {
       this.currentDiffConfigTabTmp = ''
       this.pkgName = `${row.key_name} - ${this.$t('art_differentiated_variable_configuration')}`
       this.packageName = row.code
-      this.packageType = row.package_type
       this.currentDiffConfigTab = this.packageType === this.constPackageOptions.db ? this.constPackageOptions.db : this.constPackageOptions.app
       this.currentDiffConfigTabTmp = this.currentDiffConfigTab
-      this.packageId = row.guid
       this.showDiffConfigTab = true
       this.ciTypes = ciTypes
       this.ciTypes.forEach(ciType => {
@@ -1000,12 +1016,12 @@ export default {
       diffConfVariable.forEach(elVar => {
         // 记录原始值
         elVar.originDiffExpr = elVar.diffExpr
-        // const res = this.getRootCI(elVar.diffExpr, defaultAppRootCiTypeId, elVar)
-        const res = defaultAppRootCiTypeId
+        // const res = this.getRootCI(elVar.diffExpr, this.appRootCiTypeId, elVar)
+        const res = this.appRootCiTypeId || defaultAppRootCiTypeId
         let rootCI = res
         if (res === 'parseFail') {
           appParseFailVariable.push(elVar)
-          rootCI = defaultAppRootCiTypeId
+          rootCI = this.appRootCiTypeId || defaultAppRootCiTypeId
         }
         elVar.originRootCI = rootCI
         elVar.tempRootCI = rootCI

@@ -44,7 +44,17 @@ export const getCITypeOperations = ciTypeId => req.get(`/ci-types/${ciTypeId}/op
 export const getRefCiTypeFrom = id => req.get(`/ci-types/${id}/references/by`)
 export const getCiTypeAttr = id => req.get(`/ci-types/${id}/attributes`)
 export const getSpecialConnector = () => req.get('/static-data/special-connector')
-export const getVariableRootCiTypeId = () => req.get('/getVariableRootCiTypeId')
+export const getVariableRootCiTypeId = (params = {}) => {
+  const query = []
+  if (params.unit_design_id) {
+    query.push(`unit_design_id=${encodeURIComponent(params.unit_design_id)}`)
+  }
+  if (params.package_type) {
+    query.push(`package_type=${encodeURIComponent(params.package_type)}`)
+  }
+  const qs = query.length ? `?${query.join('&')}` : ''
+  return req.get(`/getVariableRootCiTypeId${qs}`)
+}
 export const getEntitiesByCiType = (packageName, ci, data) => req.post(`/platform/v1/packages/${packageName}/entities/${ci}/retrieve`, data)
 // 获取cmdb中差异化变量
 export const getDiffVariable = (citype, data) => req.post(`/cidata/${citype}/query`, data)

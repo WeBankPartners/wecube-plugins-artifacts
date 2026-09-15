@@ -36,15 +36,14 @@ class ControllerVariableRootCiTypeId(object):
     name = 'artifacts.deploy-package.varrootcitypeid'
 
     def on_get(self, req, resp, **kwargs):
+        resource = package_api.WeCubeResource()
         resp.json = {
             'code': 200,
             'status': 'OK',
-            'data': {
-                'app': CONF.wecube.wecmdb.citypes.app_root_ci,
-                'db': CONF.wecube.wecmdb.citypes.db_root_ci,
-                'app_template': CONF.wecube.wecmdb.citypes.app_template_ci,
-                'db_template': CONF.wecube.wecmdb.citypes.db_template_ci
-            },
+            'data': resource.get_variable_root_ci_type_ids(
+                req.params.get('unit_design_id'),
+                req.params.get('package_type')
+            ),
             'message': 'success'
         }
 
