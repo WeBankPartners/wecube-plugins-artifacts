@@ -7,7 +7,7 @@ requests==2.27.1
 requests_toolbelt==1.0.0
 pyjwt<2.0.0
 minio==7.1.13
-pycryptodome==3.20.1
+pycryptodome==3.20.0
 gevent==21.12.0
 gunicorn==21.2.0
 apscheduler==3.10.4
