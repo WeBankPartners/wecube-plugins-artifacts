@@ -1,5 +1,5 @@
 #!/bin/sh
-if [ ${ARTIFACTS_USE_REMOTE_NEXUS_ONLY} == 'true' ]; then
+if [ "${ARTIFACTS_USE_REMOTE_NEXUS_ONLY}" = "true" ]; then
     echo "use remote nexus only, skip local nexus"
 else
     echo "use local nexus, starting local nexus"

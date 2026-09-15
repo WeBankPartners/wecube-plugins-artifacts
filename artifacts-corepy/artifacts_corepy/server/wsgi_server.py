@@ -12,6 +12,8 @@ from __future__ import absolute_import
 import json
 import os
 import os.path
+import sys
+import traceback
 
 from artifacts_corepy.middlewares import auth
 from artifacts_corepy.middlewares import permission
@@ -32,11 +34,16 @@ def error_serializer(req, resp, exception):
     resp.content_type = 'application/json'
 
 
-application = base.initialize_server('artifacts_corepy',
-                                     os.environ.get('ARTIFACTS_COREPY_CONF',
-                                                    '/etc/artifacts_corepy/artifacts_corepy.conf'),
-                                     conf_dir=os.environ.get('ARTIFACTS_COREPY_CONF_DIR',
-                                                             '/etc/artifacts_corepy/artifacts_corepy.conf.d'),
-                                     middlewares=[auth.JWTAuth(), permission.Permission()])
-application.set_error_serializer(error_serializer)
+try:
+    application = base.initialize_server('artifacts_corepy',
+                                         os.environ.get('ARTIFACTS_COREPY_CONF',
+                                                        '/etc/artifacts_corepy/artifacts_corepy.conf'),
+                                         conf_dir=os.environ.get('ARTIFACTS_COREPY_CONF_DIR',
+                                                                 '/etc/artifacts_corepy/artifacts_corepy.conf.d'),
+                                         middlewares=[auth.JWTAuth(), permission.Permission()])
+    application.set_error_serializer(error_serializer)
+except Exception:
+    traceback.print_exc(file=sys.stderr)
+    sys.stderr.flush()
+    raise
 # application.req_options.auto_parse_qs_csv = True

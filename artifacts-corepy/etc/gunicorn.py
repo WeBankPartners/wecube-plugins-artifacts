@@ -29,8 +29,8 @@ daemon = False
 loglevel = CONF.log.level.lower()
 # 访问日志文件的路径
 accesslog = "/dev/null"
-# 错误日志文件的路径
-errorlog = "/dev/null"
+# 错误日志文件的路径（worker 启动失败的 traceback 会写到这里，勿丢到 /dev/null）
+errorlog = CONF.log.gunicorn_error
 acclog = logging.getLogger('gunicorn.access')
 acclog.addHandler(WatchedFileHandler(CONF.log.gunicorn_access))
 acclog.propagate = False
