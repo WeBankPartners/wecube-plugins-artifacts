@@ -181,7 +181,7 @@ const defaultDBRootCiTypeId = 'rdb_instance'
 // cmdb插件包名
 const cmdbPackageName = 'wecmdb'
 // 差异配置key_name
-const DIFF_CONFIGURATION = 'diff_configuration'
+const defaultDiffConfiguration = 'diff_configuration'
 export default {
   name: 'artifacts',
   data () {
@@ -556,7 +556,8 @@ export default {
       calcDBInstance: '', // 待试算实例
       calcDBInstanceOptions: [], // 待试算实例选项
       variableDBValue: {}, // 缓存试算结果
-      appRootCiTypeId: defaultAppRootCiTypeId
+      appRootCiTypeId: defaultAppRootCiTypeId,
+      diffConfigCiTypeId: defaultDiffConfiguration
     }
   },
   computed: {},
@@ -662,6 +663,7 @@ export default {
     },
     async loadAppRootCiTypeId () {
       this.appRootCiTypeId = defaultAppRootCiTypeId
+      this.diffConfigCiTypeId = defaultDiffConfiguration
       if (!this.guid) {
         return
       }
@@ -669,8 +671,13 @@ export default {
         unit_design_id: this.guid,
         package_type: this.packageType
       })
-      if (res.status === 'OK' && res.data && res.data.app) {
-        this.appRootCiTypeId = res.data.app
+      if (res.status === 'OK' && res.data) {
+        if (res.data.app) {
+          this.appRootCiTypeId = res.data.app
+        }
+        if (res.data.diff_config) {
+          this.diffConfigCiTypeId = res.data.diff_config
+        }
       }
     },
     async typeChange (configKeyInfos) {
@@ -1245,7 +1252,7 @@ export default {
         })
       }
 
-      const diffConfigs = await getDiffVariable(DIFF_CONFIGURATION, params)
+      const diffConfigs = await getDiffVariable(this.diffConfigCiTypeId, params)
       if (diffConfigs) {
         this.tempCopyTableData = diffConfigs.data.contents
         this.page.total = diffConfigs.data.pageInfo.totalRows
@@ -1445,7 +1452,7 @@ export default {
       }
       await this.updateEntity({
         packageName: cmdbPackageName,
-        entityName: DIFF_CONFIGURATION,
+        entityName: this.diffConfigCiTypeId,
         data: [
           {
             id: row.conf_variable.diffConfigGuid,

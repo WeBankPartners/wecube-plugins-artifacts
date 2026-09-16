@@ -31,7 +31,7 @@ def decrypt_rsa(secret_key, encrypt_text):
 
 @config.intercept('db_username', 'db_hostip', 'db_hostport', 'db_schema',
                   'upload_enabled', 'upload_nexus_enabled', 'ci_typeid_system_design', 'ci_typeid_unit_design',
-                  'ci_typeid_diff_config', 'ci_typeid_deploy_package', 'encrypt_variable_prefix',
+                  'ci_typeid_diff_config', 'ci_typeid_k8s_diff_config', 'ci_typeid_deploy_package', 'encrypt_variable_prefix',
                   'file_variable_prefix', 'default_special_replace', 'artifact_field', 's3_access_key', 's3_secret_key',
                   'nexus_server', 'nexus_repository', 'nexus_username', 'nexus_password', 'local_nexus_server',
                   'local_nexus_repository', 'local_nexus_username', 'local_nexus_password', 'gateway_url',

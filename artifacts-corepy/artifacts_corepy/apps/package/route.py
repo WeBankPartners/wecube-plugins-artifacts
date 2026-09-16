@@ -6,6 +6,7 @@ from talos.core import config
 from talos.core import utils
 from talos.core.i18n import _
 from artifacts_corepy.apps.package import controller
+from artifacts_corepy.apps.package import apiv2 as package_api
 from artifacts_corepy.common import nexus
 from artifacts_corepy.common import wecube
 from artifacts_corepy.common import exceptions
@@ -46,10 +47,10 @@ class EntityAdapter(object):
             data = client.retrieve(url, req.json)
             resp.json = {'code': 200, 'status': 'OK', 'data': data['data'], 'message': 'success'}
         elif action_name == 'update':
-            if package_name == 'wecmdb' and entity_name == CONF.wecube.wecmdb.citypes.diff_config:
+            if package_name == 'wecmdb' and package_api.is_diff_config_entity(entity_name):
                 # 拦截差异化变量的更新，使用cmdbclient直接调用校验用户token权限
                 diff_config_controller = controller.ItemDiffConfigUpdate()
-                resp_data = diff_config_controller.make_resource(req).update(req.json)
+                resp_data = diff_config_controller.make_resource(req).update(req.json, citype=entity_name)
                 resp.json = {'code': 200, 'status': 'OK', 'data': resp_data, 'message': 'success'}
             else:
                 # 其他类型的更新，使用platform的模型更新，即使用subsys权限
