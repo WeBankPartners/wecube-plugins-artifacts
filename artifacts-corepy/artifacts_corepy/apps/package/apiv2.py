@@ -1181,14 +1181,16 @@ class UnitDesignPackages(WeCubeResource):
                         continue
                     seen[key] = True
                     seed = seed_finder.get(key) or {}
+                    orig_key = (seed.get('key_name') or seed.get('variable_name') or seed.get('code')
+                                or item.get('key') or key)
                     create_payload.append({
-                        'code': key,
-                        'variable_name': key,
-                        'description': key,
+                        'code': orig_key,
+                        'variable_name': orig_key,
+                        'description': orig_key,
                         'variable_value': item.get('diffExpr') or seed.get('variable_value') or '',
                         'variable_type': seed.get('variable_type') or self._conv_diff_conf_type(item.get('type') or ''),
                     })
-                    created_keys.append(key)
+                    created_keys.append(orig_key)
                 if create_payload:
                     cmdb_client = self.get_cmdb_client()
                     resp_json = cmdb_client.create(citype, create_payload)
@@ -2655,13 +2657,14 @@ class UnitDesignPackages(WeCubeResource):
             b_finder[bconf['key_name']] = bconf
         for k, v in p_finder.items():
             conf = finder.get(k, None)
-            p_conf = p_finder.get(k, None)
+            p_conf = v
             results.append({
                 'bound': k in b_finder,
                 'diffConfigGuid': None if conf is None else conf['guid'],
                 'diffExpr': None if conf is None else conf['variable_value'],
                 'fixedDate': None if conf is None else conf['confirm_time'],
-                'key': k if conf is None else conf['key_name'],
+                # CaseInsensitiveDict 会把 key 存成小写，未建 CI 时必须用文件解析出的原始 key
+                'key': conf['key_name'] if conf is not None else p_conf.get('key', k),
                 'type': None if p_conf is None else p_conf['type']
             })
         return results
