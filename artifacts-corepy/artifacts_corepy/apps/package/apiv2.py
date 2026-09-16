@@ -1134,6 +1134,72 @@ class UnitDesignPackages(WeCubeResource):
             return resp_json['data']['contents']
         return []
 
+    def _ensure_bound_diff_guids(self, items, citype):
+        """Resolve guids for bound variables, creating missing CI records in citype."""
+        if not items:
+            return []
+        bound_items = [c for c in items if c.get('bound')]
+        if not bound_items:
+            return []
+        guids = []
+        missing = []
+        for item in bound_items:
+            guid = item.get('diffConfigGuid')
+            if guid:
+                guids.append(guid)
+            elif item.get('key'):
+                missing.append(item)
+        if missing:
+            keys = list(dict.fromkeys([c['key'] for c in missing]))
+            existing = self._get_diff_configs_by_keyname(keys, citype=citype)
+            finder = artifact_utils.CaseInsensitiveDict()
+            for conf in existing:
+                finder[conf['key_name']] = conf
+            still_missing = []
+            for item in missing:
+                conf = finder.get(item['key'])
+                if conf:
+                    guids.append(conf['guid'])
+                else:
+                    still_missing.append(item)
+            if still_missing:
+                other_citype = (k8s_diff_config_ci_type()
+                                if citype == diff_config_ci_type() else diff_config_ci_type())
+                seed_keys = list(dict.fromkeys([c['key'] for c in still_missing]))
+                seeds = []
+                if other_citype and other_citype != citype:
+                    seeds = self._get_diff_configs_by_keyname(seed_keys, citype=other_citype)
+                seed_finder = artifact_utils.CaseInsensitiveDict()
+                for conf in seeds:
+                    seed_finder[conf['key_name']] = conf
+                create_payload = []
+                created_keys = []
+                seen = artifact_utils.CaseInsensitiveDict()
+                for item in still_missing:
+                    key = item['key']
+                    if key in seen:
+                        continue
+                    seen[key] = True
+                    seed = seed_finder.get(key) or {}
+                    create_payload.append({
+                        'code': key,
+                        'variable_name': key,
+                        'description': key,
+                        'variable_value': item.get('diffExpr') or seed.get('variable_value') or '',
+                        'variable_type': seed.get('variable_type') or self._conv_diff_conf_type(item.get('type') or ''),
+                    })
+                    created_keys.append(key)
+                if create_payload:
+                    cmdb_client = self.get_cmdb_client()
+                    resp_json = cmdb_client.create(citype, create_payload)
+                    created = (resp_json or {}).get('data') or []
+                    if created:
+                        guids.extend([c['guid'] for c in created if c.get('guid')])
+                    else:
+                        created = self._get_diff_configs_by_keyname(created_keys, citype=citype)
+                        guids.extend([c['guid'] for c in created if c.get('guid')])
+        return list(dict.fromkeys([g for g in guids if g]))
+
     def _pack_compose_package(self, pack_filepath, deploy_package_id: str):
         deploy_package = self._get_deploy_package_by_id(deploy_package_id)
         deploy_package_url = deploy_package['deploy_package_url']
@@ -1694,7 +1760,7 @@ class UnitDesignPackages(WeCubeResource):
                                                    {'rid': deploy_package_id})
         deploy_package = resp_json['data']['contents'][0]
         data['guid'] = deploy_package_id
-        self._project_pkg_diff_vars(deploy_package)
+        _, diff_citype = self._project_pkg_diff_vars(deploy_package)
         clean_data = crud.ColumnValidator.get_clean_data(validates, data, 'update')
         # FIXME: patch for wecmdb, error update without code
         clean_data['code'] = deploy_package['name']
@@ -1763,8 +1829,8 @@ class UnitDesignPackages(WeCubeResource):
         # 根据用户指定进行变量绑定
         auto_bind = True
         if field_pkg_diff_conf_var_name in data:
-            clean_data[field_pkg_diff_conf_var_name] = list(dict.fromkeys(
-                [c['diffConfigGuid'] for c in data[field_pkg_diff_conf_var_name] if c['bound']]))
+            clean_data[field_pkg_diff_conf_var_name] = self._ensure_bound_diff_guids(
+                data[field_pkg_diff_conf_var_name], diff_citype)
             auto_bind = False
         # 根据diff_conf_file计算变量进行更新绑定
         if field_pkg_diff_conf_file_name in data and auto_bind:
@@ -1778,8 +1844,8 @@ class UnitDesignPackages(WeCubeResource):
         # 根据用户指定进行变量绑定
         db_auto_bind = True
         if field_pkg_db_diff_conf_var_name in data:
-            clean_data[field_pkg_db_diff_conf_var_name] = list(dict.fromkeys(
-                [c['diffConfigGuid'] for c in data[field_pkg_db_diff_conf_var_name] if c['bound']]))
+            clean_data[field_pkg_db_diff_conf_var_name] = self._ensure_bound_diff_guids(
+                data[field_pkg_db_diff_conf_var_name], diff_citype)
             db_auto_bind = False
         # 根据diff_conf_file计算变量进行更新绑定
         if field_pkg_db_diff_conf_file_name in data and db_auto_bind:
