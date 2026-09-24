@@ -1512,9 +1512,13 @@ export default {
     },
     // 新增服务码
     buildImageDeployScript () {
-      const deployPath = (this.packageInput.image_deploy_path || '').trim()
+      let deployPath = (this.packageInput.image_deploy_path || '').trim()
+      if (!deployPath.startsWith('/')) {
+        deployPath = `/data/app/${deployPath}`
+      }
+      deployPath = deployPath.replace(/\/{2,}/g, '/').replace(/\/$/, '')
       return [
-        `app_path=/data/app/${deployPath}`,
+        `app_path=${deployPath}`,
         'mkdir -p $app_path',
         'copied=0',
         'for dir in /shared-data/diff-var-files/*/; do',
