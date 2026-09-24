@@ -261,18 +261,27 @@
                 </Col>
               </Row>
             </div>
-            <!-- 自定义脚本输入（镜像部署脚本） -->
+            <!-- 镜像内部署目录与启动脚本 -->
             <div style="margin-top: 16px;">
               <Row>
                 <Col span="3" style="margin-top: 6px">
-                  <span>{{ $t('art_script_content') }}</span>
+                  <span>{{ $t('art_image_deploy_path') }}</span>
                 </Col>
                 <Col span="21">
+                  <Input v-model.trim="packageInput.image_deploy_path" placeholder="image_deploy_path" />
+                </Col>
+              </Row>
+              <Row style="margin-top: 12px;">
+                <Col span="3" style="margin-top: 6px">
+                  <span>{{ $t('art_image_start_script') }}</span>
+                </Col>
+                <Col span="21">
+                  <Button size="small" style="margin-bottom: 8px;" @click="quickGenerateImageScript">{{ $t('art_quick_generate') }}</Button>
                   <Input
                     type="textarea"
                     :autosize="{ minRows: 6 }"
                     v-model="packageInput.image_deploy_script"
-                    :placeholder="$t('art_script_content')"
+                    :placeholder="$t('art_image_start_script')"
                   />
                 </Col>
               </Row>
@@ -544,6 +553,7 @@ export default {
         db_deploy_file_path: [],
 
         upgrade_cleanup_file_path: [], // 升级清理目录
+        image_deploy_path: '',
         image_deploy_script: ''
       },
       packageDetail: {
@@ -572,6 +582,7 @@ export default {
         db_deploy_file_path: [],
 
         upgrade_cleanup_file_path: [], // 升级清理目录
+        image_deploy_path: '',
         image_deploy_script: ''
       },
       packageType: '', // 包类型
@@ -709,6 +720,7 @@ export default {
               }
             ]
           : JSON.parse(JSON.stringify(this.packageDetail.upgrade_cleanup_file_path))
+      this.packageInput.image_deploy_path = this.packageDetail.image_deploy_path || ''
       this.packageInput.image_deploy_script = this.packageDetail.image_deploy_script || ''
       this.$nextTick(() => {
         this.packageInput.key_service_code = JSON.parse(JSON.stringify(this.packageDetail.key_service_code))
@@ -859,6 +871,7 @@ export default {
                 exists: false
               }
             ]
+        this.packageInput.image_deploy_path = found.image_deploy_path || ''
         this.packageInput.image_deploy_script = found.image_deploy_script || ''
         this.$nextTick(() => {
           this.packageInput.key_service_code = found.key_service_code ? JSON.parse(JSON.stringify(found.key_service_code)) : []
@@ -988,6 +1001,7 @@ export default {
         db_deploy_file_path: [],
 
         upgrade_cleanup_file_path: [], // 升级清理目录
+        image_deploy_path: '',
         image_deploy_script: ''
       }
     },
@@ -1497,6 +1511,44 @@ export default {
       })
     },
     // 新增服务码
+    buildImageDeployScript () {
+      const deployPath = (this.packageInput.image_deploy_path || '').trim()
+      return [
+        `app_path=/data/app/${deployPath}`,
+        'mkdir -p $app_path',
+        'copied=0',
+        'for dir in /shared-data/diff-var-files/*/; do',
+        '  if [ -d "$dir" ]; then',
+        '    cp -rf "$dir" $app_path/',
+        '    copied=1',
+        '  fi',
+        'done',
+        'if [ "$copied" -eq 0 ]; then',
+        '  mkdir -p $app_path/conf',
+        '  cp -rf /shared-data/diff-var-files/. $app_path/conf/',
+        'fi',
+        'cd $app_path/bin',
+        'sh deploy.sh',
+        ''
+      ].join('\n')
+    },
+    quickGenerateImageScript () {
+      if (!(this.packageInput.image_deploy_path || '').trim()) {
+        this.$Message.warning(this.$t('art_image_deploy_path_required'))
+        return
+      }
+      const apply = () => {
+        this.packageInput.image_deploy_script = this.buildImageDeployScript()
+      }
+      if ((this.packageInput.image_deploy_script || '').trim()) {
+        this.$Modal.confirm({
+          title: this.$t('art_overwrite_script_confirm'),
+          onOk: apply
+        })
+        return
+      }
+      apply()
+    },
     addCodeStringMap () {
       this.packageInput.key_service_code.push({
         regulative: 0,
@@ -1590,6 +1642,7 @@ export default {
         upgrade_cleanup_file_path: this.packageInput.upgrade_cleanup_file_path,
 
         key_service_code: this.packageInput.key_service_code,
+        image_deploy_path: this.packageInput.image_deploy_path,
         image_deploy_script: this.packageInput.image_deploy_script
       }
       try {

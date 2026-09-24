@@ -194,5 +194,10 @@
   "art_size": "大小",
   "art_file_type": "文件类型",
   "art_parse_fail": "差异化变量解析失败",
-  "art_script_content": "脚本内容"
+  "art_script_content": "脚本内容",
+  "art_image_deploy_path": "镜像内部署目录",
+  "art_image_start_script": "镜像启动脚本",
+  "art_quick_generate": "快速生成",
+  "art_overwrite_script_confirm": "镜像启动脚本已有内容，是否覆盖？",
+  "art_image_deploy_path_required": "请先填写镜像内部署目录"
 }

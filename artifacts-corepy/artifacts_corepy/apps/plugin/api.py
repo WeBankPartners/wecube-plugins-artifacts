@@ -8,6 +8,7 @@ import tempfile
 import hashlib
 from urllib.parse import urlparse
 
+from artifacts_corepy.apps.package.apiv2 import deploy_package_attr_names, fill_suggest_fields
 from artifacts_corepy.common import wecmdbv2 as wecmdb
 from artifacts_corepy.common import constant
 from artifacts_corepy.common import exceptions
@@ -21,6 +22,14 @@ CONF = config.CONF
 
 
 class Package(object):
+    def _fill_suggest_on_create(self, cmdb_client, rows):
+        try:
+            attr_names = deploy_package_attr_names(cmdb_client)
+        except Exception as e:
+            LOG.warning('query deploy package attributes failed, skip suggest# fill: %s', e)
+            return rows
+        return fill_suggest_fields(rows, attr_names)
+
     def create_from_image_name(self, image_name, tag, namespace, md5, nexus_url, connector_port, unit_design_id,
                                baseline_package, operator):
         client = wecmdb.WeCMDBClient(CONF.wecube.server, scoped_globals.GLOBALS.request.auth_token)
@@ -62,6 +71,7 @@ class Package(object):
                 'upload_user': operator,
                 'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             }
+            self._fill_suggest_on_create(client, [data])
             ret = client.create(CONF.wecube.wecmdb.citypes.deploy_package, [data])
             package = {'guid': ret['data'][0]['guid'], 'deploy_package_url': ret['data'][0]['deploy_package_url']}
         else:
@@ -164,6 +174,7 @@ class Package(object):
                         'upload_user': operator,
                         'upload_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     }
+                    self._fill_suggest_on_create(cmdb_client, [data])
                     ret = cmdb_client.create(CONF.wecube.wecmdb.citypes.deploy_package, [data])
                     # package = {'guid': ret['data'][0]['guid'],
                     #           'deploy_package_url': ret['data'][0]['deploy_package_url']}

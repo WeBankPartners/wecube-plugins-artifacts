@@ -194,5 +194,10 @@
   "art_size": "Size",
   "art_file_type": "File Type",
   "art_parse_fail": "Differentiated Variable Parsing Failed",
-  "art_script_content": "Script Content"
+  "art_script_content": "Script Content",
+  "art_image_deploy_path": "image_deploy_path",
+  "art_image_start_script": "Image Start Script",
+  "art_quick_generate": "Quick Generate",
+  "art_overwrite_script_confirm": "The image start script already has content. Overwrite it?",
+  "art_image_deploy_path_required": "Please fill image_deploy_path first"
 }

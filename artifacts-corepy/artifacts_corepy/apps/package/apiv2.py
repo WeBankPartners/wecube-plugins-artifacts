@@ -132,6 +132,34 @@ def resolve_diff_config_ci(unit_design, package_type):
     return diff_config_ci_type()
 
 
+def deploy_package_attr_names(cmdb_client):
+    resp_json = cmdb_client.citype_attrs(CONF.wecube.wecmdb.citypes.deploy_package)
+    attrs = resp_json.get('data') or []
+    names = set()
+    for attr in attrs:
+        if not isinstance(attr, dict):
+            continue
+        for key in ('propertyName', 'name', 'code'):
+            value = attr.get(key)
+            if value:
+                names.add(value)
+    return names
+
+
+def fill_suggest_fields(rows, attr_names):
+    """模型上存在的建议字段，在新增时未给值则传 suggest#。"""
+    suggest_fields = [field for field in fields_pkg_suggest_on_create if field in attr_names]
+    if not suggest_fields:
+        return rows
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        for field in suggest_fields:
+            if not row.get(field):
+                row[field] = field_pkg_image_name_default_value
+    return rows
+
+
 def query_ci_by_guid(cmdb_client, citype, guid):
     if not guid or not citype:
         return None
@@ -157,14 +185,19 @@ field_pkg_package_type_name = 'package_type'  # APP DB APP&DB
 field_pkg_key_service_code_name = 'key_service_code'
 field_pkg_image_deploy_script_name = 'image_deploy_script'
 field_pkg_image_name_name = 'image_name' # Docker镜像名称
+field_pkg_image_deploy_path_name = 'image_deploy_path'
 fields_pkg_common = [field_pkg_baseline_package_name, field_pkg_is_decompression_name, field_pkg_package_type_name,
-                     field_pkg_key_service_code_name, field_pkg_image_deploy_script_name, field_pkg_image_name_name]
+                     field_pkg_key_service_code_name, field_pkg_image_deploy_script_name, field_pkg_image_name_name,
+                     field_pkg_image_deploy_path_name]
 field_pkg_baseline_package_default_value = None
 field_pkg_is_decompression_default_value = 'true'
 field_pkg_package_type_default_value = constant.PackageType.default
 field_pkg_key_service_code_default_value = []
 field_pkg_image_deploy_script_default_value = ''
 field_pkg_image_name_default_value = 'suggest#'
+field_pkg_image_deploy_path_default_value = 'suggest#'
+# 新增物料包时，模型上存在这些属性且行内未给值，则传 suggest# 让 CMDB 按建议规则填充
+fields_pkg_suggest_on_create = (field_pkg_image_name_name, field_pkg_image_deploy_path_name)
 # APP
 field_pkg_diff_conf_directory_name = 'diff_conf_directory'
 field_pkg_diff_conf_file_name = 'diff_conf_file'
@@ -1638,6 +1671,12 @@ class UnitDesignPackages(WeCubeResource):
     def create(self, data: list) -> list:
         cmdb_client = self.get_cmdb_client()
         mapped = [self._remap_pkg_diff_fields(row) for row in data]
+        try:
+            attr_names = deploy_package_attr_names(cmdb_client)
+        except Exception as e:
+            LOG.warning('query deploy package attributes failed, skip suggest# fill: %s', e)
+            attr_names = set()
+        fill_suggest_fields(mapped, attr_names)
         return cmdb_client.create(CONF.wecube.wecmdb.citypes.deploy_package, mapped)
 
     # 纯cmdb更新物料包
@@ -1668,6 +1707,11 @@ class UnitDesignPackages(WeCubeResource):
             crud.ColumnValidator(field_pkg_image_deploy_script_name,
                                  validate_on=['update:O'],
                                  rule='0, 65535',
+                                 rule_type='length',
+                                 nullable=True),
+            crud.ColumnValidator(field_pkg_image_deploy_path_name,
+                                 validate_on=['update:O'],
+                                 rule='0, 1024',
                                  rule_type='length',
                                  nullable=True),
             # app diff conf
@@ -1876,6 +1920,8 @@ class UnitDesignPackages(WeCubeResource):
         # ColumnValidator.get_clean_data 对于可选字段可能不会包含，需要显式添加
         if field_pkg_image_deploy_script_name in data:
             clean_data[field_pkg_image_deploy_script_name] = data[field_pkg_image_deploy_script_name]
+        if field_pkg_image_deploy_path_name in data:
+            clean_data[field_pkg_image_deploy_path_name] = data[field_pkg_image_deploy_path_name]
         # 如果本次 update 未触发差异化变量重新计算，仍需对现有值去重，以清理历史重复数据
         for _var_field in (field_pkg_diff_conf_var_name, field_pkg_db_diff_conf_var_name):
             if _var_field not in clean_data:
@@ -2048,6 +2094,7 @@ class UnitDesignPackages(WeCubeResource):
         result[field_pkg_package_size_name] = int(result[field_pkg_package_size_name])
         result[field_pkg_key_service_code_name] = deploy_package[field_pkg_key_service_code_name]
         result[field_pkg_image_deploy_script_name] = deploy_package.get(field_pkg_image_deploy_script_name, '')
+        result[field_pkg_image_deploy_path_name] = deploy_package.get(field_pkg_image_deploy_path_name, '') or ''
         # var 字段
         result[field_pkg_diff_conf_var_name] = deploy_package.get(field_pkg_diff_conf_var_name) or []
         result[field_pkg_db_diff_conf_var_name] = deploy_package.get(field_pkg_db_diff_conf_var_name) or []
@@ -2165,6 +2212,7 @@ class UnitDesignPackages(WeCubeResource):
         result[field_pkg_package_size_name] = int(result[field_pkg_package_size_name])
         result[field_pkg_key_service_code_name] = deploy_package[field_pkg_key_service_code_name]
         result[field_pkg_image_deploy_script_name] = deploy_package.get(field_pkg_image_deploy_script_name, '')
+        result[field_pkg_image_deploy_path_name] = deploy_package.get(field_pkg_image_deploy_path_name, '') or ''
         # var 字段
         result[field_pkg_diff_conf_var_name] = deploy_package.get(field_pkg_diff_conf_var_name) or []
         result[field_pkg_db_diff_conf_var_name] = deploy_package.get(field_pkg_db_diff_conf_var_name) or []
