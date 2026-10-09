@@ -1357,6 +1357,40 @@ class UnitDesignPackages(WeCubeResource):
         self.pure_update([new_deploy_attrs])
         return [self._get_deploy_package_by_id(new_package_guid)]
 
+    def _upsert_uploaded_package(self, package_rows, filename, unit_design_id, baseline_package, package_type,
+                                 image_name):
+        """创建或按基线更新物料包。已有纪录且本次基线为空时，只刷新物料本身，不覆盖已有配置。"""
+        exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
+        if exist_package is not None and not baseline_package:
+            artifact_row = {
+                'guid': exist_package['guid'],
+                field_pkg_package_size_name: package_rows[0].get(field_pkg_package_size_name),
+                'deploy_package_url': package_rows[0].get('deploy_package_url'),
+                'md5_value': package_rows[0].get('md5_value'),
+                'upload_user': package_rows[0].get('upload_user'),
+                'upload_time': package_rows[0].get('upload_time'),
+            }
+            if image_name:
+                artifact_row[field_pkg_image_name_name] = image_name
+            self.pure_update([artifact_row])
+            return [self._get_deploy_package_by_id(exist_package['guid'])]
+        if exist_package is None:
+            # 只在首次创建时提供 image_name 默认值，更新时不覆盖
+            package_rows[0][field_pkg_image_name_name] = image_name or field_pkg_image_name_default_value
+            package_result = self.create(package_rows)
+        else:
+            package_rows[0]['guid'] = exist_package['guid']
+            if image_name:
+                package_rows[0][field_pkg_image_name_name] = image_name
+            package_result = self.pure_update(package_rows)
+        new_package_guid = package_result['data'][0]['guid']
+        new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
+            field_pkg_package_type_name: package_type
+        })
+        new_deploy_attrs['guid'] = new_package_guid
+        self.pure_update([new_deploy_attrs])
+        return [self._get_deploy_package_by_id(new_package_guid)]
+
     def upload_from_nexus(self, download_url, baseline_package, package_type, image_name, unit_design_id):
         if not package_type:
             package_type = constant.PackageType.default
@@ -1431,24 +1465,8 @@ class UnitDesignPackages(WeCubeResource):
                 field_pkg_package_type_name: package_type,
                 field_pkg_image_deploy_script_name: final_image_deploy_script
             }]
-            exist_package = self._get_deploy_package_by_name_unit(url_info['filename'], unit_design_id)
-            if exist_package is None:
-                # 只在首次创建时提供 image_name 默认值，更新时不覆盖
-                package_rows[0][field_pkg_image_name_name] = image_name or field_pkg_image_name_default_value
-                package_result = self.create(package_rows)
-            else:
-                package_rows[0]['guid'] = exist_package['guid']
-                if image_name:
-                    package_rows[0][field_pkg_image_name_name] = image_name
-                package_result = self.pure_update(package_rows)
-            new_package_guid = package_result['data'][0]['guid']
-            new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
-                field_pkg_package_type_name: package_type
-            })
-            # update 属性
-            new_deploy_attrs['guid'] = new_package_guid
-            self.pure_update([new_deploy_attrs])
-            return [self._get_deploy_package_by_id(new_package_guid)]
+            return self._upsert_uploaded_package(package_rows, url_info['filename'], unit_design_id,
+                                                  baseline_package, package_type, image_name)
         else:
             # 从本地Nexus下载并上传到远端Nexus中
             l_nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
@@ -1499,24 +1517,8 @@ class UnitDesignPackages(WeCubeResource):
                         field_pkg_package_type_name: package_type,
                         field_pkg_image_deploy_script_name: final_image_deploy_script
                     }]
-                    exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
-                    if exist_package is None:
-                        # 只在首次创建时提供 image_name 默认值，更新时不覆盖
-                        package_rows[0][field_pkg_image_name_name] = image_name or field_pkg_image_name_default_value
-                        package_result = self.create(package_rows)
-                    else:
-                        package_rows[0]['guid'] = exist_package['guid']
-                        if image_name:
-                            package_rows[0][field_pkg_image_name_name] = image_name
-                        package_result = self.pure_update(package_rows)
-                    new_package_guid = package_result['data'][0]['guid']
-                    new_deploy_attrs = self._analyze_package_attrs(new_package_guid, baseline_package, {
-                        field_pkg_package_type_name: package_type
-                    })
-                    # update 属性
-                    new_deploy_attrs['guid'] = new_package_guid
-                    self.pure_update([new_deploy_attrs])
-                    return [self._get_deploy_package_by_id(new_package_guid)]
+                    return self._upsert_uploaded_package(package_rows, filename, unit_design_id, baseline_package,
+                                                          package_type, image_name)
 
     def upload_and_create(self, data):
         def _pop_none(d, k):
