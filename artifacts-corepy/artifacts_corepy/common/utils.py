@@ -47,6 +47,23 @@ REGISTED_UNPACK_FORMATS = [
 ]
 
 
+# 压缩包和二进制不可能是差异化配置，解析变量时直接跳过。
+# 复合后缀放在前面，endswith 对元组是“任一命中”。
+DIFF_CONF_PARSE_SKIP_SUFFIXES = (
+    '.tar.gz', '.tar.bz2', '.tar.xz', '.tgz', '.tbz2', '.txz',
+    '.jar', '.war', '.ear', '.aar', '.zip', '.tar', '.gz', '.bz2', '.xz', '.7z', '.rar',
+    '.so', '.dll', '.dylib', '.exe', '.bin', '.class', '.pyc', '.pyo', '.o', '.a', '.ko',
+    '.apk', '.ipa', '.deb', '.rpm', '.whl', '.iso', '.img',
+)
+
+
+def should_skip_diff_conf_parse(filename):
+    if not filename:
+        return False
+    name = str(filename).strip().replace('\\', '/').rsplit('/', 1)[-1].lower()
+    return name.endswith(DIFF_CONF_PARSE_SKIP_SUFFIXES)
+
+
 def variable_parse(content, spliters):
     variables = []
     rule = re.compile(r'\[(' + '|'.join([re.escape(ch) for ch in spliters]) + r')(' + CONF.variable_expression + r')\]')

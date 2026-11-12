@@ -1251,7 +1251,9 @@ class UnitDesignPackages(WeCubeResource):
         spliters = [s for s in spliters if s]
         for i in files:
             filepath = os.path.join(package_cached_dir, i['filename'])
-            if os.path.exists(filepath):
+            if artifact_utils.should_skip_diff_conf_parse(i.get('filename')):
+                i['configKeyInfos'] = []
+            elif os.path.exists(filepath) and os.path.isfile(filepath):
                 with open(filepath, errors='replace') as f:
                     content = f.read()
                     i['configKeyInfos'] = artifact_utils.variable_parse(content, spliters)

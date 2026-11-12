@@ -2681,7 +2681,9 @@ class UnitDesignPackages(WeCubeResource):
         spliters = [s for s in spliters if s]
         for i in files:
             filepath = os.path.join(package_cached_dir, i['filename'])
-            if os.path.exists(filepath):
+            if artifact_utils.should_skip_diff_conf_parse(i.get('filename')):
+                i['configKeyInfos'] = []
+            elif os.path.exists(filepath) and os.path.isfile(filepath):
                 with open(filepath, errors='replace') as f:
                     content = f.read()
                     i['configKeyInfos'] = artifact_utils.variable_parse(content, spliters)
@@ -2874,7 +2876,9 @@ class UnitDesignPackages(WeCubeResource):
                                         self.get_package_cached_path(package_id),
                                         baseline_file_obj, file_key='filename')
                 # remove deleted status
-                filtered_file_objs = [f for f in baseline_file_obj if f['comparisonResult'] != 'deleted']
+                filtered_file_objs = [f for f in baseline_file_obj
+                                      if f['comparisonResult'] != 'deleted'
+                                      and not artifact_utils.should_skip_diff_conf_parse(f.get('filename'))]
                 changed_file_objs = [f for f in baseline_file_obj if f['comparisonResult'] == 'changed']
                 changed_file_objs_map = set([f['filename'] for f in changed_file_objs])
                 # find new,changed status
@@ -2958,7 +2962,9 @@ class UnitDesignPackages(WeCubeResource):
                                         self.get_package_cached_path(package_id),
                                         baseline_file_obj, file_key='filename')
                 # remove deleted status
-                filtered_file_objs = [f for f in baseline_file_obj if f['comparisonResult'] != 'deleted']
+                filtered_file_objs = [f for f in baseline_file_obj
+                                      if f['comparisonResult'] != 'deleted'
+                                      and not artifact_utils.should_skip_diff_conf_parse(f.get('filename'))]
                 changed_file_objs = [f for f in baseline_file_obj if f['comparisonResult'] == 'changed']
                 changed_file_objs_map = set([f['filename'] for f in changed_file_objs])
                 # find new,changed status
