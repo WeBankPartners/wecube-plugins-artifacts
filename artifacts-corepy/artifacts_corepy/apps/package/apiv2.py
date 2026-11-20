@@ -69,8 +69,18 @@ def _conf_value(value, default):
     return value if value else default
 
 
-def docker_unit_type_key():
-    return _conf_value(getattr(CONF.wecube.wecmdb, 'docker_unit_type_key', None), 'DOCKER')
+# 配置项可追加其它 key（逗号/分号/竖线分隔）。DOCKER、POD 始终视为容器。
+_DEFAULT_CONTAINER_UNIT_TYPES = ('DOCKER', 'POD')
+
+
+def container_unit_type_keys():
+    keys = set(_DEFAULT_CONTAINER_UNIT_TYPES)
+    raw = getattr(CONF.wecube.wecmdb, 'docker_unit_type_key', None) or ''
+    for item in re.split(r'[,|;]', str(raw)):
+        item = item.strip()
+        if item:
+            keys.add(item)
+    return keys
 
 
 def k8s_root_ci_type():
@@ -112,7 +122,33 @@ def _package_type_value(value):
 def is_docker_unit(unit_design):
     if not unit_design:
         return False
-    return _ci_key_name(unit_design.get('unit_type')) == docker_unit_type_key()
+    return _ci_key_name(unit_design.get('unit_type')).strip() in container_unit_type_keys()
+
+
+def build_image_deploy_script(deploy_path):
+    """与前端「快速生成」镜像启动脚本一致。"""
+    path = (deploy_path or '').strip()
+    if not path.startswith('/'):
+        path = '/data/app/' + path
+    path = re.sub(r'/{2,}', '/', path).rstrip('/')
+    return '\n'.join([
+        'app_path=%s' % path,
+        'mkdir -p $app_path',
+        'copied=0',
+        'for dir in /shared-data/diff-var-files/*/; do',
+        '  if [ -d "$dir" ]; then',
+        '    cp -rf "$dir" $app_path/',
+        '    copied=1',
+        '  fi',
+        'done',
+        'if [ "$copied" -eq 0 ]; then',
+        '  mkdir -p $app_path/conf',
+        '  cp -rf /shared-data/diff-var-files/. $app_path/conf/',
+        'fi',
+        'cd $app_path/bin',
+        'sh deploy.sh',
+        '',
+    ])
 
 
 def use_k8s_app_root(unit_design, package_type):
@@ -196,8 +232,9 @@ field_pkg_key_service_code_default_value = []
 field_pkg_image_deploy_script_default_value = ''
 field_pkg_image_name_default_value = 'suggest#'
 field_pkg_image_deploy_path_default_value = 'suggest#'
-# 新增物料包时，模型上存在这些属性且行内未给值，则传 suggest# 让 CMDB 按建议规则填充
-fields_pkg_suggest_on_create = (field_pkg_image_name_name, field_pkg_image_deploy_path_name)
+# 新增物料包时，模型上存在 image_name 且行内未给值，则传 suggest#。
+# image_deploy_path 只在容器单元首次在线选包或上传新包时传 suggest#。
+fields_pkg_suggest_on_create = (field_pkg_image_name_name,)
 # APP
 field_pkg_diff_conf_directory_name = 'diff_conf_directory'
 field_pkg_diff_conf_file_name = 'diff_conf_file'
@@ -1293,6 +1330,43 @@ class UnitDesignPackages(WeCubeResource):
                 tar.add(package_path_db_diffconfigs, arcname=os.path.basename(package_path_db_diffconfigs))
         return output_filename
 
+    def _deploy_package_attr_name_set(self):
+        try:
+            return deploy_package_attr_names(self.get_cmdb_client())
+        except Exception as e:
+            LOG.warning('query deploy package attributes failed: %s', e)
+            return set()
+
+    def _mark_container_image_deploy_path(self, unit_design, row):
+        """容器新包：模型有 image_deploy_path 时传 suggest#，让 CMDB 自动填充。"""
+        if not is_docker_unit(unit_design) or not isinstance(row, dict):
+            return None
+        attr_names = self._deploy_package_attr_name_set()
+        if field_pkg_image_deploy_path_name not in attr_names:
+            return None
+        row[field_pkg_image_deploy_path_name] = field_pkg_image_deploy_path_default_value
+        return attr_names
+
+    def _sync_container_image_deploy_script(self, package_guid, attr_names):
+        """suggest# 落库后读回 image_deploy_path，按快速生成规则回写 image_deploy_script。"""
+        if not package_guid or not attr_names:
+            return
+        if field_pkg_image_deploy_script_name not in attr_names:
+            LOG.warning('deploy package model has no %s, skip script update', field_pkg_image_deploy_script_name)
+            return
+        pkg = self._get_deploy_package_by_id(package_guid)
+        deploy_path = pkg.get(field_pkg_image_deploy_path_name)
+        if isinstance(deploy_path, dict):
+            deploy_path = deploy_path.get('key_name') or deploy_path.get('value') or deploy_path.get('code') or ''
+        deploy_path = (deploy_path or '').strip()
+        if not deploy_path or deploy_path == field_pkg_image_deploy_path_default_value:
+            LOG.warning('image_deploy_path is empty after create, skip image_deploy_script, package=%s', package_guid)
+            return
+        self.pure_update([{
+            'guid': package_guid,
+            field_pkg_image_deploy_script_name: build_image_deploy_script(deploy_path),
+        }])
+
     def upload(self, filename, filetype, fileobj, baseline_package, package_type, image_name, unit_design_id):
         if not package_type:
             package_type = constant.PackageType.default
@@ -1339,9 +1413,11 @@ class UnitDesignPackages(WeCubeResource):
             field_pkg_image_deploy_script_name: final_image_deploy_script
         }]
         exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
+        image_path_attr_names = None
         if exist_package is None:
             # 只在首次创建时提供 image_name 默认值，更新时不覆盖
             package_rows[0][field_pkg_image_name_name] = image_name or field_pkg_image_name_default_value
+            image_path_attr_names = self._mark_container_image_deploy_path(unit_design, package_rows[0])
             package_result = self.create(package_rows)
         else:
             package_rows[0]['guid'] = exist_package['guid']
@@ -1355,10 +1431,12 @@ class UnitDesignPackages(WeCubeResource):
         # update 属性
         new_deploy_attrs['guid'] = new_package_guid
         self.pure_update([new_deploy_attrs])
+        if image_path_attr_names:
+            self._sync_container_image_deploy_script(new_package_guid, image_path_attr_names)
         return [self._get_deploy_package_by_id(new_package_guid)]
 
     def _upsert_uploaded_package(self, package_rows, filename, unit_design_id, baseline_package, package_type,
-                                 image_name):
+                                 image_name, unit_design=None):
         """创建或按基线更新物料包。已有纪录且本次基线为空时，只刷新物料本身，不覆盖已有配置。"""
         exist_package = self._get_deploy_package_by_name_unit(filename, unit_design_id)
         if exist_package is not None and not baseline_package:
@@ -1374,9 +1452,13 @@ class UnitDesignPackages(WeCubeResource):
                 artifact_row[field_pkg_image_name_name] = image_name
             self.pure_update([artifact_row])
             return [self._get_deploy_package_by_id(exist_package['guid'])]
+        image_path_attr_names = None
         if exist_package is None:
             # 只在首次创建时提供 image_name 默认值，更新时不覆盖
             package_rows[0][field_pkg_image_name_name] = image_name or field_pkg_image_name_default_value
+            if unit_design is None:
+                unit_design = self._get_unit_design_by_id(unit_design_id)
+            image_path_attr_names = self._mark_container_image_deploy_path(unit_design, package_rows[0])
             package_result = self.create(package_rows)
         else:
             package_rows[0]['guid'] = exist_package['guid']
@@ -1389,6 +1471,8 @@ class UnitDesignPackages(WeCubeResource):
         })
         new_deploy_attrs['guid'] = new_package_guid
         self.pure_update([new_deploy_attrs])
+        if image_path_attr_names:
+            self._sync_container_image_deploy_script(new_package_guid, image_path_attr_names)
         return [self._get_deploy_package_by_id(new_package_guid)]
 
     def upload_from_nexus(self, download_url, baseline_package, package_type, image_name, unit_design_id):
@@ -1466,7 +1550,8 @@ class UnitDesignPackages(WeCubeResource):
                 field_pkg_image_deploy_script_name: final_image_deploy_script
             }]
             return self._upsert_uploaded_package(package_rows, url_info['filename'], unit_design_id,
-                                                  baseline_package, package_type, image_name)
+                                                  baseline_package, package_type, image_name,
+                                                  unit_design=unit_design)
         else:
             # 从本地Nexus下载并上传到远端Nexus中
             l_nexus_client = nexus.NeuxsClient(CONF.nexus.server, CONF.nexus.username, CONF.nexus.password)
@@ -1518,7 +1603,7 @@ class UnitDesignPackages(WeCubeResource):
                         field_pkg_image_deploy_script_name: final_image_deploy_script
                     }]
                     return self._upsert_uploaded_package(package_rows, filename, unit_design_id, baseline_package,
-                                                          package_type, image_name)
+                                                          package_type, image_name, unit_design=unit_design)
 
     def upload_and_create(self, data):
         def _pop_none(d, k):
