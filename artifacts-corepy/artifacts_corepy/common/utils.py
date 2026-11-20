@@ -55,12 +55,18 @@ DIFF_CONF_PARSE_SKIP_SUFFIXES = (
     '.so', '.dll', '.dylib', '.exe', '.bin', '.class', '.pyc', '.pyo', '.o', '.a', '.ko',
     '.apk', '.ipa', '.deb', '.rpm', '.whl', '.iso', '.img',
 )
+# 文件名命中则不作为差异化配置文件。按去掉目录后的文件名比较，忽略大小写。
+DIFF_CONF_PARSE_SKIP_NAMES = (
+    'log4j2.xml',
+)
 
 
 def should_skip_diff_conf_parse(filename):
     if not filename:
         return False
     name = str(filename).strip().replace('\\', '/').rsplit('/', 1)[-1].lower()
+    if name in DIFF_CONF_PARSE_SKIP_NAMES:
+        return True
     return name.endswith(DIFF_CONF_PARSE_SKIP_SUFFIXES)
 
 
